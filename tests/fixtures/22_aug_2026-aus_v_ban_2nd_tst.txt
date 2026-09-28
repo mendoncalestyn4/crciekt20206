@@ -1,0 +1,143 @@
+************************************************************
+Australia v Bangladesh
+2nd Test Match (of 2) - 22 Aug 2026
+************************************************************
+
+Bangladesh - 1st Innings                  R    B    4s  6s
+------------------------------------------------------------
+S Islam         b Neser                   52   128  4   -
+M Hasan Joy     lbw b Boland              69   137  7   -
+M Haque         c Carey b Starc           99   136  12  -
+M Rahim         c Head b Starc            6    14   -   -
+N H' Shanto     c Boland b Cummins        12   27   1   -
+L Das           lbw b Neser               6    26   -   -
+Z Hasan         c Smith b Boland          14   20   2   -
+H Mahmud        c Weatherald b Starc      14   45   1   -
+T Islam         b Cummins                 2    9    -   -
+K Ahmed         not out                   2    3    -   -
+N Rana          lbw b Starc               0    2    -   -
+------------------------------------------------------------
+Extras: (nb9)                             9
+TOTAL: (all out, 89.4 overs)              285
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+P Cummins       23     3     53     2     2.30
+M Starc         22.4   0     73     4     3.22
+M Neser         21     1     97     2     4.62
+S Boland        19     2     42     2     2.21
+C Green         3      0     13     0     4.33
+T Head          1      0     7      0     7.00
+------------------------------------------------------------
+Fall of Wickets:
+1-111  2-149  3-173  4-198  5-216  
+6-248  7-277  8-283  9-285  10-285
+
+************************************************************
+************************************************************
+
+Australia - 1st Innings                   R    B    4s  6s
+------------------------------------------------------------
+M Harris        c Hasan Joy b Mahmud      71   109  9   -
+J Weatherald    c Rana b Ahmed            57   68   7   -
+M Labuschagne   c Das b Mahmud            71   117  9   1
+C Green         b Islam                   20   39   2   -
+S Smith         lbw b Rana                35   54   3   -
+T Head          c Das b Rana              4    14   1   -
+A Carey         lbw b Mahmud              10   26   1   -
+M Neser         c Das b Mahmud            3    5    -   -
+P Cummins       lbw b Islam               9    20   -   -
+M Starc         c Haque b Islam           9    14   2   -
+S Boland        not out                   5    12   1   -
+------------------------------------------------------------
+Extras: (nb4,w2)                          6
+TOTAL: (all out, 79 overs)                300
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+H Mahmud        22     4     67     4     3.05
+N Rana          22     0     104    2     4.73
+K Ahmed         16     0     67     1     4.19
+T Islam         17     3     53     3     3.12
+S Islam         2      0     9      0     4.50
+------------------------------------------------------------
+Fall of Wickets:
+1-97  2-164  3-215  4-240  5-248  
+6-273  7-276  8-277  9-293  10-300
+
+************************************************************
+************************************************************
+
+Bangladesh - 2nd Innings                  R    B    4s  6s
+------------------------------------------------------------
+S Islam         c Smith b Neser           6    17   1   -
+M Hasan Joy     b Neser                   8    13   1   -
+M Haque         c Harris b Neser          42   47   4   1
+M Rahim         c Boland b Cummins        17   23   2   -
+N H' Shanto     lbw b Starc               42   85   5   -
+L Das           c Harris b Neser          7    13   1   -
+Z Hasan         c Cummins b Green         38   107  3   -
+H Mahmud        lbw b Cummins             31   96   3   -
+T Islam         c Carey b Starc           6    15   -   -
+K Ahmed         c Smith b Starc           1    4    -   -
+N Rana          not out                   10   10   2   -
+------------------------------------------------------------
+Extras: (nb3)                             3
+TOTAL: (all out, 71.1 overs)              211
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+P Cummins       20     0     72     2     3.60
+M Neser         19     3     43     4     2.26
+M Starc         16.1   1     67     3     4.14
+S Boland        14     2     27     0     1.93
+C Green         2      0     2      1     1.00
+------------------------------------------------------------
+Fall of Wickets:
+1-9  2-14  3-43  4-90  5-104  
+6-144  7-184  8-200  9-200  10-211
+
+************************************************************
+************************************************************
+
+Australia - 2nd Innings                   R    B    4s  6s
+------------------------------------------------------------
+M Harris        run out                   36   77   4   -
+J Weatherald    c Hasan b Ahmed           29   58   2   -
+M Labuschagne   c H' Shanto b Mahmud      12   22   2   -
+C Green         not out                   83   88   13  -
+S Smith         lbw b Ahmed               24   35   2   -
+T Head          not out                   9    21   1   -
+A Carey         
+M Neser         
+P Cummins       
+M Starc         
+S Boland        
+------------------------------------------------------------
+Extras: (nb2,w2)                          4
+TOTAL: (4 wkts, 49.5 overs)               197
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+H Mahmud        11     0     40     1     3.64
+N Rana          13     0     58     0     4.46
+K Ahmed         13     0     49     2     3.77
+T Islam         11     1     46     0     4.18
+S Islam         1.5    0     4      0     2.18
+------------------------------------------------------------
+Fall of Wickets:
+1-65  2-69  3-92  4-182  
+
+
+************************************************************
+Australia won by 6 wickets
+Man of the match: M Starc
+************************************************************

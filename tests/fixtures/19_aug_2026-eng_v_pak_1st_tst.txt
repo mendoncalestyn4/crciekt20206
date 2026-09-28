@@ -1,0 +1,139 @@
+************************************************************
+England v Pakistan
+1st Test Match (of 3) - 19 Aug 2026
+************************************************************
+
+England - 1st Innings                     R    B    4s  6s
+------------------------------------------------------------
+B Duckett       lbw b Khan                85   161  8   -
+E Gay           c Rizwan b Shah           8    26   -   -
+O Pope          lbw b Abbas               12   9    -   2
+H Brook         lbw b Abbas               53   60   7   -
+J Root          b Ali                     22   44   4   -
+J Smith         lbw b Khan                43   60   5   -
+J Bethell       c Rizwan b Ali            3    11   -   -
+J Archer        c Rizwan b Ali            0    1    -   -
+G Atkinson      c Salman b Khan           21   48   2   -
+O Robinson      c Shakil b Ali            10   27   1   -
+J Tongue        not out                   14   13   3   -
+------------------------------------------------------------
+Extras: (nb4)                             4
+TOTAL: (all out, 76 overs)                275
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+M Abbas         22     2     57     2     2.59
+N Shah          17     0     89     1     5.23
+S Khan          23     1     77     3     3.35
+N Ali           14     1     52     4     3.71
+------------------------------------------------------------
+Fall of Wickets:
+1-10  2-24  3-121  4-174  5-185  
+6-190  7-190  8-248  9-253  10-275
+
+************************************************************
+************************************************************
+
+Pakistan - 1st Innings                    R    B    4s  6s
+------------------------------------------------------------
+S Masood        c Duckett b Archer        20   40   1   -
+A Shafiq        c Brook b Atkinson        6    8    1   -
+S Shakil        lbw b Atkinson            4    12   -   -
+B Azam          c Brook b Atkinson        24   40   3   -
+M Rizwan        b Tongue                  22   43   2   -
+A Salman        b Atkinson                2    9    -   -
+G Ghouri        c Brook b Archer          8    12   1   -
+S Khan          not out                   15   15   2   -
+N Ali           c Brook b Robinson        6    13   -   -
+N Shah          c Robinson b Archer       7    10   1   -
+M Abbas         c Smith b Robinson        3    6    -   -
+------------------------------------------------------------
+Extras: (nb1,w1)                          2
+TOTAL: (all out, 34.3 overs)              119
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+J Tongue        12     0     53     1     4.42
+G Atkinson      11     0     32     4     2.91
+J Archer        8      1     19     3     2.37
+O Robinson      3.3    0     15     2     4.29
+------------------------------------------------------------
+Fall of Wickets:
+1-8  2-24  3-34  4-69  5-77  
+6-88  7-94  8-101  9-116  10-119
+
+************************************************************
+************************************************************
+
+England - 2nd Innings                     R    B    4s  6s
+------------------------------------------------------------
+B Duckett       b Shah                    22   29   4   -
+E Gay           c Ghouri b Abbas          15   14   2   -
+O Pope          b Abbas                   17   40   1   -
+H Brook         b Shah                    7    13   1   -
+J Root          lbw b Abbas               2    6    -   -
+J Smith         b Ali                     44   42   6   -
+J Bethell       c Khan b Shah             119  204  16  -
+J Archer        c Ghouri b Abbas          39   65   5   -
+G Atkinson      lbw b Shah                30   48   3   -
+O Robinson      c Shakil b Abbas          6    12   -   -
+J Tongue        not out                   13   26   1   -
+------------------------------------------------------------
+Extras: (nb7,w1)                          8
+TOTAL: (all out, 82 overs)                322
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+M Abbas         28     2     92     5     3.29
+N Shah          25     1     118    4     4.72
+S Khan          16     2     61     0     3.81
+N Ali           13     0     51     1     3.92
+------------------------------------------------------------
+Fall of Wickets:
+1-38  2-38  3-49  4-53  5-81  
+6-118  7-202  8-282  9-296  10-322
+
+************************************************************
+************************************************************
+
+Pakistan - 2nd Innings                    R    B    4s  6s
+------------------------------------------------------------
+S Masood        c Atkinson b Tongue       15   15   3   -
+A Shafiq        c Smith b Atkinson        15   20   3   -
+S Shakil        c Brook b Tongue          10   35   1   -
+B Azam          lbw b Tongue              43   108  4   -
+M Rizwan        c Robinson b Atkinson     14   27   2   -
+A Salman        c Tongue b Robinson       26   51   2   1
+G Ghouri        c Root b Atkinson         33   30   5   -
+S Khan          b Robinson                9    16   1   -
+N Ali           lbw b Tongue              4    10   1   -
+N Shah          c Root b Archer           6    11   1   -
+M Abbas         not out                   4    10   -   -
+------------------------------------------------------------
+Extras:                                   0
+TOTAL: (all out, 55.3 overs)              179
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+J Tongue        17     2     58     4     3.41
+G Atkinson      15     1     63     3     4.20
+J Archer        11.3   1     22     1     1.91
+O Robinson      9      1     29     2     3.22
+J Bethell       3      0     7      0     2.33
+------------------------------------------------------------
+Fall of Wickets:
+1-24  2-32  3-46  4-73  5-115  
+6-151  7-157  8-168  9-169  10-179
+
+************************************************************
+England won by 299 runs
+Man of the match: G Atkinson
+************************************************************

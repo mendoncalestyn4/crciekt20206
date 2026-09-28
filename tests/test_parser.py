@@ -141,3 +141,13 @@ def test_hundred_uses_balls_not_overs():
 ])
 def test_knockout_titles(name, title):
     assert load(name).title == title
+
+
+def test_test_match_title_and_series():
+    m = load("9_sep_2026-eng_v_pak_3rd_tst.txt")
+    assert m.title == "3rd Test Match (of 3)"
+    assert (m.series_match_no, m.series_length) == (3, 3)
+    assert len(m.innings) == 4 and [i.team_innings for i in m.innings] == [1, 1, 2, 2]
+    # "b Islam" with T Islam (3 wkts) and S Islam (0 wkts) both bowling
+    m = load("22_aug_2026-aus_v_ban_2nd_tst.txt")
+    assert {b.bowler for b in m.innings[1].batting if b.bowler.endswith("Islam")} == {"T Islam"}
