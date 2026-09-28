@@ -174,3 +174,14 @@ def test_cc2025_fc_league_byes_and_tiebreak_result():
     assert m.title == "FC League - Semi-Final"
     assert (m.result, m.winner) == ("Karnataka won on more wickets left", "Karnataka")
     assert m.margin_runs is None and m.margin_wickets is None
+
+
+@pytest.mark.parametrize("name,title", [
+    ("18_jan_2028-kar_v_krc_1_day_cup_-_f.txt", "One Day Cup - Final"),
+    ("5_jan_2029-mbc_v_sik_1_day_cup.txt", "One Day Cup"),
+    ("13_jun_2027-rsa_v_eng_wc_-_group.txt", "World Cup - Group Match"),
+    ("23_jun_2027-sl_v_eng_wc_-_f.txt", "World Cup - Final"),
+    ("11_mar_2026-aus_v_ind_wc20_-_f.txt", "World Cup 20 - Final"),
+])
+def test_one_day_cup_and_world_cup_titles(name, title):
+    assert load(name).title == title

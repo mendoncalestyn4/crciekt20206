@@ -1,0 +1,74 @@
+************************************************************
+England v New Zealand
+World Cup - Group Match - 11 Jun 2027
+************************************************************
+
+New Zealand - 1st Innings                 R    B    4s  6s
+------------------------------------------------------------
+R Mariu         c Jacks b Archer          7    9    1   -
+D Conway        c Jacks b Atkinson        6    8    1   -
+B Jacobs        c Banton b Ahmed          53   52   9   -
+K Nye           lbw b Ahmed               16   29   2   -
+T Bell          b Curran                  55   65   7   2
+B Ahern         lbw b Archer              127  104  19  2
+N Smith         lbw b Atkinson            36   21   5   1
+Z Foulkes       c Root b Archer           1    2    -   -
+T O'Connor      not out                   9    9    1   -
+W O'Rourke      not out                   0    3    -   -
+S Underwood     
+------------------------------------------------------------
+Extras: (nb2,w3,lb4)                      9
+TOTAL: (8 wkts, 50 overs)                 319
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+G Atkinson      10     0     67     2     6.70
+J Archer        10     0     62     3     6.20
+R Ahmed         10     2     59     2     5.90
+B Stokes        10     0     55     0     5.50
+S Curran        10     2     72     1     7.20
+------------------------------------------------------------
+Fall of Wickets:
+1-15  2-25  3-47  4-108  5-203  
+6-282  7-297  8-319  
+
+************************************************************
+************************************************************
+
+England - 1st Innings                     R    B    4s  6s
+------------------------------------------------------------
+T Banton        b O'Rourke                20   20   3   -
+B Duckett       c Mariu b O'Rourke        0    1    -   -
+J Bethell       b O'Rourke                7    9    -   -
+J Root          c Conway b Foulkes        52   61   9   -
+W Jacks         c Conway b O'Connor       32   36   5   -
+H Brook         not out                   103  79   12  3
+B Stokes        lbw b Smith               56   50   10  -
+S Curran        lbw b Smith               17   16   2   -
+R Ahmed         b O'Connor                17   28   1   1
+G Atkinson      not out                   4    1    1   -
+J Archer        
+------------------------------------------------------------
+Extras: (nb7,w2,lb4)                      13
+TOTAL: (8 wkts, 49 overs)                 321
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+W O'Rourke      10     0     45     3     4.50
+S Underwood     10     0     56     0     5.60
+Z Foulkes       9      0     55     1     6.11
+N Smith         10     0     85     2     8.50
+T O'Connor      10     0     76     2     7.60
+------------------------------------------------------------
+Fall of Wickets:
+1-1  2-26  3-33  4-112  5-120  
+6-240  7-269  8-317  
+
+************************************************************
+England won by 2 wickets
+Man of the match: H Brook
+************************************************************

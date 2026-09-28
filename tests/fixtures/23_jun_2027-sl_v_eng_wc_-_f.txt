@@ -1,0 +1,74 @@
+************************************************************
+Sri Lanka v England
+World Cup - Final - 23 Jun 2027
+************************************************************
+
+Sri Lanka - 1st Innings                   R    B    4s  6s
+------------------------------------------------------------
+P Nissanka      c & b Stokes              51   46   8   1
+N Madushka      b Archer                  25   34   3   1
+K Mendis        c Banton b Stokes         39   31   7   -
+C Asalanka      lbw b Atkinson            58   83   8   -
+K Mendis        c Root b Curran           11   14   2   -
+C W'asinghe     b Atkinson                32   41   4   -
+W Hasaranga     c Stokes b Atkinson       8    8    1   -
+D Wellalage     not out                   24   21   3   -
+M Theekshana    lbw b Archer              11   10   2   -
+D Fernando      c Banton b Archer         6    6    1   -
+M Pathirana     not out                   5    8    1   -
+------------------------------------------------------------
+Extras: (nb2,w5)                          7
+TOTAL: (9 wkts, 50 overs)                 277
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+G Atkinson      10     0     56     3     5.60
+J Archer        10     0     59     3     5.90
+R Ahmed         10     0     56     0     5.60
+B Stokes        10     0     59     2     5.90
+S Curran        10     0     47     1     4.70
+------------------------------------------------------------
+Fall of Wickets:
+1-30  2-106  3-123  4-137  5-218  
+6-229  7-230  8-251  9-269  
+
+************************************************************
+************************************************************
+
+England - 1st Innings                     R    B    4s  6s
+------------------------------------------------------------
+T Banton        lbw b Fernando            8    11   -   1
+B Duckett       b Theekshana              51   42   9   1
+J Bethell       c Mendis b Hasaranga      76   79   8   3
+J Root          lbw b Theekshana          13   22   2   -
+L Livingstone   b Theekshana              0    4    -   -
+H Brook         not out                   68   67   11  1
+B Stokes        b Wellalage               60   59   6   3
+S Curran        not out                   0    2    -   -
+R Ahmed         
+G Atkinson      
+J Archer        
+------------------------------------------------------------
+Extras: (nb1,w2)                          3
+TOTAL: (6 wkts, 47.3 overs)               279
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+M Pathirana     10     0     58     0     5.80
+D Fernando      10     0     65     1     6.50
+D Wellalage     9      1     55     1     6.11
+M Theekshana    10     0     60     3     6.00
+W Hasaranga     8.3    1     41     1     4.82
+------------------------------------------------------------
+Fall of Wickets:
+1-18  2-115  3-137  4-137  5-155  
+6-273  
+
+************************************************************
+England won by 4 wickets
+Man of the match: B Stokes
+************************************************************

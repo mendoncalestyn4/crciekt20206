@@ -1,0 +1,74 @@
+************************************************************
+South Africa v England
+World Cup - Group Match - 13 Jun 2027
+************************************************************
+
+South Africa - 1st Innings                R    B    4s  6s
+------------------------------------------------------------
+M Breetzke      c Brook b Atkinson        17   23   2   -
+T Callaghan     c Brook b Atkinson        4    7    1   -
+P Rhodes        lbw b Ahmed               32   34   5   -
+T Stubbs        st Banton b Ahmed         48   45   8   -
+R Rickelton     c Curran b Stokes         56   57   10  -
+C Esterhuizen   not out                   53   69   4   1
+W Stelling      c Ahmed b Curran          29   26   3   2
+W Mulder        c Banton b Atkinson       11   16   2   -
+B Fortuin       c Duckett b Archer        32   23   5   1
+M Jansen        not out                   4    3    1   -
+K Rabada        
+------------------------------------------------------------
+Extras: (nb3,w5,lb2)                      10
+TOTAL: (8 wkts, 50 overs)                 296
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+G Atkinson      10     0     51     3     5.10
+J Archer        10     0     71     1     7.10
+R Ahmed         10     0     63     2     6.30
+B Stokes        10     0     71     1     7.10
+S Curran        10     2     38     1     3.80
+------------------------------------------------------------
+Fall of Wickets:
+1-18  2-32  3-79  4-148  5-177  
+6-213  7-234  8-292  
+
+************************************************************
+************************************************************
+
+England - 1st Innings                     R    B    4s  6s
+------------------------------------------------------------
+T Banton        st Rickelton b Fortuin    77   73   11  1
+B Duckett       c Stubbs b Stelling       63   75   9   1
+J Bethell       lbw b Stelling            25   19   4   1
+J Root          b Jansen                  5    3    1   -
+H Brook         b Mulder                  25   27   4   -
+L Livingstone   lbw b Stelling            35   52   3   1
+B Stokes        not out                   50   40   7   1
+S Curran        c Stelling b Fortuin      12   7    1   1
+R Ahmed         lbw b Fortuin             0    1    -   -
+G Atkinson      b Fortuin                 4    2    1   -
+J Archer        not out                   0    2    -   -
+------------------------------------------------------------
+Extras: (nb2,w2,lb1)                      5
+TOTAL: (9 wkts, 49.5 overs)               301
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+K Rabada        10     0     68     0     6.80
+M Jansen        10     0     65     1     6.50
+W Mulder        10     0     57     1     5.70
+B Fortuin       10     0     52     4     5.20
+W Stelling      9.5    0     58     3     5.90
+------------------------------------------------------------
+Fall of Wickets:
+1-133  2-161  3-170  4-174  5-212  
+6-260  7-283  8-283  9-287  
+
+************************************************************
+England won by 1 wicket
+Man of the match: B Fortuin
+************************************************************

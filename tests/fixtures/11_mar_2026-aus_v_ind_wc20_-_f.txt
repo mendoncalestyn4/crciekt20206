@@ -1,0 +1,74 @@
+************************************************************
+Australia v India
+World Cup 20 - Final - 11 Mar 2026
+************************************************************
+
+India - 1st Innings                       R    B    4s  6s
+------------------------------------------------------------
+Y Jaiswal       c Inglis b Zampa          47   37   4   2
+A Sharma        c & b Cummins             23   11   3   1
+S Gill          c Bartlett b Cummins      2    4    -   -
+L Rahul         b Cummins                 1    6    -   -
+S Iyer          b Zampa                   9    18   -   -
+R Singh         c Bell b Bartlett         26   17   4   1
+N Kumar Reddy   c Bartlett b Zampa        1    2    -   -
+K Yadav         lbw b Bell                20   9    3   1
+A Singh         lbw b Bell                6    2    -   1
+J Bumrah        c Bryant b Starc          8    10   1   -
+V C'avarthy     not out                   11   4    1   1
+------------------------------------------------------------
+Extras: (w1)                              1
+TOTAL: (all out, 20 overs)                155
+
+************************************************************
+
+                O      D     R      W     Econ
+------------------------------------------------------------
+P Cummins       4      9     26     3     6.50
+M Starc         4      8     31     1     7.75
+A Zampa         4      12    28     3     7.00
+X Bartlett      4      11    23     1     5.75
+G Bell          4      8     47     2     11.75
+------------------------------------------------------------
+Fall of Wickets:
+1-30  2-40  3-46  4-77  5-94  
+6-96  7-111  8-118  9-143  10-155
+
+************************************************************
+************************************************************
+
+Australia - 1st Innings                   R    B    4s  6s
+------------------------------------------------------------
+C Connolly      c Singh b Singh           16   16   1   1
+T Head          run out                   3    6    -   -
+M Bryant        lbw b C'avarthy           1    3    -   -
+T David         c Rahul b Sharma          24   21   3   1
+J Inglis        c Jaiswal b Yadav         31   22   5   -
+M Stoinis       lbw b Sharma              15   7    3   -
+P Cummins       c Singh b C'avarthy       6    6    -   1
+A Zampa         c Rahul b Bumrah          11   15   2   -
+X Bartlett      c & b Bumrah              1    3    -   -
+M Starc         not out                   12   10   1   1
+G Bell          b Bumrah                  0    1    -   -
+------------------------------------------------------------
+Extras: (w1)                              1
+TOTAL: (all out, 18.2 overs)              121
+
+************************************************************
+
+                O      D     R      W     Econ
+------------------------------------------------------------
+J Bumrah        3.2    13    6      3     1.80
+A Singh         3      7     28     1     9.33
+V C'avarthy     4      14    24     2     6.00
+K Yadav         4      10    28     1     7.00
+A Sharma        4      10    35     2     8.75
+------------------------------------------------------------
+Fall of Wickets:
+1-19  2-19  3-27  4-62  5-82  
+6-90  7-100  8-107  9-121  10-121
+
+************************************************************
+India won by 34 runs
+Man of the match: J Bumrah
+************************************************************

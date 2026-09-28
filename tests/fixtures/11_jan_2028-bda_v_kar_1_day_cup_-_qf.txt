@@ -1,0 +1,74 @@
+************************************************************
+Baroda v Karnataka
+One Day Cup - Qtr-Final - 11 Jan 2028
+************************************************************
+
+Baroda - 1st Innings                      R    B    4s  6s
+------------------------------------------------------------
+S Rawat         b Rathva                  118  108  19  2
+A Sharma        c Rahul b Shetty          70   108  8   1
+S Sharma        b Shetty                  26   20   1   1
+H Pandya        c Pandey b Krishna        8    10   1   -
+N Natung        c Rahul b Krishna         27   21   4   -
+V Solanki       b Krishna                 0    3    -   -
+S Kumar         lbw b Krishna             16   8    2   1
+A Rajput        lbw b Vyshak              12   10   2   -
+M Pithiya       c Gopal b Vyshak          2    6    -   -
+M Chauhan       not out                   0    1    -   -
+C Gandhi        c Mhatre b Vyshak         4    5    1   -
+------------------------------------------------------------
+Extras: (nb6,w3,lb1)                      10
+TOTAL: (all out, 49 overs)                293
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+P Krishna       9      1     50     4     5.56
+V Vyshak        10     1     75     3     7.50
+A Shetty        10     0     70     2     7.00
+S Gopal         10     0     41     0     4.10
+N Rathva        10     0     56     1     5.60
+------------------------------------------------------------
+Fall of Wickets:
+1-164  2-218  3-226  4-235  5-235  
+6-264  7-286  8-289  9-289  10-293
+
+************************************************************
+************************************************************
+
+Karnataka - 1st Innings                   R    B    4s  6s
+------------------------------------------------------------
+L Rahul         c Natung b Pandya         25   37   3   -
+K Bedare        lbw b Rajput              24   34   1   1
+D Padikkal      b Rajput                  28   31   4   -
+A Mhatre        b Chauhan                 89   98   8   4
+M Pandey        c Sharma b Pithiya        109  97   12  4
+M Pandey        not out                   8    4    1   -
+S Gopal         b Chauhan                 0    1    -   -
+A Shetty        not out                   4    1    1   -
+N Rathva        
+V Vyshak        
+P Krishna       
+------------------------------------------------------------
+Extras: (nb5,w3,lb1)                      9
+TOTAL: (6 wkts, 49.4 overs)               296
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+M Pithiya       10     1     51     1     5.10
+A Rajput        10     0     61     2     6.10
+H Pandya        10     0     72     1     7.20
+M Chauhan       9.4    0     75     2     7.76
+C Gandhi        10     1     36     0     3.60
+------------------------------------------------------------
+Fall of Wickets:
+1-39  2-71  3-86  4-278  5-292  
+6-292  
+
+************************************************************
+Karnataka won by 4 wickets
+Man of the match: M Pandey
+************************************************************
