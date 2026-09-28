@@ -89,6 +89,7 @@ class Innings:
     wickets: int = 0
     balls: int = 0
     all_out: bool = False
+    counted_in_balls: bool = False  # The Hundred: "(6 wkts, 100 balls)"
     declared: bool = False
     follow_on: bool = False
 
@@ -394,6 +395,7 @@ def _total(line: str, inn: Innings) -> None:
         inn.balls = overs_to_balls(mm.group(1))
     elif mm := re.search(r"(\d+)\s*balls?\b", inside, re.I):
         inn.balls = int(mm.group(1))
+        inn.counted_in_balls = True
     if inn.all_out:
         inn.wickets = 10
     elif mm := re.search(r"(\d+)\s*(?:wkts?|wickets?)", inside, re.I):
