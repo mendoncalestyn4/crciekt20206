@@ -1,0 +1,76 @@
+************************************************************
+Gujarat Titans v Kolkata Knight Riders
+Indian Premier League - 17 Apr 2026
+************************************************************
+
+Gujarat Titans - 1st Innings              R    B    4s  6s
+------------------------------------------------------------
+S Gill          c Tripathi b Malik        91   50   10  3
+S Sudharsan     lbw b Narine              27   19   1   1
+K Kushagra      lbw b C'avarthy           14   7    3   -
+C Esterhuizen   b Muzarabani              51   32   8   1
+J Buttler       c Malik b Muzarabani      0    2    -   -
+N Sindhu        c Malik b Muzarabani      17   8    3   -
+R Tewatia       not out                   5    2    1   -
+M Suthar        not out                   1    1    -   -
+R Khan          
+K Rabada        
+M Siraj         
+------------------------------------------------------------
+Extras: (nb1)                             1
+TOTAL: (6 wkts, 20 overs)                 207
+
+************************************************************
+
+                O      D     R      W     Econ
+------------------------------------------------------------
+U Malik         4      3     56     1     14.00
+B Muzarabani    4      7     34     3     8.50
+S Narine        4      3     50     1     12.50
+V C'avarthy     4      9     28     1     7.00
+A Roy           2      4     11     0     5.50
+C Green         2      1     28     0     14.00
+------------------------------------------------------------
+Fall of Wickets:
+1-65  2-80  3-161  4-161  5-186  
+6-202  
+
+************************************************************
+************************************************************
+
+Kolkata Knight Riders - 1st Innings       R    B    4s  6s
+------------------------------------------------------------
+T Seifert       c E'rhuizen b Tewatia     81   34   8   6
+A Rahane        b Suthar                  40   22   6   1
+C Green         lbw b Suthar              20   11   2   1
+R Tripathi      st E'rhuizen b Khan       23   16   2   1
+R Singh         lbw b Suthar              4    2    1   -
+R Singh         lbw b Suthar              12   7    -   1
+A Roy           c E'rhuizen b Khan        4    8    -   -
+S Narine        c Suthar b Sindhu         0    1    -   -
+U Malik         not out                   6    4    1   -
+V C'avarthy     b Khan                    0    1    -   -
+B Muzarabani    c Rabada b Khan           0    1    -   -
+------------------------------------------------------------
+Extras:                                   0
+TOTAL: (all out, 17.5 overs)              190
+
+************************************************************
+
+                O      D     R      W     Econ
+------------------------------------------------------------
+K Rabada        3      6     52     0     17.33
+M Siraj         3      4     41     0     13.67
+M Suthar        4      7     39     4     9.75
+R Khan          3.5    9     28     4     7.30
+R Tewatia       1      2     8      1     8.00
+N Sindhu        3      5     22     1     7.33
+------------------------------------------------------------
+Fall of Wickets:
+1-109  2-140  3-146  4-150  5-170  
+6-181  7-182  8-190  9-190  10-190
+
+************************************************************
+Gujarat Titans won by 17 runs
+Man of the match: S Gill
+************************************************************

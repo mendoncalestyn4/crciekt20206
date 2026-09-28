@@ -163,3 +163,11 @@ def test_follow_on_chase_is_not_a_declaration(career):
     inn = career.innings.merge(career.matches[["match_id", "source"]])
     chase = inn[(inn.source == "9_sep_2026-eng_v_pak_3rd_tst.txt") & (inn.team == "England") & (inn.team_innings == 2)].iloc[0]
     assert chase.innings_no == 4 and not chase.declared
+
+
+def test_misprinted_margin_is_corrected_from_the_scores():
+    path = Path(__file__).parent / "fixtures" / "16_jul_2026-eng_v_ind_2nd_odi.txt"
+    m = parse_scorecard(path.read_text(), path.name)
+    assert m.result == "India won by 127 runs"  # what the game printed
+    assert m.margin_runs == 177  # 377 - 200
+    assert "127" in m.margin_note

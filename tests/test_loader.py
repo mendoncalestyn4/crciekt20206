@@ -95,6 +95,6 @@ def test_every_competition_is_its_own_section(career):
     sections = career.matches.groupby("section").size().to_dict()
     assert sections == {
         "County Championship · Division 1": 3, "County Championship · Division 2": 2,
-        "Indian Premier League": 6, "ODI World Cup": 4, "ODIs (bilateral series)": 5, "Ranji Trophy": 5,
-        "T20 Blast": 10, "T20 World Cup": 1, "T20Is (bilateral series)": 3, "Tests (bilateral series)": 5,
+        "Indian Premier League": 8, "ODI World Cup": 4, "ODIs (bilateral series)": 7, "Ranji Trophy": 5,
+        "T20 Blast": 10, "T20 World Cup": 1, "T20Is (bilateral series)": 3, "Tests (bilateral series)": 6,
         "The Hundred": 4, "Vijay Hazare Trophy": 3}

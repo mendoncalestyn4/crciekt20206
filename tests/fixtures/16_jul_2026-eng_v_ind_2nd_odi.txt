@@ -1,0 +1,76 @@
+************************************************************
+England v India
+2nd One Day International (of 3) - 16 Jul 2026
+************************************************************
+
+India - 1st Innings                       R    B    4s  6s
+------------------------------------------------------------
+S Gill          not out                   211  152  29  4
+Y Jaiswal       c Rashid b Archer         2    7    -   -
+V Kohli         b Bethell                 64   82   8   -
+S Iyer          lbw b Dawson              17   19   2   -
+D Jurel         b Jacks                   58   33   9   -
+R Gaikwad       c Smith b Jacks           0    1    -   -
+H Pandya        not out                   15   12   1   -
+W Sundar        
+A Patel         
+K Yadav         
+A Singh         
+------------------------------------------------------------
+Extras: (nb6,w4)                          10
+TOTAL: (5 wkts, 50 overs)                 377
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+S Curran        10     0     74     0     7.40
+J Archer        10     0     44     1     4.40
+A Rashid        10     0     75     0     7.50
+L Dawson        10     0     79     1     7.90
+W Jacks         6      0     79     2     13.17
+J Bethell       4      0     26     1     6.50
+------------------------------------------------------------
+Fall of Wickets:
+1-15  2-171  3-235  4-322  5-322  
+
+
+************************************************************
+************************************************************
+
+England - 1st Innings                     R    B    4s  6s
+------------------------------------------------------------
+W Jacks         lbw b Pandya              0    1    -   -
+J Smith         c Gill b Pandya           6    2    -   1
+J Root          b Singh                   30   33   3   1
+H Brook         c Singh b Yadav           33   36   5   -
+B Duckett       c Singh b Sundar          67   60   6   2
+J Bethell       lbw b Yadav               2    15   -   -
+J Buttler       lbw b Patel               28   23   4   -
+S Curran        c Singh b Sundar          2    6    -   -
+L Dawson        c Gaikwad b Pandya        4    18   -   -
+J Archer        not out                   16   11   2   1
+A Rashid        b Jaiswal                 7    8    -   -
+------------------------------------------------------------
+Extras: (nb2,w3)                          5
+TOTAL: (all out, 35.1 overs)              200
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+H Pandya        8      1     41     3     5.12
+A Singh         7      1     38     1     5.43
+K Yadav         7      0     52     2     7.43
+A Patel         7      1     29     1     4.14
+W Sundar        6      0     40     2     6.67
+Y Jaiswal       0.1    0     0      1       0.0
+------------------------------------------------------------
+Fall of Wickets:
+1-0  2-7  3-61  4-86  5-99  
+6-163  7-172  8-176  9-186  10-200
+
+************************************************************
+India won by 127 runs
+Man of the match: S Gill
+************************************************************

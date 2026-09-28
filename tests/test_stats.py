@@ -72,15 +72,15 @@ def test_engine_matches_the_raw_text(career, fmt):
 
 def test_hand_checked_player(career):
     bat, _, _, _ = player_tables(career, Scope(formats=["ODI"]))
-    gill = bat.set_index("player").loc["S Gill"]  # 161* and 100 in the two India v WI ODIs
-    assert (gill.innings, gill.runs, gill.outs, gill.not_outs, gill.hundreds, gill.high_score_text) == (2, 261, 1, 1, 2, "161*")
-    assert gill.average == 261.0
+    gill = bat.set_index("player").loc["S Gill"]  # 161* and 100 v West Indies, 211* v England
+    assert (gill.innings, gill.runs, gill.outs, gill.not_outs, gill.hundreds, gill.high_score_text) == (3, 472, 1, 2, 3, "211*")
+    assert gill.average == 472.0
 
 
 def test_scope_filters_and_team_view(career):
     ipl = Scope(competitions=["Indian Premier League"])
     bat, bowl, fld, base = player_tables(career, ipl)
-    assert base.matches == 6 and base.kind == "t20" and base.has_dots
+    assert base.matches == 8 and base.kind == "t20" and base.has_dots
     pbks = Scope(competitions=["Indian Premier League"], team="Punjab Kings", venue="away")
     bat, _, _, base = player_tables(career, pbks)
     assert set(bat.teams) == {"Punjab Kings"} and base.matches == 3

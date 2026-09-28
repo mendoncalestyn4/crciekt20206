@@ -112,6 +112,7 @@ class Match:
     margin_runs: int | None = None
     margin_wickets: int | None = None
     innings_win: bool = False
+    margin_note: str = ""  # set when the game's printed margin disagrees with the scores
     player_of_match: str = ""
     innings: list[Innings] = field(default_factory=list)
 
@@ -583,7 +584,31 @@ def parse_scorecard(text: str, source: str = "") -> Match:
 
     match.__dict__.update(parse_result(match.result, teams))
     _fix_follow_on(match)
+    _check_margin(match)
     return match
+
+
+def _check_margin(match: Match) -> None:
+    """Work the margin out from the scores rather than trusting the printed
+    result: one CC2026 scorecard says "India won by 127 runs" for 377 v 200.
+    Rain-adjusted results (D/L, DLS, revised target) are left as printed."""
+    if match.result_type != "win" or not match.innings or re.search(r"d/?l|dls|revised|target", match.result, re.I):
+        return
+    agg: dict[str, int] = {}
+    for inn in match.innings:
+        agg[inn.team] = agg.get(inn.team, 0) + inn.total
+    loser = next((t for t in (match.team1, match.team2) if t != match.winner), "")
+    last = match.innings[-1]
+    if match.margin_wickets is not None and last.team == match.winner:
+        real = 10 - last.wickets
+        if real != match.margin_wickets:
+            match.margin_note = f"The game printed {match.margin_wickets} wickets; the scores give {real}."
+            match.margin_wickets = real
+    elif match.margin_runs is not None and loser in agg:
+        real = agg[match.winner] - agg[loser]
+        if real != match.margin_runs and real > 0:
+            match.margin_note = f"The game printed {match.margin_runs} runs; the scores give {real}."
+            match.margin_runs = real
 
 
 def _fix_follow_on(match: Match) -> None:

@@ -268,6 +268,7 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
             loser=(m.team2 if winner == m.team1 else m.team1) if winner else "",
             result_type=result_type, result=m.result, tiebreak_winner=tiebreak,
             margin_runs=m.margin_runs, margin_wickets=m.margin_wickets, innings_win=m.innings_win,
+            margin_note=m.margin_note,
             player_of_match=fixes.rename(m.player_of_match, ""), batted_first=batted_first, source=m.source))
         for p in validate_match(m):
             P.append(dict(match_id=m.match_id, source=m.source, problem=p))
@@ -327,7 +328,8 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
 MATCH_COLUMNS = [
     "match_id", "date", "season", "competition", "section", "format", "level", "country", "stage", "knockout", "neutral",
     "recognised", "title", "series_id", "series_match_no", "series_length", "home", "away", "winner", "loser",
-    "result_type", "result", "tiebreak_winner", "margin_runs", "margin_wickets", "innings_win", "player_of_match",
+    "result_type", "result", "tiebreak_winner", "margin_runs", "margin_wickets", "innings_win", "margin_note",
+    "player_of_match",
     "batted_first", "source"]
 INNINGS_COLUMNS = [
     "match_id", "innings_no", "team_innings", "team", "opposition", "runs", "wickets", "balls", "all_out",
