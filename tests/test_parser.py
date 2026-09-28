@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from ccstats.parser import parse_dismissal, parse_scorecard, resolve_name
+from ccstats.parser import parse_dismissal, parse_scorecard, resolve_candidates, resolve_name
 
 FIXTURES = sorted((Path(__file__).parent / "fixtures").glob("*.txt"))
 
@@ -27,8 +27,12 @@ def test_every_innings_reconciles(path):
         assert sum(b.wickets for b in inn.bowling) + run_outs == inn.wickets
         assert sum(b.balls for b in inn.bowling) == inn.balls
         assert len(inn.fow) == inn.wickets
-        bowlers = {b.player for b in inn.bowling}
-        assert all(b.bowler in bowlers for b in inn.batting if b.bowler)
+        # every dismissal is credited to a bowler on the card, unless the
+        # surname is genuinely ambiguous (T Curran and S Curran both bowling)
+        bowlers = [b.player for b in inn.bowling]
+        for b in inn.batting:
+            if b.bowler and b.bowler not in bowlers:
+                assert len(resolve_candidates(b.bowler, bowlers)) > 1, b.bowler
 
 
 def test_odi_header_and_result():
@@ -118,3 +122,13 @@ def test_particle_and_abbreviated_surnames():
     assert {b.bowler for b in m.innings[1].batting if b.bowler} >= {"T v' Gugten", "N McAndrew"}
     m = load("3_jul_2026-yrk_v_drh_blast_-_n.txt")
     assert m.innings[0].batting[2].bowler == "L van Beek"
+
+
+def test_hundred_uses_balls_not_overs():
+    m = load("1_aug_2026-brm_v_cdf_hundred.txt")
+    assert m.title == "The Hundred"
+    phoenix, fire = m.innings
+    assert (phoenix.total, phoenix.wickets, phoenix.balls) == (150, 6, 100)
+    assert (fire.total, fire.balls) == (153, 92)
+    ahmed = fire.bowling[-1]
+    assert (ahmed.player, ahmed.balls, ahmed.dots, ahmed.runs) == ("R Ahmed", 12, 3, 19)

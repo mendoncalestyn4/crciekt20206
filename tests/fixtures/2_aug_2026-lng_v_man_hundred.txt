@@ -1,0 +1,74 @@
+************************************************************
+MI London v Manchester Super Giants
+The Hundred - 2 Aug 2026
+************************************************************
+
+Manchester Super Giants - 1st Innings     R    B    4s  6s
+------------------------------------------------------------
+A Markram       b Curran                  94   47   14  2
+J Buttler       c Roy b Gleeson           17   10   3   -
+T Moores        c Rutherford b Sowter     18   13   1   1
+H Klaasen       lbw b Curran              9    4    2   -
+T Seifert       c Roy b Curran            26   13   4   1
+T Muyeye        b Boult                   9    7    1   -
+L Dawson        c Gleeson b Curran        4    4    1   -
+T Hartley       not out                   1    1    -   -
+G Atkinson      not out                   8    3    2   -
+J Tongue        
+N Ahmad         
+------------------------------------------------------------
+Extras: (nb4)                             4
+TOTAL: (7 wkts, 100 balls)                190
+
+************************************************************
+
+                B      D     R      W     Econ
+------------------------------------------------------------
+T Boult         20     6     31     1     7.75
+R Gleeson       20     2     45     1     11.25
+T Curran        20     5     36     1     9.00
+N Sowter        20     1     47     1     11.75
+S Curran        20     8     31     3     7.75
+------------------------------------------------------------
+Fall of Wickets:
+1-55  2-106  3-120  4-156  5-177  
+6-181  7-182  
+
+************************************************************
+************************************************************
+
+MI London - 1st Innings                   R    B    4s  6s
+------------------------------------------------------------
+W Jacks         b Tongue                  6    3    -   1
+J Roy           c Atkinson b Ahmad        49   24   4   3
+S Curran        lbw b Atkinson            1    2    -   -
+O Pope          c Seifert b Ahmad         43   21   2   3
+S Rutherford    b Hartley                 26   15   3   1
+O Sykes         b Hartley                 4    2    1   -
+T Curran        not out                   28   17   3   2
+C Parkinson     c Moores b Dawson         9    4    2   -
+N Sowter        not out                   23   11   2   2
+T Boult         
+R Gleeson       
+------------------------------------------------------------
+Extras: (nb2,w2)                          4
+TOTAL: (7 wkts, 98 balls)                 193
+
+************************************************************
+
+                B      D     R      W     Econ
+------------------------------------------------------------
+J Tongue        20     6     39     1     9.75
+G Atkinson      18     8     29     1     8.06
+N Ahmad         20     3     42     2     10.50
+L Dawson        20     5     46     1     11.50
+T Hartley       20     8     37     2     9.25
+------------------------------------------------------------
+Fall of Wickets:
+1-6  2-14  3-86  4-124  5-133  
+6-134  7-143  
+
+************************************************************
+MI London won by 3 wickets
+Man of the match: J Roy
+************************************************************

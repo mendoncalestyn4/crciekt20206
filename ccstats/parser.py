@@ -16,7 +16,7 @@ Cricket Captain 2026 writes one plain-text file per match, e.g.::
     Extras: (nb2)                             2
     TOTAL: (all out, 49.2 overs)              255
 
-                    O      M     R      W     Econ    <- "D" (dots) in T20s
+                    O      M     R      W     Econ    <- "D" (dots) in T20s; "B" (balls) in The Hundred
     ------------------------------------------------------------
     A Singh         10     0     52     1     5.20
     ------------------------------------------------------------
@@ -149,7 +149,7 @@ DISMISSAL_START_RE = re.compile(
 
 BAT_COLS = {"r": "r", "runs": "r", "b": "b", "balls": "b", "4s": "4s", "6s": "6s",
             "m": "m", "mins": "m", "sr": "sr"}
-BOWL_COLS = {"o": "o", "overs": "o", "m": "m", "md": "m", "mdns": "m", "d": "d", "dots": "d",
+BOWL_COLS = {"o": "o", "overs": "o", "b": "balls", "balls": "balls", "m": "m", "md": "m", "mdns": "m", "d": "d", "dots": "d",
              "r": "r", "runs": "r", "w": "w", "wkts": "w", "econ": "econ", "er": "econ",
              "wd": "wd", "nb": "nb"}
 
@@ -364,7 +364,7 @@ def _bowling_row(line: str, cols: list[str]) -> BowlingEntry | None:
     vals = dict(zip(cols, nums))
     return BowlingEntry(
         player=re.sub(r"\s+", " ", m.group("body").strip()),
-        balls=overs_to_balls(vals.get("o")),
+        balls=_to_int(vals["balls"]) if "balls" in vals else overs_to_balls(vals.get("o")),
         runs=_to_int(vals.get("r", "0")),
         wickets=_to_int(vals.get("w", "0")),
         maidens=_to_int(vals["m"]) if "m" in vals else None,
@@ -463,7 +463,7 @@ def parse_scorecard(text: str, source: str = "") -> Match:
                 continue
 
         hdr = _header_cols(line, BOWL_COLS)
-        if "o" in hdr and "w" in hdr and not re.search(r"\d", line):
+        if ("o" in hdr or "balls" in hdr) and "w" in hdr and not re.search(r"\d", line):
             section, bowl_cols = "bowling", hdr
             continue
 
