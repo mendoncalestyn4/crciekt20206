@@ -52,7 +52,7 @@ def watch_status() -> None:
 
 
 with st.sidebar:
-    st.markdown("### 🏏 Stats Pack")
+    st.markdown('<div class="brand">🏏 Stats Pack<small>Cricket Captain 2026</small></div>', unsafe_allow_html=True)
     career = state.current()
     names = state.career_names()
     if career is not None:

@@ -19,6 +19,8 @@ What the site does, the decisions behind it, and what is built so far.
 - **First-named team is the home team**; ICC events count as neutral.
 - **General stats browser** (not built around one team).
 - **One stat per chart**, with Top-N limits and a minimum to qualify.
+- **Look:** "night match under floodlights" (dark) and "day match" (light), scoreboard-style headings and tiles.
+- **Wrong margins in the game's files** are silently corrected from the scores.
 
 ## Data you can trust
 

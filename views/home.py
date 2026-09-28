@@ -7,7 +7,7 @@ from ccstats.loader import Career
 from ccstats.local import default_scorecards_folder
 from ui import state
 from ui.pick_folder import choose_folder
-from ui.theme import kpis, page_header
+from ui.theme import kpis, page_header, scoreboard
 
 
 def new_career_form(first: bool) -> None:
@@ -112,6 +112,20 @@ if m.empty:
     st.info("No matches yet. Play a match in Cricket Captain (with Autosave scorecards on) and it will appear here "
             "within about 20 seconds.")
 else:
+    last = m.sort_values(["date", "match_id"]).iloc[-1]
+    inn = career.innings[career.innings.match_id == last.match_id]
+
+    def score(team):
+        parts = []
+        for _, r in inn[inn.team == team].sort_values("innings_no").iterrows():
+            parts.append(f"{r.runs}" if r.all_out else f"{r.runs}/{r.wickets}{'d' if r.declared else ''}")
+        return " & ".join(parts) or "–"
+
+    stage = f" · {last.stage}" if last.stage else ""
+    scoreboard(f"Latest result · {last.section}{stage} · {last.date:%d %b %Y}",
+               last.home, score(last.home), last.away, score(last.away),
+               f"{last.result} · Player of the match: {last.player_of_match}" if last.player_of_match else last.result)
+    st.write("")
     kpis([("Matches", f"{len(m):,}"), ("Sections", f"{m.section.nunique()}"), ("Seasons", f"{m.season.nunique()}"),
           ("Players", f"{career.batting.player.nunique():,}"),
           ("Runs", f"{int(career.innings.runs.sum()):,}"), ("Wickets", f"{int(career.innings.wickets.sum()):,}")])

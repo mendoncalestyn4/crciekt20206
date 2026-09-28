@@ -266,7 +266,7 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
             series_match_no=m.series_match_no, series_length=m.series_length,
             home=m.team1, away=m.team2, winner=winner,
             loser=(m.team2 if winner == m.team1 else m.team1) if winner else "",
-            result_type=result_type, result=m.result, tiebreak_winner=tiebreak,
+            result_type=result_type, result=_corrected_result(m), tiebreak_winner=tiebreak,
             margin_runs=m.margin_runs, margin_wickets=m.margin_wickets, innings_win=m.innings_win,
             margin_note=m.margin_note,
             player_of_match=fixes.rename(m.player_of_match, ""), batted_first=batted_first, source=m.source))
@@ -323,6 +323,16 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
         problems=pd.DataFrame(P, columns=["match_id", "source", "problem"]),
     )
     return frames
+
+
+def _corrected_result(m: Match) -> str:
+    """The result line with the margin worked out from the scores (the game
+    occasionally prints a wrong one; see parser._check_margin)."""
+    if not m.margin_note:
+        return m.result
+    if m.margin_wickets is not None:
+        return re.sub(r"by \d+ wicket(s?)", f"by {m.margin_wickets} wicket{'s' * (m.margin_wickets != 1)}", m.result)
+    return re.sub(r"by \d+ run(s?)", f"by {m.margin_runs} run{'s' * (m.margin_runs != 1)}", m.result)
 
 
 MATCH_COLUMNS = [

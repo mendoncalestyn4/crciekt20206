@@ -171,3 +171,8 @@ def test_misprinted_margin_is_corrected_from_the_scores():
     assert m.result == "India won by 127 runs"  # what the game printed
     assert m.margin_runs == 177  # 377 - 200
     assert "127" in m.margin_note
+
+
+def test_results_shown_on_the_site_use_the_corrected_margin(career):
+    row = career.matches.set_index("source").loc["16_jul_2026-eng_v_ind_2nd_odi.txt"]
+    assert row.result == "India won by 177 runs" and row.margin_runs == 177

@@ -1,28 +1,38 @@
-[theme.light]
-primaryColor = "#2a78d6"
-backgroundColor = "#f9f9f7"
-secondaryBackgroundColor = "#efeee9"
-textColor = "#0b0b0b"
-linkColor = "#2a78d6"
-baseRadius = "10px"
-headingFont = "'Barlow Condensed', 'Arial Narrow', sans-serif"
-headingFontWeights = [700, 700, 700]
-
-[theme.light.sidebar]
-backgroundColor = "#f0efeb"
+# Night match (dark) and day match (light). The site follows your computer's
+# setting; switch in the ⋮ menu → Settings → Theme.
 
 [theme.dark]
-primaryColor = "#3987e5"
-backgroundColor = "#0d0d0d"
-secondaryBackgroundColor = "#1a1a19"
-textColor = "#ffffff"
-linkColor = "#6da7ec"
-baseRadius = "10px"
+primaryColor = "#f2b632"
+backgroundColor = "#0a1322"
+secondaryBackgroundColor = "#13203a"
+textColor = "#eef2f8"
+linkColor = "#7fb6f2"
+borderColor = "#22314d"
+baseRadius = "12px"
+font = "'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif"
 headingFont = "'Barlow Condensed', 'Arial Narrow', sans-serif"
 headingFontWeights = [700, 700, 700]
 
 [theme.dark.sidebar]
-backgroundColor = "#141413"
+backgroundColor = "#071020"
+secondaryBackgroundColor = "#101b31"
+
+[theme.light]
+primaryColor = "#1d6b45"
+backgroundColor = "#f3f5ef"
+secondaryBackgroundColor = "#e6eadf"
+textColor = "#0f1b2d"
+linkColor = "#1d6b45"
+borderColor = "#d5dacb"
+baseRadius = "12px"
+font = "'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif"
+headingFont = "'Barlow Condensed', 'Arial Narrow', sans-serif"
+headingFontWeights = [700, 700, 700]
+
+[theme.light.sidebar]
+backgroundColor = "#0f1b2d"
+secondaryBackgroundColor = "#18273f"
+textColor = "#e9eef6"
 
 [client]
 toolbarMode = "minimal"
