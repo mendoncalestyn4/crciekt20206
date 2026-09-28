@@ -1,0 +1,143 @@
+************************************************************
+Durham v Middlesex
+County Championship - D2 - 8 Sep 2026
+************************************************************
+
+Durham - 1st Innings                      R    B    4s  6s
+------------------------------------------------------------
+A Lees          b R'd-Jones               0    4    -   -
+W Rhodes        c Holden b Robson         48   82   4   -
+C Ackermann     b R'd-Jones               17   27   2   -
+D Bedingham     run out                   83   68   11  1
+S Borthwick     lbw b R'd-Jones           150  238  18  -
+G Clark         lbw b Cullen              57   78   7   -
+O Robinson      c Holden b Cullen         4    2    1   -
+K Aldridge      lbw b Cullen              91   114  13  1
+B Carse         b Brookes                 28   33   4   -
+M Potts         c Cracknell b R'd-Jones   11   14   1   -
+D Olivier       not out                   4    3    1   -
+------------------------------------------------------------
+Extras: (nb12,w2)                         14
+TOTAL: (all out, 109.3 overs)             507
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+T R'd-Jones     33     3     116    4     3.52
+H Brookes       25.3   1     141    1     5.53
+E Bosch         29     0     122    0     4.21
+B Cullen        16     0     90     3     5.62
+S Robson        6      0     38     1     6.33
+------------------------------------------------------------
+Fall of Wickets:
+1-0  2-35  3-125  4-165  5-262  
+6-266  7-427  8-475  9-499  10-507
+
+************************************************************
+************************************************************
+
+Middlesex - 1st Innings                   R    B    4s  6s
+------------------------------------------------------------
+M Holden        lbw b Aldridge            0    1    -   -
+S Robson        lbw b Olivier             16   22   2   -
+C Falconer      c Aldridge b Olivier      13   23   2   -
+L du Plooy      lbw b Aldridge            18   39   1   -
+B Geddes        b Potts                   22   36   2   1
+J Cracknell     c Bedingham b Olivier     33   42   4   1
+A Turpin        not out                   106  151  14  -
+E Bosch         lbw b Aldridge            37   59   3   -
+T R'd-Jones     c Potts b Aldridge        4    4    1   -
+B Cullen        c Lees b Carse            7    13   -   -
+H Brookes       b Borthwick               21   39   3   -
+------------------------------------------------------------
+Extras: (nb2)                             2
+TOTAL: (all out, 71.2 overs)              279
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+K Aldridge      17     2     67     4     3.94
+D Olivier       15     2     56     3     3.73
+M Potts         19     1     66     1     3.47
+B Carse         13     1     66     1     5.08
+S Borthwick     6.2    0     24     1     3.79
+W Rhodes        1      1     0      0       0.0
+------------------------------------------------------------
+Fall of Wickets:
+1-0  2-27  3-30  4-65  5-75  
+6-134  7-213  8-227  9-238  10-279
+
+************************************************************
+************************************************************
+
+Durham - 2nd Innings                      R    B    4s  6s
+------------------------------------------------------------
+A Lees          c Holden b Brookes        89   150  11  -
+W Rhodes        b Brookes                 11   10   2   -
+C Ackermann     b Bosch                   18   32   2   -
+D Bedingham     c Holden b Cullen         50   30   7   2
+S Borthwick     c Cracknell b Cullen      0    2    -   -
+G Clark         c Cullen b Bosch          113  95   19  1
+O Robinson      not out                   27   40   2   -
+K Aldridge      not out                   5    4    1   -
+B Carse         
+M Potts         
+D Olivier       
+------------------------------------------------------------
+Extras: (nb6)                             6
+TOTAL: (6 wkts, 60 overs)                 319
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+T R'd-Jones     18     3     60     0     3.33
+H Brookes       15     0     113    2     7.53
+E Bosch         13     1     72     2     5.54
+B Cullen        11     1     59     2     5.36
+S Robson        3      0     15     0     5.00
+------------------------------------------------------------
+Fall of Wickets:
+1-14  2-48  3-120  4-130  5-231  
+6-314  
+
+************************************************************
+************************************************************
+
+Middlesex - 2nd Innings                   R    B    4s  6s
+------------------------------------------------------------
+M Holden        c Robinson b Aldridge     156  258  17  1
+S Robson        c Lees b Potts            90   238  8   -
+C Falconer      c Clark b Aldridge        115  185  13  -
+L du Plooy      c & b Carse               0    3    -   -
+B Geddes        c Carse b Rhodes          8    19   1   -
+J Cracknell     c Clark b Aldridge        21   29   2   -
+A Turpin        b Olivier                 1    4    -   -
+E Bosch         c Potts b Rhodes          37   42   4   1
+T R'd-Jones     c Borthwick b Aldridge    22   28   3   -
+B Cullen        not out                   7    9    1   -
+H Brookes       not out                   1    1    -   -
+------------------------------------------------------------
+Extras: (nb12,w3)                         15
+TOTAL: (9 wkts, 135 overs)                473
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+K Aldridge      38     2     144    4     3.79
+D Olivier       35     3     112    1     3.20
+M Potts         29     3     87     1     3.00
+B Carse         25     0     96     1     3.84
+W Rhodes        8      1     34     2     4.25
+------------------------------------------------------------
+Fall of Wickets:
+1-217  2-285  3-286  4-301  5-350  
+6-351  7-422  8-453  9-472  
+
+************************************************************
+Match drawn
+Man of the match: G Clark
+************************************************************

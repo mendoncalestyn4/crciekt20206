@@ -1,0 +1,145 @@
+************************************************************
+Leicestershire v Somerset
+County Championship - D1 - 8 Sep 2026
+************************************************************
+
+Somerset - 1st Innings                    R    B    4s  6s
+------------------------------------------------------------
+J Hermann       st Hill b Ahmed           125  182  17  1
+T Lammonby      c Holland b Davey         42   52   7   -
+T Banton        lbw b Mike                23   36   4   -
+A Richards      b Green                   43   55   6   -
+J Rew           b Mike                    32   49   4   1
+W Smeed         c Scriven b Mike          7    10   1   -
+L Gregory       c Holland b Ahmed         9    11   1   -
+L Goldsworthy   lbw b Holland             24   44   1   -
+C Overton       b Scriven                 7    13   1   -
+J Shaw          c Eskinazi b Green        45   45   7   -
+N Rowntree      not out                   4    16   -   -
+------------------------------------------------------------
+Extras: (nb12,w2)                         14
+TOTAL: (all out, 84.3 overs)              375
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+B Mike          19     1     109    3     5.74
+I Holland       22     1     72     1     3.27
+T Scriven       16     0     73     1     4.56
+B Green         7.3    1     36     2     4.80
+R Ahmed         19     2     82     2     4.32
+J Davey         1      0     3      1     3.00
+------------------------------------------------------------
+Fall of Wickets:
+1-100  2-136  3-211  4-243  5-273  
+6-278  7-291  8-303  9-356  10-375
+
+************************************************************
+************************************************************
+
+Leicestershire - 1st Innings              R    B    4s  6s
+------------------------------------------------------------
+R Patel         c Hermann b G'sworthy     60   101  6   -
+S Eskinazi      c Overton b Shaw          2    12   -   -
+L Hill          c Lammonby b Rowntree     88   108  12  -
+R Ahmed         c Hermann b G'sworthy     9    15   1   -
+N Kelly         b Shaw                    6    5    1   -
+S Budinger      b Shaw                    14   15   2   -
+T Scriven       c Shaw b Rowntree         29   38   3   -
+B Mike          lbw b Rowntree            5    8    1   -
+I Holland       b Rowntree                8    37   -   -
+B Green         not out                   15   27   2   -
+J Davey         c Richards b G'sworthy    9    21   1   -
+------------------------------------------------------------
+Extras: (nb4,w1)                          5
+TOTAL: (all out, 64.1 overs)              250
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+J Shaw          18     0     69     3     3.83
+L Gregory       8      0     36     0     4.50
+C Overton       5      0     22     0     4.40
+N Rowntree      17     1     61     4     3.59
+L Goldsworthy   16.1   0     62     3     3.83
+------------------------------------------------------------
+Fall of Wickets:
+1-9  2-116  3-154  4-161  5-177  
+6-191  7-201  8-223  9-224  10-250
+
+************************************************************
+************************************************************
+
+Somerset - 2nd Innings                    R    B    4s  6s
+------------------------------------------------------------
+J Hermann       b Holland                 15   25   2   -
+T Lammonby      c Hill b Mike             20   38   -   1
+T Banton        c Green b Mike            16   37   2   -
+A Richards      b Holland                 110  117  16  -
+J Rew           c Green b Mike            86   107  11  1
+W Smeed         b Ahmed                   7    6    1   -
+L Gregory       c Green b Ahmed           42   46   8   -
+L Goldsworthy   not out                   27   52   2   -
+C Overton       lbw b Ahmed               0    1    -   -
+J Shaw          lbw b Holland             7    22   -   -
+N Rowntree      c Kelly b Mike            2    11   -   -
+------------------------------------------------------------
+Extras: (nb8,w1)                          9
+TOTAL: (all out, 76.2 overs)              341
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+B Mike          21.2   1     107    4     5.02
+I Holland       20     2     62     3     3.10
+B Green         10     1     40     0     4.00
+T Scriven       3      0     16     0     5.33
+R Ahmed         20     0     110    3     5.50
+J Davey         2      0     6      0     3.00
+------------------------------------------------------------
+Fall of Wickets:
+1-19  2-51  3-52  4-245  5-258  
+6-264  7-306  8-308  9-330  10-341
+
+************************************************************
+************************************************************
+
+Leicestershire - 2nd Innings              R    B    4s  6s
+------------------------------------------------------------
+R Patel         c Gregory b Rowntree      28   65   2   -
+S Eskinazi      b Gregory                 89   196  6   -
+L Hill          c Rew b Rowntree          26   52   2   -
+R Ahmed         c Banton b Rowntree       8    8    1   -
+N Kelly         lbw b Rowntree            5    16   1   -
+S Budinger      c Richards b Shaw         19   54   1   -
+T Scriven       rtrd ht                   1    5    -   -
+B Mike          c G'sworthy b Rowntree    71   169  6   1
+I Holland       c Rew b Shaw              10   16   1   1
+B Green         b Rowntree                27   37   4   -
+J Davey         not out                   4    15   -   -
+------------------------------------------------------------
+Extras: (nb6)                             6
+TOTAL: (9 wkts, 105 overs)                294
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+J Shaw          25     2     83     2     3.32
+L Gregory       13     1     45     1     3.46
+C Overton       6      0     11     0     1.83
+N Rowntree      33     7     81     6     2.45
+L Goldsworthy   27     6     64     0     2.37
+T Lammonby      1      0     10     0     10.00
+------------------------------------------------------------
+Fall of Wickets:
+1-44  2-84  3-93  4-101  5-134  
+6-222  7-241  8-281  9-294  
+
+************************************************************
+Somerset won by 172 runs
+Man of the match: A Richards
+************************************************************
