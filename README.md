@@ -50,19 +50,25 @@ All the matches already in the folder are read, and from then on every new match
 Use the **menu on the left** to move between pages, and the **search box** under it to jump straight to any
 player, team, competition or match.
 
+The pages are grouped in the menu:
+
 | Page | What it's for |
 |---|---|
-| **Home** | Latest result, totals, every section, latest records, backups |
-| **Stat by stat** | Pick a section and one stat (runs, average, strike rate, economy, …). Left: the best (or worst) ranked. Right: every player as a dot against the section average. Filter by season, team, batting position, or pick exact players. Download the table as CSV. |
-| **Players** | Everything about one player: batting and bowling tables for every section, form, how they get out, splits (chasing, home/away, strong/weak opponents), nemesis and bunnies, batting position, role |
+| **Home** | Latest result, headlines (hundreds, five-fors, collapses, titles, new records), totals, every section, backups |
+| **Stat by stat** | Pick a section and one stat. Left: the best (or worst) ranked. Right: every player as a dot against the section average. Filter by season, team, batting position, or pick exact players. Download as CSV. |
+| **Players** | Everything about one player: batting and bowling tables for every section, career journey, form, streaks, chasing, splits, nemesis and bunnies, batting position, role |
 | **Compare players** | Up to four players side by side, one chart per stat |
-| **Teams** | A team's record against the average team, streaks, top players, partnerships, collapses, results, the section table |
+| **Teams** | A team against the average team, how they play (team style), discipline (extras), streaks, top players, partnerships, collapses, results |
 | **Team vs team** | Two teams head to head, overall / home / away / only against each other |
-| **Matches** | Search any match: scoreboard, wicket timeline, full scorecard |
+| **Opponent preview** | Before you play someone: their form, in-form batters and bowlers, how their batters get out, how often they collapse, your record against them |
+| **Matches** | Search any match: scoreboard, wicket timeline with the par line, full scorecard |
 | **Competitions** | League tables (points, NRR), knockout brackets, bilateral series |
-| **Insights** | Is this total enough? Home advantage, how scoring changes season to season, breakout players |
+| **Honours board** | Champions of every competition and season, top scorers, trophy cabinets |
+| **Rivalries** | Every pair of teams that have met, and who does best in those games |
+| **Records** | The record books, plus "On pace for" projections while a season is under way |
+| **Hall of fame** | Player of the Match leaderboard, deadly catcher-and-bowler duos, best all-round match performances |
 | **Rankings** | Player ratings (recent form counts most) and team Elo |
-| **Records** | The record books for every competition; 🆕 marks records from your latest matches |
+| **Insights** | Is this total enough? Home advantage, how scoring changes season to season, breakout players |
 | **Data check** | Fix what the scorecards leave unclear: who took "c Patel" when there are four Patels, two players with one name, one player with two names. Nothing changes unless you say so, and every fix can be undone. |
 
 **Hover** over any bar or dot to see the player's full figures and rank. Hover a chart and click the

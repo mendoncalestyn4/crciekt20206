@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 
+from ccstats import extras as E
 from ccstats.parser import balls_to_overs
 from ui import state
 from ui.charts import CONFIG, fmt, wicket_timeline
@@ -64,10 +65,19 @@ with st.container(border=True):
         tot = f"{r.runs}" if r.all_out else f"{r.runs}/{r.wickets}"
         data.append(dict(label=f"{r.team} {tot}" + (" (2nd inns)" if r.team_innings == 2 else ""),
                          fow=list(zip(f.wicket, f.score)), total=int(r.runs), all_out=bool(r.all_out)))
-    st.plotly_chart(wicket_timeline(data), width="stretch", config=CONFIG, key="mt_timeline")
-    explain_list([("", "<b>Each step to the right</b> is one more wicket down. <b>The height of a step</b> is the partnership: runs added before the next wicket."),
-                  ("", "<b>Several short steps in a row</b> = a collapse. <b>One tall step</b> = a big stand that rebuilt the innings."),
-                  ("", "The scorecard gives the score at each wicket but not the over, so this shows wickets, not overs.")])
+    sec_ids = m[m.section == row.section].match_id
+    par = E.par_by_wicket(career, sec_ids)
+    n_inns = int(career.innings.match_id.isin(sec_ids).sum())
+    par = par[par.innings >= 0.3 * n_inns]  # later wickets fall in too few innings for a fair par
+    st.plotly_chart(wicket_timeline(data, list(zip(par.wicket, par.par)) if len(sec_ids) >= 5 else None),
+                    width="stretch", config=CONFIG, key="mt_timeline")
+    notes = [("", "<b>Each step to the right</b> is one more wicket down. <b>The height of a step</b> is the partnership: runs added before the next wicket."),
+             ("", "<b>Several short steps in a row</b> = a collapse. <b>One tall step</b> = a big stand that rebuilt the innings.")]
+    if len(sec_ids) >= 5:
+        notes.append(("line", f"<b>Grey dashed line: par</b>, the typical score when each wicket falls in {row.section}. "
+                              "Above it = ahead of the game; below it = behind. It stops where too few innings get that far."))
+    notes.append(("", "The scorecard gives the score at each wicket but not the over, so this shows wickets, not overs."))
+    explain_list(notes)
 
 # ---------------------------------------------------------------- top performers
 top_bat = bat[bat.did_bat].sort_values(["runs", "balls"], ascending=[False, True]).head(3)

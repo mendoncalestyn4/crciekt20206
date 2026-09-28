@@ -3,6 +3,7 @@ import pandas as pd
 import streamlit as st
 
 from ccstats import analysis as A
+from ccstats import extras as E
 from ccstats.stats import Scope
 from ui import state
 from ui.charts import CONFIG, bars, fmt, form_chart, paired_bars
@@ -81,6 +82,12 @@ with st.container(border=True):
         st.caption("Hasn't bowled.")
     st.caption("Same columns in every section. Hover a column name for what it means. Maidens are only printed on "
                "longer-format scorecards and dot balls only on T20 and Hundred scorecards, so one of them is blank.")
+
+with st.expander("Career journey · every team and competition, in order"):
+    j = E.journey(career, player)
+    st.dataframe(pd.DataFrame({"From": j["first"].dt.strftime("%d %b %Y"), "To": j["last"].dt.strftime("%d %b %Y"),
+                               "Team": j.team, "Section": j.section, "Season": j.season, "Matches": j.matches,
+                               "Runs": j.runs, "Wickets": j.wickets}), hide_index=True, width="stretch")
 
 c1, c2 = st.columns([2, 1])
 section = c1.selectbox("Section", list(order), key="pl_section")
@@ -236,6 +243,31 @@ if "Batting" in tabs:
                 else:
                     st.plotly_chart(bars(n.bowler, n.dismissals, "Times dismissed"), width="stretch", config=CONFIG, key="pl_nemesis")
 
+        left, right = st.columns(2, gap="medium")
+        with left:
+            with st.container(border=True):
+                st.markdown("**Streaks** · innings in a row")
+                srows = E.batting_streaks(inns, kind)
+                st.dataframe(pd.DataFrame({"Streak": [r["streak"] for r in srows],
+                                           "Longest": [r["longest"] for r in srows],
+                                           "Current": [r["current"] for r in srows]}),
+                             hide_index=True, width="stretch")
+                st.caption("Current = the run they're on now, counting back from their latest innings here.")
+        with right:
+            with st.container(border=True):
+                st.markdown("**When chasing** · batting in the last innings of the match")
+                ch = E.chasing(career, ids, min_innings=1)
+                ch = ch[ch.player == player]
+                if ch.empty:
+                    st.caption("Hasn't batted in a chase here yet.")
+                else:
+                    r = ch.iloc[0]
+                    kpis([("Chases won", f"{r.won_innings}"), ("Average in wins", fmt(r.won_average, 1))])
+                    st.write("")
+                    kpis([("Chases lost", f"{r.lost_innings}"), ("Average in defeats", fmt(r.lost_average, 1))])
+                    st.caption(f"Not out at the end of {r.not_out_in_wins} winning chase"
+                               f"{'s' if r.not_out_in_wins != 1 else ''}: still there when the runs were knocked off.")
+
         with st.container(border=True):
             st.markdown("**Against each team** · average")
             t = A.split_batting(inns, "opposition").sort_values("runs", ascending=False)
@@ -298,6 +330,11 @@ if "Bowling" in tabs:
                     st.caption("No wickets yet.")
                 else:
                     st.plotly_chart(bars(bn.player, bn.dismissals, "Times dismissed"), width="stretch", config=CONFIG, key="pl_bunnies")
+        with st.container(border=True):
+            st.markdown("**Streaks** · innings bowled in a row")
+            srows = E.bowling_streaks(spells)
+            st.dataframe(pd.DataFrame({"Streak": [r["streak"] for r in srows], "Longest": [r["longest"] for r in srows],
+                                       "Current": [r["current"] for r in srows]}), hide_index=True, width="stretch")
         cols = st.columns(2, gap="medium")
         for i, (title, d, col) in enumerate([
                 ("Bowling first or second", spells.assign(s=np.where(spells.batting_first, "Their side batted first", "Their side bowled first")), "s"),

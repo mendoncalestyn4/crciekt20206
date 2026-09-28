@@ -78,21 +78,31 @@ with st.sidebar:
         search_box(career)
     watch_status()
 
-pages = [
-    st.Page("views/home.py", title="Home", icon=":material/home:", default=True),
-    st.Page("views/stat_by_stat.py", title="Stat by stat", icon=":material/leaderboard:"),
-    st.Page("views/player.py", title="Players", icon=":material/person:"),
-    st.Page("views/compare.py", title="Compare players", icon=":material/compare_arrows:"),
-    st.Page("views/teams.py", title="Teams", icon=":material/groups:"),
-    st.Page("views/team_vs_team.py", title="Team vs team", icon=":material/swords:"),
-    st.Page("views/match.py", title="Matches", icon=":material/scoreboard:"),
-    st.Page("views/competitions.py", title="Competitions", icon=":material/emoji_events:"),
-    st.Page("views/insights.py", title="Insights", icon=":material/insights:"),
-    st.Page("views/rankings.py", title="Rankings", icon=":material/trending_up:"),
-    st.Page("views/records.py", title="Records", icon=":material/military_tech:"),
-    st.Page("views/data_check.py", title="Data check", icon=":material/fact_check:"),
-]
-nav = st.navigation(pages)
+pages = {
+    "": [st.Page("views/home.py", title="Home", icon=":material/home:", default=True)],
+    "Players and teams": [
+        st.Page("views/stat_by_stat.py", title="Stat by stat", icon=":material/leaderboard:"),
+        st.Page("views/player.py", title="Players", icon=":material/person:"),
+        st.Page("views/compare.py", title="Compare players", icon=":material/compare_arrows:"),
+        st.Page("views/teams.py", title="Teams", icon=":material/groups:"),
+        st.Page("views/team_vs_team.py", title="Team vs team", icon=":material/swords:"),
+        st.Page("views/opponent.py", title="Opponent preview", icon=":material/visibility:"),
+    ],
+    "Matches and competitions": [
+        st.Page("views/match.py", title="Matches", icon=":material/scoreboard:"),
+        st.Page("views/competitions.py", title="Competitions", icon=":material/emoji_events:"),
+        st.Page("views/honours.py", title="Honours board", icon=":material/workspace_premium:"),
+        st.Page("views/rivalries.py", title="Rivalries", icon=":material/sports_cricket:"),
+    ],
+    "Records and insights": [
+        st.Page("views/records.py", title="Records", icon=":material/military_tech:"),
+        st.Page("views/hall_of_fame.py", title="Hall of fame", icon=":material/star:"),
+        st.Page("views/rankings.py", title="Rankings", icon=":material/trending_up:"),
+        st.Page("views/insights.py", title="Insights", icon=":material/insights:"),
+    ],
+    "Tools": [st.Page("views/data_check.py", title="Data check", icon=":material/fact_check:")],
+}
+nav = st.navigation(pages, expanded=True)  # every page always listed
 goto = st.session_state.pop("search_goto", None)  # set by the search box
 if goto:
     st.switch_page(goto)

@@ -3,6 +3,8 @@ import pandas as pd
 import streamlit as st
 
 from ccstats import analysis as A
+from ccstats import extras as E
+from ui.theme import colours
 from ccstats.stats import Scope
 from ui import state
 from ui.charts import CONFIG, bars, fmt
@@ -151,6 +153,46 @@ with right:
                                        "Slide": [f"{f} → {t}" for f, t in zip(col.from_score, col.to_score)],
                                        "Lost": [f"{w} for {r}" for w, r in zip(col.wickets, col.runs)],
                                        "Finished on": col.total}), hide_index=True, width="stretch")
+
+# ---------------------------------------------------------------- team style
+style = E.team_style(career, ids)
+if team in set(style.team):
+    s_me = style.set_index("team").loc[team]
+    s_avg = style.mean(numeric_only=True)
+    labels, diffs, texts = [], [], []
+    for label, col, higher in E.STYLE:
+        v, a = s_me[col], s_avg[col]
+        if not (np.isfinite(v) and np.isfinite(a)) or a == 0:
+            continue
+        labels.append(label)
+        diffs.append((v - a) / abs(a) * 100)
+        texts.append(f"{(v - a) / abs(a) * 100:+.0f}% · {fmt(v, 1)} v {fmt(a, 1)}")
+    left, right = st.columns([1.3, 1], gap="medium")
+    with left:
+        with st.container(border=True):
+            st.markdown(f"**How {team} play** · more (right) or less (left) than the average team, not better or worse")
+            st.plotly_chart(bars(labels, diffs, "% more or less than the average team", 0, texts=texts,
+                                 colour=colours()["s2"], x_range=[min(min(diffs), 0) - (max(diffs) - min(min(diffs), 0)) * 1.1 - 8,
+                                                                  max(max(diffs), 0) + (max(max(diffs), 0) - min(diffs)) * 0.9 + 8]),
+                            width="stretch", config=CONFIG, key="tm_style")
+            st.caption("This is style, not quality: a team can win either way. Each bar compares this team's figure "
+                       "with the average of all teams in the section.")
+    # ---------------------------------------------------------------- discipline (extras)
+    disc = E.discipline(career, ids)
+    with right:
+        with st.container(border=True):
+            st.markdown("**Discipline** · extras given away per match (fewest first)")
+            d = disc.head(12)
+            st.plotly_chart(bars([t + ("  ◀" if t == team else "") for t in d.team], d.extras_per_match, "Extras per match", 1,
+                                 notes=[f"wides {fmt(w, 1)} · no-balls {fmt(n, 1)} · byes {fmt(b, 1)} · leg byes {fmt(lb, 1)} per match"
+                                        for w, n, b, lb in zip(d.wides_per_match, d.no_balls_per_match, d.byes_per_match,
+                                                               d.leg_byes_per_match)]),
+                            width="stretch", config=CONFIG, key="tm_disc")
+            if team in set(disc.team):
+                r = disc.set_index("team").loc[team]
+                st.caption(f"{team}: {fmt(r.extras_per_match, 1)} extras a match ({fmt(r.wides_per_match, 1)} wides, "
+                           f"{fmt(r.no_balls_per_match, 1)} no-balls), {int(list(disc.team).index(team)) + 1} of {len(disc)} "
+                           f"for discipline. Section average {fmt(disc.extras_per_match.mean(), 1)}.")
 
 with st.container(border=True):
     st.markdown("**Results**")

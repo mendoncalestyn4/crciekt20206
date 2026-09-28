@@ -278,7 +278,7 @@ def form_chart(runs, not_out, hover, window: int | None = None, y_label: str = "
     return fig
 
 
-def wicket_timeline(innings: list[dict]) -> go.Figure:
+def wicket_timeline(innings: list[dict], par: list[tuple[int, float]] | None = None) -> go.Figure:
     """Score at each fall of wicket, one stepped line per innings.
 
     innings: [{"label": "Somerset 163/8", "fow": [(1, 6), (2, 16), ...], "total": 163, "all_out": False}]"""
@@ -299,6 +299,13 @@ def wicket_timeline(innings: list[dict]) -> go.Figure:
                                  line=dict(color=col, width=2.5, shape="vh"),
                                  marker=dict(size=8, color=col, line=dict(color=c["surface"], width=2)),
                                  customdata=hover, hovertemplate=f"<b>{inn['label']}</b><br>%{{customdata}}<extra></extra>"))
+    if par:
+        px = [0] + [w for w, _ in par]
+        py = [0] + [s for _, s in par]
+        top = max(top, max(py))
+        fig.add_trace(go.Scatter(x=px, y=py, mode="lines", name="Par (typical score at each wicket)",
+                                 line=dict(color=c["muted"], width=1.5, dash="dash", shape="vh"),
+                                 hovertemplate="Par: %{y:.0f} when wicket %{x} falls<extra></extra>"))
     fig.update_layout(**_layout(c, height=420, showlegend=True,
                                 legend=dict(orientation="h", y=1.1, x=0, font=dict(size=12, color=c["ink"])),
                                 xaxis=_axis(c, "Wickets down", dtick=1, range=[-0.3, 10.8]),

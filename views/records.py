@@ -1,7 +1,9 @@
 import pandas as pd
 import streamlit as st
 
+from ccstats import extras as E
 from ccstats import records as RC
+from ui.charts import CONFIG, bars
 from ccstats.stats import Scope
 from ui import state
 from ui.theme import page_header
@@ -22,6 +24,30 @@ season = c2.selectbox("Season", ["All seasons"] + seasons, key="rc_season")
 top = c3.selectbox("Show", [5, 10, 20], index=1, key="rc_top", format_func=lambda n: f"Top {n}")
 ids = Scope(sections=[section], seasons=[] if season == "All seasons" else [season]).match_ids(m)
 recs = RC.records(career, ids, top=top)
+
+# ---------------------------------------------------------------- on pace for
+pace = E.on_pace(career, section)
+info = E.season_in_progress(career, section)
+if info is not None and len(pace):
+    cur, now, full = info
+    with st.container(border=True):
+        st.markdown(f"**On pace for** · {section} {cur} is under way ({now} of about {full} matches played)")
+        cols = st.columns(2, gap="medium")
+        for box, what in zip(cols, ("runs", "wickets")):
+            p = pace[pace.what == what].head(8)
+            with box:
+                if p.empty:
+                    st.caption(f"Nobody has played enough yet to project {what}.")
+                    continue
+                st.plotly_chart(bars([pl + (" 🔥" if b else "") for pl, b in zip(p.player, p.beats_record)],
+                                     p.projected, f"Projected season {what}", 0,
+                                     texts=[f"{pr} (now {s} in {mt})" for pr, s, mt in zip(p.projected, p.so_far, p.matches)],
+                                     reference=p.record.iloc[0] or None, reference_label="season record",
+                                     x_range=[0, max(p.projected.max(), p.record.iloc[0]) * 1.75],
+                                     notes=[f"{t} · record: {h or '–'}" for t, h in zip(p.team, p.record_holder)]),
+                                width="stretch", config=CONFIG, key=f"rc_pace_{what}")
+        st.caption("Projected = what they have so far, per match, times the number of matches their team played last "
+                   "season. 🔥 = on course to break the season record (the dashed line).")
 fresh = set(RC.recent_sources(career))
 
 GROUPS = [("Team", ["Highest team totals", "Lowest completed totals", "Biggest wins by runs", "Innings wins"]),
