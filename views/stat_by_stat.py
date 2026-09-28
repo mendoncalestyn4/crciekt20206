@@ -140,7 +140,11 @@ with st.container(border=True):
     st.markdown(f"**Full figures for the players ranked above** · sorted by {stat.label.lower()}")
     st.dataframe(out.style.set_properties(subset=[cols[stat.column]], **{"font-weight": "700"}),
                  width="stretch", height=min(35 * (len(out) + 1) + 3, 720),
-                 column_config={"Role": st.column_config.TextColumn("Role", width="small",
-                                                                    help="From where they bat and how much they bowl in this section")})
+                 column_config={"Role": st.column_config.TextColumn("Role", width=104,
+                                                                    help="From where they bat and how much they bowl in this section"),
+                                "Player": st.column_config.TextColumn("Player", width=112),
+                                "Team": st.column_config.TextColumn("Team", width=128)}
+                 | {v: st.column_config.Column(v, width=54) for k, v in cols.items()
+                    if k not in ("player", "teams")})
     st.download_button("Download this table (CSV)", out.to_csv(index_label="#").encode(),
                        file_name=f"{section} {stat.label}.csv".replace("/", "-"), key="sbs_dl")
