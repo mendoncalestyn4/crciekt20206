@@ -1,0 +1,74 @@
+************************************************************
+Worcestershire v Kent
+T20 Blast - Group Match - 3 Jul 2026
+************************************************************
+
+Kent - 1st Innings                        R    B    4s  6s
+------------------------------------------------------------
+Z Crawley       c Darley b Taylor         8    5    2   -
+T Muyeye        c Roderick b Darley       49   21   8   1
+D B'rummond     c Libby b Taylor          18   9    3   -
+S Northeast     run out                   18   9    2   1
+J Denly         lbw b Taylor              0    1    -   -
+S Billings      c Roderick b Darley       40   26   4   2
+J Denly         c Taylor b Singh          6    7    -   -
+S Muthusamy     not out                   49   31   7   1
+K Dudgeon       c Ali b Waite             13   8    2   -
+M Cohen         not out                   0    4    -   -
+M Parkinson     
+------------------------------------------------------------
+Extras: (nb1,w1)                          2
+TOTAL: (8 wkts, 20 overs)                 203
+
+************************************************************
+
+                O      D     R      W     Econ
+------------------------------------------------------------
+T Taylor        4      7     50     3     12.50
+M Waite         4      7     44     1     11.00
+F Singh         4      9     33     1     8.25
+H Darley        4      11    33     2     8.25
+E Brookes       4      5     43     0     10.75
+------------------------------------------------------------
+Fall of Wickets:
+1-8  2-26  3-77  4-82  5-103  
+6-116  7-188  8-203  
+
+************************************************************
+************************************************************
+
+Worcestershire - 1st Innings              R    B    4s  6s
+------------------------------------------------------------
+R Edavalath     c Billings b Dudgeon      7    7    1   -
+J Libby         c Denly b Muthusamy       68   35   13  -
+D Lategan       run out                   8    4    1   -
+A Hose          lbw b Parkinson           56   29   5   3
+E Brookes       run out                   19   11   1   1
+K Ali           c Northeast b Denly       4    5    -   -
+G Roderick      lbw b Muthusamy           14   9    2   -
+M Waite         c Billings b Cohen        14   14   2   -
+T Taylor        not out                   9    4    2   -
+F Singh         not out                   1    1    -   -
+H Darley        
+------------------------------------------------------------
+Extras: (nb2,w2)                          4
+TOTAL: (8 wkts, 19.3 overs)               204
+
+************************************************************
+
+                O      D     R      W     Econ
+------------------------------------------------------------
+K Dudgeon       4      5     50     1     12.50
+M Cohen         3.3    6     35     1     10.00
+M Parkinson     4      4     42     1     10.50
+S Muthusamy     4      6     41     2     10.25
+J Denly         4      3     36     1     9.00
+------------------------------------------------------------
+Fall of Wickets:
+1-22  2-30  3-126  4-158  5-166  
+6-166  7-184  8-203  
+
+************************************************************
+Worcestershire won by 2 wickets
+Man of the match: J Libby
+************************************************************

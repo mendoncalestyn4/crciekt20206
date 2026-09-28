@@ -101,3 +101,20 @@ def test_resolve_name():
     assert resolve_name("K'r Reddy", xi) == "N Kumar Reddy"
     assert resolve_name("K'Cadmore", xi) == "T Kohler-Cadmore"
     assert resolve_name("G'sworthy", xi) == "L Goldsworthy"
+
+
+def test_blast_titles_and_duplicate_names_in_one_xi():
+    m = load("3_jul_2026-yrk_v_drh_blast_-_n.txt")
+    assert m.title == "T20 Blast - North"
+    m = load("3_jul_2026-wrc_v_knt_blast_-_group.txt")
+    assert m.title == "T20 Blast - Group Match"
+    # Kent field two different players both printed as "J Denly"
+    kent = m.innings[0]
+    assert [b.position for b in kent.batting if b.player == "J Denly"] == [5, 7]
+
+
+def test_particle_and_abbreviated_surnames():
+    m = load("10_jul_2026-wrk_v_glm_blast_-_s.txt")
+    assert {b.bowler for b in m.innings[1].batting if b.bowler} >= {"T v' Gugten", "N McAndrew"}
+    m = load("3_jul_2026-yrk_v_drh_blast_-_n.txt")
+    assert m.innings[0].batting[2].bowler == "L van Beek"

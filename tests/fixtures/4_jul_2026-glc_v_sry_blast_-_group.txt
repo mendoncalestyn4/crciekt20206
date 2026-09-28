@@ -1,0 +1,74 @@
+************************************************************
+Gloucestershire v Surrey
+T20 Blast - Group Match - 4 Jul 2026
+************************************************************
+
+Surrey - 1st Innings                      R    B    4s  6s
+------------------------------------------------------------
+O Hunt          c Taylor b Scott          33   20   3   2
+R Patel         c Bracey b Taylor         71   39   7   3
+L Evans         lbw b Payne               13   6    2   -
+D Lawrence      c Rao b Taylor            2    8    -   -
+O Pope          not out                   24   24   1   1
+J Roy           c Taylor b Taylor         0    1    -   -
+T Curran        c Payne b C'esworth       28   10   5   1
+N Barnwell      lbw b Taylor              9    6    2   -
+G Atkinson      lbw b Scott               4    6    -   -
+R Chahar        not out                   0    1    -   -
+Y Majid         
+------------------------------------------------------------
+Extras: (nb1,w2)                          3
+TOTAL: (8 wkts, 20 overs)                 187
+
+************************************************************
+
+                O      D     R      W     Econ
+------------------------------------------------------------
+A Rao           4      10    41     0     10.25
+L Scott         4      11    27     2     6.75
+D Payne         4      4     49     1     12.25
+L C'esworth     4      12    26     1     6.50
+M Taylor        4      8     44     4     11.00
+------------------------------------------------------------
+Fall of Wickets:
+1-55  2-94  3-103  4-130  5-130  
+6-163  7-174  8-187  
+
+************************************************************
+************************************************************
+
+Gloucestershire - 1st Innings             R    B    4s  6s
+------------------------------------------------------------
+D Malan         c Evans b Curran          18   7    1   2
+M Hammond       run out                   48   30   3   2
+J Bracey        b Curran                  4    2    1   -
+L Scott         c Hunt b Curran           14   14   2   -
+T Boorman       run out                   20   16   2   1
+O Price         c Atkinson b Majid        20   11   4   -
+J Taylor        lbw b Majid               10   9    -   1
+A Rao           lbw b Atkinson            12   7    1   1
+D Payne         b Barnwell                3    7    -   -
+M Taylor        c Curran b Atkinson       6    5    1   -
+L C'esworth     not out                   5    3    1   -
+------------------------------------------------------------
+Extras: (nb1,w3)                          4
+TOTAL: (all out, 18.2 overs)              164
+
+************************************************************
+
+                O      D     R      W     Econ
+------------------------------------------------------------
+G Atkinson      3.2    7     35     2     10.50
+T Curran        4      8     30     3     7.50
+N Barnwell      3      8     22     1     7.33
+Y Majid         4      8     43     2     10.75
+R Chahar        4      10    34     0     8.50
+------------------------------------------------------------
+Fall of Wickets:
+1-19  2-23  3-49  4-90  5-108  
+6-138  7-143  8-152  9-154  10-164
+
+************************************************************
+Surrey won by 23 runs
+Man of the match: R Patel
+************************************************************
