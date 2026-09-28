@@ -1,0 +1,75 @@
+************************************************************
+Somerset v Northamptonshire
+T20 Blast - Final - 18 Jul 2026
+************************************************************
+
+Somerset - 1st Innings                    R    B    4s  6s
+------------------------------------------------------------
+W Smeed         lbw b Scrimshaw           1    2    -   -
+T Banton        lbw b Scrimshaw           6    4    1   -
+T K'Cadmore     c Miller b Sanderson      8    7    1   -
+J Rew           c Sanderson b Scrimshaw   5    8    1   -
+T Abell         lbw b Sanderson           1    2    -   -
+T Lammonby      not out                   76   47   10  2
+L Goldsworthy   c Harrison b Chahal       38   31   7   -
+J Thomas        c Procter b Broad         14   7    3   -
+C Overton       b Broad                   0    2    -   -
+M Pretorius     not out                   13   10   2   -
+R Meredith      
+------------------------------------------------------------
+Extras: (w1)                              1
+TOTAL: (8 wkts, 20 overs)                 163
+
+************************************************************
+
+                O      D     R      W     Econ
+------------------------------------------------------------
+G Scrimshaw     4      10    28     3     7.00
+B Sanderson     4      13    21     2     5.25
+Y Chahal        4      9     38     1     9.50
+C Harrison      4      11    29     0     7.25
+S Zaib          1      4     5      0     5.00
+J Broad         3      4     42     2     14.00
+------------------------------------------------------------
+Fall of Wickets:
+1-6  2-16  3-16  4-17  5-25  
+6-102  7-137  8-137  
+
+************************************************************
+************************************************************
+
+Northamptonshire - 1st Innings            R    B    4s  6s
+------------------------------------------------------------
+C Lynn          lbw b Pretorius           12   5    1   1
+A Sharma        c K'Cadmore b Meredith    7    7    1   -
+J Broad         b G'sworthy               19   13   2   1
+R Vasconcelos   b Pretorius               8    6    2   -
+S Zaib          b Pretorius               13   8    1   1
+G Miller        c K'Cadmore b Pretorius   0    1    -   -
+L Procter       c Lammonby b Overton      4    6    1   -
+C Harrison      not out                   16   26   2   -
+G Scrimshaw     c Overton b Lammonby      8    8    2   -
+B Sanderson     c K'Cadmore b Lammonby    0    3    -   -
+Y Chahal        b G'sworthy               9    4    2   -
+------------------------------------------------------------
+Extras:                                   0
+TOTAL: (all out, 14.3 overs)              96
+
+************************************************************
+
+                O      D     R      W     Econ
+------------------------------------------------------------
+R Meredith      2      4     22     1     11.00
+M Pretorius     4      13    36     4     9.00
+C Overton       4      14    17     1     4.25
+L Goldsworthy   3.3    14    20     2     5.71
+T Lammonby      1      5     1      2     1.00
+------------------------------------------------------------
+Fall of Wickets:
+1-15  2-23  3-32  4-46  5-46  
+6-51  7-70  8-87  9-87  10-96
+
+************************************************************
+Somerset won by 67 runs
+Man of the match: T Lammonby
+************************************************************

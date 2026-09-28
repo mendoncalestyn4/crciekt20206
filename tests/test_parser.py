@@ -132,3 +132,12 @@ def test_hundred_uses_balls_not_overs():
     assert (fire.total, fire.balls) == (153, 92)
     ahmed = fire.bowling[-1]
     assert (ahmed.player, ahmed.balls, ahmed.dots, ahmed.runs) == ("R Ahmed", 12, 3, 19)
+
+
+@pytest.mark.parametrize("name,title", [
+    ("15_jul_2026-drh_v_knt_blast_-_qf.txt", "T20 Blast - Qtr-Final"),
+    ("17_jul_2026-nht_v_knt_blast_-_sf.txt", "T20 Blast - Semi-Final"),
+    ("18_jul_2026-som_v_nht_blast_-_f.txt", "T20 Blast - Final"),
+])
+def test_knockout_titles(name, title):
+    assert load(name).title == title
