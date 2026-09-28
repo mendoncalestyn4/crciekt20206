@@ -80,7 +80,7 @@ def test_retired_hurt_and_stumping():
         b.bowler == "L Goldsworthy" for b in m.innings[1].batting)
     m = load("24_sep_2026-som_v_sry_county_-_d1.txt")
     foakes = next(b for b in m.innings[2].batting if b.player == "B Foakes")
-    assert (foakes.how_out, foakes.fielder, foakes.bowler) == ("stumped", "Rew", "J Leach")
+    assert (foakes.how_out, foakes.fielder, foakes.bowler) == ("stumped", "J Rew", "J Leach")
 
 
 @pytest.mark.parametrize("text,how,bowler,fielder", [

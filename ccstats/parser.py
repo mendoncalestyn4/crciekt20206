@@ -50,8 +50,9 @@ class BattingEntry:
     position: int
     dismissal: str = ""
     how_out: str = "dnb"  # caught, bowled, lbw, stumped, run out, not out, dnb, ...
-    bowler: str = ""  # as written in the dismissal (surname), resolved later
-    fielder: str = ""
+    bowler: str = ""  # full name from the bowling card once resolved
+    fielder: str = ""  # full name from the fielding side's XI once resolved
+    fielder_resolved: bool = False  # False: printed name matches 0 or 2+ players
     runs: int = 0
     balls: int = 0
     fours: int = 0
@@ -292,6 +293,37 @@ def _assign_bowlers(inn: "Innings") -> None:
             remaining[able[0]] -= 1
 
 
+def _assign_fielders(match: "Match") -> None:
+    """Credit catches and stumpings to the same full name the fielder bats and
+    bowls under.  The dismissal only prints a surname ("st de Kock", "c DKock",
+    "c van Beek", "c H' Shanto"); the fielding side's XI comes from its own
+    batting card (every player is listed there, including those who did not
+    bat), so resolving against it keeps a keeper's stumpings, catches, runs and
+    wickets on one player."""
+    squads: dict[str, list[str]] = {}
+    for inn in match.innings:
+        squad = squads.setdefault(inn.team, [])
+        squad.extend(b.player for b in inn.batting if b.player not in squad)
+    for inn in match.innings:  # a side that never batted: fall back to its bowlers
+        squad = squads.setdefault(inn.bowling_team, [])
+        squad.extend(b.player for b in inn.bowling if b.player not in squad)
+    for inn in match.innings:
+        xi = squads.get(inn.bowling_team, [])
+        for e in inn.batting:
+            if not e.fielder:
+                continue
+            if re.match(r"c\s*(?:&|and)\s*b\b", e.dismissal, re.I):
+                hits = [e.bowler] if e.bowler in xi else []
+            else:
+                hits = resolve_candidates(e.fielder, xi)
+                # "c Taylor b Taylor": a caught-and-bowled is written "c & b",
+                # so the catcher is the other Taylor
+                if len(hits) > 1 and e.bowler in hits:
+                    hits = [h for h in hits if h != e.bowler]
+            if len(hits) == 1:
+                e.fielder, e.fielder_resolved = hits[0], True
+
+
 def parse_result(result: str, teams: list[str]) -> dict:
     low = result.lower()
     out = {"winner": "", "result_type": "", "margin_runs": None, "margin_wickets": None,
@@ -511,6 +543,7 @@ def parse_scorecard(text: str, source: str = "") -> Match:
     for inn in match.innings:
         inn.bowling_team = next((t for t in teams if t and t != inn.team), "")
         _assign_bowlers(inn)
+    _assign_fielders(match)
 
     match.__dict__.update(parse_result(match.result, teams))
     return match
