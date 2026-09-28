@@ -103,3 +103,9 @@ def test_ipl_eliminator_is_recovered_from_the_bracket():
     ]
     fix_playoff_stages(games)
     assert [g["stage"] for g in games] == ["Qualifier 1", "Eliminator", "Qualifier 2"]
+
+
+def test_home_team_is_first_named_except_at_icc_events():
+    assert not classify(load("19_aug_2026-eng_v_pak_1st_tst.txt")).neutral
+    assert not classify(load("6_may_2026-hdr_v_pnj_ipl.txt")).neutral
+    assert classify(load("23_jun_2027-sl_v_eng_wc_-_f.txt")).neutral

@@ -154,6 +154,9 @@ class Classification:
     stage: str = ""  # "Division 1", "North Group", "Semi-final", ...
     knockout: bool = False
     recognised: bool = True  # False when we fell back to guessing from the scorecard
+    # The first-named team is the home side, except at ICC events (World
+    # Cups etc.) where the scorecard doesn't say who hosted: treat as neutral.
+    neutral: bool = False
 
 
 def _team_country(team: str) -> str:
@@ -198,7 +201,8 @@ def classify(match: Match) -> Classification:
         comp, fmt, level, country = KNOWN[key]
         if not fmt:  # e.g. Asia Cup is played as ODI or T20I
             fmt = T20I if _shape_format(match) == T20 else ODI
-        return Classification(comp, fmt, level, country, stage, knockout)
+        return Classification(comp, fmt, level, country, stage, knockout,
+                              neutral=level == INTERNATIONAL)
 
     # 3. CC2025 generic names: pick the real competition by the teams' country
     if key in GENERIC:
