@@ -12,7 +12,7 @@ import json
 import os
 import re
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from .loader import Career, Fixes
@@ -72,7 +72,6 @@ def read_files(folder: Path, names: list[str]) -> list[tuple[str, bytes]]:
 class CareerSettings:
     name: str
     folder: str = ""  # watched Scorecards folder, "" if none
-    snapshot: dict = field(default_factory=dict)
     updated: float = 0.0
 
 
@@ -109,9 +108,13 @@ class CareerStore:
         (d / "settings.json").write_text(json.dumps(asdict(settings), indent=1))
         (self.root / "last.json").write_text(json.dumps({"career": career.name}))
 
-    def load(self, name: str) -> tuple[Career, CareerSettings]:
+    def load_settings(self, name: str) -> tuple[Path, CareerSettings]:
         d = self._dir(name)
-        settings = CareerSettings(**json.loads((d / "settings.json").read_text()))
+        raw = json.loads((d / "settings.json").read_text())
+        return d, CareerSettings(**{k: v for k, v in raw.items() if k in ("name", "folder", "updated")})
+
+    def load(self, name: str) -> tuple[Career, CareerSettings]:
+        d, settings = self.load_settings(name)
         career = Career.from_pack((d / "career.stats-pack.zip").read_bytes())
         career.name = name
         return career, settings
@@ -132,7 +135,7 @@ class CareerStore:
 
 
 # --------------------------------------------------------------------------- #
-# Watching
+# Watching (one record per folder, shared by every career that uses it)
 # --------------------------------------------------------------------------- #
 
 
@@ -144,31 +147,84 @@ class SyncResult:
     failed: list[tuple[str, str]]  # (source, reason)
 
 
-def start_watching(name: str, folder: Path, fixes: Fixes | None = None) -> SyncResult:
-    """Create a career from everything currently in the folder."""
-    snap = snapshot(folder)
-    career = Career.build(name, read_files(folder, list(snap)), fixes)
-    settings = CareerSettings(name=name, folder=str(folder), snapshot=snap)
+def _result(career: Career, settings: CareerSettings) -> SyncResult:
     return SyncResult(career, settings, [r.source for r in career.report if r.status == "loaded"],
                       [(r.source, r.message) for r in career.report if r.status == "failed"])
 
 
-def sync(career: Career, settings: CareerSettings) -> SyncResult | None:
-    """Look at the watched folder; if anything is new or changed, add it.
+class Watcher:
+    """Knows, for each watched folder, which files it has already seen and
+    which career is **Playing now**.  New scorecards go to that career."""
 
-    Matches already in the career stay even if their file is later deleted
-    from the folder, so clearing out the game's folder never loses history.
-    Returns None when nothing changed."""
-    folder = Path(settings.folder)
-    if not settings.folder or not folder.is_dir():
-        return None
-    snap = snapshot(folder)
-    changed = [n for n, sig in snap.items() if settings.snapshot.get(n) != sig]
-    if not changed:
-        if snap != settings.snapshot:  # only deletions: remember, nothing to load
-            settings.snapshot = snap
-        return None
-    updated = career.add_files(read_files(folder, changed))
-    settings.snapshot = snap
-    return SyncResult(updated, settings, [r.source for r in updated.report if r.status == "loaded"],
-                      [(r.source, r.message) for r in updated.report if r.status == "failed"])
+    def __init__(self, store: CareerStore):
+        self.store = store
+        self.path = store.root / "folders.json"
+
+    def _all(self) -> dict:
+        try:
+            return json.loads(self.path.read_text())
+        except (OSError, ValueError):
+            return {}
+
+    def _write(self, data: dict) -> None:
+        self.store.root.mkdir(parents=True, exist_ok=True)
+        self.path.write_text(json.dumps(data, indent=1))
+
+    def playing(self, folder: str) -> str | None:
+        return self._all().get(folder, {}).get("playing")
+
+    def set_playing(self, folder: str, name: str) -> None:
+        data = self._all()
+        data.setdefault(folder, {"snapshot": {}})["playing"] = name
+        self._write(data)
+
+    def careers_on(self, folder: str) -> list[str]:
+        out = []
+        for name in self.store.names():
+            try:
+                _, settings = self.store.load_settings(name)
+            except OSError:
+                continue
+            if settings.folder == folder:
+                out.append(name)
+        return out
+
+    def create(self, name: str, folder: Path, include_existing: bool = True) -> SyncResult:
+        """Start a career on a folder and make it Playing now.  The first
+        career on a folder takes everything already there; a second save on
+        the same folder starts empty unless `include_existing`."""
+        folder_key = str(folder)
+        data = self._all()
+        snap = snapshot(folder)
+        files = read_files(folder, list(snap)) if include_existing else []
+        career = Career.build(name, files)
+        settings = CareerSettings(name=name, folder=folder_key)
+        self.store.save(career, settings)
+        data[folder_key] = {"snapshot": snap, "playing": name}
+        self._write(data)
+        return _result(career, settings)
+
+    def sync(self, folder: str) -> SyncResult | None:
+        """Add new or changed scorecards to the Playing now career.
+        Returns None when nothing changed (or no career is Playing now)."""
+        path = Path(folder)
+        if not path.is_dir():
+            return None
+        data = self._all()
+        entry = data.setdefault(folder, {"snapshot": {}})
+        name = entry.get("playing")
+        if not name or name not in self.store.names():
+            return None
+        snap = snapshot(path)
+        changed = [n for n, sig in snap.items() if entry["snapshot"].get(n) != sig]
+        if not changed:
+            if snap != entry["snapshot"]:  # only deletions: remember them, nothing to load
+                entry["snapshot"] = snap
+                self._write(data)
+            return None
+        career, settings = self.store.load(name)
+        career = career.add_files(read_files(path, changed))
+        self.store.save(career, settings)
+        entry["snapshot"] = snap
+        self._write(data)
+        return _result(career, settings)

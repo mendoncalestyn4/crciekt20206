@@ -102,6 +102,8 @@ elif disc == "Bowling":
             "hauls": "4w+", "five_fors": "5w", "runs_saved": "Runs saved"}
 else:
     cols = {"player": "Player", "teams": "Team", "matches": "Mat", "catches": "Ct", "stumpings": "St", "dismissals": "Total"}
+if stat.column not in cols:  # the ranked stat is always in the table (e.g. 50+ scores)
+    cols = {**dict(list(cols.items())[:3]), stat.column: stat.label, **dict(list(cols.items())[3:])}
 out = shown[list(cols)].rename(columns=cols).reset_index(drop=True)
 out.index = out.index + 1
 # decimals as text so a missing value reads "–" (never dismissed, no wicket) rather than "None"

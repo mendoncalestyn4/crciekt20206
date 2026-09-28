@@ -1,9 +1,10 @@
 """Cricket Captain 2026 Stats Pack.
 
-Run with:  streamlit run app.py
+Run with:  streamlit run app.py   (or double-click "Start Stats Pack.bat")
 """
 
 import os
+import time
 from pathlib import Path
 
 import streamlit as st
@@ -15,29 +16,67 @@ from ui.theme import inject_css
 st.set_page_config(page_title="Cricket Captain Stats Pack", page_icon="🏏", layout="wide")
 inject_css()
 
-# Start-up data: a Scorecards folder on this PC (STATS_PACK_FOLDER), or the demo league (?demo=1).
-if state.current() is None:
+# Developer start-up options: a folder of scorecards (STATS_PACK_FOLDER) or the demo league (?demo=1).
+if state.current() is None and "boot_done" not in st.session_state:
+    st.session_state["boot_done"] = True
     folder = os.environ.get("STATS_PACK_FOLDER")
     if folder and Path(folder).is_dir():
         files = [(p.name, p.read_bytes()) for p in sorted(Path(folder).glob("*.txt"))]
-        state.set_current(Career.build(os.environ.get("STATS_PACK_CAREER", "My career"), files))
+        state.show(Career.build(os.environ.get("STATS_PACK_CAREER", "My career"), files))
     elif st.query_params.get("demo"):
-        state.set_current(state.demo_career())
+        state.show(state.demo_career())
+
+
+@st.fragment(run_every="20s")
+def watch_status() -> None:
+    """Check every watched Scorecards folder and add new matches to the career Playing now."""
+    w = state.watcher()
+    folders = {s.folder for n in state.career_names() if (s := state.settings_of(n)) and s.folder}
+    shown = state.current()
+    refresh = False
+    for folder in sorted(folders):
+        res = w.sync(folder)
+        if res and res.added:
+            n = len(res.added)
+            st.toast(f"{n} new match{'es' if n > 1 else ''} added to **{res.career.name}**", icon="🏏")
+            if shown is not None and res.career.name == shown.name:
+                st.session_state["career_obj"] = res.career
+                st.session_state.pop("stats_cache", None)
+                refresh = True
+        if res and res.failed:
+            st.toast(f"{len(res.failed)} file(s) could not be read. See the Home page.", icon="⚠️")
+    if folders:
+        st.caption(f"Watching {len(folders)} folder{'s' if len(folders) > 1 else ''} · checked {time.strftime('%H:%M:%S')}")
+    if refresh:
+        st.rerun()
+
 
 with st.sidebar:
     st.markdown("### 🏏 Stats Pack")
     career = state.current()
+    names = state.career_names()
     if career is not None:
-        n = len(career.matches)
-        demo = " · <span class='chip demo'>demo data</span>" if career.name == state.DEMO_NAME else ""
-        st.markdown(f"<div class='side-status'>Career<br><b>{career.name}</b>{demo}<br>{n} matches</div>",
-                    unsafe_allow_html=True)
-        names = list(state.careers())
-        if len(names) > 1:
-            pick = st.selectbox("Switch career", names, index=names.index(career.name))
-            if pick != career.name:
-                state.set_current(state.careers()[pick])
-                st.rerun()
+        options = names + ([state.DEMO_NAME] if career.name == state.DEMO_NAME else [])
+        if career.name not in options:
+            options.append(career.name)
+        # the switches always show what is saved; changing one saves it straight away
+        st.session_state["sb_viewing"] = career.name
+        st.selectbox("Viewing", options, key="sb_viewing",
+                     on_change=lambda: state.open_career(st.session_state["sb_viewing"]))
+        settings = state.settings_of(career.name)
+        if settings and settings.folder:
+            w = state.watcher()
+            on_folder = w.careers_on(settings.folder)
+            playing = w.playing(settings.folder)
+            if len(on_folder) > 1:
+                st.session_state["sb_playing"] = playing if playing in on_folder else on_folder[0]
+                st.selectbox("Playing now", on_folder, key="sb_playing",
+                             help="New scorecards from the game go into this save. Switch it before you start playing the other save.",
+                             on_change=lambda f=settings.folder: w.set_playing(f, st.session_state["sb_playing"]))
+            else:
+                st.caption(f"New matches go to **{playing or career.name}**")
+        st.caption(f"{len(career.matches):,} matches")
+    watch_status()
 
 pages = [
     st.Page("views/home.py", title="Home", icon=":material/home:", default=True),

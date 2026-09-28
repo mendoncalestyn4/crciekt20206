@@ -74,8 +74,9 @@ class BowlingEntry:
 @dataclass
 class Innings:
     team: str
-    number: int  # order in the match, 1..4
+    number: int  # batting order in the match, 1..4 (see _fix_follow_on)
     team_innings: int  # 1st or 2nd innings for this team
+    listed: int = 0  # position in the file (the game lists innings in team order)
     bowling_team: str = ""
     batting: list[BattingEntry] = field(default_factory=list)
     bowling: list[BowlingEntry] = field(default_factory=list)
@@ -506,7 +507,8 @@ def parse_scorecard(text: str, source: str = "") -> Match:
         if im and not TOTAL_RE.match(line):
             team = im.group("team").strip()
             prior = sum(1 for x in match.innings if x.team == team)
-            cur = Innings(team=team, number=len(match.innings) + 1, team_innings=prior + 1)
+            cur = Innings(team=team, number=len(match.innings) + 1, team_innings=prior + 1,
+                          listed=len(match.innings) + 1)
             cur.follow_on = "follow" in im.group("rest").lower()
             match.innings.append(cur)
             bat_cols = _header_cols(im.group("rest"), BAT_COLS)
@@ -580,4 +582,33 @@ def parse_scorecard(text: str, source: str = "") -> Match:
     _assign_fielders(match)
 
     match.__dict__.update(parse_result(match.result, teams))
+    _fix_follow_on(match)
     return match
+
+
+def _fix_follow_on(match: Match) -> None:
+    """Put the innings in the order they were batted.
+
+    The game lists a four-innings match in team order (A, B, A, B) even when
+    B followed on, so the order in the file is then A, B, A, B although the
+    batting order was A, B, B, A.  The result settles it: a side that wins
+    "by N wickets" batted last, a side that loses "by N runs" batted last,
+    and in a draw the side batting last is the one not bowled out."""
+    inns = match.innings
+    if len(inns) != 4 or inns[0].team != inns[2].team or inns[1].team == inns[0].team:
+        return
+    a1, b1, a2, b2 = inns
+    if a1.total - b1.total < 150:  # too small a lead to enforce the follow-on
+        return
+    last = None
+    if match.result_type == "win" and match.margin_wickets is not None:
+        last = match.winner
+    elif match.result_type == "win" and match.margin_runs is not None:
+        last = b1.team if match.winner == a1.team else a1.team
+    elif match.result_type in ("draw", "") and not a2.all_out and b2.all_out:
+        last = a1.team
+    if last == a1.team:
+        b2.follow_on = True
+        match.innings = [a1, b1, b2, a2]
+        for i, inn in enumerate(match.innings, 1):
+            inn.number = i

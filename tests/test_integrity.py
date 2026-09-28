@@ -20,7 +20,7 @@ def test_fours_and_sixes_match_their_fixed_columns(path):
     the parser saw exactly the same numbers for every batter."""
     lines = path.read_text().splitlines()
     m = parse_scorecard(path.read_text(), path.name)
-    innings = iter(m.innings)
+    innings = iter(sorted(m.innings, key=lambda i: i.listed))  # file order
     for i, line in enumerate(lines):
         if not re.search(r" - (1st|2nd) Innings\s+R\s+B\s+4s\s+6s", line):
             continue

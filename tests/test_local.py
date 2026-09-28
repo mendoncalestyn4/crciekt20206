@@ -1,44 +1,54 @@
-import os
 import shutil
 from pathlib import Path
 
-from ccstats.local import CareerStore, default_scorecards_folder, start_watching, sync
+from ccstats.local import CareerStore, Watcher, default_scorecards_folder
 
 FIXTURES = sorted((Path(__file__).parent / "fixtures").glob("*.txt"))
 
 
-def test_watch_folder_picks_up_new_matches(tmp_path):
+def setup(tmp_path, n=5):
     folder = tmp_path / "Scorecards"
     folder.mkdir()
-    for p in FIXTURES[:5]:
+    for p in FIXTURES[:n]:
         shutil.copy(p, folder)
-    res = start_watching("India save", folder)
-    assert len(res.career.matches) == 5 and len(res.added) == 5
-    assert sync(res.career, res.settings) is None  # nothing new
+    return folder, Watcher(CareerStore(tmp_path / "home"))
+
+
+def test_new_matches_go_to_the_career_playing_now(tmp_path):
+    folder, w = setup(tmp_path)
+    res = w.create("India save", folder)
+    assert len(res.career.matches) == 5 and w.playing(str(folder)) == "India save"
+    assert w.sync(str(folder)) is None  # nothing new yet
     for p in FIXTURES[5:8]:  # the game autosaves three more matches
         shutil.copy(p, folder)
-    res2 = sync(res.career, res.settings)
-    assert res2 is not None and len(res2.added) == 3 and len(res2.career.matches) == 8
-    # deleting files from the game's folder never loses matches already loaded
-    (folder / FIXTURES[0].name).unlink()
-    assert sync(res2.career, res2.settings) is None
-    assert len(res2.career.matches) == 8
+    res = w.sync(str(folder))
+    assert res.career.name == "India save" and len(res.added) == 3 and len(res.career.matches) == 8
 
 
-def test_store_round_trip(tmp_path):
-    folder = tmp_path / "Scorecards"
-    folder.mkdir()
-    for p in FIXTURES[:4]:
+def test_two_saves_share_one_folder(tmp_path):
+    folder, w = setup(tmp_path)
+    w.create("India save", folder)
+    # a second save on the same folder starts empty and becomes Playing now
+    res = w.create("Surrey save", folder, include_existing=False)
+    assert len(res.career.matches) == 0 and w.playing(str(folder)) == "Surrey save"
+    for p in FIXTURES[5:7]:
         shutil.copy(p, folder)
-    res = start_watching("Surrey save", folder)
-    store = CareerStore(tmp_path / "home")
-    store.save(res.career, res.settings)
-    assert store.names() == ["Surrey save"] and store.last_used() == "Surrey save"
-    career, settings = store.load("Surrey save")
-    assert len(career.matches) == 4 and settings.folder == str(folder)
-    assert settings.snapshot == res.settings.snapshot
-    store.delete("Surrey save")
-    assert store.names() == []
+    assert len(w.sync(str(folder)).career.matches) == 2  # went to Surrey save
+    w.set_playing(str(folder), "India save")
+    for p in FIXTURES[7:10]:
+        shutil.copy(p, folder)
+    res = w.sync(str(folder))
+    assert res.career.name == "India save" and len(res.career.matches) == 8
+    assert len(w.store.load("Surrey save")[0].matches) == 2
+    assert sorted(w.careers_on(str(folder))) == ["India save", "Surrey save"]
+
+
+def test_deleting_files_never_loses_matches(tmp_path):
+    folder, w = setup(tmp_path)
+    w.create("India save", folder)
+    (folder / FIXTURES[0].name).unlink()
+    assert w.sync(str(folder)) is None
+    assert len(w.store.load("India save")[0].matches) == 5
 
 
 def test_default_folder_on_windows(tmp_path, monkeypatch):
