@@ -160,6 +160,11 @@ def bars(labels, values, x_label: str, decimals: int = 0, colour: str | None = N
                                 text=f"{reference_label} {fmt(reference, decimals or (0 if float(reference).is_integer() else 1))}",
                                 font=dict(size=11, color=c["muted"])))
     # counts (wickets, dismissals, innings) never get half-way tick marks
+    if signed and not x_range and shown:
+        # room either side for the numbers, so a negative bar's text never runs into the names
+        lo, hi = min(min(shown), 0), max(max(shown), 0)
+        span = (hi - lo) or 1
+        x_range = [lo - span * 0.3 if lo < 0 else 0, hi + span * 0.2]
     counts = decimals == 0 and all(float(v).is_integer() for v in shown)
     small = counts and max((abs(v) for v in shown), default=0) <= 8
     fig.update_layout(**_layout(c, bargap=0.3, shapes=shapes, annotations=annotations,

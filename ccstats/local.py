@@ -125,6 +125,66 @@ class CareerStore:
             p.unlink()
         d.rmdir()
 
+    # ------------------------------------------------------------ backups
+    # Documents\Cricket Captain Stats Pack\backups\<career>\2026-09-28_141500.stats-pack.zip
+    BACKUP_EVERY = 7 * 24 * 3600  # seconds
+    BACKUPS_KEPT = 8
+
+    def _backup_dir(self, name: str) -> Path:
+        return self.root / "backups" / _slug(name)
+
+    def backups(self, name: str) -> list[tuple[Path, float]]:
+        """(file, time made) for every backup of a career, newest first."""
+        d = self._backup_dir(name)
+        out = []
+        for p in d.glob("*.stats-pack.zip") if d.is_dir() else []:
+            try:
+                made = time.mktime(time.strptime(p.name.split(".")[0][:17], "%Y-%m-%d_%H%M%S"))
+            except ValueError:
+                made = p.stat().st_mtime
+            out.append((p, made))
+        return sorted(out, key=lambda x: x[1], reverse=True)
+
+    def backup(self, name: str, now: float | None = None, note: str = "") -> Path:
+        """Copy a career's saved file into its backups folder and keep only the newest few."""
+        now = time.time() if now is None else now
+        src = self._dir(name) / "career.stats-pack.zip"
+        d = self._backup_dir(name)
+        d.mkdir(parents=True, exist_ok=True)
+        stamp = time.strftime("%Y-%m-%d_%H%M%S", time.localtime(now))
+        dest = d / f"{stamp}{'_' + _slug(note) if note else ''}.stats-pack.zip"
+        dest.write_bytes(src.read_bytes())
+        for old, _ in self.backups(name)[self.BACKUPS_KEPT:]:
+            old.unlink()
+        return dest
+
+    def backup_due(self, name: str, now: float | None = None) -> bool:
+        now = time.time() if now is None else now
+        b = self.backups(name)
+        return not b or now - b[0][1] >= self.BACKUP_EVERY
+
+    def backup_all_due(self, now: float | None = None) -> list[str]:
+        """Back up every career whose last backup is a week old (or that has none)."""
+        done = []
+        for name in self.names():
+            if (self._dir(name) / "career.stats-pack.zip").is_file() and self.backup_due(name, now):
+                self.backup(name, now)
+                done.append(name)
+        return done
+
+    def restore(self, name: str, backup: Path) -> Career:
+        """Put a backup back as the career.  The current state is backed up first,
+        so a restore can itself be undone."""
+        data = Path(backup).read_bytes()  # read first: the backup below may prune the oldest file
+        if not Career.is_pack(data):
+            raise ValueError(f"{backup} is not a career file")
+        self.backup(name, note="before-restore")
+        d, settings = self.load_settings(name)
+        (d / "career.stats-pack.zip").write_bytes(data)
+        career, _ = self.load(name)
+        self.save(career, settings)
+        return career
+
     def last_used(self) -> str | None:
         f = self.root / "last.json"
         try:
@@ -175,6 +235,15 @@ class Watcher:
         """The career that watches this folder, if any."""
         name = self._all().get(folder, {}).get("career")
         return name if name in self.store.names() else None
+
+    def rescan(self, folder: str) -> None:
+        """Forget which files in a folder were already read, so the next sync
+        reads them all again (used after restoring a backup: matches still in
+        the folder come back, and ones already in the career are skipped)."""
+        data = self._all()
+        if folder in data:
+            data[folder]["snapshot"] = {}
+            self._write(data)
 
     def create(self, name: str, folder: Path) -> SyncResult:
         """Start a career on a folder, taking everything already in it."""

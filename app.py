@@ -33,6 +33,10 @@ if state.current() is None and "boot_done" not in st.session_state:
 def watch_status() -> None:
     """Check every watched Scorecards folder and add new matches to its career."""
     w = state.watcher()
+    try:
+        state.store().backup_all_due()  # weekly copy of every career, see the Backups panel on Home
+    except OSError:
+        pass  # a full or read-only disk must never stop the site; the next check tries again
     folders = {s.folder for n in state.career_names() if (s := state.settings_of(n)) and s.folder}
     shown = state.current()
     refresh = False

@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -79,6 +80,41 @@ def upload_panel(existing: Career | None) -> None:
         st.rerun()
 
 
+def backups_panel(name: str) -> None:
+    """Weekly backups of this career, with restore (two clicks, and undoable)."""
+    store = state.store()
+    items = store.backups(name)
+    with st.expander(f"Backups ({len(items)})"):
+        st.caption(f"A copy of this career is saved automatically once a week; the newest {store.BACKUPS_KEPT} are kept, in "
+                   f"`{store.root / 'backups'}`. Restoring puts that copy back; your current state is backed up first, "
+                   "so you can always undo it.")
+        if st.button("Back up now", key="bk_now"):
+            store.backup(name)
+            st.session_state["bk_msg"] = "Backed up."
+            st.rerun()
+        msg = st.session_state.pop("bk_msg", None)
+        if msg:
+            st.success(msg)
+        for i, (path, made) in enumerate(items):
+            c1, c2 = st.columns([4, 1], vertical_alignment="center")
+            note = " · made just before a restore" if "before-restore" in path.name else ""
+            c1.markdown(f"**{time.strftime('%a %d %b %Y, %H:%M', time.localtime(made))}**{note}")
+            if st.session_state.get("bk_confirm") == str(path):
+                if c2.button("Yes, restore", key=f"bk_yes_{i}", type="primary"):
+                    restored = store.restore(name, path)
+                    s = state.settings_of(name)
+                    if s and s.folder:
+                        state.watcher().rescan(s.folder)  # matches still in the folder come back on the next check
+                    state.show(restored)
+                    st.session_state.pop("bk_confirm", None)
+                    st.session_state["bk_msg"] = (f"Restored the backup from {time.strftime('%d %b %Y, %H:%M', time.localtime(made))}. "
+                                                  "Any newer matches still in your Scorecards folder are added back within 20 seconds.")
+                    st.rerun()
+            elif c2.button("Restore", key=f"bk_{i}"):
+                st.session_state["bk_confirm"] = str(path)
+                st.rerun()
+
+
 career = state.current()
 
 if career is None:
@@ -154,7 +190,7 @@ else:
         "last": st.column_config.DateColumn("Latest match", format="D MMM YYYY"), "format": "Format", "level": "Level"})
     st.subheader("Latest results", anchor=False)
     latest = m.sort_values("date", ascending=False).head(12)[["date", "section", "stage", "home", "away", "result", "player_of_match"]]
-    st.dataframe(latest, hide_index=True, width="stretch", column_config={
+    st.dataframe(latest, hide_index=True, width="stretch", height=35 * (len(latest) + 1) + 3, column_config={
         "date": st.column_config.DateColumn("Date", format="D MMM YYYY"), "section": "Section", "stage": "Stage",
         "home": "Home", "away": "Away", "result": "Result", "player_of_match": "Player of the match"})
 
@@ -162,5 +198,7 @@ with st.expander("Add another career (a different Scorecards folder)"):
     new_career_form(first=False)
 with st.expander("Upload files instead, or open a career file"):
     upload_panel(career)
+if career.name != state.DEMO_NAME and career.name in state.career_names():
+    backups_panel(career.name)
 st.download_button("Download career file", career.to_pack(), file_name=f"{career.name}.stats-pack.zip",
                    help="One small file with every match and your manual fixes, e.g. to back it up or open it on another PC.")
