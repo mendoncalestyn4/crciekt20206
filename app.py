@@ -29,7 +29,7 @@ if state.current() is None and "boot_done" not in st.session_state:
 
 @st.fragment(run_every="20s")
 def watch_status() -> None:
-    """Check every watched Scorecards folder and add new matches to the career Playing now."""
+    """Check every watched Scorecards folder and add new matches to its career."""
     w = state.watcher()
     folders = {s.folder for n in state.career_names() if (s := state.settings_of(n)) and s.folder}
     shown = state.current()
@@ -65,16 +65,7 @@ with st.sidebar:
                      on_change=lambda: state.open_career(st.session_state["sb_viewing"]))
         settings = state.settings_of(career.name)
         if settings and settings.folder:
-            w = state.watcher()
-            on_folder = w.careers_on(settings.folder)
-            playing = w.playing(settings.folder)
-            if len(on_folder) > 1:
-                st.session_state["sb_playing"] = playing if playing in on_folder else on_folder[0]
-                st.selectbox("Playing now", on_folder, key="sb_playing",
-                             help="New scorecards from the game go into this save. Switch it before you start playing the other save.",
-                             on_change=lambda f=settings.folder: w.set_playing(f, st.session_state["sb_playing"]))
-            else:
-                st.caption(f"New matches go to **{playing or career.name}**")
+            st.caption("New matches from your Scorecards folder are added automatically.")
         st.caption(f"{len(career.matches):,} matches")
     watch_status()
 

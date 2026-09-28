@@ -32,25 +32,21 @@ def new_career_form(first: bool) -> None:
 
     c2.button("Browse…", width="stretch", on_click=browse, key=f"{k}_browse")
     folder = Path(st.session_state[f"{k}_folder"]) if st.session_state[f"{k}_folder"] else None
-    others = state.watcher().careers_on(str(folder)) if folder else []
+    owner = state.watcher().owner(str(folder)) if folder else None
     st.markdown("**2 · Name this career**")
     name = st.text_input("Career name", value="My career" if first else "", placeholder="e.g. India save",
                          label_visibility="collapsed", key=f"{k}_name")
-    include = st.checkbox("Include the matches already in this folder", value=not others,
-                          key=f"{k}_include_{'shared' if others else 'new'}",
-                          help="Untick this when the folder already holds another save's matches: the new career then "
-                               "starts empty and collects matches from now on (it becomes Playing now).")
-    if others:
-        st.caption(f"This folder is already used by **{', '.join(others)}**. The new career will be set as **Playing now**, "
-                   "so switch Playing now in the left menu whenever you change saves in the game.")
-    ok = folder is not None and folder.is_dir() and name.strip() and name.strip() not in state.career_names()
+    if owner:
+        st.error(f"This folder is already watched by **{owner}**. One Scorecards folder is one career, so both saves' "
+                 "matches go there. Pick a different folder for a separate career.")
+    ok = folder is not None and folder.is_dir() and not owner and name.strip() and name.strip() not in state.career_names()
     if folder is not None and st.session_state[f"{k}_folder"] and not folder.is_dir():
         st.error("That folder doesn't exist on this PC. Check the path or use Browse….")
     if name.strip() in state.career_names():
         st.error("A career with that name already exists.")
     if st.button("Start watching", type="primary", disabled=not ok, key=f"{k}_start"):
         with st.spinner("Reading scorecards…"):
-            res = state.watcher().create(name.strip(), folder, include_existing=include)
+            res = state.watcher().create(name.strip(), folder)
         state.show(res.career)
         st.session_state["last_report"] = res.career.report
         st.rerun()
@@ -137,7 +133,7 @@ else:
         "date": st.column_config.DateColumn("Date", format="D MMM YYYY"), "section": "Section", "stage": "Stage",
         "home": "Home", "away": "Away", "result": "Result", "player_of_match": "Player of the match"})
 
-with st.expander("Add another career (e.g. your second save)"):
+with st.expander("Add another career (a different Scorecards folder)"):
     new_career_form(first=False)
 with st.expander("Upload files instead, or open a career file"):
     upload_panel(career)

@@ -9,8 +9,8 @@ What the site does, the decisions behind it, and what is built so far.
 - **Runs on your own PC (Windows).** The site watches your Scorecards folder
   (`%AppData%\Childish Things\Cricket Captain 2026\Scorecards`) and new matches appear automatically.
   Turn on **Autosave scorecards** in the game's options.
-- **Separate careers, one per save.** You play more than one save, so the left menu has a **Playing now** switch:
-  new scorecards go to whichever save is set as Playing now. Nothing else is automatic.
+- **One Scorecards folder = one career.** If you play more than one save into the same folder, their matches
+  go into that one career together (your choice). A separate career needs a separate folder or an upload.
 - **Every competition is its own section, nothing merged.** Bilateral Tests / ODIs / T20Is, ODI World Cup,
   T20 World Cup, WTC final, Champions Trophy, IPL, The Hundred, T20 Blast, County Championship Division 1 and
   Division 2, Ranji Trophy, … are all separate.
@@ -33,10 +33,11 @@ What the site does, the decisions behind it, and what is built so far.
 
 - ✅ Careers saved in `Documents\Cricket Captain Stats Pack` (safe when you update the program)
 - ✅ Folder watching: only new or changed scorecards are read; deleting old files never loses matches
-- ✅ Playing now switch in the left menu; live check every ~20 seconds with a "new matches added" message
+- ✅ Live check every ~20 seconds with a "new matches added" message
 - ✅ Browse… button (normal Windows folder picker)
 - 🔨 `Start Stats Pack.bat`: first run installs everything, then opens the site in your browser
 - ⬜ Download any chart as an image (14)
+- ⬜ Automatic weekly backup of every career
 
 ## Pages
 
@@ -48,6 +49,8 @@ What the site does, the decisions behind it, and what is built so far.
   - nemesis and bunnies (1), batting first vs chasing (2), wins vs losses and share of team runs/wickets (3)
   - consistency (4), how they get out / how they take wickets (8), quality of wickets (new 1)
   - player vs each team (21), golden ducks
+  - "came in at": score when they walked in, batting under pressure, best rescue innings
+  - record against strong vs weak teams
 - ⬜ **Compare players** side by side (new 5)
 - ⬜ **Teams**: record overall/home/away, streaks and form (14), batting depth (15), opening partnerships (11),
   partnership averages by wicket (new 9), collapses (12)
@@ -57,6 +60,7 @@ What the site does, the decisions behind it, and what is built so far.
 - ⬜ **Competitions**: points tables (NRR, Ranji points, county points), knockout brackets, series results
 - ⬜ **Is this total enough?** win % by first-innings score (new 6), **home advantage** by section (new 8)
 - ⬜ **How the game changes over seasons** (new 11), **breakout players** (new 3)
+- ⬜ **Rankings**: player ratings per format and team Elo over time
 - ⬜ **Records** and **"New record!" alerts** when a new match breaks one (new 13)
 - ⬜ **Scorecards** with the **wicket timeline** (new 7)
 - ⬜ **Data check** (22): upload report, dismissals that couldn't be credited, same-name players to merge or split (manual)

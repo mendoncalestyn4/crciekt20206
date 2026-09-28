@@ -154,7 +154,8 @@ def _result(career: Career, settings: CareerSettings) -> SyncResult:
 
 class Watcher:
     """Knows, for each watched folder, which files it has already seen and
-    which career is **Playing now**.  New scorecards go to that career."""
+    which career it belongs to.  One folder = one career: if several saves
+    write into the same folder, their matches go into that one career."""
 
     def __init__(self, store: CareerStore):
         self.store = store
@@ -170,49 +171,34 @@ class Watcher:
         self.store.root.mkdir(parents=True, exist_ok=True)
         self.path.write_text(json.dumps(data, indent=1))
 
-    def playing(self, folder: str) -> str | None:
-        return self._all().get(folder, {}).get("playing")
+    def owner(self, folder: str) -> str | None:
+        """The career that watches this folder, if any."""
+        name = self._all().get(folder, {}).get("career")
+        return name if name in self.store.names() else None
 
-    def set_playing(self, folder: str, name: str) -> None:
-        data = self._all()
-        data.setdefault(folder, {"snapshot": {}})["playing"] = name
-        self._write(data)
-
-    def careers_on(self, folder: str) -> list[str]:
-        out = []
-        for name in self.store.names():
-            try:
-                _, settings = self.store.load_settings(name)
-            except OSError:
-                continue
-            if settings.folder == folder:
-                out.append(name)
-        return out
-
-    def create(self, name: str, folder: Path, include_existing: bool = True) -> SyncResult:
-        """Start a career on a folder and make it Playing now.  The first
-        career on a folder takes everything already there; a second save on
-        the same folder starts empty unless `include_existing`."""
+    def create(self, name: str, folder: Path) -> SyncResult:
+        """Start a career on a folder, taking everything already in it."""
         folder_key = str(folder)
+        if self.owner(folder_key):
+            raise ValueError(f"{folder} is already watched by {self.owner(folder_key)}")
         data = self._all()
         snap = snapshot(folder)
-        files = read_files(folder, list(snap)) if include_existing else []
-        career = Career.build(name, files)
+        career = Career.build(name, read_files(folder, list(snap)))
         settings = CareerSettings(name=name, folder=folder_key)
         self.store.save(career, settings)
-        data[folder_key] = {"snapshot": snap, "playing": name}
+        data[folder_key] = {"snapshot": snap, "career": name}
         self._write(data)
         return _result(career, settings)
 
     def sync(self, folder: str) -> SyncResult | None:
-        """Add new or changed scorecards to the Playing now career.
-        Returns None when nothing changed (or no career is Playing now)."""
+        """Add new or changed scorecards to the folder's career.
+        Returns None when nothing changed."""
         path = Path(folder)
         if not path.is_dir():
             return None
         data = self._all()
         entry = data.setdefault(folder, {"snapshot": {}})
-        name = entry.get("playing")
+        name = entry.get("career")
         if not name or name not in self.store.names():
             return None
         snap = snapshot(path)
