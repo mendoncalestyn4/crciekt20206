@@ -222,6 +222,20 @@ def classify(match: Match) -> Classification:
                           recognised=False)
 
 
+# Bilateral internationals are named by format; give them a clear section name.
+BILATERAL_SECTION = {TEST: "Tests (bilateral series)", ODI: "ODIs (bilateral series)", T20I: "T20Is (bilateral series)"}
+
+
+def section_of(competition: str, stage: str) -> str:
+    """The unit stats are kept within.  Nothing is merged: bilateral ODIs,
+    the ODI World Cup and the Champions Trophy are separate sections, and a
+    league with divisions (County Championship) gets one section per division."""
+    name = BILATERAL_SECTION.get(competition, competition)
+    if stage.startswith("Division"):
+        return f"{name} · {stage}"
+    return name
+
+
 # --------------------------------------------------------------------------- #
 # Seasons, series and playoff fix-ups (need the whole collection of matches)
 # --------------------------------------------------------------------------- #

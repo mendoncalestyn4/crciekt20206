@@ -89,3 +89,12 @@ def test_results_and_declarations(career):
     durham = career.innings.merge(career.matches[["match_id", "source"]])
     durham = durham[(durham.source == "8_sep_2026-drh_v_mid_county_-_d2.txt")].set_index("innings_no")
     assert durham.loc[3, "declared"] and not durham.loc[4, "declared"]
+
+
+def test_every_competition_is_its_own_section(career):
+    sections = career.matches.groupby("section").size().to_dict()
+    assert sections == {
+        "County Championship · Division 1": 3, "County Championship · Division 2": 2,
+        "Indian Premier League": 6, "ODI World Cup": 4, "ODIs (bilateral series)": 5, "Ranji Trophy": 5,
+        "T20 Blast": 10, "T20 World Cup": 1, "T20Is (bilateral series)": 3, "Tests (bilateral series)": 5,
+        "The Hundred": 4, "Vijay Hazare Trophy": 3}

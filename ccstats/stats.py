@@ -27,6 +27,7 @@ BALL_QUOTA = {T20: 120, T20I: 120, HUNDRED: 100, ODI: 300, LIST_A: 300}
 
 @dataclass
 class Scope:
+    sections: list[str] = field(default_factory=list)  # empty = any; normally exactly one
     competitions: list[str] = field(default_factory=list)  # empty = any
     formats: list[str] = field(default_factory=list)
     seasons: list[str] = field(default_factory=list)
@@ -37,6 +38,8 @@ class Scope:
 
     def match_ids(self, matches: pd.DataFrame) -> pd.Index:
         m = matches
+        if self.sections:
+            m = m[m.section.isin(self.sections)]
         if self.competitions:
             m = m[m.competition.isin(self.competitions)]
         if self.formats:

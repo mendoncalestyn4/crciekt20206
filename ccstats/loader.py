@@ -17,7 +17,7 @@ from typing import Iterable
 
 import pandas as pd
 
-from .competitions import FIRST_CLASS, TEST, assign_seasons, assign_series, classify, fix_playoff_stages
+from .competitions import FIRST_CLASS, TEST, assign_seasons, assign_series, classify, fix_playoff_stages, section_of
 from .parser import Match, ScorecardError, parse_scorecard, validate_match
 
 MULTI_DAY = {TEST, FIRST_CLASS}
@@ -260,6 +260,7 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
         winner = m.winner if result_type == "win" else ""
         M.append(dict(
             match_id=m.match_id, date=pd.Timestamp(m.date), season=seasons[i], competition=c.competition,
+            section=section_of(c.competition, stages[i]),
             format=c.format, level=c.level, country=c.country, stage=stages[i], knockout=c.knockout,
             neutral=c.neutral, recognised=c.recognised, title=m.title, series_id=series[i],
             series_match_no=m.series_match_no, series_length=m.series_length,
@@ -324,7 +325,7 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
 
 
 MATCH_COLUMNS = [
-    "match_id", "date", "season", "competition", "format", "level", "country", "stage", "knockout", "neutral",
+    "match_id", "date", "season", "competition", "section", "format", "level", "country", "stage", "knockout", "neutral",
     "recognised", "title", "series_id", "series_match_no", "series_length", "home", "away", "winner", "loser",
     "result_type", "result", "tiebreak_winner", "margin_runs", "margin_wickets", "innings_win", "player_of_match",
     "batted_first", "source"]
