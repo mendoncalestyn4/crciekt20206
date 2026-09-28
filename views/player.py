@@ -27,7 +27,8 @@ mine_bat = career.batting[(career.batting.player == player)]
 mine_bowl = career.bowling[(career.bowling.player == player)]
 my_matches = m[m.match_id.isin(set(mine_bat.match_id) | set(mine_bowl.match_id))]
 teams = sorted(set(mine_bat.team) | set(mine_bowl.team))
-page_header(" · ".join(teams), player,
+is_keeper = not A.keepers(career, my_matches.match_id)[lambda k: k.player == player].empty
+page_header(" · ".join(teams) + (" · Wicketkeeper" if is_keeper else ""), player,
             f"{len(my_matches)} matches in {my_matches.section.nunique()} section{'s' if my_matches.section.nunique() != 1 else ''}. "
             "Pick a section below; every figure on this page is for that section only.")
 

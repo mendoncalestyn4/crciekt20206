@@ -278,3 +278,52 @@ def opposition_strength(inns: pd.DataFrame, strength: dict[str, float]) -> pd.Se
         return pd.Series([], dtype=str)
     median = float(np.median(list(strength.values())))
     return inns.opposition.map(lambda t: "Stronger half" if strength.get(t, 0) > median else "Weaker half")
+
+
+def keepers(career, ids, team: str | None = None) -> pd.DataFrame:
+    """Players who have made a stumping, i.e. wicketkeepers. The scorecards
+    don't mark the keeper, so a stumping is the only reliable sign."""
+    f = career.fielding[career.fielding.match_id.isin(ids) & career.fielding.resolved & (career.fielding.kind == "stumped")]
+    if team:
+        f = f[f.team == team]
+    return (f.groupby(["player", "team"]).size().rename("stumpings").reset_index()
+            .sort_values("stumpings", ascending=False).reset_index(drop=True))
+
+
+BALL_QUOTA = {"T20": 120, "T20I": 120, "The Hundred": 100, "ODI": 300, "List A": 300}
+
+
+def team_table(career, ids, venue: str = "all") -> pd.DataFrame:
+    """One row per team in the selected matches: results, runs per wicket,
+    run rates and (limited overs) net run rate. `venue` = all / home / away,
+    from each team's own point of view."""
+    m = career.matches[career.matches.match_id.isin(ids)]
+    inn = career.innings[career.innings.match_id.isin(ids)].merge(m[["match_id", "format", "home", "away", "neutral"]], on="match_id")
+    quota = inn.format.map(BALL_QUOTA)
+    inn = inn.assign(nrr_balls=np.where(inn.all_out & quota.notna(), quota, inn.balls))
+    rows = []
+    for team in sorted(set(m.home) | set(m.away)):
+        mine = m[(m.home == team) | (m.away == team)]
+        if venue == "home":
+            mine = mine[(mine.home == team) & ~mine.neutral]
+        elif venue == "away":
+            mine = mine[(mine.away == team) & ~mine.neutral]
+        if mine.empty:
+            continue
+        i = inn[inn.match_id.isin(mine.match_id)]
+        bat, bowl = i[i.team == team], i[i.opposition == team]
+        first = bat[bat.innings_no == 1]
+        limited = mine.format.isin(list(BALL_QUOTA)).all()
+        n = len(mine)
+        rows.append(dict(
+            team=team, played=n, won=int((mine.winner == team).sum()),
+            lost=int(((mine.winner != team) & (mine.winner != "")).sum()),
+            drawn=int((mine.result_type == "draw").sum()), tied=int((mine.result_type == "tie").sum()),
+            win_pct=float((mine.winner == team).mean() * 100),
+            rpw_for=bat.runs.sum() / max(bat.wickets.sum(), 1), rpw_against=bowl.runs.sum() / max(bowl.wickets.sum(), 1),
+            rr_for=bat.runs.sum() / max(bat.balls.sum(), 1) * 6, rr_against=bowl.runs.sum() / max(bowl.balls.sum(), 1) * 6,
+            nrr=(bat.runs.sum() / max(bat.nrr_balls.sum(), 1) - bowl.runs.sum() / max(bowl.nrr_balls.sum(), 1)) * 6 if limited else np.nan,
+            first_innings_avg=first.runs.mean() if len(first) else np.nan,
+            wkts_per_match=bowl.wickets.sum() / n))
+    return pd.DataFrame(rows, columns=["team", "played", "won", "lost", "drawn", "tied", "win_pct", "rpw_for", "rpw_against",
+                                       "rr_for", "rr_against", "nrr", "first_innings_avg", "wkts_per_match"])

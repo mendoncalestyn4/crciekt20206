@@ -120,3 +120,15 @@ def test_stat_page_runs_for_every_choice(career):
                     assert not at.exception, (section, disc_label, stat.label, view, at.exception)
                     runs += 1
     assert runs > 100
+
+
+def test_wicket_timeline_plots_the_fall_of_wickets(career):
+    from ui.charts import wicket_timeline
+    mid = career.matches.set_index("source").loc["18_jul_2026-som_v_nht_blast_-_f.txt"].match_id
+    data = []
+    for r in career.innings[career.innings.match_id == mid].sort_values("innings_no").itertuples():
+        f = career.fow[(career.fow.match_id == mid) & (career.fow.innings_no == r.innings_no)].sort_values("wicket")
+        data.append(dict(label=r.team, fow=list(zip(f.wicket, f.score)), total=int(r.runs), all_out=bool(r.all_out)))
+    fig = wicket_timeline(data)
+    assert list(fig.data[0].y) == [0, 6, 16, 16, 17, 25, 102, 137, 137, 163]  # Somerset 163/8, unbroken at the end
+    assert list(fig.data[1].y) == [0, 15, 23, 32, 46, 46, 51, 70, 87, 87, 96]  # Northants all out 96

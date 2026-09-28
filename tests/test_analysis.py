@@ -1,3 +1,4 @@
+import numpy as np
 from pathlib import Path
 
 import pytest
@@ -70,3 +71,21 @@ def test_splits_add_up(career):
         assert s.runs.sum() == 254 and s.innings.sum() == 5
     c = A.consistency(inns, "multi")
     assert c["bar"] == 30 and round(c["past_bar_pct"]) == 40  # 119 and 96 of 3,119,28,96,8
+
+
+def test_keepers_are_the_players_who_stumped(career):
+    ids = career.matches.match_id
+    k = A.keepers(career, ids)
+    assert {"J Rew", "C Esterhuizen"} <= set(k.player)  # st Rew b Leach, st E'rhuizen b Sindhu
+    assert A.keepers(career, ids, "Somerset").player.tolist() == ["J Rew"]
+
+
+def test_team_table(career):
+    ids = Scope(sections=["Indian Premier League"]).match_ids(career.matches)
+    t = A.team_table(career, ids).set_index("team")
+    gt = t.loc["Gujarat Titans"]
+    assert (gt.played, gt.won, gt.lost) == (4, 4, 0) and gt.win_pct == 100
+    assert t.played.sum() == 2 * len(ids)  # every match counted once for each side
+    assert (t.won.sum() == (career.matches[career.matches.match_id.isin(ids)].winner != "").sum())
+    # net run rate: all out counts as the full 20 overs; over a whole league the NRRs, weighted, net to ~0
+    assert np.isfinite(t.nrr).all()

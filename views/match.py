@@ -1,0 +1,123 @@
+import pandas as pd
+import streamlit as st
+
+from ccstats.parser import balls_to_overs
+from ui import state
+from ui.charts import CONFIG, fmt, wicket_timeline
+from ui.theme import explain_list, page_header, scoreboard
+
+career = state.current()
+if career is None:
+    st.info("Load a career on the Home page first.")
+    st.stop()
+
+m = career.matches.sort_values(["date", "match_id"], ascending=False)
+inn_all = career.innings
+
+
+def score_of(mid, team):
+    parts = []
+    for r in inn_all[(inn_all.match_id == mid) & (inn_all.team == team)].sort_values("innings_no").itertuples():
+        parts.append(f"{r.runs}" if r.all_out else f"{r.runs}/{r.wickets}{'d' if r.declared else ''}")
+    return " & ".join(parts) or "–"
+
+
+page_header("Matches", "Find a match", "Narrow the list by section or team, then type to search: a team, a date, a stage like "
+            "'Final', or a result.")
+c1, c2 = st.columns(2)
+section = c1.selectbox("Section", ["All sections"] + sorted(m.section.unique()), key="mt_section")
+pool = m if section == "All sections" else m[m.section == section]
+teams = sorted(set(pool.home) | set(pool.away))
+team = c2.selectbox("Team", ["All teams"] + teams, key="mt_team")
+if team != "All teams":
+    pool = pool[(pool.home == team) | (pool.away == team)]
+
+labels = {r.match_id: f"{r.date:%d %b %Y} · {r.home} v {r.away} · {r.section}{' · ' + r.stage if r.stage else ''} · {r.result}"
+          for r in pool.itertuples()}
+wanted = st.query_params.get("match")
+if wanted in labels and "mt_match" not in st.session_state:
+    st.session_state["mt_match"] = wanted
+mid = st.selectbox(f"Match ({len(labels)} to choose from, newest first)", list(labels), format_func=labels.get,
+                   key="mt_match", index=None, placeholder="Type to search, e.g. 'Final' or 'Kent'")
+if not mid:
+    st.stop()
+
+row = m[m.match_id == mid].iloc[0]
+st.divider()
+stage = f" · {row.stage}" if row.stage else ""
+series = f" · match {int(row.series_match_no)} of {int(row.series_length)}" if pd.notna(row.series_match_no) else ""
+scoreboard(f"{row.section}{stage}{series} · {row.date:%d %b %Y}", row.home, score_of(mid, row.home), row.away,
+           score_of(mid, row.away), row.result + (f" · Player of the match: {row.player_of_match}" if row.player_of_match else ""))
+st.write("")
+
+inns = inn_all[inn_all.match_id == mid].sort_values("innings_no")
+bat = career.batting[career.batting.match_id == mid]
+bowl = career.bowling[career.bowling.match_id == mid]
+fow = career.fow[career.fow.match_id == mid]
+
+# ---------------------------------------------------------------- wicket timeline
+with st.container(border=True):
+    st.markdown("**Wicket timeline** · the score each time a wicket fell")
+    data = []
+    for r in inns.itertuples():
+        f = fow[fow.innings_no == r.innings_no].sort_values("wicket")
+        tot = f"{r.runs}" if r.all_out else f"{r.runs}/{r.wickets}"
+        data.append(dict(label=f"{r.team} {tot}" + (" (2nd inns)" if r.team_innings == 2 else ""),
+                         fow=list(zip(f.wicket, f.score)), total=int(r.runs), all_out=bool(r.all_out)))
+    st.plotly_chart(wicket_timeline(data), width="stretch", config=CONFIG, key="mt_timeline")
+    explain_list([("", "<b>Each step to the right</b> is one more wicket down. <b>The height of a step</b> is the partnership: runs added before the next wicket."),
+                  ("", "<b>Several short steps in a row</b> = a collapse. <b>One tall step</b> = a big stand that rebuilt the innings."),
+                  ("", "The scorecard gives the score at each wicket but not the over, so this shows wickets, not overs.")])
+
+# ---------------------------------------------------------------- top performers
+top_bat = bat[bat.did_bat].sort_values(["runs", "balls"], ascending=[False, True]).head(3)
+top_bowl = bowl.assign(k=bowl.wickets * 1000 - bowl.runs).sort_values("k", ascending=False).head(3)
+c1, c2 = st.columns(2, gap="medium")
+with c1:
+    with st.container(border=True):
+        st.markdown("**Top scores**")
+        st.dataframe(pd.DataFrame({"Batter": top_bat.player, "Team": top_bat.team,
+                                   "Score": [f"{r}{'' if o else '*'}" for r, o in zip(top_bat.runs, top_bat.out)],
+                                   "Balls": top_bat.balls}), hide_index=True, width="stretch")
+with c2:
+    with st.container(border=True):
+        st.markdown("**Best bowling**")
+        st.dataframe(pd.DataFrame({"Bowler": top_bowl.player, "Team": top_bowl.team,
+                                   "Figures": [f"{w}/{r}" for w, r in zip(top_bowl.wickets, top_bowl.runs)],
+                                   "Overs": [str(b) + " balls" if c else balls_to_overs(b) for b, c in zip(top_bowl.balls, top_bowl.counted_in_balls)]}),
+                     hide_index=True, width="stretch")
+
+# ---------------------------------------------------------------- full scorecard
+st.subheader("Scorecard", anchor=False)
+for r in inns.itertuples():
+    tot = f"{r.runs} all out" if r.all_out else f"{r.runs}/{r.wickets}{' declared' if r.declared else ''}"
+    length = f"{r.balls} balls" if r.counted_in_balls else f"{balls_to_overs(r.balls)} overs"
+    fo = " · followed on" if r.team_innings == 2 and r.innings_no == 3 and inns.iloc[0].team != r.team else ""
+    with st.expander(f"{r.team} · {'1st' if r.team_innings == 1 else '2nd'} innings · {tot} ({length}){fo}", expanded=True):
+        b = bat[bat.innings_no == r.innings_no].sort_values("position")
+        st.dataframe(pd.DataFrame({
+            "Batter": b.player,
+            "How out": [d if d else ("did not bat" if not db else "") for d, db in zip(b.dismissal, b.did_bat)],
+            "R": [str(x) if db else "" for x, db in zip(b.runs, b.did_bat)],
+            "B": [str(x) if db else "" for x, db in zip(b.balls, b.did_bat)],
+            "4s": [str(x) if db else "" for x, db in zip(b.fours, b.did_bat)],
+            "6s": [str(x) if db else "" for x, db in zip(b.sixes, b.did_bat)],
+            "SR": [fmt(x / y * 100, 1) if db and y else "" for x, y, db in zip(b.runs, b.balls, b.did_bat)],
+        }), hide_index=True, width="stretch")
+        parts = [f"{k} {v}" for k, v in (("b", r.byes), ("lb", r.leg_byes), ("w", r.wides), ("nb", r.no_balls)) if v]
+        st.caption(f"Extras {r.extras}" + (f" ({', '.join(parts)})" if parts else "") + f" · Total {tot} ({length})")
+        w = bowl[bowl.innings_no == r.innings_no]
+        dots = w.dots.notna().any()
+        st.dataframe(pd.DataFrame({
+            "Bowler": w.player,
+            ("Balls" if r.counted_in_balls else "O"): [str(x) if r.counted_in_balls else balls_to_overs(x) for x in w.balls],
+            ("Dots" if dots else "M"): [int(x) if pd.notna(x) else 0 for x in (w.dots if dots else w.maidens)],
+            "R": w.runs, "W": w.wickets, "Econ": [fmt(x / y * 6, 2) if y else "–" for x, y in zip(w.runs, w.balls)],
+        }), hide_index=True, width="stretch")
+        f = fow[fow.innings_no == r.innings_no].sort_values("wicket")
+        if len(f):
+            prev, stands = 0, []
+            for wk, sc in zip(f.wicket, f.score):
+                stands.append(f"{wk}-{sc} (+{sc - prev})")
+                prev = sc
+            st.caption("Fall of wickets (partnership in brackets): " + ", ".join(stands))

@@ -73,5 +73,8 @@ pages = [
     st.Page("views/home.py", title="Home", icon=":material/home:", default=True),
     st.Page("views/stat_by_stat.py", title="Stat by stat", icon=":material/leaderboard:"),
     st.Page("views/player.py", title="Players", icon=":material/person:"),
+    st.Page("views/compare.py", title="Compare players", icon=":material/compare_arrows:"),
+    st.Page("views/teams.py", title="Teams", icon=":material/groups:"),
+    st.Page("views/match.py", title="Matches", icon=":material/scoreboard:"),
 ]
 st.navigation(pages).run()
