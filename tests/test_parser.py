@@ -151,3 +151,14 @@ def test_test_match_title_and_series():
     # "b Islam" with T Islam (3 wkts) and S Islam (0 wkts) both bowling
     m = load("22_aug_2026-aus_v_ban_2nd_tst.txt")
     assert {b.bowler for b in m.innings[1].batting if b.bowler.endswith("Islam")} == {"T Islam"}
+
+
+def test_ipl_playoff_titles():
+    # The game labels the Eliminator "Qualifier 1" as well, so playoff
+    # stages must later be worked out from the bracket, not the label alone.
+    q1 = load("26_may_2026-gjt_v_pnj_ipl_-_q1.txt")
+    elim = load("27_may_2026-mmb_v_del_ipl_-_q1.txt")
+    assert q1.title == elim.title == "Indian Premier League - Qualifier 1"
+    assert load("29_may_2026-pnj_v_mmb_ipl_-_q2.txt").title == "Indian Premier League - Qualifier 2"
+    final = load("31_may_2026-gjt_v_pnj_ipl_-_f.txt")
+    assert (final.title, final.winner) == ("Indian Premier League - Final", "Gujarat Titans")

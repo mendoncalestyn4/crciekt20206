@@ -1,0 +1,74 @@
+************************************************************
+Punjab Kings v Mumbai Indians
+Indian Premier League - Qualifier 2 - 29 May 2026
+************************************************************
+
+Punjab Kings - 1st Innings                R    B    4s  6s
+------------------------------------------------------------
+H Singh         lbw b Ghazanfar           48   27   9   -
+P Singh         c Ahir b Pandya           52   30   5   2
+S Iyer          lbw b Ghazanfar           33   16   6   -
+P Arya          b Pandya                  38   19   3   3
+M Stoinis       b Bosch                   30   20   5   -
+A Omarzai       not out                   14   9    1   1
+M Khan          not out                   0    1    -   -
+P Dubey         
+M Jansen        
+L Ferguson      
+Y Thakur        
+------------------------------------------------------------
+Extras: (nb2,w2)                          4
+TOTAL: (5 wkts, 20 overs)                 219
+
+************************************************************
+
+                O      D     R      W     Econ
+------------------------------------------------------------
+S Raju          4      4     53     0     13.25
+C Bosch         4      7     36     1     9.00
+A Ghazanfar     4      6     39     2     9.75
+H Pandya        4      6     41     2     10.25
+D Chahar        4      6     50     0     12.50
+------------------------------------------------------------
+Fall of Wickets:
+1-92  2-121  3-163  4-198  5-219  
+
+
+************************************************************
+************************************************************
+
+Mumbai Indians - 1st Innings              R    B    4s  6s
+------------------------------------------------------------
+W Jacks         b Ferguson                6    4    -   1
+R Sharma        b Ferguson                6    6    1   -
+T Varma         c Dubey b Jansen          49   28   7   1
+H Pandya        c Dubey b Jansen          7    5    1   -
+S Yadav         c Stoinis b Omarzai       31   18   5   1
+R Rickelton     b Dubey                   4    9    -   -
+R Ahir          lbw b Ferguson            23   23   3   -
+C Bosch         not out                   37   23   4   1
+D Chahar        not out                   2    5    -   -
+S Raju          
+A Ghazanfar     
+------------------------------------------------------------
+Extras: (nb1)                             1
+TOTAL: (7 wkts, 20 overs)                 166
+
+************************************************************
+
+                O      D     R      W     Econ
+------------------------------------------------------------
+L Ferguson      4      10    30     3     7.50
+M Jansen        4      7     54     2     13.50
+Y Thakur        4      7     30     0     7.50
+P Dubey         4      8     29     1     7.25
+A Omarzai       4      12    23     1     5.75
+------------------------------------------------------------
+Fall of Wickets:
+1-6  2-21  3-56  4-73  5-90  
+6-108  7-157  
+
+************************************************************
+Punjab Kings won by 53 runs
+Man of the match: P Singh
+************************************************************
