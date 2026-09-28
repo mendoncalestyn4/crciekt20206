@@ -324,6 +324,40 @@ def _assign_fielders(match: "Match") -> None:
                 e.fielder, e.fielder_resolved = hits[0], True
 
 
+def validate_match(match: "Match") -> list[str]:
+    """Self-check a parsed scorecard.  Every number on a Cricket Captain card
+    is tied to others (runs to the total, 4s and 6s to runs, bowling figures
+    to the total, wickets to the fall of wickets), so a column read wrongly
+    shows up as a broken sum.  Returns a list of problems; empty means clean."""
+    problems = []
+    for inn in match.innings:
+        where = f"{inn.team} innings {inn.team_innings}"
+        batted = [b for b in inn.batting if b.did_bat]
+        for b in batted:
+            if 4 * b.fours + 6 * b.sixes > b.runs:
+                problems.append(f"{where}: {b.player} has more boundary runs than runs")
+            if b.fours + b.sixes > b.balls:
+                problems.append(f"{where}: {b.player} has more boundaries than balls faced")
+        if sum(b.runs for b in batted) + inn.extras != inn.total:
+            problems.append(f"{where}: batting runs + extras do not add up to the total")
+        extras = inn.byes + inn.leg_byes + inn.wides + inn.no_balls + inn.penalties
+        if extras and extras != inn.extras:
+            problems.append(f"{where}: extras breakdown does not match the extras total")
+        if inn.bowling:
+            if sum(b.runs for b in inn.bowling) + inn.byes + inn.leg_byes + inn.penalties != inn.total:
+                problems.append(f"{where}: bowling runs do not add up to the total")
+            if sum(b.balls for b in inn.bowling) != inn.balls:
+                problems.append(f"{where}: bowlers' overs do not add up to the innings overs")
+            run_outs = sum(b.how_out in ("run out", "timed out", "obstructing", "retired out") for b in batted)
+            if sum(b.wickets for b in inn.bowling) + run_outs != inn.wickets:
+                problems.append(f"{where}: bowlers' wickets do not match the wickets that fell")
+        if sum(1 for b in batted if not b.not_out) != inn.wickets:
+            problems.append(f"{where}: dismissals do not match the wickets in the total")
+        if len(inn.fow) != inn.wickets:
+            problems.append(f"{where}: fall of wickets does not match the wickets in the total")
+    return problems
+
+
 def parse_result(result: str, teams: list[str]) -> dict:
     low = result.lower()
     out = {"winner": "", "result_type": "", "margin_runs": None, "margin_wickets": None,
