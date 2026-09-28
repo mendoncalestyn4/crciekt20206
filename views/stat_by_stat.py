@@ -26,7 +26,15 @@ season = c2.selectbox("Season", ["All seasons"] + seasons, key="sbs_season")
 disc = c3.segmented_control("Discipline", ["Batting", "Bowling", "Fielding"], default="Batting", key="sbs_disc") or "Batting"
 
 scope = Scope(sections=[section], seasons=[] if season == "All seasons" else [season])
-bat, bowl, fld, base = state.tables(career, scope)
+sec_ids = scope.match_ids(m)
+teams_here = sorted(set(m[m.match_id.isin(sec_ids)].home) | set(m[m.match_id.isin(sec_ids)].away))
+t1, t2 = st.columns([1.2, 2.6])
+team = t1.selectbox("Team", ["All teams"] + teams_here, key="sbs_team")
+# per player-and-team rows when one team is picked, so only their games for that team count;
+# the average line always comes from the whole section
+bat, bowl, fld, base = state.tables(career, scope, by_team=team != "All teams")
+if team != "All teams":
+    bat, bowl, fld = (t[t.team == team] for t in (bat, bowl, fld))
 defs = stat_definitions(base)[{"Batting": "bat", "Bowling": "bowl", "Fielding": "field"}[disc]]
 table = {"Batting": bat, "Bowling": bowl, "Fielding": fld}[disc]
 
@@ -49,6 +57,7 @@ minimum = c6.selectbox("Minimum to qualify", options, index=options.index(defaul
                        format_func=lambda v: "Anyone" if v == 0 else f"{v}+ {unit}", key=f"sbs_min_{disc}_{base.kind}")
 names = sorted(table.player.unique())
 highlight = c7.selectbox("Find a player", ["—"] + names, key="sbs_find")
+only = t2.multiselect("Only these players", names, key="sbs_only", placeholder="Everyone (or pick players to compare)")
 highlight = "" if highlight == "—" else highlight
 
 stat_label = st.pills("Stat", [s.label for s in defs], default=defs[0].label, key=f"sbs_stat_{disc}") or defs[0].label
@@ -56,6 +65,8 @@ stat = next(s for s in defs if s.label == stat_label)
 
 best = view == "Best"
 pool = table[table[stat.column].notna() & (table[min_col] >= minimum)]
+if only:
+    pool = pool[pool.player.isin(only)]
 if stat.keepers_only:
     pool = pool[pool.stumpings > 0]
 ranked = rank(pool, stat, best=best)

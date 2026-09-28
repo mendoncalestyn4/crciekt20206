@@ -72,5 +72,6 @@ with st.sidebar:
 pages = [
     st.Page("views/home.py", title="Home", icon=":material/home:", default=True),
     st.Page("views/stat_by_stat.py", title="Stat by stat", icon=":material/leaderboard:"),
+    st.Page("views/player.py", title="Players", icon=":material/person:"),
 ]
 st.navigation(pages).run()
