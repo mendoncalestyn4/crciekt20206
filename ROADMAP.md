@@ -37,9 +37,9 @@ What the site does, the decisions behind it, and what is built so far.
 - ✅ Folder watching: only new or changed scorecards are read; deleting old files never loses matches
 - ✅ Live check every ~20 seconds with a "new matches added" message
 - ✅ Browse… button (normal Windows folder picker)
-- 🔨 `Start Stats Pack.bat`: first run installs everything, then opens the site in your browser
-- ⬜ Download any chart as an image (14)
-- ⬜ Automatic weekly backup of every career
+- ✅ `Start Stats Pack.bat`: first run installs everything, then opens the site in your browser (see README)
+- ✅ Download any chart as an image: camera button on every chart
+- ✅ Automatic weekly backup of every career, restore from Home
 
 ## Pages
 

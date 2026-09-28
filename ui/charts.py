@@ -11,7 +11,9 @@ from ccstats.stats import Stat
 from .theme import colours
 
 FONT = 'system-ui, -apple-system, "Segoe UI", sans-serif'
-CONFIG = {"displayModeBar": False}
+# Only one button on each chart: a camera that saves the chart as a picture (shows when you hover the chart).
+CONFIG = {"displayModeBar": "hover", "displaylogo": False, "modeBarButtons": [["toImage"]],
+          "toImageButtonOptions": {"format": "png", "scale": 2, "filename": "cricket-captain-stats-chart"}}
 
 
 def _axis(c, title, **extra):
@@ -25,6 +27,7 @@ def _axis(c, title, **extra):
 def _layout(c, **extra):
     base = dict(paper_bgcolor=c["surface"], plot_bgcolor=c["surface"], font=dict(family=FONT, color=c["ink"], size=12),
                 margin=dict(l=10, r=16, t=10, b=10), showlegend=False,
+                modebar=dict(bgcolor="rgba(0,0,0,0)", color=c["muted"], activecolor=c["ink"]),
                 hoverlabel=dict(bgcolor=c["surface"], bordercolor=c["axis"], font=dict(family=FONT, color=c["ink"], size=12)))
     base.update(extra)
     return base
@@ -46,8 +49,9 @@ def ranked_bars(rows: pd.DataFrame, stat: Stat, best: bool, highlight: str = "")
         marker=dict(color=[c["s2"] if p == highlight else colour for p in r.player], line=dict(width=0)),
         text=[fmt(v, stat.decimals) for v in r[stat.column]], textposition="outside", cliponaxis=False,
         textfont=dict(size=11, color=c["ink2"]),
-        customdata=[f"<b>{p}</b> · {t}" for p, t in zip(r.player, r.teams)],
-        hovertemplate="%{customdata}<br>" + stat.label + ": %{text}<extra></extra>"))
+        customdata=[f"<b>{row.player}</b> · {row.teams}<br><b>{stat.label}: {fmt(row[stat.column], stat.decimals)}</b>"
+                    f"<br>{player_profile(row)}" for _, row in r.iterrows()],
+        hovertemplate="%{customdata}<extra></extra>"))
     shapes, annotations = [], []
     if stat.reference is not None and np.isfinite(stat.reference):
         shapes.append(dict(type="line", x0=stat.reference, x1=stat.reference, xref="x", y0=0, y1=1, yref="paper",
@@ -61,6 +65,32 @@ def ranked_bars(rows: pd.DataFrame, stat: Stat, best: bool, highlight: str = "")
         yaxis=dict(showgrid=False, showline=False, tickfont=dict(size=12, color=c["ink"]), automargin=True),
         margin=dict(l=10, r=52, t=24, b=10)))
     return fig
+
+
+def _num(v, d=1):
+    return fmt(v, d) if v is not None and not (isinstance(v, float) and np.isnan(v)) else "–"
+
+
+def _n(k, one: str, many: str | None = None) -> str:
+    k = int(k)
+    return f"{k} {one if k == 1 else (many or one + 's')}"
+
+
+def player_profile(r) -> str:
+    """Everything worth knowing about a player's row, for a hover box."""
+    g = r.get if hasattr(r, "get") else (lambda k, default=None: getattr(r, k, default))
+    if g("economy") is not None and g("wickets") is not None:  # bowling
+        lines = [f"{int(g('innings'))} inns · {_n(g('wickets'), 'wicket')} · best {g('best')}",
+                 f"average {_num(g('average'))} · economy {_num(g('economy'), 2)} · strike rate {_num(g('strike_rate'))}",
+                 f"{_n(g('hauls'), 'four-for')} · runs saved {'+' if (g('runs_saved') or 0) > 0 else ''}{_num(g('runs_saved'))}"]
+    elif g("strike_rate") is not None and g("runs") is not None:  # batting
+        lines = [f"{int(g('innings'))} inns · {int(g('runs'))} runs · high score {g('high_score_text') or '–'}",
+                 f"average {_num(g('average'))} · strike rate {_num(g('strike_rate'))}",
+                 f"{_n(g('hundreds'), 'hundred')} · {_n(g('fifties'), 'fifty', 'fifties')} · {_n(g('fours'), 'four')} · {_n(g('sixes'), 'six', 'sixes')}",
+                 f"runs above average {'+' if (g('runs_above_average') or 0) > 0 else ''}{_num(g('runs_above_average'))}"]
+    else:  # fielding
+        lines = [f"{_n(g('matches'), 'match', 'matches')} · {_n(g('catches'), 'catch', 'catches')} · {_n(g('stumpings'), 'stumping')}"]
+    return "<br>".join(lines)
 
 
 def dot_chart(pool: pd.DataFrame, ranked: pd.DataFrame, stat: Stat, best: bool, highlight: str = "",
@@ -97,11 +127,18 @@ def dot_chart(pool: pd.DataFrame, ranked: pd.DataFrame, stat: Stat, best: bool, 
                                 text=d.line_label, font=dict(size=11, color=c["muted"])))
     top = set(ranked.player)
     colour = c["s1"] if best else c["neg"]
+    # every dot's place in the full ranking of this stat, best first
+    from ccstats.stats import rank as _rank
+    place = {p: i + 1 for i, p in enumerate(_rank(pool, stat, best=True).player)}
 
     def trace(df, col, size, text=False):
-        hover = [f"<b>{p}</b> · {t}<br>{d.x_label}: {fmt(a, 0 if float(a).is_integer() else 1)}"
-                 f"<br>{d.y_label}: {fmt(b, 0 if float(b).is_integer() else 1)}<br>{stat.label}: {fmt(v, stat.decimals)}"
-                 for p, t, a, b, v in zip(df.player, df.teams, df[d.x], df[d.y], df[stat.column])]
+        hover = []
+        for _, r in df.iterrows():
+            axes = "" if {d.x, d.y} <= {stat.column, "innings", "runs", "wickets", "matches", "catches"} else (
+                f"<br>{d.x_label}: {fmt(r[d.x], 0 if float(r[d.x]).is_integer() else 1)} · "
+                f"{d.y_label}: {fmt(r[d.y], 0 if float(r[d.y]).is_integer() else 1)}")
+            hover.append(f"<b>{r.player}</b> · {r.teams}<br><b>{stat.label}: {fmt(r[stat.column], stat.decimals)}</b>"
+                         f" · #{place.get(r.player, '–')} of {len(pool)}<br>{player_profile(r)}{axes}")
         return go.Scatter(x=df[d.x], y=df[d.y], mode="markers+text" if text else "markers",
                           text=list(df.player) if text else None, textposition="top center",
                           textfont=dict(size=11, color=c["ink"]),
@@ -164,7 +201,8 @@ def bars(labels, values, x_label: str, decimals: int = 0, colour: str | None = N
         # room either side for the numbers, so a negative bar's text never runs into the names
         lo, hi = min(min(shown), 0), max(max(shown), 0)
         span = (hi - lo) or 1
-        x_range = [lo - span * 0.3 if lo < 0 else 0, hi + span * 0.2]
+        room = 0.55 if texts else 0.25  # longer labels ("+32% · 21.8 v 32.0") need more space
+        x_range = [lo - span * (room + 0.1) if lo < 0 else 0, hi + span * room]
     counts = decimals == 0 and all(float(v).is_integer() for v in shown)
     small = counts and max((abs(v) for v in shown), default=0) <= 8
     fig.update_layout(**_layout(c, bargap=0.3, shapes=shapes, annotations=annotations,

@@ -6,7 +6,7 @@ from ccstats import analysis as A
 from ccstats.stats import Scope
 from ui import state
 from ui.charts import CONFIG, bars, fmt
-from ui.theme import kpis, page_header
+from ui.theme import explain_list, kpis, page_header
 
 career = state.current()
 if career is None:
@@ -61,7 +61,8 @@ measures = [("Win %", "win_pct", "high"), ("Runs per wicket (batting)", "rpw_for
             ("Run rate (batting)", "rr_for", "high"), ("Avg score batting first", "first_innings_avg", "high"),
             ("Runs per wicket conceded", "rpw_against", "low"), ("Economy (bowling)", "rr_against", "low"),
             ("Wickets taken per match", "wkts_per_match", "high")]
-labels, diffs, notes = [], [], []
+labels, diffs, notes, texts, rows = [], [], [], [], []
+dec = {"win_pct": 0, "first_innings_avg": 0}
 for label, col, better in measures:
     v, a = me[col], avg[col]
     if not (np.isfinite(v) and np.isfinite(a)) or a == 0:
@@ -69,13 +70,29 @@ for label, col, better in measures:
     d = (v - a) / abs(a) * 100 * (1 if better == "high" else -1)
     labels.append(label)
     diffs.append(d)
-    notes.append(f"{team}: {fmt(v, 2)} · average team: {fmt(a, 2)}")
+    vt, at = fmt(v, dec.get(col, 1)), fmt(a, dec.get(col, 1))
+    texts.append(f"{d:+.0f}% · {vt} v {at}")
+    notes.append(f"{team}: {vt} · average team: {at}" + ("" if better == "high" else " · lower is better"))
+    rows.append((label, d, vt, at, better))
 with st.container(border=True):
     st.markdown(f"**{team} against the average team in {section}** · % better (blue) or worse (red) than the average of all {len(table)} teams")
-    st.plotly_chart(bars(labels, diffs, "% better than the average team", 0, notes=notes, signed=True),
+    st.plotly_chart(bars(labels, diffs, "% better than the average team", 0, notes=notes, signed=True, texts=texts),
                     width="stretch", config=CONFIG, key="tm_vsavg")
-    st.caption("For runs conceded and economy, lower is better, so conceding less than average shows as blue. "
-               "Hover a bar for the actual numbers.")
+    # explain the numbers with this team's own figures
+    ex = []
+    good = max(rows, key=lambda r: r[1]) if rows else None
+    bad = min(rows, key=lambda r: r[1]) if rows else None
+    for r in [x for x in (good, bad) if x is not None and (x is good or x[1] < 0)]:
+        label, d, vt, at, better = r
+        word = ("better" if d >= 0 else "worse")
+        how = ("higher" if (d >= 0) == (better == "high") else "lower")
+        ex.append(("", f"<b>{d:+.0f}% on {label.lower()}</b>: {team} {vt}, the average team {at}. {team} are {abs(d):.0f}% "
+                       f"{how}, which is {word}" + ("" if better == "high" else " because lower is better here") + "."))
+    ex.append(("", "<b>The number on each bar</b> is how much better (+, blue) or worse (−, red) this team is than the "
+                   f"average of all {len(table)} teams, then the team's figure v the average team's."))
+    ex.append(("", "<b>Runs per wicket conceded and economy</b>: lower is better, so conceding less than average is a "
+                   "plus and shows blue."))
+    explain_list(ex)
 
 left, right = st.columns(2, gap="medium")
 bat_t, bowl_t, _, _ = state.tables(career, scope, by_team=True)

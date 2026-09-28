@@ -6,7 +6,7 @@ import streamlit as st
 from ccstats import analysis as A
 from ccstats.stats import WICKET_VALUE, Scope
 from ui import state
-from ui.charts import CONFIG, _axis, _layout, fmt
+from ui.charts import player_profile, CONFIG, _axis, _layout, fmt
 from ui.theme import colours, explain_list, page_header
 
 career = state.current()
@@ -193,7 +193,7 @@ with left:
         st.markdown("**Batters: runs vs balls faced**")
         two_team_scatter("tv_bat", bat_a[bat_a.balls > 0], bat_b[bat_b.balls > 0], "balls", "runs", "Balls faced", "Runs",
                          base.strike_rate / 100, f"section strike rate {fmt(base.strike_rate, 1)}",
-                         lambda r: f"<b>{r.player}</b> · {r.team}<br>{r.runs} runs off {r.balls} balls<br>Average {fmt(r.average, 1)} · SR {fmt(r.strike_rate, 1)}")
+                         lambda r: f"<b>{r.player}</b> · {r.team}<br>{player_profile(r)}")
         explain_list([("dot", f"<b>Blue</b>: {a}. <b>Orange</b>: {b}."),
                       ("line", "<b>Dashed line</b>: the section's average scoring rate."),
                       ("shade", "<b>Shaded area (above the line)</b>: scores faster than the average batter in this section."),
@@ -203,7 +203,7 @@ with right:
         st.markdown("**Bowlers: wickets vs balls bowled**")
         two_team_scatter("tv_bowl", bowl_a, bowl_b, "balls", "wickets", "Balls bowled", "Wickets", 1 / base.bowl_strike_rate,
                          f"a wicket every {fmt(base.bowl_strike_rate, 1)} balls",
-                         lambda r: f"<b>{r.player}</b> · {r.team}<br>{r.wickets} wickets, economy {fmt(r.economy, 2)}<br>Strike rate {fmt(r.strike_rate, 1)}")
+                         lambda r: f"<b>{r.player}</b> · {r.team}<br>{player_profile(r)}")
         explain_list([("line", "<b>Dashed line</b>: the section's average wicket rate."),
                       ("shade", "<b>Shaded area (above the line)</b>: takes wickets more often than the average bowler."),
                       ("", "<b>Further right</b>: bowled more. Top-right dots are the main strike bowlers.")])
@@ -231,13 +231,13 @@ with left:
     with st.container(border=True):
         st.markdown("**Every batter: runs above average**")
         team_bars("tv_raa", bat_a[bat_a.innings > 0], bat_b[bat_b.innings > 0], "runs_above_average", "Runs above average",
-                  lambda r: f"<b>{r.player}</b><br>{r.runs} runs off {r.balls} balls")
+                  lambda r: f"<b>{r.player}</b> · {r.team}<br>{player_profile(r)}")
         st.caption("Runs scored minus what an average batter in this section would have made. Right of the line beat the average.")
 with right:
     with st.container(border=True):
         st.markdown("**Every bowler: runs saved**")
         team_bars("tv_saved", bowl_a, bowl_b, "runs_saved", "Runs saved",
-                  lambda r: f"<b>{r.player}</b><br>{r.wickets} wickets, economy {fmt(r.economy, 2)}")
+                  lambda r: f"<b>{r.player}</b> · {r.team}<br>{player_profile(r)}")
         st.caption("Runs kept below the section average, with extra wickets turned into runs. Right of the line beat the average.")
 
 with st.container(border=True):
