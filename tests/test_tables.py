@@ -69,6 +69,13 @@ def test_tiebreak_winner_goes_through(career):
     assert r.winner == "" and r.through == "Karnataka"
 
 
+def test_bilateral_sections_have_no_points_or_groups(career):
+    for section in ("Tests (bilateral series)", "ODIs (bilateral series)", "T20Is (bilateral series)"):
+        [(label, t, rule)] = T.league_tables(career, ids_of(career, section, "2026"))
+        assert label == "Every team" and t.points.isna().all() and "no league table" in rule
+        assert t.won.sum() == (career.matches[career.matches.section == section].winner != "").sum()
+
+
 def test_series(career):
     s = T.series_table(career, career.matches.match_id).set_index("teams")
     eng = s.loc["England v Pakistan"]
@@ -88,3 +95,39 @@ def test_competitions_page_every_section_and_season(career):
             assert not at.exception, (section, season, at.exception)
             runs += 1
     assert runs == len(career.matches.groupby(["section", "season"]))
+
+
+def test_a_team_is_only_ever_in_one_table(career):
+    for section in career.matches.section.unique():
+        for season in career.matches[career.matches.section == section].season.unique():
+            seen = []
+            for _, t, _ in T.league_tables(career, ids_of(career, section, season)):
+                seen += list(t.team)
+            assert len(seen) == len(set(seen)), (section, season)
+
+
+def _round_robin(teams, stage, start):
+    import itertools
+    import pandas as pd
+    rows = [dict(home=a, away=b, stage=stage, date=pd.Timestamp(start) + pd.Timedelta(days=i))
+            for i, (a, b) in enumerate(itertools.combinations(teams, 2))]
+    return rows
+
+
+def test_groups_from_who_played_whom():
+    import pandas as pd
+    north, south = ["A", "B", "C", "D"], ["E", "F", "G", "H"]
+    named = pd.DataFrame(_round_robin(north, "North Group", "2026-06-01") + _round_robin(south, "South Group", "2026-06-02"))
+    got = {label: set(g.home) | set(g.away) for label, g in T._groups(named)}
+    assert got == {"North Group": set(north), "South Group": set(south)}
+    # the game only said "Group Match": the groups get letters, in order of their first game
+    plain = pd.DataFrame(_round_robin(north, "Group", "2026-06-01") + _round_robin(south, "Group", "2026-06-02"))
+    got = {label: set(g.home) | set(g.away) for label, g in T._groups(plain)}
+    assert got == {"Group A": set(north), "Group B": set(south)}
+    # mixed labels for the same group still give one table per group
+    mixed = named.copy()
+    mixed.loc[mixed.index[:2], "stage"] = "Group"
+    got = {label: set(g.home) | set(g.away) for label, g in T._groups(mixed)}
+    assert got == {"North Group": set(north), "South Group": set(south)}
+    # one league (IPL-style): one table
+    assert [l for l, _ in T._groups(pd.DataFrame(_round_robin(north + south, "", "2026-04-01")))] == ["League"]

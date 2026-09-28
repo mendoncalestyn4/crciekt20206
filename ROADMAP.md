@@ -45,24 +45,24 @@ What the site does, the decisions behind it, and what is built so far.
 
 - ✅ **Home**: career summary, sections, latest results, load folder / files / career file
 - ✅ **Stat by stat**: pick a section, season, stat; ranked bars + dot chart with every region explained; full table + download
-- ⬜ **Search** box on every page (20)
-- ⬜ **Player page**
-  - career by section, season by season (9), form
-  - nemesis and bunnies (1), batting first vs chasing (2), wins vs losses and share of team runs/wickets (3)
+- ✅ **Search** box in the sidebar: players, teams, competitions, matches (20)
+- ✅ **Player page**
+  - batting and bowling tables with the same columns in every section, and season by season
+  - form, nemesis and bunnies (1), batting first vs chasing (2), wins vs losses (3)
   - consistency (4), how they get out / how they take wickets (8), quality of wickets (new 1)
-  - player vs each team (21), golden ducks
+  - player vs each team (21), golden ducks, average at each batting position, role labels
   - "came in at": score when they walked in, batting under pressure, best rescue innings
-  - record against strong vs weak teams
-- ⬜ **Compare players** side by side (new 5)
-- ⬜ **Teams**: record overall/home/away, streaks and form (14), batting depth (15), opening partnerships (11),
-  partnership averages by wicket (new 9), collapses (12)
-- ⬜ **Team vs team**: overall / home / away / only against each other, tale of the tape, head to head,
+  - record against strong vs weak teams; wicketkeeper flag
+- ✅ **Compare players** side by side (new 5)
+- ✅ **Teams**: record overall/home/away against the average team, streaks and form (14), batting depth (15),
+  opening partnerships (11), partnership averages by wicket (new 9), collapses (12), wicketkeepers
+- ✅ **Team vs team**: overall / home / away / only against each other, tale of the tape, head to head,
   player-by-player dot charts, runs above average / runs saved for every player
-- ⬜ **Best batting position** rankings (6), **role labels** (7)
-- ⬜ **Competitions**: points tables (NRR, Ranji points, county points), knockout brackets, series results
-- ⬜ **Is this total enough?** win % by first-innings score (new 6), **home advantage** by section (new 8)
-- ⬜ **How the game changes over seasons** (new 11), **breakout players** (new 3)
-- ⬜ **Rankings**: player ratings per format and team Elo over time
-- ⬜ **Records** and **"New record!" alerts** when a new match breaks one (new 13)
-- ⬜ **Scorecards** with the **wicket timeline** (new 7)
-- ⬜ **Data check** (22): upload report, dismissals that couldn't be credited, same-name players to merge or split (manual)
+- ✅ **Best batting position** rankings (6), **role labels** (7)
+- ✅ **Competitions**: league tables (NRR, Ranji points, county points from results), knockout brackets, series results
+- ✅ **Is this total enough?** win % by first-innings score (new 6), **home advantage** by section (new 8)
+- ✅ **How the game changes over seasons** (new 11), **breakout players** (new 3)
+- ✅ **Rankings**: player ratings per section and team Elo over time
+- ✅ **Records** and **"New record!" alerts** when a new match breaks one (new 13)
+- ✅ **Matches**: search, scorecards and the **wicket timeline** (new 7)
+- ✅ **Data check** (22): scorecard report, unclear catches to credit, same-name players to merge or split (manual, undoable)

@@ -109,7 +109,8 @@ h2 { text-transform: uppercase; font-size: 1.7rem !important; }
 .chip.demo { border: 1px dashed {muted}; }
 /* ---------- knockout bracket ---------- */
 .ko { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 6px; align-items: stretch; }
-.ko-col { flex: 1 0 220px; display: flex; flex-direction: column; justify-content: space-around; gap: 12px; }
+.ko-col { flex: 1 0 220px; display: flex; flex-direction: column; gap: 8px; }
+.ko-cards { flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 12px; }
 .ko-round { font-family: 'Barlow Condensed', sans-serif; letter-spacing: .14em; text-transform: uppercase; font-size: 13px;
   font-weight: 700; color: {accent}; }
 .ko-card { display: block; text-decoration: none !important; color: {ink} !important; border: 1px solid {panel_edge};

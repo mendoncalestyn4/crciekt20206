@@ -123,24 +123,33 @@ def dot_chart(pool: pd.DataFrame, ranked: pd.DataFrame, stat: Stat, best: bool, 
         placed.append((nx, ny, shift))
         annotations.append(dict(x=p[d.x], y=p[d.y], text=p.player, showarrow=False, yshift=shift,
                                 font=dict(size=11, color=c["ink2"])))
+    # small counts (catches, 50s, hauls) get whole-number ticks; room at the top for stacked names
+    ints = lambda s: len(s) and all(float(v).is_integer() for v in s)  # noqa: E731
+    yextra = {"dtick": 1} if ints(y) and ymax <= 8 else {}
+    xextra = {"dtick": 1} if ints(x) and xmax <= 9 else {}
     fig.update_layout(**_layout(c, height=460, shapes=shapes, annotations=annotations,
-                                xaxis=_axis(c, d.x_label, range=[0, xmax]), yaxis=_axis(c, d.y_label, range=yr)))
+                                xaxis=_axis(c, d.x_label, range=[0, xmax], **xextra),
+                                yaxis=_axis(c, d.y_label, range=yr, **yextra),
+                                margin=dict(l=10, r=16, t=46, b=10)))
     return fig
 
 
 def bars(labels, values, x_label: str, decimals: int = 0, colour: str | None = None, reference: float | None = None,
-         reference_label: str = "average", notes=None, signed: bool = False, height: int | None = None) -> go.Figure:
+         reference_label: str = "average", notes=None, signed: bool = False, height: int | None = None,
+         texts=None, x_range=None) -> go.Figure:
     """Horizontal bars for one measure, top of the list first. `notes` adds a
-    hover line per bar (e.g. how many innings the figure rests on)."""
+    hover line per bar (e.g. how many innings the figure rests on); `texts`
+    replaces the number printed at the end of each bar."""
     c = colours()
     labels, values = list(labels)[::-1], list(values)[::-1]
     notes = list(notes)[::-1] if notes is not None else [""] * len(values)
+    texts = list(texts)[::-1] if texts is not None else None
     col = colour or c["s1"]
     labels = [str(x) for x in labels]  # seasons like 2026 are labels, not numbers
     shown = [0 if v is None or (isinstance(v, float) and not np.isfinite(v)) else v for v in values]
     colours_ = [(c["pos"] if v >= 0 else c["neg"]) if signed else col for v in shown]
     fig = go.Figure(go.Bar(x=shown, y=labels, orientation="h", marker=dict(color=colours_, line=dict(width=0)),
-                           text=[("+" if signed and v > 0 else "") + fmt(v, decimals) for v in values],
+                           text=texts or [("+" if signed and v is not None and v > 0 else "") + fmt(v, decimals) for v in values],
                            textposition="outside", cliponaxis=False, textfont=dict(size=11, color=c["ink2"]),
                            customdata=notes, hovertemplate="<b>%{y}</b>: %{text}<br>%{customdata}<extra></extra>"))
     shapes, annotations = [], []
@@ -148,14 +157,45 @@ def bars(labels, values, x_label: str, decimals: int = 0, colour: str | None = N
         shapes.append(dict(type="line", x0=reference, x1=reference, xref="x", y0=0, y1=1, yref="paper",
                            line=dict(color=c["muted"], width=1, dash="dash"), layer="below"))
         annotations.append(dict(x=reference, y=1, yref="paper", xanchor="left", yanchor="bottom", showarrow=False,
-                                text=f"{reference_label} {fmt(reference, max(decimals, 1))}", font=dict(size=11, color=c["muted"])))
+                                text=f"{reference_label} {fmt(reference, decimals or (0 if float(reference).is_integer() else 1))}",
+                                font=dict(size=11, color=c["muted"])))
+    # counts (wickets, dismissals, innings) never get half-way tick marks
+    counts = decimals == 0 and all(float(v).is_integer() for v in shown)
+    small = counts and max((abs(v) for v in shown), default=0) <= 8
     fig.update_layout(**_layout(c, bargap=0.3, shapes=shapes, annotations=annotations,
                                 height=height or max(220, 32 * len(values) + 80),
                                 xaxis=_axis(c, x_label, zeroline=True, zerolinecolor=c["axis"],
-                                            rangemode="normal" if signed else "tozero"),
+                                            rangemode="normal" if signed else "tozero",
+                                            **({"dtick": 1} if small else {"tickformat": ",d"} if counts else {}),
+                                            **({"range": x_range} if x_range else {})),
                                 yaxis=dict(type="category", showgrid=False, showline=False, tickfont=dict(size=12, color=c["ink"]),
                                            automargin=True),
                                 margin=dict(l=10, r=52, t=24, b=10)))
+    return fig
+
+
+def paired_bars(labels, mine, other, mine_name: str, other_name: str, x_label: str, decimals: int = 1,
+                notes=None) -> go.Figure:
+    """Two bars per row: a player's figure next to the comparison (e.g. the
+    average batter at that position). Top of the list first."""
+    c = colours()
+    labels = [str(x) for x in labels]
+    notes = list(notes) if notes is not None else [""] * len(labels)
+    fig = go.Figure()
+    for vals, name, col in ((other, other_name, c["dim"]), (mine, mine_name, c["s1"])):
+        vals = list(vals)
+        fig.add_trace(go.Bar(y=labels, x=[0 if v is None or not np.isfinite(v) else v for v in vals], name=name,
+                             orientation="h", marker=dict(color=col, line=dict(width=0)),
+                             text=[fmt(v, decimals) for v in vals], textposition="outside", cliponaxis=False,
+                             textfont=dict(size=11, color=c["ink2"]), customdata=notes,
+                             hovertemplate=f"<b>%{{y}}</b> · {name}: %{{text}}<br>%{{customdata}}<extra></extra>"))
+    fig.update_layout(**_layout(c, barmode="group", bargap=0.25, bargroupgap=0.05, showlegend=True,
+                                legend=dict(orientation="h", y=1.12, x=0, traceorder="reversed", font=dict(color=c["ink"])),
+                                height=max(220, 56 * len(labels) + 90),
+                                xaxis=_axis(c, x_label, zeroline=True, zerolinecolor=c["axis"], rangemode="tozero"),
+                                yaxis=dict(type="category", autorange="reversed", showgrid=False, showline=False,
+                                           tickfont=dict(size=12, color=c["ink"]), automargin=True),
+                                margin=dict(l=10, r=52, t=40, b=10)))
     return fig
 
 
@@ -190,7 +230,8 @@ def form_chart(runs, not_out, hover, window: int | None = None, y_label: str = "
         annotations.append(dict(x=1, xref="paper", y=career, xanchor="right", yanchor="bottom", showarrow=False,
                                 text=f"average {career:.1f}", font=dict(size=11, color=c["muted"])))
     fig.update_layout(**_layout(c, bargap=0.25, height=340, shapes=shapes, annotations=annotations,
-                                xaxis=_axis(c, "Innings, in order"), yaxis=_axis(c, y_label)))
+                                xaxis=_axis(c, "Innings, in order", **({"dtick": 1} if len(runs) <= 15 else {})),
+                                yaxis=_axis(c, y_label, **({"dtick": 1} if y_label == "Wickets" and max(runs, default=0) <= 8 else {}))))
     return fig
 
 

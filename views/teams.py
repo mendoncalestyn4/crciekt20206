@@ -15,7 +15,7 @@ if career is None:
 
 m = career.matches
 page_header("Teams", "Team record", "Pick a section and a team. Every comparison is against the average of all the teams in that section.")
-c1, c2, c3, c4 = st.columns([2, 1, 1.6, 1.4])
+c1, c2, c3, c4 = st.columns([1.9, 1, 1.5, 1.7])
 sections = m.section.value_counts()
 section = c1.selectbox("Section", list(sections.index), key="tm_section", format_func=lambda s: f"{s} · {sections[s]} matches")
 seasons = sorted(m[m.section == section].season.unique(), reverse=True)
@@ -80,7 +80,8 @@ with st.container(border=True):
 left, right = st.columns(2, gap="medium")
 bat_t, bowl_t, _, _ = state.tables(career, scope, by_team=True)
 my_bat = bat_t[bat_t.team == team].sort_values("runs", ascending=False).head(6)
-my_bowl = bowl_t[bowl_t.team == team].sort_values("wickets", ascending=False).head(6)
+my_bowl = bowl_t[(bowl_t.team == team) & (bowl_t.wickets > 0)].sort_values(["wickets", "average"], ascending=[False, True]).head(6)
+my_bat = my_bat[my_bat.runs > 0]
 with left:
     with st.container(border=True):
         st.markdown("**Top run-scorers**")
@@ -129,7 +130,7 @@ with right:
             st.caption("No collapses. Nice.")
         else:
             st.dataframe(pd.DataFrame({"Date": col.date.dt.strftime("%d %b %Y"),
-                                       "Match": [f"{h} v {a}" for h, a in zip(col.home, col.away)],
+                                       "Against": [a if h == team else h for h, a in zip(col.home, col.away)],
                                        "Slide": [f"{f} → {t}" for f, t in zip(col.from_score, col.to_score)],
                                        "Lost": [f"{w} for {r}" for w, r in zip(col.wickets, col.runs)],
                                        "Finished on": col.total}), hide_index=True, width="stretch")
@@ -137,8 +138,11 @@ with right:
 with st.container(border=True):
     st.markdown("**Results**")
     res = tm.sort_values("date", ascending=False)
-    st.dataframe(pd.DataFrame({"Date": res.date.dt.strftime("%d %b %Y"), "Opponent": res.opponent, "Venue": res.venue.str.title(),
-                               "Stage": res.stage, "Result": res.result, "": res.outcome}), hide_index=True, width="stretch")
+    table_res = pd.DataFrame({"Date": res.date.dt.strftime("%d %b %Y"), "Opponent": res.opponent, "Venue": res.venue.str.title(),
+                              "Stage": res.stage, "Result": res.result, "": res.outcome})
+    if not res.stage.astype(bool).any():
+        table_res = table_res.drop(columns="Stage")
+    st.dataframe(table_res, hide_index=True, width="stretch")
 
 with st.container(border=True):
     st.markdown(f"**Every team in {section}**" + ("" if venue == "all" else f" · {venue_label.lower()} games only"))

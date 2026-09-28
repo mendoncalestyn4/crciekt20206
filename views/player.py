@@ -5,7 +5,7 @@ import streamlit as st
 from ccstats import analysis as A
 from ccstats.stats import Scope
 from ui import state
-from ui.charts import CONFIG, bars, fmt, form_chart
+from ui.charts import CONFIG, bars, fmt, form_chart, paired_bars
 from ui.theme import explain_list, kpis, page_header
 
 career = state.current()
@@ -49,11 +49,14 @@ def record_table(df: pd.DataFrame, first: str, bowling: bool, key: str) -> None:
     cfg = {c: st.column_config.NumberColumn(c, help=h, format="%d") for c, h in helps.items()
            if c in df and c not in ("HS", "Overs", "BBI", "BBM", "Avg", "SR", "Econ")}
     cfg |= {c: st.column_config.TextColumn(c, help=helps[c]) for c in ("HS", "Overs", "BBI", "BBM") if c in df}
-    cfg |= {c: st.column_config.NumberColumn(c, help=helps[c], format="%.2f") for c in ("Avg", "Econ") if c in df}
-    cfg["SR"] = st.column_config.NumberColumn("SR", help=helps["SR"], format="%.1f")
+    # decimals as text so "never dismissed" / "no wicket" reads "–", not "None"
+    dec = {"Avg": 2, "Econ": 2, "SR": 1}
+    cfg |= {c: st.column_config.TextColumn(c, help=helps[c]) for c in dec if c in df}
+    df = df.assign(**{c: [fmt(v, d) for v in df[c]] for c, d in dec.items() if c in df})
     # maidens / dots that the scorecard doesn't print show as a dash, not as 0
     cfg |= {c: st.column_config.TextColumn(c, help=helps[c]) for c in ("Mdns", "Dots") if c in df}
     df = df.assign(**{c: [("–" if pd.isna(v) else str(int(v))) for v in df[c]] for c in ("Mdns", "Dots") if c in df})
+    df = df.drop(columns=["Balls"], errors="ignore")  # Overs says the same and keeps the table on screen
     cfg[first] = st.column_config.TextColumn(first.title())
     st.dataframe(df, hide_index=True, width="stretch", column_config=cfg, key=key)
 
@@ -170,9 +173,10 @@ if "Batting" in tabs:
         if len(pr):
             with st.container(border=True):
                 st.markdown("**Average at each batting position** · compared with the average batter at that position")
-                st.plotly_chart(bars(pr.group, pr.average, "Average", 1,
-                                     notes=[f"{n} innings, {r} runs · average batter here: {fmt(s, 1)}"
-                                            for n, r, s in zip(pr.innings, pr.runs, pr.section_average)]),
+                st.plotly_chart(paired_bars(pr.group, pr.average, pr.section_average, player, "Average batter there",
+                                            "Average", 1,
+                                            notes=[f"{n} innings, {r} runs, strike rate {fmt(s, 1)}"
+                                                   for n, r, s in zip(pr.innings, pr.runs, pr.strike_rate)]),
                                 width="stretch", config=CONFIG, key="pl_positions")
                 best = pr[pr.innings >= 3].assign(edge=lambda d: d.average - d.section_average).dropna(subset=["edge"])
                 if len(best) > 1:
@@ -194,8 +198,11 @@ if "Batting" in tabs:
                 t = A.split_batting(ci, "situation")
                 st.plotly_chart(bars(t.situation, t.average, "Average", 1, reference=b.average,
                                      notes=[f"{n} innings" for n in t.innings]), width="stretch", config=CONFIG, key="pl_situation")
-                st.caption(f"On average they came in at **{ci.came_in_score.mean():.0f} for {ci.came_in_wickets.mean():.1f}**. "
-                           "The score comes from the fall of wickets: the number 5 walks in when the 3rd wicket falls.")
+                if len(ci):
+                    wk = float(ci.came_in_wickets.mean())
+                    st.caption(f"On average they came in at **{ci.came_in_score.mean():.0f} for "
+                               f"{fmt(wk, 0 if wk.is_integer() else 1)}**. "
+                               "The score comes from the fall of wickets: the number 5 walks in when the 3rd wicket falls.")
         with right:
             with st.container(border=True):
                 st.markdown("**Best rescue innings** · came in with 3 or more down for 60 or fewer")

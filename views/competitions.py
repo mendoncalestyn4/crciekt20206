@@ -37,11 +37,12 @@ shown_any = False
 leagues = T.league_tables(career, ids)
 if leagues:
     shown_any = True
-    st.subheader("League table" + ("s" if len(leagues) > 1 else ""), anchor=False)
+    bilateral = m[m.match_id.isin(ids)].competition.iloc[0] in T.BILATERAL
+    st.subheader("Every team's record" if bilateral else "League table" + ("s" if len(leagues) > 1 else ""), anchor=False)
     limited = m[m.match_id.isin(ids)].format.iloc[0] in T.LIMITED
     for label, t, rule in leagues:
         with st.container(border=True):
-            if len(leagues) > 1 or label not in ("League",):
+            if len(leagues) > 1 or label not in ("League", "Every team"):
                 st.markdown(f"**{label}**")
             cols = {"team": "Team", "played": "P", "won": "W", "lost": "L"}
             if t.drawn.any() or not limited:
@@ -64,7 +65,7 @@ if leagues:
                                         "Conceded/wkt": st.column_config.NumberColumn(format="%.2f")})
             st.caption(rule + ("" if not limited else " Net run rate: runs scored per over minus runs conceded per over; "
                                                       "a side bowled out counts as having used its full overs."))
-    if any(len(t) < 3 for _, t, _ in leagues) or len(leagues) > 1:
+    if not bilateral and (any(len(t) < 3 for _, t, _ in leagues) or len(leagues) > 1):
         st.caption("Groups are worked out from who played whom (teams in different groups never meet), so they only "
                    "separate cleanly once each team has played a couple of games.")
 
@@ -86,7 +87,8 @@ if len(ko):
             cards.append(f"<a class='ko-card' href='match?match={r.match_id}' target='_self'>"
                          f"<div class='ko-date'>{r.date:%d %b %Y}</div>{''.join(lines)}"
                          f"<div class='ko-res'>{html.escape(r.result)}</div></a>")
-        cols_html.append(f"<div class='ko-col'><div class='ko-round'>{html.escape(rnd)}</div>{''.join(cards)}</div>")
+        cols_html.append(f"<div class='ko-col'><div class='ko-round'>{html.escape(rnd)}</div>"
+                         f"<div class='ko-cards'>{''.join(cards)}</div></div>")
     st.markdown(f"<div class='ko'>{''.join(cols_html)}</div>", unsafe_allow_html=True)
     champ = ko[ko.stage == "Final"]
     if len(champ) == 1 and champ.through.iloc[0]:
@@ -103,7 +105,7 @@ if len(ser):
                                "Result": ser.result, "Drawn": ser.drawn, "Most runs": ser.top_runs,
                                "Most wickets": ser.top_wickets}), hide_index=True, width="stretch")
     for r in ser.itertuples():
-        with st.expander(f"{r.teams} · {r.score}"):
+        with st.expander(f"{r.teams} · {r.score} · {r.result}"):
             g = m[m.match_id.isin(r.match_ids)].sort_values("date")
             st.dataframe(pd.DataFrame({
                 "Match": [f"{int(n)} of {int(o)}" if pd.notna(n) else "" for n, o in zip(g.series_match_no, g.series_length)],

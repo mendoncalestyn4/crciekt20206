@@ -39,14 +39,13 @@ for group, names in GROUPS:
             with st.container(border=True):
                 st.markdown(f"**{name}**")
                 show = pd.DataFrame({
-                    "#": t["rank"], "": ["🆕" if s in fresh else "" for s in t.source],
-                    "Who": t.holder, "Record": t.value,
+                    "#": [str(r) for r in t["rank"]],
+                    "Who": [f"{h} 🆕" if s in fresh else h for h, s in zip(t.holder, t.source)], "Record": t.value,
                     "Against": [a if a else "" for a in t.against], "Date": t.date.dt.strftime("%d %b %Y")})
                 if "season" in name:
                     show = show.drop(columns=["Against", "Date"])
                 st.dataframe(show, hide_index=True, width="stretch",
-                             column_config={"#": st.column_config.NumberColumn(width="small"),
-                                            "": st.column_config.TextColumn(width="small")})
+                             column_config={"#": st.column_config.TextColumn(width=36)})
 st.caption("Equal records share a place. Partnerships come from the fall of wickets; * means unbroken at the end of "
            "the innings. The fastest fifties and hundreds can't be worked out because scorecards don't record when "
            "each run was scored.")

@@ -133,11 +133,16 @@ else:
     if not career.problems.empty:
         st.warning(f"{career.problems.match_id.nunique()} scorecard(s) failed the self-check (numbers that don't add up). "
                    "They'll be listed on the Data check page.")
+    st.write("")
     latest_records = new_records(career, recent_sources(career))
-    if latest_records:
-        with st.container(border=True):
-            st.markdown("**🏆 Latest records** · set in your 10 most recent matches")
+    with st.container(border=True):
+        st.markdown("**🏆 Latest records** · set in your 10 most recent matches")
+        if latest_records:
             st.markdown("\n".join(f"- {r.replace('New record in ', '', 1)}" for r in latest_records[:8]))
+        else:
+            st.caption("No records broken in your last 10 matches. When a new match sets one (highest score, best "
+                       "bowling, biggest total, …) it pops up here and as a message while you play. See every record "
+                       "on the Records page.")
     st.subheader("Sections", anchor=False)
     sec = (m.groupby("section")
            .agg(matches=("match_id", "size"), seasons=("season", lambda s: ", ".join(sorted(set(s)))),

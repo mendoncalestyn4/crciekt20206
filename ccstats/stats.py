@@ -342,7 +342,8 @@ def stat_definitions(base: Baseline) -> dict[str, list[Stat]]:
     field_ = [
         Stat("catches", "Catches", "catches", "high", 0,
              "Catches taken, credited under the fielder's own name (so 'c de Kock' counts for Q de Kock).",
-             DotChart("matches", "catches", "Matches played", "Catches", "slope", base.catches_per_match, "average per match",
+             DotChart("matches", "catches", "Matches played", "Catches", "slope", base.catches_per_match,
+                      f"{base.catches_per_match:.2f} catches per match" if np.isfinite(base.catches_per_match) else "average per match",
                       "Takes more catches per match than average.", "Takes fewer catches per match.", "Has played more matches.")),
         Stat("stumpings", "Stumpings", "stumpings", "high", 0, "Stumpings, wicketkeepers only.",
              DotChart("matches", "stumpings", "Matches played", "Stumpings", "slope", np.nan, "average per match",
@@ -364,5 +365,9 @@ def rank(table: pd.DataFrame, stat: Stat, best: bool = True, minimum: tuple[str,
     if stat.keepers_only:
         t = t[t.stumpings > 0]
     ascending = (stat.better == "low") == best
+    # Equal values: a "more is better" figure reached in fewer balls ranks higher (7 wickets in 66 balls
+    # beats 7 in 96); a "less is better" figure kept up over more balls ranks higher (no ducks in 20
+    # innings beats none in 2).  Fielding stats use matches the same way.
     tiebreak = "balls" if "balls" in t else "matches"
-    return t.sort_values([stat.column, tiebreak], ascending=[ascending, False])
+    tb_ascending = (stat.better == "high") == best
+    return t.sort_values([stat.column, tiebreak, "player"], ascending=[ascending, tb_ascending, True])

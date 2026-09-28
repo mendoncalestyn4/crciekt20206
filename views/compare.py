@@ -53,7 +53,7 @@ summary = pd.DataFrame({p: [rows.loc[p, col] if d is None else fmt(rows.loc[p, c
                        index=[f[0] for f in fields])
 with st.container(border=True):
     st.markdown(f"**{section}{'' if season == 'All seasons' else ' ' + season}**")
-    st.dataframe(summary, width="stretch")
+    st.dataframe(summary, width="stretch", height=35 * (len(summary) + 1) + 3)  # every row visible
 
 # ---------------------------------------------------------------- one chart per stat
 st.subheader("Stat by stat", anchor=False)
@@ -76,8 +76,16 @@ for i, stat in enumerate(defs):
                 ann.append(dict(x=stat.reference, y=1, yref="paper", xanchor="left", yanchor="bottom", showarrow=False,
                                 text=f"section average {fmt(stat.reference, max(stat.decimals, 1))}",
                                 font=dict(size=11, color=c["muted"])))
+            finite = [float(v) for v in vals if pd.notna(v)]
+            signed = stat.column in ("runs_above_average", "runs_saved")
+            extra = {}
+            if stat.decimals == 0 and max(finite, default=0) <= 8:
+                extra["dtick"] = 1  # counts never get half-way ticks
+            if not any(finite):
+                extra["range"] = [0, 1]  # everyone on 0: keep the axis starting at 0
             fig.update_layout(**_layout(c, height=70 + 42 * len(chosen), bargap=0.35, shapes=shapes, annotations=ann,
-                                        xaxis=_axis(c, stat.label, zeroline=True, zerolinecolor=c["axis"]),
+                                        xaxis=_axis(c, stat.label, zeroline=True, zerolinecolor=c["axis"],
+                                                    rangemode="normal" if signed else "tozero", **extra),
                                         yaxis=dict(autorange="reversed", showgrid=False, tickfont=dict(size=12, color=c["ink"]),
                                                    automargin=True),
                                         margin=dict(l=10, r=52, t=24, b=10)))

@@ -121,3 +121,21 @@ def test_every_derived_figure_follows_its_formula(career, fmt):
     # best bowling can never beat the bowler's own totals
     best_w = bowl.best.str.split("/").str[0].astype(int)
     assert (best_w <= bowl.wickets).all()
+
+
+def test_ties_go_to_the_player_who_needed_fewer_balls():
+    from pathlib import Path
+    from ccstats.loader import Career
+    files = sorted((Path(__file__).parent / "fixtures").glob("*.txt"))
+    c = Career.build("ties", [(p.name, p.read_bytes()) for p in files])
+    bat, bowl, _, base = player_tables(c, Scope(sections=["Indian Premier League"]))
+    defs = {s.id: s for s in stat_definitions(base)["bowl"]}
+    top = rank(bowl, defs["wickets"], best=True)
+    for (_, a), (_, b) in zip(top.iterrows(), top.iloc[1:].iterrows()):
+        if a.wickets == b.wickets:
+            assert a.balls <= b.balls  # same wickets: fewer balls first
+    assert list(top.player[:3]) != ["M Jansen", "K Rabada", "N Sindhu"]  # 7 wkts in 96 balls no longer tops 7 in 66
+    worst = rank(bowl, defs["wickets"], best=False)
+    for (_, a), (_, b) in zip(worst.iterrows(), worst.iloc[1:].iterrows()):
+        if a.wickets == b.wickets:
+            assert a.balls >= b.balls

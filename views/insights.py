@@ -50,6 +50,9 @@ with tab_total:
         with st.container(border=True):
             st.markdown(f"**Win % batting first, by {what}** · bands of {size} runs")
             st.plotly_chart(bars(table.band[::-1], table.win_pct[::-1], "Win % for the side batting first", 0,
+                                 texts=[f"{p:.0f}% · won {w} of {n}" for p, w, n in
+                                        zip(table.win_pct[::-1], table.won[::-1], table.matches[::-1])],
+                                 x_range=[0, 128],  # room for the text after a 100% bar
                                  notes=[f"{w} won, {l} lost" + (f", {d} drawn" if d else "") + (f", {t} tied" if t else "")
                                         + f" · {n} matches" for w, l, d, t, n in
                                         zip(table.won[::-1], table.lost[::-1], table.drawn[::-1], table.tied[::-1], table.matches[::-1])]),
@@ -64,8 +67,10 @@ with tab_home:
     if h.empty:
         st.info("No home-and-away matches yet (ICC events are played at neutral venues).")
     else:
+        h = h.assign(section=[f"{s} ({n})" for s, n in zip(h.section, h.matches)])
         with st.container(border=True):
-            st.markdown("**Home wins against away wins, in every section** · finished matches at home grounds")
+            st.markdown("**Home wins against away wins, in every section** · finished matches at home grounds, "
+                        "number of matches in brackets")
             fig = go.Figure([
                 go.Bar(y=h.section, x=h.home_pct, name="Home side won", orientation="h", marker=dict(color=c["s1"]),
                        text=[f"{p:.0f}%" for p in h.home_pct], textposition="inside",
@@ -79,7 +84,7 @@ with tab_home:
                        marker=dict(color=c["dim"]), hovertemplate="<b>%{y}</b><br>Draw or tie: %{x:.0f}%<extra></extra>"),
             ])
             fig.update_layout(**_layout(c, barmode="stack", height=max(240, 44 * len(h) + 90), showlegend=True,
-                                        legend=dict(orientation="h", y=1.08, x=0, font=dict(color=c["ink"])),
+                                        legend=dict(orientation="h", y=1.08, x=0, font=dict(color=c["ink"]), traceorder="normal"),
                                         xaxis=_axis(c, "% of matches", range=[0, 100]),
                                         yaxis=dict(type="category", autorange="reversed", automargin=True,
                                                    tickfont=dict(size=12, color=c["ink"])),

@@ -103,7 +103,7 @@ for r in inns.itertuples():
             "4s": [str(x) if db else "" for x, db in zip(b.fours, b.did_bat)],
             "6s": [str(x) if db else "" for x, db in zip(b.sixes, b.did_bat)],
             "SR": [fmt(x / y * 100, 1) if db and y else "" for x, y, db in zip(b.runs, b.balls, b.did_bat)],
-        }), hide_index=True, width="stretch")
+        }), hide_index=True, width="stretch", height=35 * (len(b) + 1) + 3)  # all eleven, no scrolling
         parts = [f"{k} {v}" for k, v in (("b", r.byes), ("lb", r.leg_byes), ("w", r.wides), ("nb", r.no_balls)) if v]
         st.caption(f"Extras {r.extras}" + (f" ({', '.join(parts)})" if parts else "") + f" · Total {tot} ({length})")
         w = bowl[bowl.innings_no == r.innings_no]
@@ -113,7 +113,7 @@ for r in inns.itertuples():
             ("Balls" if r.counted_in_balls else "O"): [str(x) if r.counted_in_balls else balls_to_overs(x) for x in w.balls],
             ("Dots" if dots else "M"): [int(x) if pd.notna(x) else 0 for x in (w.dots if dots else w.maidens)],
             "R": w.runs, "W": w.wickets, "Econ": [fmt(x / y * 6, 2) if y else "–" for x, y in zip(w.runs, w.balls)],
-        }), hide_index=True, width="stretch")
+        }), hide_index=True, width="stretch", height=35 * (len(w) + 1) + 3)
         f = fow[fow.innings_no == r.innings_no].sort_values("wicket")
         if len(f):
             prev, stands = 0, []

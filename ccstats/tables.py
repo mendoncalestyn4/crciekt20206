@@ -32,46 +32,60 @@ def points_rule(competition: str, fmt: str) -> tuple[str, dict]:
 
 
 def _groups(matches: pd.DataFrame) -> list[tuple[str, pd.DataFrame]]:
-    """Split league matches into groups: by the stage name first (North Group /
-    South Group), then by who played whom, since teams in different groups never meet."""
-    out = []
-    for stage, sm in matches.groupby("stage", sort=False):
-        teams = sorted(set(sm.home) | set(sm.away))
-        parent = {t: t for t in teams}
+    """Split league matches into groups by who played whom (teams in different
+    groups never meet), so a team is only ever in one table.  Each group is
+    named from its matches' stage ("North Group"), or Group A, B, … when the
+    scorecards only say "Group Match"."""
+    teams = sorted(set(matches.home) | set(matches.away))
+    parent = {t: t for t in teams}
 
-        def find(t):
-            while parent[t] != t:
-                parent[t] = parent[parent[t]]
-                t = parent[t]
-            return t
+    def find(t):
+        while parent[t] != t:
+            parent[t] = parent[parent[t]]
+            t = parent[t]
+        return t
 
-        for h, a in zip(sm.home, sm.away):
-            parent[find(h)] = find(a)
-        comps: dict[str, set] = {}
-        for t in teams:
-            comps.setdefault(find(t), set()).add(t)
-        parts = sorted(comps.values(), key=lambda s: sm[sm.home.isin(s) | sm.away.isin(s)].date.min())
-        base = stage if stage and not stage.startswith("Division") else ""
-        if len(parts) == 1 or any(len(p) < 3 for p in parts):
-            out.append((base or "League", sm))  # one group (or too few games yet to tell groups apart)
-        else:
-            for i, p in enumerate(parts):
-                label = f"{base + ' ' if base and base != 'Group' else ''}Group {chr(65 + i)}".strip()
-                out.append((label, sm[sm.home.isin(p) | sm.away.isin(p)]))
+    for h, a in zip(matches.home, matches.away):
+        parent[find(h)] = find(a)
+    comps: dict[str, set] = {}
+    for t in teams:
+        comps.setdefault(find(t), set()).add(t)
+    parts = sorted(comps.values(), key=lambda s: matches[matches.home.isin(s) | matches.away.isin(s)].date.min())
+
+    def name_of(gm: pd.DataFrame) -> str:
+        named = gm.stage[~gm.stage.isin(["", "Group"]) & ~gm.stage.str.startswith("Division")]
+        return named.mode().iloc[0] if len(named) else ""
+
+    if len(parts) == 1 or any(len(p) < 3 for p in parts):
+        # one group, or too few games yet to tell the groups apart
+        return [(name_of(matches) if len(parts) == 1 and name_of(matches) else "League", matches)]
+    out, letters = [], iter("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    for p in parts:
+        gm = matches[matches.home.isin(p) | matches.away.isin(p)]
+        out.append((name_of(gm) or f"Group {next(letters)}", gm))
     return out
 
 
+BILATERAL = {"Test", "ODI", "T20I"}  # competition names of bilateral internationals
+
+
 def league_tables(career, ids) -> list[tuple[str, pd.DataFrame, str]]:
-    """[(group name, table, points rule)] for the league (non-knockout) matches."""
+    """[(group name, table, points rule)] for the league (non-knockout) matches.
+    Bilateral internationals have no league: they get one table of every
+    team's record, ordered by wins, with no points."""
     m = career.matches[career.matches.match_id.isin(ids) & ~career.matches.knockout].sort_values("date")
     if m.empty:
         return []
     comp, fmt = m.competition.iloc[0], m.format.iloc[0]
+    bilateral = comp in BILATERAL
     rule_text, pts = points_rule(comp, fmt)
+    if bilateral:
+        rule_text, pts = ("Bilateral series have no league table, so this is each team's record in them, ordered by "
+                          "wins, then fewest defeats."), {}
     inn = career.innings[career.innings.match_id.isin(m.match_id)]
     first = inn[inn.team_innings == 1].groupby(["match_id", "team"]).runs.sum()
     out = []
-    for label, gm in _groups(m):
+    for label, gm in ([("Every team", m)] if bilateral else _groups(m)):
         tt = A.team_table(career, gm.match_id).set_index("team")
         rows = []
         for team in tt.index:
@@ -135,11 +149,10 @@ def series_table(career, ids) -> pd.DataFrame:
             lead, trail = (a, b) if wa > wb else (b, a)
             line = f"{lead} {max(wa, wb)}–{min(wa, wb)} {trail}"
         done = len(g) >= length
-        state = "" if done else f" · {len(g)} of {length} played"
-        rows.append(dict(series_id=sid, start=g.date.min(), teams=f"{a} v {b}", score=line + state,
+        rows.append(dict(series_id=sid, start=g.date.min(), teams=f"{a} v {b}", score=line,
                          played=len(g), length=length, drawn=int((g.result_type == "draw").sum()),
                          result=("Series drawn" if wa == wb else f"{a if wa > wb else b} won the series") if done else
-                         ("Level so far" if wa == wb else f"{a if wa > wb else b} lead"),
+                         ("Level" if wa == wb else f"{a if wa > wb else b} lead") + f" · {len(g)} of {length} played",
                          top_runs=f"{bat.idxmax()} ({int(bat.max())})" if len(bat) else "–",
                          top_wickets=f"{bowl.idxmax()} ({int(bowl.max())})" if len(bowl) and bowl.max() > 0 else "–",
                          match_ids=list(g.match_id)))

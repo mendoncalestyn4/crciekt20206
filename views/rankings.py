@@ -81,8 +81,9 @@ with tab_t:
         left, right = st.columns([1, 1.4], gap="medium")
         with left:
             with st.container(border=True):
-                st.markdown("**Current Elo**")
-                st.plotly_chart(bars(elo.team, elo.elo, "Elo rating", 0, reference=1500, reference_label="start",
+                st.markdown("**Current Elo** · above (blue) or below (red) the 1500 every team starts on")
+                st.plotly_chart(bars(elo.team, elo.elo - 1500, "Points above or below 1500", 0, signed=True,
+                                     texts=[f"{e:.0f}" for e in elo.elo],
                                      notes=[f"{n} matches · best {p:.0f}" for n, p in zip(elo.played, elo.peak)]),
                                 width="stretch", config=CONFIG, key="rk_elo")
         with right:

@@ -103,7 +103,7 @@ with right:
         st.plotly_chart(dot_chart(pool, shown, stat, best, highlight), width="stretch", config=CONFIG, key="sbs_dots")
         better_side = "below" if d.better_below else "above"
         explain_list([
-            ("line", f"<b>Dashed line</b>: the average player in this section: {d.line_label}. A dot on the line is exactly average."),
+            ("line", f"<b>Dashed line</b>: the average player in this section{where}: {d.line_label}. A dot on the line is exactly average."),
             ("shade", f"<b>Shaded area ({better_side} the line)</b>: {d.below if d.better_below else d.above} This is the better side."),
             ("", f"<b>{'Above' if d.better_below else 'Below'} the line</b>: {d.above if d.better_below else d.below}"),
             ("", f"<b>Further right</b>: {d.right} The further right a dot is, the more you can trust its position."),
@@ -123,6 +123,8 @@ elif disc == "Bowling":
             "hauls": "4w+", "five_fors": "5w", "runs_saved": "Runs saved"}
 else:
     cols = {"player": "Player", "teams": "Team", "matches": "Mat", "catches": "Ct", "stumpings": "St", "dismissals": "Total"}
+if base.kind != "multi":
+    cols.pop("best_match", None)  # one innings each: best in a match is always the same as best in an innings
 if stat.column not in cols:  # the ranked stat is always in the table (e.g. 50+ scores)
     cols = {**dict(list(cols.items())[:3]), stat.column: stat.label, **dict(list(cols.items())[3:])}
 out = shown[list(cols)].rename(columns=cols).reset_index(drop=True)
@@ -137,6 +139,8 @@ for k, v in cols.items():
 with st.container(border=True):
     st.markdown(f"**Full figures for the players ranked above** · sorted by {stat.label.lower()}")
     st.dataframe(out.style.set_properties(subset=[cols[stat.column]], **{"font-weight": "700"}),
-                 width="stretch", height=min(35 * (len(out) + 1) + 3, 720))
+                 width="stretch", height=min(35 * (len(out) + 1) + 3, 720),
+                 column_config={"Role": st.column_config.TextColumn("Role", width="small",
+                                                                    help="From where they bat and how much they bowl in this section")})
     st.download_button("Download this table (CSV)", out.to_csv(index_label="#").encode(),
                        file_name=f"{section} {stat.label}.csv".replace("/", "-"), key="sbs_dl")

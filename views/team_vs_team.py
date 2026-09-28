@@ -30,7 +30,7 @@ if len(teams) < 2:
     st.stop()
 a = r1[2].selectbox("Team A", teams, key="tv_a")
 b = r1[3].selectbox("Team B", [t for t in teams if t != a], key="tv_b")
-r2 = st.columns([1.4, 2, 3])
+r2 = st.columns([1.7, 2.6, 1.7])
 venue_label = r2[0].segmented_control("Venue", ["Overall", "Home", "Away"], default="Overall", key="tv_venue") or "Overall"
 which = r2[1].segmented_control("Matches", ["All matches", "Only against each other"], default="All matches", key="tv_which") or "All matches"
 venue = venue_label.lower().replace("overall", "all")
@@ -163,9 +163,17 @@ def two_team_scatter(key, da, db, x, y, x_label, y_label, slope, line_label, hov
         fig.add_trace(go.Scatter(x=d[x], y=d[y], mode="markers", name=team, marker=dict(size=11, color=colour, line=dict(color=c["surface"], width=2)),
                                  customdata=[hover(r) for r in d.itertuples()], hovertemplate="%{customdata}<extra></extra>"))
     ann = []
-    for d in (da, db):
-        for r in d.sort_values(y, ascending=False).head(3).itertuples():
-            ann.append(dict(x=getattr(r, x), y=getattr(r, y), text=r.player, showarrow=False, yshift=13, font=dict(size=11, color=c["ink2"])))
+    placed: list[tuple[float, float, int]] = []  # stack names whose dots sit close together
+    top = pd.concat([d.sort_values(y, ascending=False).head(3) for d in (da, db)]).sort_values(y, ascending=False)
+    for r in top.itertuples():
+        nx, ny = getattr(r, x) / xmax, getattr(r, y) / ymax
+        shift = 13
+        for px, py, ps in placed:
+            if abs(px - nx) < 0.14 and abs(py - ny) < 0.05:
+                shift = max(shift, ps + 14)
+        placed.append((nx, ny, shift))
+        ann.append(dict(x=getattr(r, x), y=getattr(r, y), text=r.player, showarrow=False, yshift=shift,
+                        font=dict(size=11, color=c["ink2"])))
     ann.append(dict(x=xmax * 0.3, y=slope * xmax * 0.3, xanchor="left", yanchor="top", xshift=6, showarrow=False,
                     text=line_label, font=dict(size=11, color=c["muted"])))
     fig.update_layout(**_layout(c, height=440, showlegend=True, legend=dict(orientation="h", y=1.08, x=0), annotations=ann,
