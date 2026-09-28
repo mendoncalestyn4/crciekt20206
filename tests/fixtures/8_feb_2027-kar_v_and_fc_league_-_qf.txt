@@ -1,0 +1,141 @@
+************************************************************
+Karnataka v Andhra
+FC League - Qtr-Final - 8 Feb 2027
+************************************************************
+
+Karnataka - 1st Innings                   R    B    4s  6s
+------------------------------------------------------------
+L Rahul         b Rafi                    22   93   1   -
+K Bedare        lbw b Rafi                8    23   1   -
+D Padikkal      lbw b Kumar               14   36   1   -
+R Smaran        c & b Anjaneyulu          42   105  4   -
+S Shedge        c Rasheed b Kumar         33   38   4   1
+M Pandey        c Singh b Rafi            10   27   2   -
+K Pandya        not out                   77   62   14  2
+S Gopal         b Anjaneyulu              2    9    -   -
+V Vyshak        c Bhui b Sasikanth        9    26   1   -
+M Khan          c Bharat b Sasikanth      0    3    -   -
+A Shetty        b Rafi                    7    17   1   -
+------------------------------------------------------------
+Extras: (nb3,b1,lb3)                      7
+TOTAL: (all out, 72.4 overs)              231
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+V Sasikanth     22     2     63     2     2.86
+M Rafi          22.4   3     89     4     3.93
+B Kumar         17     3     35     2     2.06
+M Anjaneyulu    11     3     40     2     3.64
+------------------------------------------------------------
+Fall of Wickets:
+1-14  2-38  3-68  4-124  5-125  
+6-149  7-152  8-174  9-174  10-231
+
+************************************************************
+************************************************************
+
+Andhra - 1st Innings                      R    B    4s  6s
+------------------------------------------------------------
+H Muzumdar      c Rahul b Shetty          36   80   3   1
+S Bharat        c Pandey b Shetty         62   98   9   -
+S Rasheed       c Shetty b Gopal          64   122  5   1
+R Bhui          b Gopal                   21   23   3   -
+H Tector        c Padikkal b Pandya       61   82   9   1
+P Singh         run out                   20   51   -   1
+P Tapaswi       c Padikkal b Gopal        1    2    -   -
+M Anjaneyulu    lbw b Vyshak              18   46   1   -
+V Sasikanth     c Padikkal b Vyshak       4    4    1   -
+B Kumar         not out                   1    5    -   -
+M Rafi          c Rahul b Vyshak          0    1    -   -
+------------------------------------------------------------
+Extras: (nb5,w1,lb2)                      8
+TOTAL: (all out, 84.5 overs)              296
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+A Shetty        21     4     78     2     3.71
+V Vyshak        20.5   4     63     3     3.02
+M Khan          7      0     35     0     5.00
+S Gopal         21     2     79     3     3.76
+K Pandya        15     2     39     1     2.60
+------------------------------------------------------------
+Fall of Wickets:
+1-79  2-114  3-151  4-251  5-253  
+6-254  7-290  8-294  9-295  10-296
+
+************************************************************
+************************************************************
+
+Karnataka - 2nd Innings                   R    B    4s  6s
+------------------------------------------------------------
+L Rahul         b Rafi                    11   35   2   -
+K Bedare        c Bharat b Sasikanth      24   43   2   1
+D Padikkal      c Rasheed b Anjaneyulu    17   28   4   -
+R Smaran        c Bharat b Kumar          201  392  28  1
+S Shedge        lbw b Rafi                78   179  8   1
+M Pandey        c Rasheed b Anjaneyulu    54   119  8   -
+K Pandya        b Anjaneyulu              7    14   1   -
+S Gopal         c Bharat b Sasikanth      12   32   2   -
+V Vyshak        c Bharat b Sasikanth      14   49   1   1
+M Khan          b Kumar                   4    23   1   -
+A Shetty        not out                   0    3    -   -
+------------------------------------------------------------
+Extras: (nb4,w3,b2,lb3)                   12
+TOTAL: (all out, 152.1 overs)             434
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+V Sasikanth     41.1   6     102    3     2.48
+M Rafi          14     0     51     2     3.64
+P Tapaswi       1      0     8      0     8.00
+B Kumar         52     11    141    2     2.71
+M Anjaneyulu    44     10    127    3     2.89
+------------------------------------------------------------
+Fall of Wickets:
+1-35  2-35  3-60  4-263  5-390  
+6-400  7-412  8-418  9-434  10-434
+
+************************************************************
+************************************************************
+
+Andhra - 2nd Innings                      R    B    4s  6s
+------------------------------------------------------------
+H Muzumdar      lbw b Vyshak              5    37   -   -
+S Bharat        c Khan b Vyshak           16   32   3   -
+S Rasheed       not out                   98   245  11  -
+R Bhui          c Rahul b Khan            22   56   3   -
+H Tector        c Shetty b Gopal          13   35   1   -
+P Singh         c & b Khan                9    22   1   -
+P Tapaswi       c Shedge b Khan           37   84   6   -
+M Anjaneyulu    c Rahul b Gopal           1    7    -   -
+V Sasikanth     c Rahul b Gopal           11   14   2   -
+B Kumar         c Shetty b Gopal          3    17   -   -
+M Rafi          c Padikkal b Pandya       1    20   -   -
+------------------------------------------------------------
+Extras: (nb2,w2,b4,lb2)                   10
+TOTAL: (all out, 94.3 overs)              226
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+A Shetty        12     4     20     0     1.67
+V Vyshak        10     4     12     2     1.20
+M Khan          34     6     95     3     2.79
+K Pandya        14.3   3     32     1     2.21
+S Gopal         24     7     61     4     2.54
+------------------------------------------------------------
+Fall of Wickets:
+1-20  2-21  3-78  4-101  5-119  
+6-179  7-186  8-206  9-215  10-226
+
+************************************************************
+Karnataka won by 143 runs
+Man of the match: R Smaran
+************************************************************

@@ -162,3 +162,15 @@ def test_ipl_playoff_titles():
     assert load("29_may_2026-pnj_v_mmb_ipl_-_q2.txt").title == "Indian Premier League - Qualifier 2"
     final = load("31_may_2026-gjt_v_pnj_ipl_-_f.txt")
     assert (final.title, final.winner) == ("Indian Premier League - Final", "Gujarat Titans")
+
+
+def test_cc2025_fc_league_byes_and_tiebreak_result():
+    m = load("6_nov_2027-kar_v_goa_fc_league.txt")
+    assert m.title == "FC League"
+    kar2 = m.innings[2]
+    assert (kar2.byes, kar2.leg_byes, kar2.no_balls, kar2.extras) == (8, 7, 3, 18)
+    # drawn knockout decided by the game's tiebreak - no margin given
+    m = load("17_feb_2026-guj_v_kar_fc_league_-_sf.txt")
+    assert m.title == "FC League - Semi-Final"
+    assert (m.result, m.winner) == ("Karnataka won on more wickets left", "Karnataka")
+    assert m.margin_runs is None and m.margin_wickets is None
