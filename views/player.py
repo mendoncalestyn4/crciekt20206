@@ -33,26 +33,54 @@ page_header(" · ".join(teams) + (" · Wicketkeeper" if is_keeper else ""), play
             "Pick a section below; every figure on this page is for that section only.")
 
 # ---------------------------------------------------------------- career by section
-rows = []
-for sec, grp in my_matches.groupby("section"):
-    bat, bowl, _, _ = state.tables(career, Scope(sections=[sec]))
-    b = bat[bat.player == player]
-    w = bowl[bowl.player == player]
-    rows.append(dict(
-        Section=sec, Mat=len(grp), Inns=int(b.innings.sum()) if len(b) else 0, Runs=int(b.runs.sum()) if len(b) else 0,
-        Avg=fmt(b.average.iloc[0], 1) if len(b) else "–", SR=fmt(b.strike_rate.iloc[0], 1) if len(b) else "–",
-        HS=b.high_score_text.iloc[0] if len(b) else "–", **{"100s": int(b.hundreds.sum()) if len(b) else 0,
-                                                             "50s": int(b.fifties.sum()) if len(b) else 0},
-        Wkts=int(w.wickets.sum()) if len(w) else 0, BAvg=fmt(w.average.iloc[0], 1) if len(w) else "–",
-        Econ=fmt(w.economy.iloc[0], 2) if len(w) else "–", Best=w.best.iloc[0] if len(w) else "–"))
-by_section = pd.DataFrame(rows).sort_values("Mat", ascending=False)
+BAT_HELP = {"Mat": "Matches played", "Inns": "Innings batted", "NO": "Not outs", "HS": "Highest score (* = not out)",
+            "Avg": "Runs per dismissal", "BF": "Balls faced", "SR": "Runs per 100 balls", "100": "Hundreds",
+            "50": "Fifties (50-99)", "0": "Ducks", "Ct": "Catches", "St": "Stumpings"}
+BOWL_HELP = {"Mat": "Matches played", "Inns": "Innings bowled in", "Overs": "Six-ball overs (The Hundred's balls are converted)",
+             "Mdns": "Maidens (only printed on longer-format cards)", "Dots": "Dot balls (only printed on T20 and Hundred cards)",
+             "Wkts": "Wickets", "BBI": "Best bowling in an innings", "BBM": "Best bowling in a match",
+             "Avg": "Runs per wicket", "Econ": "Runs per over", "SR": "Balls per wicket", "4w": "Four wickets in an innings",
+             "5w": "Five or more wickets in an innings", "10m": "Ten or more wickets in a match"}
+
+
+def record_table(df: pd.DataFrame, first: str, bowling: bool, key: str) -> None:
+    """The standard batting or bowling table, identical in every section."""
+    helps = BOWL_HELP if bowling else BAT_HELP
+    cfg = {c: st.column_config.NumberColumn(c, help=h, format="%d") for c, h in helps.items()
+           if c in df and c not in ("HS", "Overs", "BBI", "BBM", "Avg", "SR", "Econ")}
+    cfg |= {c: st.column_config.TextColumn(c, help=helps[c]) for c in ("HS", "Overs", "BBI", "BBM") if c in df}
+    cfg |= {c: st.column_config.NumberColumn(c, help=helps[c], format="%.2f") for c in ("Avg", "Econ") if c in df}
+    cfg["SR"] = st.column_config.NumberColumn("SR", help=helps["SR"], format="%.1f")
+    # maidens / dots that the scorecard doesn't print show as a dash, not as 0
+    cfg |= {c: st.column_config.TextColumn(c, help=helps[c]) for c in ("Mdns", "Dots") if c in df}
+    df = df.assign(**{c: [("–" if pd.isna(v) else str(int(v))) for v in df[c]] for c in ("Mdns", "Dots") if c in df})
+    cfg[first] = st.column_config.TextColumn(first.title())
+    st.dataframe(df, hide_index=True, width="stretch", column_config=cfg, key=key)
+
+
+all_ids = my_matches.match_id
+order = list(my_matches.section.value_counts().index)  # most-played section first
+
+
+def by_order(df: pd.DataFrame) -> pd.DataFrame:
+    return df.assign(_o=df.section.map(order.index)).sort_values("_o").drop(columns="_o").reset_index(drop=True)
+
+
+bat_rec = by_order(A.batting_record(career, all_ids, player))
+bowl_rec = by_order(A.bowling_record(career, all_ids, player))
 with st.container(border=True):
-    st.markdown("**Career by section**")
-    st.dataframe(by_section, hide_index=True, width="stretch",
-                 column_config={"BAvg": st.column_config.TextColumn("Bowl avg"), "Econ": "Econ", "Best": "Best"})
+    st.markdown("**Batting and fielding · every section**")
+    record_table(bat_rec, "section", False, "pl_bat_rec")
+    if len(bowl_rec):
+        st.markdown("**Bowling · every section**")
+        record_table(bowl_rec, "section", True, "pl_bowl_rec")
+    else:
+        st.caption("Hasn't bowled.")
+    st.caption("Same columns in every section. Hover a column name for what it means. Maidens are only printed on "
+               "longer-format scorecards and dot balls only on T20 and Hundred scorecards, so one of them is blank.")
 
 c1, c2 = st.columns([2, 1])
-section = c1.selectbox("Section", list(by_section.Section), key="pl_section")
+section = c1.selectbox("Section", list(order), key="pl_section")
 seasons = sorted(my_matches[my_matches.section == section].season.unique(), reverse=True)
 season = c2.selectbox("Season", ["All seasons"] + seasons, key="pl_season")
 scope = Scope(sections=[section], seasons=[] if season == "All seasons" else [season])
@@ -87,7 +115,7 @@ if "Batting" in tabs:
             hover = [f"{r.runs}{'' if r.out else '*'} off {r.balls} v {r.opposition} · {r.date:%d %b %Y}" for r in inns.itertuples()]
             st.plotly_chart(form_chart(inns.runs, ~inns.out, hover), width="stretch", config=CONFIG, key="pl_form")
             explain_list([("", "<b>Grey bars</b>: runs in each innings, oldest on the left."),
-                          ("dot", "<b>Blue line</b>: average over the last 10 innings. Rising means in form, falling means out of form."),
+                          ("dot", "<b>Blue line</b>: average over the last 10 innings (5 for a shorter career). Rising means in form, falling means out of form."),
                           ("line", "<b>Dashed line</b>: average over every innings shown.")])
 
         left, right = st.columns(2, gap="medium")
@@ -106,6 +134,10 @@ if "Batting" in tabs:
                 else:
                     st.plotly_chart(bars([h.title() for h in ho.index], ho.values, "Dismissals"), width="stretch",
                                     config=CONFIG, key="pl_howout")
+        with st.container(border=True):
+            st.markdown(f"**Every season in {section}** · the same columns as the table at the top")
+            record_table(A.batting_record(career, ids, player, by="season").sort_values("season", ascending=False),
+                         "season", False, "pl_bat_seasons")
 
         st.subheader("Average in different situations", anchor=False)
         st.caption(f"Each chart splits the same innings one way. The dashed line is their overall average ({fmt(b.average, 1)}).")
@@ -119,7 +151,7 @@ if "Batting" in tabs:
             with cols[i % 2]:
                 with st.container(border=True):
                     st.markdown(f"**{title}**")
-                    st.plotly_chart(bars(t[col], t.average.fillna(0), "Average", 1, reference=b.average,
+                    st.plotly_chart(bars(t[col], t.average, "Average", 1, reference=b.average,
                                          notes=[f"{n} innings, {r} runs, strike rate {fmt(s, 1)}" for n, r, s in zip(t.innings, t.runs, t.strike_rate)]),
                                     width="stretch", config=CONFIG, key=f"pl_split_{i}")
         with st.container(border=True):
@@ -138,7 +170,7 @@ if "Batting" in tabs:
             with st.container(border=True):
                 st.markdown("**Average by the situation they walked into**")
                 t = A.split_batting(ci, "situation")
-                st.plotly_chart(bars(t.situation, t.average.fillna(0), "Average", 1, reference=b.average,
+                st.plotly_chart(bars(t.situation, t.average, "Average", 1, reference=b.average,
                                      notes=[f"{n} innings" for n in t.innings]), width="stretch", config=CONFIG, key="pl_situation")
                 st.caption(f"On average they came in at **{ci.came_in_score.mean():.0f} for {ci.came_in_wickets.mean():.1f}**. "
                            "The score comes from the fall of wickets: the number 5 walks in when the 3rd wicket falls.")
@@ -159,11 +191,13 @@ if "Batting" in tabs:
             with st.container(border=True):
                 st.markdown("**Consistency**")
                 cs = A.consistency(inns, kind)
-                kpis([(f"{cs['bar']}+ scores", f"{cs['past_bar_pct']:.0f}%"), ("Out in single figures", f"{cs['single_figures_pct']:.0f}%"),
-                      ("Golden ducks", f"{cs['golden_ducks']}"),
-                      ("50s turned into 100s", "–" if np.isnan(cs["conversion_pct"]) else f"{cs['conversion_pct']:.0f}%")])
-                st.caption(f"'{cs['bar']}+ scores' is how often they pass {cs['bar']}, a decent score in this format. "
-                           "A golden duck is out first ball.")
+                kpis([(f"{cs['bar']}+ scores", f"{cs['past_bar_pct']:.0f}%"), ("Single figures", f"{cs['single_figures_pct']:.0f}%")])
+                st.write("")
+                kpis([("Golden ducks", f"{cs['golden_ducks']}"),
+                      ("50s → 100s", "–" if np.isnan(cs["conversion_pct"]) else f"{cs['conversion_pct']:.0f}%")])
+                st.caption(f"'{cs['bar']}+ scores' is how often they pass {cs['bar']}, a decent score in this format. 'Single figures' "
+                           "is how often they're out for under 10. A golden duck is out first ball. '50s → 100s' is how often a "
+                           "fifty is turned into a hundred.")
         with right:
             with st.container(border=True):
                 st.markdown("**Nemesis** · bowlers who have dismissed them most")
@@ -176,7 +210,7 @@ if "Batting" in tabs:
         with st.container(border=True):
             st.markdown("**Against each team** · average")
             t = A.split_batting(inns, "opposition").sort_values("runs", ascending=False)
-            st.plotly_chart(bars(t.opposition, t.average.fillna(0), "Average", 1, reference=b.average,
+            st.plotly_chart(bars(t.opposition, t.average, "Average", 1, reference=b.average,
                                  notes=[f"{n} innings, {r} runs, best {h}" for n, r, h in zip(t.innings, t.runs, t.high)]),
                             width="stretch", config=CONFIG, key="pl_vs")
 
@@ -194,7 +228,7 @@ if "Bowling" in tabs:
             st.plotly_chart(form_chart(spells.wickets, [False] * len(spells), hover, y_label="Wickets"),
                             width="stretch", config=CONFIG, key="pl_bform")
             explain_list([("", "<b>Grey bars</b>: wickets in each innings bowled."),
-                          ("dot", "<b>Blue line</b>: wickets per innings over the last 10."),
+                          ("dot", "<b>Blue line</b>: wickets per innings over the last 10 (5 for a shorter career)."),
                           ("line", "<b>Dashed line</b>: wickets per innings over everything shown.")])
         left, right = st.columns(2, gap="medium")
         with left:
@@ -211,6 +245,10 @@ if "Bowling" in tabs:
                     st.caption("No wickets yet.")
                 else:
                     st.plotly_chart(bars([h.title() for h in wt.index], wt.values, "Wickets"), width="stretch", config=CONFIG, key="pl_wtypes")
+        with st.container(border=True):
+            st.markdown(f"**Every season in {section}** · the same columns as the table at the top")
+            record_table(A.bowling_record(career, ids, player, by="season").sort_values("season", ascending=False),
+                         "season", True, "pl_bowl_seasons")
         left, right = st.columns(2, gap="medium")
         with left:
             with st.container(border=True):

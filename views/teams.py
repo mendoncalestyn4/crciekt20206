@@ -43,8 +43,8 @@ if venue != "all":
     tm = tm[tm.venue == venue]
 sk = A.streaks(list(tm.outcome))
 cur = sk["current"]
-kpis([("Played", f"{me.played}"), ("Won–Lost", f"{me.won}–{me.lost}"), ("Win %", f"{me.win_pct:.0f}%")]
-     + ([("Net run rate", f"{me.nrr:+.2f}")] if limited else [("Drawn", f"{me.drawn}")])
+kpis([("Played", f"{int(me.played)}"), ("Won–Lost", f"{int(me.won)}–{int(me.lost)}"), ("Win %", f"{me.win_pct:.0f}%")]
+     + ([("Net run rate", f"{me.nrr:+.2f}")] if limited else [("Drawn", f"{int(me.drawn)}")])
      + [("Current run", f"{cur[1]} {dict(W='won', L='lost', D='drawn', T='tied', NR='no result').get(cur[0], '')}" if cur[0] else "–"),
         ("Last 5", " ".join(sk["last5"]) or "–")])
 st.caption(f"Longest winning run: {sk['longest_win']} · longest losing run: {sk['longest_loss']}")

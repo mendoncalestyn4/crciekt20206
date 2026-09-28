@@ -83,6 +83,66 @@ def split_bowling(spells: pd.DataFrame, by: str) -> pd.DataFrame:
     return t
 
 
+def _overs(balls: int) -> str:
+    return f"{balls // 6}" + (f".{balls % 6}" if balls % 6 else "")
+
+
+def batting_record(career, ids, player: str, by: str = "section") -> pd.DataFrame:
+    """A player's standard batting figures, one row per section (or season).
+    The columns are the same whatever the format, so every section reads alike."""
+    b = career.batting[career.batting.match_id.isin(ids) & (career.batting.player == player)]
+    b = b.merge(career.matches[["match_id", "section", "season"]], on="match_id")
+    f = career.fielding[career.fielding.match_id.isin(ids) & career.fielding.resolved & (career.fielding.player == player)]
+    f = f.merge(career.matches[["match_id", "section", "season"]], on="match_id")
+    rows = []
+    for key, g in b.groupby(by, sort=False):
+        d = g[g.did_bat]
+        outs = int(d.out.sum())
+        runs, balls = int(d.runs.sum()), int(d.balls.sum())
+        top = d.assign(_r=d.runs * 2 + ~d.out).sort_values("_r").tail(1)
+        mine_f = f[f[by] == key]
+        rows.append({by: key, "Mat": g.match_id.nunique(), "Inns": len(d), "NO": len(d) - outs, "Runs": runs,
+                     "HS": f"{int(top.runs.iloc[0])}{'' if top.out.iloc[0] else '*'}" if len(d) else "–",
+                     "Avg": runs / outs if outs else np.nan, "BF": balls, "SR": runs / balls * 100 if balls else np.nan,
+                     "100": int((d.runs >= 100).sum()), "50": int(((d.runs >= 50) & (d.runs < 100)).sum()),
+                     "0": int(((d.runs == 0) & d.out).sum()), "4s": int(d.fours.sum()), "6s": int(d.sixes.sum()),
+                     "Ct": int((mine_f.kind == "caught").sum()), "St": int((mine_f.kind == "stumped").sum())})
+    cols = [by, "Mat", "Inns", "NO", "Runs", "HS", "Avg", "BF", "SR", "100", "50", "0", "4s", "6s", "Ct", "St"]
+    return pd.DataFrame(rows, columns=cols)
+
+
+def bowling_record(career, ids, player: str, by: str = "section") -> pd.DataFrame:
+    """A player's standard bowling figures, one row per section (or season),
+    with the same columns in every format. Maidens are only printed on
+    longer-format cards and dot balls only on T20 cards, so the other one
+    shows as blank."""
+    mat = career.matches[["match_id", "section", "season"]]
+    appeared = career.batting[career.batting.match_id.isin(ids) & (career.batting.player == player)].merge(mat, on="match_id")
+    w = career.bowling[career.bowling.match_id.isin(ids) & (career.bowling.player == player)].merge(mat, on="match_id")
+    rows = []
+    for key, g in w.groupby(by, sort=False):
+        d = g[g.balls > 0]
+        if d.empty:
+            continue
+        balls, runs, wkts = int(d.balls.sum()), int(d.runs.sum()), int(d.wickets.sum())
+        best = d.assign(_k=d.wickets * 1000 - d.runs).sort_values("_k").iloc[-1]
+        bm = d.groupby("match_id")[["wickets", "runs"]].sum().assign(_k=lambda x: x.wickets * 1000 - x.runs)
+        bm_row = bm.sort_values("_k").iloc[-1]
+        mdn = d.maidens.dropna()
+        dots = d.dots.dropna()
+        rows.append({by: key, "Mat": appeared[appeared[by] == key].match_id.nunique(), "Inns": len(d),
+                     "Overs": _overs(balls), "Balls": balls,
+                     "Mdns": int(mdn.sum()) if len(mdn) else np.nan, "Dots": int(dots.sum()) if len(dots) else np.nan,
+                     "Runs": runs, "Wkts": wkts, "BBI": f"{int(best.wickets)}/{int(best.runs)}",
+                     "BBM": f"{int(bm_row.wickets)}/{int(bm_row.runs)}",
+                     "Avg": runs / wkts if wkts else np.nan, "Econ": runs / balls * 6,
+                     "SR": balls / wkts if wkts else np.nan,
+                     "4w": int(((d.wickets >= 4) & (d.wickets < 5)).sum()), "5w": int((d.wickets >= 5).sum()),
+                     "10m": int((bm.wickets >= 10).sum())})
+    cols = [by, "Mat", "Inns", "Overs", "Balls", "Mdns", "Dots", "Runs", "Wkts", "BBI", "BBM", "Avg", "Econ", "SR", "4w", "5w", "10m"]
+    return pd.DataFrame(rows, columns=cols)
+
+
 def how_out(inns: pd.DataFrame) -> pd.Series:
     out = inns[inns.out]
     return out.how_out.value_counts()

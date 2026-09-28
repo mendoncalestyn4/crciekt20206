@@ -11,6 +11,7 @@ import streamlit as st
 
 from ccstats.loader import Career
 from ui import state
+from ui.search import search_box
 from ui.theme import inject_css
 
 st.set_page_config(page_title="Cricket Captain Stats Pack", page_icon="🏏", layout="wide")
@@ -67,6 +68,7 @@ with st.sidebar:
         if settings and settings.folder:
             st.caption("New matches from your Scorecards folder are added automatically.")
         st.caption(f"{len(career.matches):,} matches")
+        search_box(career)
     watch_status()
 
 pages = [
@@ -75,6 +77,12 @@ pages = [
     st.Page("views/player.py", title="Players", icon=":material/person:"),
     st.Page("views/compare.py", title="Compare players", icon=":material/compare_arrows:"),
     st.Page("views/teams.py", title="Teams", icon=":material/groups:"),
+    st.Page("views/team_vs_team.py", title="Team vs team", icon=":material/swords:"),
     st.Page("views/match.py", title="Matches", icon=":material/scoreboard:"),
+    st.Page("views/data_check.py", title="Data check", icon=":material/fact_check:"),
 ]
-st.navigation(pages).run()
+nav = st.navigation(pages)
+goto = st.session_state.pop("search_goto", None)  # set by the search box
+if goto:
+    st.switch_page(goto)
+nav.run()

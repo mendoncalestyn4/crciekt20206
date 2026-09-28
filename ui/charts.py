@@ -136,8 +136,10 @@ def bars(labels, values, x_label: str, decimals: int = 0, colour: str | None = N
     labels, values = list(labels)[::-1], list(values)[::-1]
     notes = list(notes)[::-1] if notes is not None else [""] * len(values)
     col = colour or c["s1"]
-    colours_ = [(c["pos"] if v >= 0 else c["neg"]) if signed else col for v in values]
-    fig = go.Figure(go.Bar(x=values, y=labels, orientation="h", marker=dict(color=colours_, line=dict(width=0)),
+    labels = [str(x) for x in labels]  # seasons like 2026 are labels, not numbers
+    shown = [0 if v is None or (isinstance(v, float) and not np.isfinite(v)) else v for v in values]
+    colours_ = [(c["pos"] if v >= 0 else c["neg"]) if signed else col for v in shown]
+    fig = go.Figure(go.Bar(x=shown, y=labels, orientation="h", marker=dict(color=colours_, line=dict(width=0)),
                            text=[("+" if signed and v > 0 else "") + fmt(v, decimals) for v in values],
                            textposition="outside", cliponaxis=False, textfont=dict(size=11, color=c["ink2"]),
                            customdata=notes, hovertemplate="<b>%{y}</b>: %{text}<br>%{customdata}<extra></extra>"))
@@ -151,16 +153,19 @@ def bars(labels, values, x_label: str, decimals: int = 0, colour: str | None = N
                                 height=height or max(220, 32 * len(values) + 80),
                                 xaxis=_axis(c, x_label, zeroline=True, zerolinecolor=c["axis"],
                                             rangemode="normal" if signed else "tozero"),
-                                yaxis=dict(showgrid=False, showline=False, tickfont=dict(size=12, color=c["ink"]), automargin=True),
+                                yaxis=dict(type="category", showgrid=False, showline=False, tickfont=dict(size=12, color=c["ink"]),
+                                           automargin=True),
                                 margin=dict(l=10, r=52, t=24, b=10)))
     return fig
 
 
-def form_chart(runs, not_out, hover, window: int = 10, y_label: str = "Runs") -> go.Figure:
+def form_chart(runs, not_out, hover, window: int | None = None, y_label: str = "Runs") -> go.Figure:
     """Every innings as a bar; the average over the last `window` innings as a line;
     the average over all innings shown as a dashed line."""
     c = colours()
     runs, not_out = list(runs), list(not_out)
+    if window is None:  # 10 innings for a long career, 5 for a short one
+        window = 10 if len(runs) >= 20 else 5
     x = list(range(1, len(runs) + 1))
     outs = sum(1 for n in not_out if not n)
     career = sum(runs) / outs if outs else None

@@ -73,6 +73,37 @@ def test_splits_add_up(career):
     assert c["bar"] == 30 and round(c["past_bar_pct"]) == 40  # 119 and 96 of 3,119,28,96,8
 
 
+def test_player_record_tables(career):
+    ids = career.matches.match_id
+    b = A.batting_record(career, ids, "J Bethell").set_index("section").loc["Tests (bilateral series)"]
+    assert (b.Inns, b.Runs, b["100"], b["50"]) == (5, 254, 1, 1)  # 3, 119, 28, 96, 8
+    w = A.bowling_record(career, ids, "J Archer").set_index("section").loc["Tests (bilateral series)"]
+    assert w.Wkts == 15 and np.isnan(w.Dots) and w.Mdns >= 0
+
+
+@pytest.mark.parametrize("section", ["Tests (bilateral series)", "Indian Premier League", "The Hundred", "T20 Blast"])
+def test_player_record_tables_agree_with_the_stat_tables(career, section):
+    """The per-section table on the player page must give the same numbers as Stat by stat."""
+    from ccstats.stats import player_tables
+    scope = Scope(sections=[section])
+    ids = scope.match_ids(career.matches)
+    bat, bowl, fld, _ = player_tables(career, scope)
+    for p in bat[bat.innings > 0].player.head(25):
+        r = A.batting_record(career, ids, p).iloc[0]
+        t = bat.set_index("player").loc[p]
+        f = fld.set_index("player").loc[p]
+        assert (r.Mat, r.Inns, r.Runs, r.BF, r["100"], r["50"], r["0"], r["4s"], r["6s"], r.HS) == \
+               (t.matches, t.innings, t.runs, t.balls, t.hundreds, t.fifties, t.ducks, t.fours, t.sixes, t.high_score_text), p
+        assert (r.Ct, r.St) == (f.catches, f.stumpings), p
+        assert (np.isnan(r.Avg) and np.isnan(t.average)) or abs(r.Avg - t.average) < 1e-9, p
+    for p in bowl.player.head(25):
+        r = A.bowling_record(career, ids, p).iloc[0]
+        t = bowl.set_index("player").loc[p]
+        assert (r.Inns, r.Balls, r.Runs, r.Wkts, r.BBI, r.BBM) == (t.innings, t.balls, t.runs, t.wickets, t.best, t.best_match), p
+        assert r["4w"] + r["5w"] == t.hauls and r["5w"] == t.five_fors, p
+        assert abs(r.Econ - t.economy) < 1e-9, p
+
+
 def test_keepers_are_the_players_who_stumped(career):
     ids = career.matches.match_id
     k = A.keepers(career, ids)

@@ -31,7 +31,7 @@ table = table[table.innings > 0]
 defs = stat_definitions(base)["bat" if disc == "Batting" else "bowl"]
 
 default = list(table.sort_values("runs" if disc == "Batting" else "wickets", ascending=False).player.head(2))
-chosen = st.multiselect("Players (up to 4)", sorted(table.player), default=default, max_selections=4, key=f"cp_players_{disc}")
+chosen = st.multiselect("Players (up to 4)", sorted(table.player), default=default, max_selections=4, key=f"cp_players_{disc}_{section}_{season}")
 if len(chosen) < 2:
     st.info("Pick at least two players.")
     st.stop()
