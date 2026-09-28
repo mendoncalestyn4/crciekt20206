@@ -35,6 +35,7 @@ class Scope:
     venue: str = "all"  # all / home / away (from `team`'s point of view)
     opponent: str = ""
     stages: str = "all"  # all / league / knockout
+    positions: list[int] = field(default_factory=list)  # batting positions to count (empty = all); batting only
 
     def match_ids(self, matches: pd.DataFrame) -> pd.Index:
         m = matches
@@ -57,6 +58,10 @@ class Scope:
             if self.opponent:
                 m = m[(m.home == self.opponent) | (m.away == self.opponent)]
         return pd.Index(m.match_id)
+
+
+POSITION_GROUPS = {"Openers (1-2)": [1, 2], "No. 3": [3], "4 and 5": [4, 5], "6 and 7": [6, 7],
+                   "8 to 11": [8, 9, 10, 11]}
 
 
 def kind_of(matches: pd.DataFrame) -> str:
@@ -106,6 +111,8 @@ def player_tables(career, scope: Scope | None = None, by_team: bool = False) -> 
     keys = ["player", "team"] if by_team else ["player"]
 
     bat = career.batting[career.batting.match_id.isin(ids)]
+    if scope.positions:  # innings at these positions only; the baseline is then the average batter there too
+        bat = bat[bat.position.isin(scope.positions)]
     if scope.team:
         bat_scope = bat[bat.team == scope.team]
     else:

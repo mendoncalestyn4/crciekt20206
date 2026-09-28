@@ -122,6 +122,21 @@ def test_stat_page_runs_for_every_choice(career):
     assert runs > 100
 
 
+def test_stat_page_runs_for_every_batting_position(career):
+    from ccstats.stats import POSITION_GROUPS
+    for section in career.matches.section.unique():
+        _, defs, _ = tables_for(career, section)
+        for pos in POSITION_GROUPS:
+            for stat in defs["bat"]:
+                at = AppTest.from_file(str(ROOT / "views" / "stat_by_stat.py"), default_timeout=30)
+                at.session_state["career_obj"] = career
+                at.session_state["sbs_section"] = section
+                at.session_state["sbs_pos"] = pos
+                at.session_state["sbs_stat_Batting"] = stat.label
+                at.run()
+                assert not at.exception, (section, pos, stat.label, at.exception)
+
+
 def test_wicket_timeline_plots_the_fall_of_wickets(career):
     from ui.charts import wicket_timeline
     mid = career.matches.set_index("source").loc["18_jul_2026-som_v_nht_blast_-_f.txt"].match_id

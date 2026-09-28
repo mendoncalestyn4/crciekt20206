@@ -350,6 +350,103 @@ def keepers(career, ids, team: str | None = None) -> pd.DataFrame:
             .sort_values("stumpings", ascending=False).reset_index(drop=True))
 
 
+def position_record(career, ids, player: str) -> pd.DataFrame:
+    """A player's batting at each position group, next to the average batter
+    at that position in the same matches."""
+    from .stats import POSITION_GROUPS
+    b = career.batting[career.batting.match_id.isin(ids) & career.batting.did_bat]
+    rows = []
+    for label, pos in POSITION_GROUPS.items():
+        here = b[b.position.isin(pos)]
+        me = here[here.player == player]
+        if me.empty:
+            continue
+        outs, all_outs = int(me.out.sum()), int(here.out.sum())
+        rows.append(dict(group=label, innings=len(me), runs=int(me.runs.sum()), outs=outs,
+                         average=me.runs.sum() / outs if outs else np.nan,
+                         strike_rate=me.runs.sum() / me.balls.sum() * 100 if me.balls.sum() else np.nan,
+                         section_average=here.runs.sum() / all_outs if all_outs else np.nan))
+    return pd.DataFrame(rows, columns=["group", "innings", "runs", "outs", "average", "strike_rate", "section_average"])
+
+
+# balls bowled per match that make someone "a bowler" in each format
+BOWLER_BALLS = {"t20": 9, "one": 24, "multi": 60}
+
+
+def role_labels(career, ids, kind: str, min_matches: int = 3) -> pd.DataFrame:
+    """A role for each player in the selected matches, from what they actually
+    did there, plus a few style tags measured against the other players.
+
+    role: Opener / Top order / Middle order / Finisher (limited overs) or Lower order / Tail
+          for batters; Bowler; All-rounder; with Wicketkeeper for anyone who made a stumping."""
+    cols = ["player", "role", "tags", "usual_position", "matches"]
+    bat = career.batting[career.batting.match_id.isin(ids)]
+    if bat.empty:
+        return pd.DataFrame(columns=cols)
+    bowl = career.bowling[career.bowling.match_id.isin(ids)]
+    batted = bat[bat.did_bat]
+    matches = bat.groupby("player").match_id.nunique()
+    pos = bat.groupby("player").position.median()  # where they're listed, batting or not
+    b = batted.groupby("player").agg(inns=("runs", "size"), runs=("runs", "sum"), balls=("balls", "sum"), outs=("out", "sum"),
+                                     bdry=("fours", "sum"), six=("sixes", "sum"))
+    b["bdry_runs"] = 4 * b.bdry + 6 * b.six
+    w = bowl[bowl.balls > 0].groupby("player").agg(spells=("balls", "size"), balls=("balls", "sum"), runs=("runs", "sum"),
+                                                   wkts=("wickets", "sum"))
+    top7 = batted[batted.position <= 7]
+    per_inns_top7 = top7.runs.sum() / len(top7) if len(top7) else 0
+    stumpers = set(career.fielding[career.fielding.match_id.isin(ids) & career.fielding.resolved
+                                   & (career.fielding.kind == "stumped")].player)
+    limited = kind != "multi"
+    # style thresholds among regulars
+    reg_b = b[b.inns >= 5].copy()
+    reg_b["avg"] = reg_b.runs / reg_b.outs.replace(0, np.nan)
+    reg_b["sr"] = reg_b.runs / reg_b.balls.replace(0, np.nan) * 100
+    reg_b["bpct"] = reg_b.bdry_runs / reg_b.runs.replace(0, np.nan)
+    reg_w = w[w.spells >= 5].copy()
+    reg_w["sr"] = reg_w.balls / reg_w.wkts.replace(0, np.nan)
+    reg_w["econ"] = reg_w.runs / reg_w.balls * 6
+    q = lambda s, p: s.quantile(p) if s.notna().any() else np.nan  # noqa: E731
+    rows = []
+    for p, n in matches.items():
+        if n < min_matches:
+            continue
+        up = float(pos.get(p, 11))
+        bowls = p in w.index and w.balls[p] / n >= BOWLER_BALLS[kind]
+        rpi = b.runs[p] / b.inns[p] if p in b.index and b.inns[p] else 0
+        bats = up <= 7.5 and rpi >= 0.6 * per_inns_top7
+        if bowls and bats:
+            role = "All-rounder"
+        elif bowls:
+            role = "Bowler"
+        elif up <= 2.5:  # opened in at least half their games
+            role = "Opener"
+        elif up <= 3:
+            role = "Top order"
+        elif up <= 5:
+            role = "Middle order"
+        elif up <= 7:
+            role = "Finisher" if limited else "Lower order"
+        else:
+            role = "Tail"
+        tags = []
+        if p in stumpers:
+            tags.append("Wicketkeeper")
+        if p in reg_b.index:
+            r = reg_b.loc[p]
+            if limited and r.bpct >= q(reg_b.bpct, 0.75) and r.sr >= q(reg_b.sr, 0.5):
+                tags.append("Big hitter")
+            if r.avg >= q(reg_b.avg, 0.75) and r.sr < q(reg_b.sr, 0.5):
+                tags.append("Anchor")
+        if p in reg_w.index:
+            r = reg_w.loc[p]
+            if r.sr <= q(reg_w.sr, 0.25):
+                tags.append("Strike bowler")
+            if limited and r.econ <= q(reg_w.econ, 0.25):
+                tags.append("Economist")
+        rows.append(dict(player=p, role=role, tags=tags, usual_position=up, matches=int(n)))
+    return pd.DataFrame(rows, columns=cols)
+
+
 BALL_QUOTA = {"T20": 120, "T20I": 120, "The Hundred": 100, "ODI": 300, "List A": 300}
 
 

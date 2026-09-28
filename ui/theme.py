@@ -107,6 +107,26 @@ h2 { text-transform: uppercase; font-size: 1.7rem !important; }
 .statdef .note { color: {muted}; font-size: 13px; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
 .chip.demo { border: 1px dashed {muted}; }
+/* ---------- knockout bracket ---------- */
+.ko { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 6px; align-items: stretch; }
+.ko-col { flex: 1 0 220px; display: flex; flex-direction: column; justify-content: space-around; gap: 12px; }
+.ko-round { font-family: 'Barlow Condensed', sans-serif; letter-spacing: .14em; text-transform: uppercase; font-size: 13px;
+  font-weight: 700; color: {accent}; }
+.ko-card { display: block; text-decoration: none !important; color: {ink} !important; border: 1px solid {panel_edge};
+  border-radius: 12px; padding: 8px 12px; background: {panel}; }
+.ko-card:hover { border-color: {accent}; }
+.ko-date { font-size: 11.5px; color: {muted}; margin-bottom: 2px; }
+.ko-team { display: flex; justify-content: space-between; gap: 10px; font-size: 14.5px; color: {ink2}; padding: 1px 0; }
+.ko-team b { font-variant-numeric: tabular-nums; font-weight: 600; }
+.ko-team.win { color: {ink}; font-weight: 700; }
+.ko-team.win b { font-weight: 800; }
+.ko-res { font-size: 12px; color: {muted}; margin-top: 3px; }
+.ko-champ { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .03em; color: {accent}; margin: 10px 0 0; }
+.roles { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 2px 0 6px; }
+.roles .chip { background: {accent_soft}; color: {ink}; border: 1px solid {panel_edge}; font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px; letter-spacing: .04em; text-transform: uppercase; }
+.roles .note { color: {muted}; font-size: 13px; }
 
 /* ---------- dot-chart legend ---------- */
 .explain { list-style: none; padding: 0; margin: 4px 0 0; display: grid; gap: 7px; font-size: 13.5px; }

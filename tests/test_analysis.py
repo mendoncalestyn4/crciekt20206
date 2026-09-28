@@ -104,6 +104,36 @@ def test_player_record_tables_agree_with_the_stat_tables(career, section):
         assert abs(r.Econ - t.economy) < 1e-9, p
 
 
+def test_role_labels(career):
+    ids = Scope(sections=["T20 Blast"]).match_ids(career.matches)
+    r = A.role_labels(career, ids, "t20", min_matches=2).set_index("player")
+    assert r.role["W Smeed"] == "Opener" and r.role["T Banton"] == "Opener"
+    everyone = A.role_labels(career, ids, "t20", min_matches=1).set_index("player")
+    assert "Wicketkeeper" in everyone.tags["J Tattersall"]  # st Tattersall in the Blast
+    assert "Wicketkeeper" not in everyone.tags.get("J Rew", [])  # his stumping was in the County Championship, not here
+    assert sum("Wicketkeeper" in t for t in everyone.tags) == 1
+    assert r.role["Y Chahal"] == "Bowler"
+    assert (r.matches >= 2).all()
+    # nobody with fewer matches than the minimum gets a label
+    few = A.role_labels(career, ids, "t20", min_matches=3)
+    counts = career.batting[career.batting.match_id.isin(ids)].groupby("player").match_id.nunique()
+    assert set(few.player) == set(counts[counts >= 3].index)
+
+
+def test_position_scope_counts_only_those_innings(career):
+    from ccstats.stats import POSITION_GROUPS, player_tables
+    sec = Scope(sections=["Indian Premier League"])
+    total = player_tables(career, sec)[0].runs.sum()
+    parts = sum(player_tables(career, Scope(sections=sec.sections, positions=p))[0].runs.sum() for p in POSITION_GROUPS.values())
+    assert parts == total  # every innings is at exactly one position
+    openers, _, _, base = player_tables(career, Scope(sections=sec.sections, positions=[1, 2]))
+    b = career.batting[career.batting.match_id.isin(sec.match_ids(career.matches)) & career.batting.did_bat
+                       & career.batting.position.isin([1, 2])]
+    assert abs(base.average - b.runs.sum() / b.out.sum()) < 1e-9
+    gill = A.position_record(career, sec.match_ids(career.matches), "S Gill").set_index("group")
+    assert gill.runs.sum() == player_tables(career, sec)[0].set_index("player").runs["S Gill"]
+
+
 def test_keepers_are_the_players_who_stumped(career):
     ids = career.matches.match_id
     k = A.keepers(career, ids)

@@ -94,6 +94,14 @@ inns = A.batting_innings(career, ids, player)
 spells = A.bowling_spells(career, ids, player)
 strength = A.team_strength(career, ids)
 
+roles = A.role_labels(career, ids, kind).set_index("player")
+if player in roles.index:
+    r = roles.loc[player]
+    chips = " ".join(f"<span class='chip'>{t}</span>" for t in [r.role] + list(r.tags))
+    st.markdown(f"<p class='roles'>{chips}<span class='note'>Role in {section}{'' if season == 'All seasons' else ' ' + season}, "
+                f"from where they bat (usually no. {r.usual_position:.0f}) and how much they bowl</span></p>",
+                unsafe_allow_html=True)
+
 tab_names = []
 if len(inns):
     tab_names.append("Batting")
@@ -157,6 +165,20 @@ if "Batting" in tabs:
         with st.container(border=True):
             st.markdown("**Stronger and weaker teams** · teams ranked by their win % in this section; the top half are the stronger teams. "
                         f"Stronger half: {', '.join(sorted(t for t, v in strength.items() if v > np.median(list(strength.values())))) or '–'}.")
+
+        pr = A.position_record(career, ids, player)
+        if len(pr):
+            with st.container(border=True):
+                st.markdown("**Average at each batting position** · compared with the average batter at that position")
+                st.plotly_chart(bars(pr.group, pr.average, "Average", 1,
+                                     notes=[f"{n} innings, {r} runs · average batter here: {fmt(s, 1)}"
+                                            for n, r, s in zip(pr.innings, pr.runs, pr.section_average)]),
+                                width="stretch", config=CONFIG, key="pl_positions")
+                best = pr[pr.innings >= 3].assign(edge=lambda d: d.average - d.section_average).dropna(subset=["edge"])
+                if len(best) > 1:
+                    top = best.sort_values("edge", ascending=False).iloc[0]
+                    st.caption(f"Best position: **{top.group}**, where they average {fmt(top.average, 1)} against "
+                               f"{fmt(top.section_average, 1)} for the average batter there (at least 3 innings).")
 
         # came in at
         st.subheader("When they came in", anchor=False)

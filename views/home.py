@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 
 from ccstats.loader import Career
+from ccstats.records import new_records, recent_sources
 from ccstats.local import default_scorecards_folder
 from ui import state
 from ui.pick_folder import choose_folder
@@ -132,6 +133,11 @@ else:
     if not career.problems.empty:
         st.warning(f"{career.problems.match_id.nunique()} scorecard(s) failed the self-check (numbers that don't add up). "
                    "They'll be listed on the Data check page.")
+    latest_records = new_records(career, recent_sources(career))
+    if latest_records:
+        with st.container(border=True):
+            st.markdown("**🏆 Latest records** · set in your 10 most recent matches")
+            st.markdown("\n".join(f"- {r.replace('New record in ', '', 1)}" for r in latest_records[:8]))
     st.subheader("Sections", anchor=False)
     sec = (m.groupby("section")
            .agg(matches=("match_id", "size"), seasons=("season", lambda s: ", ".join(sorted(set(s)))),

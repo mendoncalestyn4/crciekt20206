@@ -1,7 +1,8 @@
 import pandas as pd
 import streamlit as st
 
-from ccstats.stats import Scope, rank, stat_definitions
+from ccstats import analysis as A
+from ccstats.stats import POSITION_GROUPS, Scope, rank, stat_definitions
 from ui import state
 from ui.charts import CONFIG, dot_chart, fmt, ranked_bars
 from ui.theme import explain_list, page_header
@@ -25,7 +26,14 @@ seasons = sorted(m[m.section == section].season.unique(), reverse=True)
 season = c2.selectbox("Season", ["All seasons"] + seasons, key="sbs_season")
 disc = c3.segmented_control("Discipline", ["Batting", "Bowling", "Fielding"], default="Batting", key="sbs_disc") or "Batting"
 
-scope = Scope(sections=[section], seasons=[] if season == "All seasons" else [season])
+position = "Any"
+if disc == "Batting":
+    position = st.segmented_control(
+        "Batting position", ["Any"] + list(POSITION_GROUPS), default="Any", key="sbs_pos",
+        help="Only count innings played at these positions. The average line is then the average batter at that "
+             "position, so openers are measured against openers.") or "Any"
+scope = Scope(sections=[section], seasons=[] if season == "All seasons" else [season],
+              positions=POSITION_GROUPS.get(position, []))
 sec_ids = scope.match_ids(m)
 teams_here = sorted(set(m[m.match_id.isin(sec_ids)].home) | set(m[m.match_id.isin(sec_ids)].away))
 t1, t2 = st.columns([1.2, 2.6])
@@ -73,8 +81,10 @@ ranked = rank(pool, stat, best=best)
 shown = ranked.head(top)
 
 better = "Higher is better." if stat.better == "high" else "Lower is better."
+where = {"Any": "", "Openers (1-2)": ", batting as openers", "No. 3": ", batting at no. 3"}.get(
+    position, f", batting at {position}")
 st.markdown(f"<p class='statdef'><b>{stat.label}</b>: {stat.definition} <span class='note'>{section}"
-            f"{'' if season == 'All seasons' else ' ' + season}: {len(pool)} players qualify "
+            f"{'' if season == 'All seasons' else ' ' + season}{where}: {len(pool)} players qualify "
             f"({'anyone' if not minimum else f'{minimum}+ {unit}'}). {better}</span></p>", unsafe_allow_html=True)
 
 if pool.empty:
@@ -117,6 +127,8 @@ if stat.column not in cols:  # the ranked stat is always in the table (e.g. 50+ 
     cols = {**dict(list(cols.items())[:3]), stat.column: stat.label, **dict(list(cols.items())[3:])}
 out = shown[list(cols)].rename(columns=cols).reset_index(drop=True)
 out.index = out.index + 1
+roles = A.role_labels(career, sec_ids, base.kind).set_index("player")
+out.insert(2, "Role", [" · ".join([roles.role[p]] + list(roles.tags[p])) if p in roles.index else "–" for p in shown.player])
 # decimals as text so a missing value reads "–" (never dismissed, no wicket) rather than "None"
 two_dp = {"economy"}
 for k, v in cols.items():

@@ -10,6 +10,7 @@ from pathlib import Path
 import streamlit as st
 
 from ccstats.loader import Career
+from ccstats.records import new_records
 from ui import state
 from ui.search import search_box
 from ui.theme import inject_css
@@ -40,6 +41,8 @@ def watch_status() -> None:
         if res and res.added:
             n = len(res.added)
             st.toast(f"{n} new match{'es' if n > 1 else ''} added to **{res.career.name}**", icon="🏏")
+            for msg in new_records(res.career, res.added)[:5]:
+                st.toast(msg, icon="🏆")
             if shown is not None and res.career.name == shown.name:
                 st.session_state["career_obj"] = res.career
                 st.session_state.pop("stats_cache", None)
@@ -79,6 +82,10 @@ pages = [
     st.Page("views/teams.py", title="Teams", icon=":material/groups:"),
     st.Page("views/team_vs_team.py", title="Team vs team", icon=":material/swords:"),
     st.Page("views/match.py", title="Matches", icon=":material/scoreboard:"),
+    st.Page("views/competitions.py", title="Competitions", icon=":material/emoji_events:"),
+    st.Page("views/insights.py", title="Insights", icon=":material/insights:"),
+    st.Page("views/rankings.py", title="Rankings", icon=":material/trending_up:"),
+    st.Page("views/records.py", title="Records", icon=":material/military_tech:"),
     st.Page("views/data_check.py", title="Data check", icon=":material/fact_check:"),
 ]
 nav = st.navigation(pages)
