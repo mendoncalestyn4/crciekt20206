@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from ccstats.competitions import shown_name
 from ccstats.loader import Career
 from ccstats.extras import headlines
 from ccstats.local import default_scorecards_folder
@@ -131,8 +132,8 @@ if career is None:
     st.stop()
 
 page_header("Career", career.name,
-            "Every competition is kept in its own section, so IPL, Tests, bilateral ODIs, the ODI World Cup and each "
-            "County Championship division never mix.")
+            "International matches are grouped by format (all Tests, all ODIs, all T20Is, World Cups included); "
+            "everything else, like IPL, T20 Blast and each County Championship division, is its own section.")
 
 report = st.session_state.pop("last_report", None)
 if report:
@@ -159,7 +160,7 @@ else:
         return " & ".join(parts) or "–"
 
     stage = f" · {last.stage}" if last.stage else ""
-    scoreboard(f"Latest result · {last.section}{stage} · {last.date:%d %b %Y}",
+    scoreboard(f"Latest result · {shown_name(last.section, last.event)}{stage} · {last.date:%d %b %Y}",
                last.home, score(last.home), last.away, score(last.away),
                f"{last.result} · Player of the match: {last.player_of_match}" if last.player_of_match else last.result)
     st.write("")

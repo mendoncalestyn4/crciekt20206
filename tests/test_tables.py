@@ -9,7 +9,6 @@ from streamlit.testing.v1 import AppTest
 from ccstats import analysis as A
 from ccstats import tables as T
 from ccstats.loader import Career
-from ccstats.stats import Scope
 
 ROOT = Path(__file__).parent.parent
 FIXTURES = sorted((Path(__file__).parent / "fixtures").glob("*.txt"))
@@ -20,8 +19,10 @@ def career():
     return Career.build("tables", [(p.name, p.read_bytes()) for p in FIXTURES])
 
 
-def ids_of(career, section, season):
-    return Scope(sections=[section], seasons=[season]).match_ids(career.matches)
+def ids_of(career, event, season):
+    """A competition as it's run (the Competitions page works on these), e.g. the ODI World Cup."""
+    m = career.matches
+    return m[(m.event == event) & (m.season == season)].match_id
 
 
 def test_ipl_table(career):
@@ -46,11 +47,11 @@ def test_county_and_ranji_points(career):
 
 
 def test_rows_are_in_points_order(career):
-    for section in career.matches.section.unique():
-        for season in career.matches[career.matches.section == section].season.unique():
-            for _, t, _ in T.league_tables(career, ids_of(career, section, season)):
+    for event in career.matches.event.unique():
+        for season in career.matches[career.matches.event == event].season.unique():
+            for _, t, _ in T.league_tables(career, ids_of(career, event, season)):
                 if t.points.notna().all():
-                    assert list(t.points) == sorted(t.points, reverse=True), (section, season)
+                    assert list(t.points) == sorted(t.points, reverse=True), (event, season)
 
 
 def test_ipl_bracket_order(career):
@@ -70,10 +71,10 @@ def test_tiebreak_winner_goes_through(career):
 
 
 def test_bilateral_sections_have_no_points_or_groups(career):
-    for section in ("Tests (bilateral series)", "ODIs (bilateral series)", "T20Is (bilateral series)"):
-        [(label, t, rule)] = T.league_tables(career, ids_of(career, section, "2026"))
+    for event in ("Tests (bilateral series)", "ODIs (bilateral series)", "T20Is (bilateral series)"):
+        [(label, t, rule)] = T.league_tables(career, ids_of(career, event, "2026"))
         assert label == "Every team" and t.points.isna().all() and "no league table" in rule
-        assert t.won.sum() == (career.matches[career.matches.section == section].winner != "").sum()
+        assert t.won.sum() == (career.matches[career.matches.event == event].winner != "").sum()
 
 
 def test_series(career):
@@ -85,25 +86,25 @@ def test_series(career):
 
 def test_competitions_page_every_section_and_season(career):
     runs = 0
-    for section in career.matches.section.unique():
-        for season in career.matches[career.matches.section == section].season.unique():
+    for event in career.matches.event.unique():
+        for season in career.matches[career.matches.event == event].season.unique():
             at = AppTest.from_file(str(ROOT / "views" / "competitions.py"), default_timeout=60)
             at.session_state["career_obj"] = career
-            at.session_state["cp2_section"] = section
+            at.session_state["cp2_event"] = event
             at.session_state["cp2_season"] = season
             at.run()
-            assert not at.exception, (section, season, at.exception)
+            assert not at.exception, (event, season, at.exception)
             runs += 1
-    assert runs == len(career.matches.groupby(["section", "season"]))
+    assert runs == len(career.matches.groupby(["event", "season"]))
 
 
 def test_a_team_is_only_ever_in_one_table(career):
-    for section in career.matches.section.unique():
-        for season in career.matches[career.matches.section == section].season.unique():
+    for event in career.matches.event.unique():
+        for season in career.matches[career.matches.event == event].season.unique():
             seen = []
-            for _, t, _ in T.league_tables(career, ids_of(career, section, season)):
+            for _, t, _ in T.league_tables(career, ids_of(career, event, season)):
                 seen += list(t.team)
-            assert len(seen) == len(set(seen)), (section, season)
+            assert len(seen) == len(set(seen)), (event, season)
 
 
 def _round_robin(teams, stage, start):

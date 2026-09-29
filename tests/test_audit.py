@@ -120,7 +120,7 @@ def career():
 
 def test_hand_checked_test_batter(career):
     # J Bethell in the three England v Pakistan Tests: 3 & 119, 28 & dnb, 96 & 8*
-    bat, _, _, _ = player_tables(career, Scope(sections=["Tests (bilateral series)"]))
+    bat, _, _, _ = player_tables(career, Scope(sections=["Tests"]))
     b = bat.set_index("player").loc["J Bethell"]
     assert (b.matches, b.innings, b.not_outs, b.runs, b.balls, b.hundreds, b.fifties, b.fours, b.sixes) == \
         (3, 5, 1, 254, 401, 1, 1, 29, 1)
@@ -129,7 +129,7 @@ def test_hand_checked_test_batter(career):
 
 def test_hand_checked_test_bowler(career):
     # J Archer: 8-1-19-3, 11.3-1-22-1, 24-6-73-6, 12-0-41-1, 9-1-47-2, 18.5-4-48-2
-    _, bowl, _, _ = player_tables(career, Scope(sections=["Tests (bilateral series)"]))
+    _, bowl, _, _ = player_tables(career, Scope(sections=["Tests"]))
     w = bowl.set_index("player").loc["J Archer"]
     assert (w.innings, w.balls, w.runs, w.wickets, w.maidens, w.best, w.best_match, w.hauls, w.five_fors) == \
         (6, 500, 250, 15, 13, "6/73", "7/114", 1, 1)
@@ -145,7 +145,7 @@ def test_hand_checked_hundred_bowler(career):
 
 def test_hand_checked_team_record(career):
     m = career.matches
-    eng = m[(m.section == "Tests (bilateral series)") & ((m.home == "England") | (m.away == "England"))]
+    eng = m[(m.section == "Tests") & ((m.home == "England") | (m.away == "England"))]
     assert len(eng) == 3 and (eng.winner == "England").all()
     assert eng.series_id.nunique() == 1  # one 3-match series, England won 3-0
 

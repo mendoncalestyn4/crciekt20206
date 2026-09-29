@@ -48,7 +48,9 @@ def test_chance_with_splits_every_match(career):
 
 def test_home_advantage(career):
     h = I.home_advantage(career).set_index("section")
-    assert "ODI World Cup" not in h.index  # neutral
+    assert "ODI World Cup" not in h.index  # a competition, not a section
+    odis = career.matches[(career.matches.section == "ODIs") & ~career.matches.neutral]
+    assert h.matches["ODIs"] == len(odis) and not (odis.competition == "ODI World Cup").any()  # World Cup: neutral
     m = career.matches[~career.matches.neutral & (career.matches.result_type != "no result")]
     assert h.matches.sum() == len(m)
     assert h.home_wins.sum() + h.away_wins.sum() == (m.winner != "").sum()

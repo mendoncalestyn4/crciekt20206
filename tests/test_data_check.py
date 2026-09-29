@@ -55,13 +55,13 @@ def test_split_suggestions_and_splitting(career):
 
 
 def test_merge_moves_every_row_and_undo_restores_it(career):
-    bat, _, _, _ = player_tables(career, Scope(sections=["Tests (bilateral series)"]))
+    bat, _, _, _ = player_tables(career, Scope(sections=["Tests"]))
     a, b = "J Bethell", "J Root"
     runs = bat.set_index("player").runs
     fixed = career.with_fixes(Fixes(merges={a: b}))
-    bat2 = player_tables(fixed, Scope(sections=["Tests (bilateral series)"]))[0].set_index("player")
+    bat2 = player_tables(fixed, Scope(sections=["Tests"]))[0].set_index("player")
     assert a not in bat2.index and bat2.runs[b] == runs[a] + runs[b]
-    assert player_tables(fixed.with_fixes(Fixes()), Scope(sections=["Tests (bilateral series)"]))[0].set_index("player").runs[a] == runs[a]
+    assert player_tables(fixed.with_fixes(Fixes()), Scope(sections=["Tests"]))[0].set_index("player").runs[a] == runs[a]
 
 
 def test_merge_suggestions_never_pair_players_from_the_same_match(career):
@@ -95,7 +95,7 @@ def test_data_check_page_renders(career):
 
 
 def test_search_lists_everything(career):
-    from ui.search import go_to, options
+    from ui.search import options
     opts = options(career)
     kinds = {k for k, _ in opts.values()}
     assert kinds == {"player", "team", "section", "match"}

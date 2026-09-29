@@ -92,8 +92,16 @@ def test_results_and_declarations(career):
 
 
 def test_every_competition_is_its_own_section(career):
+    # international matches are pooled by format; everything else is its own section
     sections = career.matches.groupby("section").size().to_dict()
     assert sections == {
+        "County Championship · Division 1": 3, "County Championship · Division 2": 2,
+        "Indian Premier League": 8, "ODIs": 11, "Ranji Trophy": 5,
+        "T20 Blast": 10, "T20Is": 4, "Tests": 6,
+        "The Hundred": 4, "Vijay Hazare Trophy": 3}
+    # ... while each competition keeps its own table, bracket and champion
+    events = career.matches.groupby("event").size().to_dict()
+    assert events == {
         "County Championship · Division 1": 3, "County Championship · Division 2": 2,
         "Indian Premier League": 8, "ODI World Cup": 4, "ODIs (bilateral series)": 7, "Ranji Trophy": 5,
         "T20 Blast": 10, "T20 World Cup": 1, "T20Is (bilateral series)": 3, "Tests (bilateral series)": 6,

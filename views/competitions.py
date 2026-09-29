@@ -4,7 +4,6 @@ import pandas as pd
 import streamlit as st
 
 from ccstats import tables as T
-from ccstats.stats import Scope
 from ui import state
 from ui.theme import page_header
 
@@ -17,11 +16,13 @@ m = career.matches
 page_header("Competitions", "Tables, brackets and series",
             "The league table, the knockout bracket and every series for one competition and season.")
 c1, c2 = st.columns([2, 1])
-sections = m.section.value_counts()
-section = c1.selectbox("Section", list(sections.index), key="cp2_section", format_func=lambda s: f"{s} · {sections[s]} matches")
-seasons = sorted(m[m.section == section].season.unique(), reverse=True)
+# A competition as it's run (the ODI World Cup, bilateral ODI series, each County Championship division),
+# which is finer than the stats sections: every ODI is in the ODIs section, but the World Cup has its own table.
+events = m.event.value_counts()
+event = c1.selectbox("Competition", list(events.index), key="cp2_event", format_func=lambda s: f"{s} · {events[s]} matches")
+seasons = sorted(m[m.event == event].season.unique(), reverse=True)
 season = c2.selectbox("Season", seasons, key="cp2_season")
-ids = Scope(sections=[section], seasons=[season]).match_ids(m)
+ids = pd.Index(m[(m.event == event) & (m.season == season)].match_id)
 inn = career.innings[career.innings.match_id.isin(ids)]
 
 
@@ -92,8 +93,12 @@ if len(ko):
     st.markdown(f"<div class='ko'>{''.join(cols_html)}</div>", unsafe_allow_html=True)
     champ = ko[ko.stage == "Final"]
     if len(champ) == 1 and champ.through.iloc[0]:
-        st.markdown(f"<p class='ko-champ'>🏆 {html.escape(champ.through.iloc[0])} · {html.escape(section)} {season} champions</p>",
+        st.markdown(f"<p class='ko-champ'>🏆 {html.escape(champ.through.iloc[0])} · {html.escape(event)} {season} champions</p>",
                     unsafe_allow_html=True)
+    elif len(champ) == 1 and champ.format.iloc[0] == "Test" and champ.result_type.iloc[0] in ("draw", "tie"):
+        f = champ.iloc[0]  # a drawn World Test Championship Final: the title is shared
+        st.markdown(f"<p class='ko-champ'>🏆 {html.escape(f.home)} and {html.escape(f.away)} share the {html.escape(event)} "
+                    f"{season} title</p>", unsafe_allow_html=True)
     st.caption("Click a match to open its scorecard. The side that went through is highlighted.")
 
 # ---------------------------------------------------------------- series
@@ -115,4 +120,4 @@ if len(ser):
                 "Result": g.result}), hide_index=True, width="stretch")
 
 if not shown_any:
-    st.info("No league, knockout or series matches in this section and season yet.")
+    st.info("No league, knockout or series matches in this competition and season yet.")

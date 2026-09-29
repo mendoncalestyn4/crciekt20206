@@ -25,8 +25,8 @@ def tables_for(career, section):
     return {"bat": bat, "bowl": bowl, "field": fld}, stat_definitions(base), base
 
 
-SECTIONS = ["T20 Blast", "Indian Premier League", "Tests (bilateral series)", "ODIs (bilateral series)",
-            "The Hundred", "County Championship · Division 1", "ODI World Cup"]
+SECTIONS = ["T20 Blast", "Indian Premier League", "Tests", "ODIs", "T20Is",
+            "The Hundred", "County Championship · Division 1"]
 
 
 @pytest.mark.parametrize("section", SECTIONS)

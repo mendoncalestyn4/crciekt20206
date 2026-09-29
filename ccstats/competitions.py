@@ -74,6 +74,7 @@ KNOWN = {
     "t20 world cup": ("T20 World Cup", T20I, INTERNATIONAL, ""),
     "champions trophy": ("Champions Trophy", ODI, INTERNATIONAL, ""),
     "world test championship final": ("World Test Championship Final", TEST, INTERNATIONAL, ""),
+    "world test championship": ("World Test Championship Final", TEST, INTERNATIONAL, ""),  # "… - Final - date"
     "asia cup": ("Asia Cup", "", INTERNATIONAL, ""),
     # England
     "county championship": ("County Championship", FIRST_CLASS, DOMESTIC, "England"),
@@ -201,6 +202,8 @@ def classify(match: Match) -> Classification:
         comp, fmt, level, country = KNOWN[key]
         if not fmt:  # e.g. Asia Cup is played as ODI or T20I
             fmt = T20I if _shape_format(match) == T20 else ODI
+        if comp.endswith(" Final") and not stage:  # "World Test Championship Final - 16 Jun 2027" is itself a final
+            stage, knockout = "Final", True
         return Classification(comp, fmt, level, country, stage, knockout,
                               neutral=level == INTERNATIONAL)
 
@@ -222,18 +225,38 @@ def classify(match: Match) -> Classification:
                           recognised=False)
 
 
-# Bilateral internationals are named by format; give them a clear section name.
+# Bilateral internationals are named by format; give them a clear name.
 BILATERAL_SECTION = {TEST: "Tests (bilateral series)", ODI: "ODIs (bilateral series)", T20I: "T20Is (bilateral series)"}
+# Every international match counts in its format's section, as in real career records.
+INTERNATIONAL_SECTION = {TEST: "Tests", ODI: "ODIs", T20I: "T20Is"}
 
 
-def section_of(competition: str, stage: str) -> str:
-    """The unit stats are kept within.  Nothing is merged: bilateral ODIs,
-    the ODI World Cup and the Champions Trophy are separate sections, and a
-    league with divisions (County Championship) gets one section per division."""
+def event_of(competition: str, stage: str) -> str:
+    """The competition as it is run: its own table, bracket and champion.
+    Bilateral series, the ODI World Cup and the Champions Trophy are separate
+    events, and a league with divisions (County Championship) is one per division."""
     name = BILATERAL_SECTION.get(competition, competition)
     if stage.startswith("Division"):
         return f"{name} · {stage}"
     return name
+
+
+def shown_name(section: str, event: str) -> str:
+    """What a match is called on screen: its competition ("ODI World Cup"), or
+    just the format for a match in a bilateral series ("ODIs")."""
+    return section if event in BILATERAL_SECTION.values() else event
+
+
+def section_of(competition: str, stage: str, fmt: str = "", level: str = "") -> str:
+    """The unit stats are kept within.  International matches are pooled by
+    format: every Test (bilateral series and the World Test Championship Final)
+    is in "Tests", every ODI (bilateral, World Cup, Champions Trophy, Asia Cup)
+    in "ODIs" and every T20I in "T20Is".  Nothing else is merged: each domestic
+    and franchise competition, and each County Championship division, is its own
+    section."""
+    if level == INTERNATIONAL and fmt in INTERNATIONAL_SECTION:
+        return INTERNATIONAL_SECTION[fmt]
+    return event_of(competition, stage)
 
 
 # --------------------------------------------------------------------------- #

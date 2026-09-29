@@ -35,12 +35,15 @@ with t_board:
                "are on the Competitions page.")
 
 with t_cabinet:
-    won = h[~h.how.str.contains("so far")]
-    counts = won.champions.value_counts()
+    # one row per team per title, so a shared title counts for both sides
+    won = h[~h.how.str.contains("so far")].explode("champion_teams")
+    counts = won.champion_teams.value_counts()
     if counts.empty:
         st.caption("No titles decided yet.")
     else:
         st.dataframe(pd.DataFrame({"Team": counts.index, "Titles": counts.values,
-                                   "Won": [", ".join(f"{s} {y}" for s, y in zip(won[won.champions == t].section,
-                                                                                 won[won.champions == t].season))
+                                   "Won": [", ".join(f"{s} {y}" + (" (shared)" if "shared" in w else "")
+                                                     for s, y, w in zip(won[won.champion_teams == t].section,
+                                                                        won[won.champion_teams == t].season,
+                                                                        won[won.champion_teams == t].how))
                                            for t in counts.index]}), hide_index=True, width="stretch")

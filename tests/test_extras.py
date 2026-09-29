@@ -9,7 +9,6 @@ import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from ccstats import analysis as A
 from ccstats import extras as E
 from ccstats.demo_league import generate
 from ccstats.loader import Career

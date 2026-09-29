@@ -7,6 +7,8 @@ for the page itself, never to mean something in a chart.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+
 import streamlit as st
 
 NIGHT = dict(
@@ -25,6 +27,18 @@ DAY = dict(
 )
 # kept for older imports
 DARK, LIGHT = NIGHT, DAY
+
+
+@contextmanager
+def safe_section(name: str):
+    """Run one part of a page; if it fails, show a short note there and carry on
+    with the rest of the page.  (st.stop / reruns are not errors and pass through.)"""
+    try:
+        yield
+    except Exception as e:  # noqa: BLE001 - shown to the user, never hidden
+        st.warning(f"The {name} part couldn't be shown for this selection. The rest of the page is fine.")
+        with st.expander("Details (send this to fix it)"):
+            st.code(f"{type(e).__name__}: {e}")
 
 
 def is_night() -> bool:
@@ -85,8 +99,8 @@ h2 { text-transform: uppercase; font-size: 1.7rem !important; }
     radial-gradient(circle at 1px 1px, {accent_soft} 1px, transparent 1.5px) 0 0 / 9px 9px,
     linear-gradient(180deg, {panel}, {surface});
 }
-.board .label { font-family: 'Barlow Condensed', sans-serif; letter-spacing: .16em; text-transform: uppercase;
-  font-size: 12px; font-weight: 700; color: {accent}; }
+.board .label { font-family: 'Barlow Condensed', sans-serif; letter-spacing: .08em;
+  font-size: 14px; font-weight: 700; color: {accent}; }  /* normal capitals: "T20Is", not "T20IS" */
 .board .line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px;
   font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; color: {ink}; }
 .board .line .score { font-variant-numeric: tabular-nums; color: {ink}; text-shadow: {glow}; }

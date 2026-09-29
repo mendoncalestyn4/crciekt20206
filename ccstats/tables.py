@@ -1,6 +1,6 @@
 """Competition tables: league standings, knockout brackets and bilateral series.
 
-Everything works on one section and one season (a set of match ids)."""
+Everything works on one competition and one season (a set of match ids)."""
 
 from __future__ import annotations
 

@@ -106,4 +106,9 @@ nav = st.navigation(pages, expanded=True)  # every page always listed
 goto = st.session_state.pop("search_goto", None)  # set by the search box
 if goto:
     st.switch_page(goto)
-nav.run()
+try:
+    nav.run()
+except Exception as e:  # noqa: BLE001 - shown, never hidden
+    st.error("Something went wrong on this page. Every other page still works; pick one from the menu.")
+    with st.expander("Details (send this to fix it)"):
+        st.exception(e)

@@ -34,7 +34,7 @@ def entry_scores(career) -> pd.DataFrame:
 
     Openers (positions 1 and 2) come in at 0 for 0; the batter at position p
     arrives when wicket p-2 falls, and the fall of wickets gives that score."""
-    fow = career.fow.set_index(["match_id", "innings_no", "wicket"]).score
+    fow = career.fow.drop_duplicates(["match_id", "innings_no", "wicket"]).set_index(["match_id", "innings_no", "wicket"]).score
     b = career.batting[["match_id", "innings_no", "position"]].copy()
     wk = (b.position - 2).clip(lower=0)
     keys = list(zip(b.match_id, b.innings_no, wk))

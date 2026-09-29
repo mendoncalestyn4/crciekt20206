@@ -43,7 +43,7 @@ def test_partnerships_add_up_to_the_score(career):
 
 
 def test_team_record_and_streaks(career):
-    ids = Scope(sections=["Tests (bilateral series)"]).match_ids(career.matches)
+    ids = Scope(sections=["Tests"]).match_ids(career.matches)
     tm = A.team_matches(career, ids, "England")
     rec = A.team_record(tm)
     assert (rec["played"], rec["won"], rec["lost"], rec["win_pct"]) == (3, 3, 0, 100.0)
@@ -52,7 +52,7 @@ def test_team_record_and_streaks(career):
 
 
 def test_nemesis_and_bunnies_match_the_dismissals(career):
-    ids = Scope(sections=["Tests (bilateral series)"]).match_ids(career.matches)
+    ids = Scope(sections=["Tests"]).match_ids(career.matches)
     n = A.nemesis(career, ids, "B Azam")
     inns = A.batting_innings(career, ids, "B Azam")
     assert n.dismissals.sum() <= inns.out.sum() and n.dismissals.sum() >= inns.out.sum() - (inns.how_out == "run out").sum()
@@ -64,7 +64,7 @@ def test_nemesis_and_bunnies_match_the_dismissals(career):
 
 
 def test_splits_add_up(career):
-    ids = Scope(sections=["Tests (bilateral series)"]).match_ids(career.matches)
+    ids = Scope(sections=["Tests"]).match_ids(career.matches)
     inns = A.batting_innings(career, ids, "J Bethell")
     for by in ("venue", "outcome", "batting_first", "opposition"):
         s = A.split_batting(inns, by)
@@ -75,13 +75,13 @@ def test_splits_add_up(career):
 
 def test_player_record_tables(career):
     ids = career.matches.match_id
-    b = A.batting_record(career, ids, "J Bethell").set_index("section").loc["Tests (bilateral series)"]
+    b = A.batting_record(career, ids, "J Bethell").set_index("section").loc["Tests"]
     assert (b.Inns, b.Runs, b["100"], b["50"]) == (5, 254, 1, 1)  # 3, 119, 28, 96, 8
-    w = A.bowling_record(career, ids, "J Archer").set_index("section").loc["Tests (bilateral series)"]
+    w = A.bowling_record(career, ids, "J Archer").set_index("section").loc["Tests"]
     assert w.Wkts == 15 and np.isnan(w.Dots) and w.Mdns >= 0
 
 
-@pytest.mark.parametrize("section", ["Tests (bilateral series)", "Indian Premier League", "The Hundred", "T20 Blast"])
+@pytest.mark.parametrize("section", ["Tests", "Indian Premier League", "The Hundred", "T20 Blast"])
 def test_player_record_tables_agree_with_the_stat_tables(career, section):
     """The per-section table on the player page must give the same numbers as Stat by stat."""
     from ccstats.stats import player_tables

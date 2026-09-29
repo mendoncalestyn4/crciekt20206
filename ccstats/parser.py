@@ -115,6 +115,10 @@ class Match:
     margin_note: str = ""  # set when the game's printed margin disagrees with the scores
     player_of_match: str = ""
     innings: list[Innings] = field(default_factory=list)
+    # A tie settled by a super over: the game adds "<Team> - Super over" innings after
+    # the real ones.  They decide the match but, as in real cricket, don't count in
+    # anyone's figures, so they are kept apart from `innings`.
+    super_overs: list[Innings] = field(default_factory=list)
 
 
 class ScorecardError(ValueError):
@@ -132,6 +136,7 @@ RULE_RE = re.compile(r"^[\s*=\-_~]+$")
 TEAMS_RE = re.compile(r"^(?P<a>.+?)\s+(?:v|vs\.?|versus)\s+(?P<b>.+?)$")
 INNINGS_RE = re.compile(
     r"^(?P<team>.+?)\s*[-–:]\s*(?P<ord>1st|2nd|first|second)?\s*innings\b(?P<rest>.*)$", re.I)
+SUPER_OVER_RE = re.compile(r"^(?P<team>.+?)\s*[-–:]\s*super\s*over\b(?P<rest>.*)$", re.I)
 EXTRAS_RE = re.compile(r"^extras\b", re.I)
 TOTAL_RE = re.compile(r"^total\b", re.I)
 FOW_RE = re.compile(r"^fall of wickets?\b", re.I)
@@ -322,6 +327,13 @@ def _assign_fielders(match: "Match") -> None:
                 # so the catcher is the other Taylor
                 if len(hits) > 1 and e.bowler in hits:
                     hits = [h for h in hits if h != e.bowler]
+                # "st Singh" with two Singhs: only the wicketkeeper stumps, and the
+                # keeper can't have bowled in this innings
+                if len(hits) > 1 and e.how_out == "stumped":
+                    bowled = {b.player for b in inn.bowling}
+                    keepers = [h for h in hits if h not in bowled]
+                    if keepers:
+                        hits = keepers
             if len(hits) == 1:
                 e.fielder, e.fielder_resolved = hits[0], True
 
@@ -374,7 +386,7 @@ def parse_result(result: str, teams: list[str]) -> dict:
         if re.search(rf"^{re.escape(t.lower())}\s+(?:won|win|beat)", low):
             winner = t
             break
-    if "tied" in low or re.search(r"\btie\b", low):
+    if "tied" in low or re.search(r"\btie\b", low) or "super over" in low or re.search(r"bowl[\s-]?out", low):
         out["result_type"] = "tie"
         out["winner"] = winner  # super over / bowl-out winner, if stated
         return out
@@ -504,6 +516,14 @@ def parse_scorecard(text: str, source: str = "") -> Match:
                 section = "footer"
             continue
 
+        so = SUPER_OVER_RE.match(line)
+        if so and not TOTAL_RE.match(line):
+            cur = Innings(team=so.group("team").strip(), number=0, team_innings=0)
+            match.super_overs.append(cur)
+            bat_cols = _header_cols(so.group("rest"), BAT_COLS)
+            section, pos = "batting", 0
+            continue
+
         im = INNINGS_RE.match(line)
         if im and not TOTAL_RE.match(line):
             team = im.group("team").strip()
@@ -577,8 +597,9 @@ def parse_scorecard(text: str, source: str = "") -> Match:
         match.series_match_no, match.series_length = int(sm.group("no")), int(sm.group("of"))
 
     teams = [match.team1, match.team2]
-    for inn in match.innings:
+    for inn in match.innings + match.super_overs:
         inn.bowling_team = next((t for t in teams if t and t != inn.team), "")
+    for inn in match.innings:
         _assign_bowlers(inn)
     _assign_fielders(match)
 

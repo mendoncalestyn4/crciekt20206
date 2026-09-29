@@ -68,7 +68,8 @@ def journey(career, player: str) -> pd.DataFrame:
     m = career.matches.set_index("match_id")
     rows = []
     apps = b.groupby(["match_id", "team"]).size().reset_index()[["match_id", "team"]]
-    apps = apps.assign(date=apps.match_id.map(m.date), section=apps.match_id.map(m.section),
+    # by competition as it's run, so a World Cup shows as its own stop on the journey
+    apps = apps.assign(date=apps.match_id.map(m.date), section=apps.match_id.map(m.event),
                        season=apps.match_id.map(m.season))
     for (team, section, season), g in apps.groupby(["team", "section", "season"]):
         ids = set(g.match_id)
@@ -170,7 +171,9 @@ def season_in_progress(career, section: str) -> tuple[str, int, int] | None:
         return None
     cur, prev = seasons[-1], seasons[-2]
     now, full = int((m.season == cur).sum()), int((m.season == prev).sum())
-    if now >= full or ((m.season == cur) & (m.stage == "Final")).any():
+    # a final ends a league's season; a World Cup final doesn't end a year of international cricket
+    final = (m.season == cur) & (m.stage == "Final") & (m.level != "International")
+    if now >= full or final.any():
         return None
     return cur, now, full
 
@@ -187,7 +190,6 @@ def on_pace(career, section: str, min_matches: int = 2) -> pd.DataFrame:
     m = career.matches[career.matches.section == section]
     seasons = sorted(m.season.unique())
     prev_ids = m[m.season == seasons[-2]]
-    cur_ids = m[m.season == cur].match_id
     team_games_prev = pd.concat([prev_ids.home, prev_ids.away]).value_counts()
     team_games_now = pd.concat([m[m.season == cur].home, m[m.season == cur].away]).value_counts()
     bat, bowl, _, _ = player_tables(career, Scope(sections=[section], seasons=[cur]), by_team=True)
@@ -389,46 +391,56 @@ def honours(career) -> pd.DataFrame:
     has its table leader or series winner."""
     from .tables import BILATERAL, league_tables
     m = career.matches
-    has_knockouts = set(m[m.knockout].section)  # competitions decided by a final
-    latest = m.groupby("section").season.max()
+    # one row per competition as it's run (the ODI World Cup, not the whole ODIs section)
+    has_knockouts = set(m[m.knockout].event)  # competitions decided by a final
+    latest = m.groupby("event").season.max()
     rows = []
-    for (section, season), g in m.groupby(["section", "season"]):
+    for (event, season), g in m.groupby(["event", "season"]):
         if g.competition.iloc[0] in BILATERAL:
             continue  # bilateral series aren't a competition with a champion (see Competitions → Series)
         ids = g.match_id
         champ = runner = potm = ""
         how = ""
+        teams: list[str] = []
         final = g[g.stage == "Final"].sort_values("date")
         if len(final) == 1:
             f = final.iloc[0]
             champ = f.winner or f.tiebreak_winner
             runner = (f.away if champ == f.home else f.home) if champ else ""
             potm, how = f.player_of_match, "won the final"
-        elif len(final) > 1 or section in has_knockouts:
+            if not champ and f.format == "Test" and f.result_type in ("draw", "tie"):
+                # a drawn or tied World Test Championship Final: the two sides share the title
+                teams, champ, how = [f.home, f.away], f"{f.home} and {f.away}", "final drawn: title shared"
+        elif len(final) > 1 or event in has_knockouts:
             continue  # two finals (files from different saves), or the final isn't played yet
         else:  # a league with no final (e.g. the County Championship): the table decides
             tables = league_tables(career, ids)
             if len(tables) == 1 and len(tables[0][1]) > 1:
                 t = tables[0][1]
-                done = season != latest[section]  # a later season exists, so this one is over
+                done = season != latest[event]  # a later season exists, so this one is over
                 champ, runner = t.team.iloc[0], t.team.iloc[1]
                 how = "top of the table" if done else "leading so far (season in progress)"
         if not champ:
             continue
-        bat, bowl, _, _ = player_tables(career, Scope(sections=[section], seasons=[season]))
+        # the event's own matches only: a World Cup's top scorer, not the whole year's ODIs
+        bat, bowl, _, _ = player_tables(career, Scope(sections=[g.section.iloc[0]], competitions=[g.competition.iloc[0]],
+                                                      seasons=[season]))
         tb = bat.sort_values("runs", ascending=False).iloc[0] if len(bat) else None
         tw = bowl.sort_values(["wickets", "average"], ascending=[False, True]).iloc[0] if len(bowl) else None
-        rows.append(dict(section=section, season=season, champions=champ, runners_up=runner, how=how,
+        rows.append(dict(section=event, season=season, champions=champ, champion_teams=teams or [champ],
+                         runners_up=runner, how=how,
                          top_runs=f"{tb.player} ({int(tb.runs)})" if tb is not None else "",
                          top_wickets=f"{tw.player} ({int(tw.wickets)})" if tw is not None and tw.wickets > 0 else "",
                          final_potm=potm, date=g.date.max()))
-    return pd.DataFrame(rows, columns=["section", "season", "champions", "runners_up", "how", "top_runs", "top_wickets",
-                                       "final_potm", "date"]).sort_values(["date"], ascending=False).reset_index(drop=True)
+    return pd.DataFrame(rows, columns=["section", "season", "champions", "champion_teams", "runners_up", "how", "top_runs",
+                                       "top_wickets", "final_potm", "date"]) \
+        .sort_values(["date"], ascending=False).reset_index(drop=True)
 
 
 def trophy_cabinet(career, team: str) -> pd.DataFrame:
     h = honours(career)
-    return h[(h.champions == team) & ~h.how.str.contains("so far")][["section", "season", "how", "runners_up"]]
+    mine = h.champion_teams.map(lambda t: team in t)  # a shared title counts for both sides
+    return h[mine & ~h.how.str.contains("so far")][["section", "season", "how", "runners_up"]]
 
 
 # --------------------------------------------------------------------------- #
@@ -456,9 +468,9 @@ def headlines(career, n_matches: int = 10, limit: int = 8) -> list[str]:
             out.append(line)
         for w in bowl[bowl.wickets >= 5].itertuples():
             out.append(f"🎯 {w.player} takes {w.wickets}/{w.runs} for {w.team} v {w.opposition}{stage}")
-        finals = m[(m.section == r.section) & (m.season == r.season) & (m.stage == "Final")]
+        finals = m[(m.event == r.event) & (m.season == r.season) & (m.stage == "Final")]
         if r.knockout and r.stage == "Final" and (r.winner or r.tiebreak_winner) and len(finals) == 1:
-            out.append(f"🏆 {r.winner or r.tiebreak_winner} win the {r.section} {r.season}")
+            out.append(f"🏆 {r.winner or r.tiebreak_winner} win the {r.event} {r.season}")
         for c in A.collapses(career, [r.match_id], r.home).itertuples():
             out.append(f"📉 {r.home} collapse from {c.from_score} to {c.to_score} v {r.away}")
         for c in A.collapses(career, [r.match_id], r.away).itertuples():

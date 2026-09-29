@@ -1,9 +1,14 @@
 # Cricket Captain 2026 Stats Pack
 
-Your own stats site for Cricket Captain 2026. It reads the scorecards the game saves, keeps every competition
-separate (IPL, Tests, bilateral ODIs, World Cups, each County Championship division, Ranji Trophy, …) and turns
-them into leaderboards, player and team pages, head-to-heads, records, rankings and more. New matches appear by
-themselves while you play.
+Your own stats site for Cricket Captain 2026. It reads the scorecards the game saves and turns them into
+leaderboards, player and team pages, head-to-heads, records, rankings and more. New matches appear by themselves
+while you play.
+
+International matches are grouped by format, like real career records: every Test (series and the World Test
+Championship Final) is in **Tests**, every ODI (series, World Cup, Champions Trophy, Asia Cup) in **ODIs**, and
+every T20I in **T20Is**. Everything else stays separate: IPL, T20 Blast, The Hundred, Ranji Trophy, each County
+Championship division and so on never mix. The Competitions page still shows each World Cup's own table and
+bracket, and each series on its own.
 
 Everything runs on your own PC. Nothing is uploaded anywhere.
 
@@ -62,7 +67,7 @@ The pages are grouped in the menu:
 | **Team vs team** | Two teams head to head, overall / home / away / only against each other |
 | **Opponent preview** | Before you play someone: their form, in-form batters and bowlers, how their batters get out, how often they collapse, your record against them |
 | **Matches** | Search any match: scoreboard, wicket timeline with the par line, full scorecard |
-| **Competitions** | League tables (points, NRR), knockout brackets, bilateral series |
+| **Competitions** | Pick a competition (a World Cup, the bilateral ODI series, a league): league tables (points, NRR), knockout brackets, every series |
 | **Honours board** | Champions of every competition and season, top scorers, trophy cabinets |
 | **Rivalries** | Every pair of teams that have met, and who does best in those games |
 | **Records** | The record books, plus "On pace for" projections while a season is under way |
@@ -91,8 +96,10 @@ The pages are grouped in the menu:
 
 ## Updating to a new version
 
-Download the new zip, extract it over the old program folder (or to a new folder) and double-click
-`Start Stats Pack.bat`. Your careers and backups stay where they are.
+Close the black window first. Then download the new zip, extract it over the old program folder (choose
+**Replace the files in the destination**) and double-click `Start Stats Pack.bat`. Your careers, fixes and backups
+stay where they are, and every scorecard is read again with the new version, so fixes to how scorecards are read
+(like super overs) apply to matches you already have.
 
 ## If something goes wrong
 
@@ -102,7 +109,8 @@ Download the new zip, extract it over the old program folder (or to a new folder
 | "Python isn't installed" but you installed it | Re-run the Python installer → **Modify** → make sure **Add Python to environment variables** is ticked. |
 | First start fails | Check your internet connection, delete the `.venv` folder in the program folder, and start again. |
 | New matches don't appear | Check **Autosave scorecards** is on in the game, and that Home says *New matches from your Scorecards folder are added automatically*. |
-| A catch is credited to nobody | The scorecard only printed a surname shared by two players. Credit it on **Data check**. |
+| A catch is credited to nobody | The scorecard only printed a surname shared by two players. On **Data check → Unclear catches**, accept the suggestions (e.g. the side's wicketkeeper) or pick the fielder yourself. |
+| A box says "couldn't be shown" or "Something went wrong" | The rest of the site still works. Open **Details** in that box and send the text so it can be fixed. |
 | The browser didn't open | Open **http://localhost:8501** yourself (or the address shown in the black window). |
 
 ---

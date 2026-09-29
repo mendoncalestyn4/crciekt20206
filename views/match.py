@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 
 from ccstats import extras as E
+from ccstats.competitions import shown_name
 from ccstats.parser import balls_to_overs
 from ui import state
 from ui.charts import CONFIG, fmt, wicket_timeline
@@ -33,7 +34,8 @@ team = c2.selectbox("Team", ["All teams"] + teams, key="mt_team")
 if team != "All teams":
     pool = pool[(pool.home == team) | (pool.away == team)]
 
-labels = {r.match_id: f"{r.date:%d %b %Y} · {r.home} v {r.away} · {r.section}{' · ' + r.stage if r.stage else ''} · {r.result}"
+labels = {r.match_id: f"{r.date:%d %b %Y} · {r.home} v {r.away} · {shown_name(r.section, r.event)}"
+                      f"{' · ' + r.stage if r.stage else ''} · {r.result}"
           for r in pool.itertuples()}
 wanted = st.query_params.get("match")
 if wanted in labels and "mt_match" not in st.session_state:
@@ -46,9 +48,10 @@ if not mid:
 row = m[m.match_id == mid].iloc[0]
 st.divider()
 stage = f" · {row.stage}" if row.stage else ""
-series = f" · match {int(row.series_match_no)} of {int(row.series_length)}" if pd.notna(row.series_match_no) else ""
-scoreboard(f"{row.section}{stage}{series} · {row.date:%d %b %Y}", row.home, score_of(mid, row.home), row.away,
-           score_of(mid, row.away), row.result + (f" · Player of the match: {row.player_of_match}" if row.player_of_match else ""))
+series = f" · Match {int(row.series_match_no)} of {int(row.series_length)}" if pd.notna(row.series_match_no) else ""
+scoreboard(f"{shown_name(row.section, row.event)}{stage}{series} · {row.date:%d %b %Y}", row.home, score_of(mid, row.home), row.away,
+           score_of(mid, row.away), row.result + (f" (super over: {row.super_over})" if row.super_over else "")
+           + (f" · Player of the match: {row.player_of_match}" if row.player_of_match else ""))
 st.write("")
 
 inns = inn_all[inn_all.match_id == mid].sort_values("innings_no")

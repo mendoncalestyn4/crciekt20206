@@ -15,7 +15,7 @@ import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from .loader import Career, Fixes
+from .loader import Career
 
 
 def home_dir() -> Path:

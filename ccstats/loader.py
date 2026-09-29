@@ -17,7 +17,8 @@ from typing import Iterable
 
 import pandas as pd
 
-from .competitions import FIRST_CLASS, TEST, assign_seasons, assign_series, classify, fix_playoff_stages, section_of
+from .competitions import (FIRST_CLASS, INTERNATIONAL, INTERNATIONAL_SECTION, TEST, assign_seasons, assign_series,
+                           classify, event_of, fix_playoff_stages, section_of)
 from .parser import Match, ScorecardError, parse_scorecard, validate_match
 
 MULTI_DAY = {TEST, FIRST_CLASS}
@@ -37,19 +38,23 @@ class Fixes:
              - rows for that player *while playing for that team* get the new name.
     credits: {"<match_id>|<innings_no>|<batting position>": "S Khan"} - who took a catch or
              stumping the scorecard left ambiguous ("c Khan" with two Khans in the XI).
+    suggested: the credit keys that came from "Accept all suggestions" rather than
+             being picked one by one, so they can be told apart and undone together.
     """
 
     merges: dict[str, str] = field(default_factory=dict)
     splits: list[dict] = field(default_factory=list)
     credits: dict[str, str] = field(default_factory=dict)
+    suggested: list[str] = field(default_factory=list)
 
     def to_json(self) -> str:
-        return json.dumps({"merges": self.merges, "splits": self.splits, "credits": self.credits}, indent=1)
+        return json.dumps({"merges": self.merges, "splits": self.splits, "credits": self.credits,
+                           "suggested": self.suggested}, indent=1)
 
     @classmethod
     def from_json(cls, text: str) -> "Fixes":
         d = json.loads(text or "{}")
-        return cls(d.get("merges", {}), d.get("splits", []), d.get("credits", {}))
+        return cls(d.get("merges", {}), d.get("splits", []), d.get("credits", {}), d.get("suggested", []))
 
     def rename(self, name: str, team: str) -> str:
         for s in self.splits:
@@ -245,6 +250,10 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
         fix_playoff_stages(games)
         for g in games:
             stages[g["i"]] = g["stage"]
+    # International cricket is played all year round, so its seasons are calendar
+    # years ("ODIs in 2026"), the same for a bilateral series and a World Cup.
+    seasons = [str(m.date.year) if c.level == INTERNATIONAL and c.format in INTERNATIONAL_SECTION else s
+               for s, c, m in zip(seasons, cls, parsed)]
 
     M, I, B, W, F, FOW, P = [], [], [], [], [], [], []
     for i, (m, c) in enumerate(zip(parsed, cls)):
@@ -260,7 +269,7 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
         winner = m.winner if result_type == "win" else ""
         M.append(dict(
             match_id=m.match_id, date=pd.Timestamp(m.date), season=seasons[i], competition=c.competition,
-            section=section_of(c.competition, stages[i]),
+            section=section_of(c.competition, stages[i], c.format, c.level), event=event_of(c.competition, stages[i]),
             format=c.format, level=c.level, country=c.country, stage=stages[i], knockout=c.knockout,
             neutral=c.neutral, recognised=c.recognised, title=m.title, series_id=series[i],
             series_match_no=m.series_match_no, series_length=m.series_length,
@@ -268,7 +277,7 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
             loser=(m.team2 if winner == m.team1 else m.team1) if winner else "",
             result_type=result_type, result=_corrected_result(m), tiebreak_winner=tiebreak,
             margin_runs=m.margin_runs, margin_wickets=m.margin_wickets, innings_win=m.innings_win,
-            margin_note=m.margin_note,
+            margin_note=m.margin_note, super_over=_super_over_text(m),
             player_of_match=fixes.rename(m.player_of_match, ""), batted_first=batted_first, source=m.source))
         for p in validate_match(m):
             P.append(dict(match_id=m.match_id, source=m.source, problem=p))
@@ -282,7 +291,11 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
                 counted_in_balls=inn.counted_in_balls, extras=inn.extras, byes=inn.byes, leg_byes=inn.leg_byes,
                 wides=inn.wides, no_balls=inn.no_balls,
                 home=inn.team == m.team1 and not c.neutral, batting_first=inn.team == batted_first))
+            fell = set()
             for w, score in inn.fow:
+                if w in fell:
+                    continue  # a wicket listed twice: keep the first (a later list belongs to something else)
+                fell.add(w)
                 FOW.append(dict(match_id=m.match_id, innings_no=inn.number, team=inn.team, wicket=w, score=score))
             seen: dict[str, int] = {}
             for b in inn.batting:
@@ -322,12 +335,59 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
         fow=pd.DataFrame(FOW, columns=["match_id", "innings_no", "team", "wicket", "score"]),
         problems=pd.DataFrame(P, columns=["match_id", "source", "problem"]),
     )
+    _one_row_per_key(frames)
     return frames
+
+
+# Every page looks rows up by these keys, so each must name exactly one row.
+UNIQUE_KEYS = {
+    "matches": ["match_id"],
+    "innings": ["match_id", "innings_no"],
+    "batting": ["match_id", "innings_no", "position"],
+    "bowling": ["match_id", "innings_no", "player"],
+    "fow": ["match_id", "innings_no", "wicket"],
+    "fielding": ["credit_key"],
+}
+
+
+def _one_row_per_key(frames: dict[str, pd.DataFrame]) -> None:
+    """A scorecard the parser half-understood must never leave two rows with the
+    same key (that is what once broke the player page).  A bowler listed twice in
+    one innings has the two lines added up; any other repeat keeps the first row.
+    Either way the match is listed on the data check page."""
+    source = frames["matches"].drop_duplicates("match_id").set_index("match_id").source
+    extra = []
+    for name, keys in UNIQUE_KEYS.items():
+        df = frames[name]
+        dup = df.duplicated(keys, keep=False)
+        if not dup.any():
+            continue
+        for mid in (df[dup].match_id.unique() if "match_id" in df else []):
+            extra.append(dict(match_id=mid, source=source.get(mid, ""),
+                              problem=f"a {name} line appears twice in this scorecard; it is counted once"))
+        if name == "bowling":
+            nums = ["balls", "runs", "wickets", "maidens", "dots"]
+            first = df.drop_duplicates(keys).set_index(keys)
+            summed = df.groupby(keys, sort=False)[nums].sum(min_count=1)
+            first[nums] = summed[nums]
+            frames[name] = first.reset_index()[df.columns]
+        else:
+            frames[name] = df.drop_duplicates(keys).reset_index(drop=True)
+    if extra:
+        frames["problems"] = pd.concat([frames["problems"], pd.DataFrame(extra)], ignore_index=True)
+
+
+def _super_over_text(m: Match) -> str:
+    """'Bangladesh 11/2 · New Zealand 21/0' for a tie settled by a super over."""
+    return " · ".join(f"{i.team} {i.total}/{i.wickets}" for i in m.super_overs)
 
 
 def _corrected_result(m: Match) -> str:
     """The result line with the margin worked out from the scores (the game
-    occasionally prints a wrong one; see parser._check_margin)."""
+    occasionally prints a wrong one; see parser._check_margin).  A super-over
+    finish ("New Zealand won  (super over)") reads as the tie it was."""
+    if m.super_overs and m.result_type == "tie":
+        return (f"Match tied · {m.winner} won the super over" if m.winner else "Match tied (super over)")
     if not m.margin_note:
         return m.result
     if m.margin_wickets is not None:
@@ -336,9 +396,10 @@ def _corrected_result(m: Match) -> str:
 
 
 MATCH_COLUMNS = [
-    "match_id", "date", "season", "competition", "section", "format", "level", "country", "stage", "knockout", "neutral",
+    "match_id", "date", "season", "competition", "section", "event", "format", "level", "country", "stage", "knockout", "neutral",
     "recognised", "title", "series_id", "series_match_no", "series_length", "home", "away", "winner", "loser",
     "result_type", "result", "tiebreak_winner", "margin_runs", "margin_wickets", "innings_win", "margin_note",
+    "super_over",
     "player_of_match",
     "batted_first", "source"]
 INNINGS_COLUMNS = [

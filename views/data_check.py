@@ -63,23 +63,42 @@ with tabs[1]:
     if unc.empty:
         st.success("Every catch and stumping is credited to a player.")
     else:
-        st.caption("The scorecard prints only a surname, e.g. 'c Patel', and more than one player in the side has it. "
-                   "Pick who took it; players with that surname are listed first. Leave it as it is if you're not sure: "
-                   "it then isn't counted for anyone.")
+        st.caption("Why these are unclear: the scorecard prints only the fielder's surname (e.g. 'c Patel', never "
+                   "'c A Patel'), and two or more players in that side share it. The certain cases are already sorted "
+                   "out for you: the catcher can't be the bowler (that would be printed 'c & b'), and only the "
+                   "wicketkeeper stumps, who doesn't bowl. What's left needs a decision. Until then these still count "
+                   "in the team's figures, just not for any one player.")
+        sug = unc[unc.suggestion != ""]
+        if len(sug):
+            with st.container(border=True):
+                st.markdown(f"**{len(sug)} of {len(unc)} have a strong suggestion**, e.g. the side's wicketkeeper, or a "
+                            "fielder who takes far more of the side's catches. Each one's reason is shown below.")
+                if st.button(f"Accept all {len(sug)} suggestions", type="primary", key="dc_accept_all"):
+                    f = fixes_copy()
+                    f.credits.update(dict(zip(sug.credit_key, sug.suggestion)))
+                    f.suggested = sorted(set(f.suggested) | set(sug.credit_key))
+                    apply(f, f"Credited {len(sug)} catches and stumpings as suggested. Undo them any time under Your fixes.")
+        st.caption("Or pick them one by one. The suggestion is already selected where there is one; players with "
+                   "that surname are listed first.")
         show = unc.head(40)
         with st.form("dc_credits"):
             picks = {}
             for r in show.itertuples():
                 c1, c2 = st.columns([3, 2])
                 verb = "c" if r.kind == "caught" else "st"
-                c1.markdown(f"**{r.match}** · {r.team} fielding  \n{r.batter} {verb} {r.printed} b {r.bowler}")
-                picks[r.credit_key] = c2.selectbox("Who took it?", ["Leave as it is"] + r.candidates, key=f"dc_c_{r.credit_key}",
+                c1.markdown(f"**{r.match}** · {r.team} fielding  \n{r.batter} {verb} {r.printed} b {r.bowler}"
+                            + (f"  \n<span style='opacity:.7;font-size:13px'>Suggested: {r.suggestion} ({r.reason})</span>"
+                               if r.suggestion else ""), unsafe_allow_html=True)
+                options = ["Leave as it is"] + r.candidates
+                picks[r.credit_key] = c2.selectbox("Who took it?", options, key=f"dc_c_{r.credit_key}",
+                                                   index=options.index(r.suggestion) if r.suggestion in options else 0,
                                                    label_visibility="collapsed")
             if st.form_submit_button("Save these", type="primary"):
                 chosen = {k: v for k, v in picks.items() if v != "Leave as it is"}
                 if chosen:
                     f = fixes_copy()
                     f.credits.update(chosen)
+                    f.suggested = [k for k in f.suggested if k not in chosen]  # picked by hand now
                     apply(f, f"Credited {len(chosen)} catch{'es' if len(chosen) > 1 else ''}/stumping{'s' if len(chosen) > 1 else ''}.")
         if len(unc) > len(show):
             st.caption(f"Showing the first {len(show)} of {len(unc)}. Save these to see the rest.")
@@ -159,13 +178,23 @@ with tabs[4]:
             f = fixes_copy()
             f.splits = [x for x in f.splits if x != s]
             apply(f, f"Undone: {s['new_name']} is {s['player']} again.")
+    if fx.suggested:
+        c1, c2 = st.columns([5, 1], vertical_alignment="center")
+        c1.markdown(f"**{len(fx.suggested)} catches/stumpings credited from suggestions** (marked 💡 below)")
+        if c2.button("Undo all", key="dc_undo_sug"):
+            f = fixes_copy()
+            for k in f.suggested:
+                f.credits.pop(k, None)
+            f.suggested = []
+            apply(f, "Undone: the suggested credits are uncredited again.")
     for i, (k, v) in enumerate(list(fx.credits.items())):
         mid, inn, pos = k.split("|")
         row = career.matches[career.matches.match_id == mid]
         label = f"{row.date.iloc[0]:%d %b %Y} · {row.home.iloc[0]} v {row.away.iloc[0]}" if len(row) else mid
         c1, c2 = st.columns([5, 1], vertical_alignment="center")
-        c1.markdown(f"Credited **{v}** with a dismissal · {label}, innings {inn}, batter at {pos}")
+        c1.markdown(f"{'💡 ' if k in fx.suggested else ''}Credited **{v}** with a dismissal · {label}, innings {inn}, batter at {pos}")
         if c2.button("Undo", key=f"dc_uc_{i}"):
             f = fixes_copy()
             f.credits.pop(k)
+            f.suggested = [x for x in f.suggested if x != k]
             apply(f, "Undone: that dismissal is uncredited again.")

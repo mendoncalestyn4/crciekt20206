@@ -77,7 +77,7 @@ def test_records_hand_checked(career):
     assert (hs.holder, hs.value) == ("M Savage", "104* (51)")
     lo = r["Lowest completed totals"].iloc[0]
     assert (lo.holder, lo.value, lo.against) == ("Northamptonshire", "96", "Somerset")
-    tests = RC.records(career, Scope(sections=["Tests (bilateral series)"]).match_ids(career.matches))
+    tests = RC.records(career, Scope(sections=["Tests"]).match_ids(career.matches))
     assert tests["Best bowling in a match"].iloc[0][["holder", "value"]].tolist() == ["S Khan", "9/232"]
     assert tests["Biggest wins by runs"].iloc[0][["holder", "value"]].tolist() == ["England", "299 runs"]
 

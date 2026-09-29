@@ -7,7 +7,7 @@ from ccstats import extras as E
 from ccstats.stats import Scope
 from ui import state
 from ui.charts import CONFIG, bars, fmt, form_chart, paired_bars
-from ui.theme import explain_list, kpis, page_header
+from ui.theme import explain_list, kpis, page_header, safe_section
 
 career = state.current()
 if career is None:
@@ -118,11 +118,16 @@ if len(inns):
 if len(spells):
     tab_names.append("Bowling")
 tab_names.append("Fielding")
+is_bowler = (roles.loc[player, "role"] == "Bowler" if player in roles.index  # too few games for a role: where they bat
+             else inns.empty or inns.position.median() >= 8)
+if is_bowler and "Bowling" in tab_names:
+    # a bowler's page opens on their bowling, then fielding; batting comes last
+    tab_names = ["Bowling", "Fielding"] + [t for t in tab_names if t not in ("Bowling", "Fielding")]
 tabs = dict(zip(tab_names, st.tabs(tab_names)))
 
 # ================================================================ batting
 if "Batting" in tabs:
-    with tabs["Batting"]:
+    with tabs["Batting"], safe_section("batting"):
         b = me_bat.iloc[0]
         kpis([("Innings", f"{b.innings}"), ("Runs", f"{b.runs:,}"), ("Average", fmt(b.average, 2)),
               ("Strike rate", fmt(b.strike_rate, 1)), ("High score", b.high_score_text),
@@ -277,7 +282,7 @@ if "Batting" in tabs:
 
 # ================================================================ bowling
 if "Bowling" in tabs:
-    with tabs["Bowling"]:
+    with tabs["Bowling"], safe_section("bowling"):
         w = me_bowl.iloc[0]
         kpis([("Wickets", f"{w.wickets}"), ("Average", fmt(w.average, 2)), ("Economy", fmt(w.economy, 2)),
               ("Strike rate", fmt(w.strike_rate, 1)), ("Best", w.best), ("4+ hauls", f"{w.hauls}")])
@@ -348,7 +353,7 @@ if "Bowling" in tabs:
                                     width="stretch", config=CONFIG, key=f"pl_bsplit_{i}")
 
 # ================================================================ fielding
-with tabs["Fielding"]:
+with tabs["Fielding"], safe_section("fielding"):
     if len(me_fld):
         f = me_fld.iloc[0]
         kpis([("Matches", f"{f.matches}"), ("Catches", f"{f.catches}"), ("Stumpings", f"{f.stumpings}")])
