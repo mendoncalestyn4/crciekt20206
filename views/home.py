@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from ccstats import checks
 from ccstats.competitions import shown_name
 from ccstats.loader import Career
 from ccstats.extras import headlines
@@ -20,7 +21,10 @@ def new_career_form(first: bool) -> None:
     if f"{k}_folder" not in st.session_state:
         current = state.current()
         s = state.settings_of(current.name) if current is not None else None
-        st.session_state[f"{k}_folder"] = s.folder if s and s.folder else (str(detected) if detected else "")
+        default = s.folder if s and s.folder else (str(detected) if detected else "")
+        if default and state.watcher().owner(default):
+            default = ""  # that folder already has its career: a new career needs a different one
+        st.session_state[f"{k}_folder"] = default
     st.markdown("**1 · Your Scorecards folder**")
     st.caption("In Cricket Captain 2026, turn on **Autosave scorecards** in Options. The folder is normally "
                "`AppData\\Roaming\\Childish Things\\Cricket Captain 2026\\Scorecards`"
@@ -40,13 +44,13 @@ def new_career_form(first: bool) -> None:
     name = st.text_input("Career name", value="My career" if first else "", placeholder="e.g. India save",
                          label_visibility="collapsed", key=f"{k}_name")
     if owner:
-        st.error(f"This folder is already watched by **{owner}**. One Scorecards folder is one career, so both saves' "
-                 "matches go there. Pick a different folder for a separate career.")
+        st.warning(f"This folder is already used by **{owner}**. One Scorecards folder is one career, so both saves' "
+                   "matches go there. Pick a different folder for a separate career.")
     ok = folder is not None and folder.is_dir() and not owner and name.strip() and name.strip() not in state.career_names()
     if folder is not None and st.session_state[f"{k}_folder"] and not folder.is_dir():
-        st.error("That folder doesn't exist on this PC. Check the path or use Browse….")
+        st.warning("That folder doesn't exist on this PC. Check the path or use Browse….")
     if name.strip() in state.career_names():
-        st.error("A career with that name already exists.")
+        st.warning("A career with that name already exists. Pick another name.")
     if st.button("Start watching", type="primary", disabled=not ok, key=f"{k}_start"):
         with st.spinner("Reading scorecards…"):
             res = state.watcher().create(name.strip(), folder)
@@ -170,6 +174,27 @@ else:
     if not career.problems.empty:
         st.warning(f"{career.problems.match_id.nunique()} scorecard(s) failed the self-check (numbers that don't add up). "
                    "They'll be listed on the Data check page.")
+    auto_left = int(career.leftovers.auto.sum()) if len(career.leftovers) else 0
+    if auto_left:
+        st.info(f"{auto_left} game{'s' if auto_left > 1 else ''} from an earlier playthrough of a season "
+                f"{'are' if auto_left > 1 else 'is'} left out of every figure (you reloaded a save and the knockouts "
+                "went differently). See Data check → Games left out.")
+    shared = checks.shared_names(career)
+    unclear = int((~career.fielding.resolved).sum())
+    if len(shared) or unclear:
+        with st.container(border=True):
+            c1, c2 = st.columns([4, 1], vertical_alignment="center")
+            items = []
+            if len(shared):
+                ex = shared.loc[shared.games.map(lambda g: sum(g.values())).idxmax()]  # the best-known case
+                items.append(f"**{len(shared)} name{'s are' if len(shared) > 1 else ' is'} used by two different players**, "
+                             f"so their stats are mixed together (e.g. *{ex.player}* at {ex.teams[0]} and {ex.teams[1]}). "
+                             "One click keeps them apart.")
+            if unclear:
+                items.append(f"**{unclear} catch{'es' if unclear > 1 else ''}** where the scorecard only printed a surname "
+                             "shared by two players: pick who took them, or accept the suggestions.")
+            c1.markdown("**Worth a minute of your time**  \n" + "  \n".join(f"👉 {t}" for t in items))
+            c2.markdown("<a class='btnlink' href='data_check' target='_self'>Open Data check →</a>", unsafe_allow_html=True)
     st.write("")
     news = headlines(career)
     with st.container(border=True):
@@ -185,7 +210,7 @@ else:
                 first=("date", "min"), last=("date", "max"), format=("format", "first"), level=("level", "first"))
            .sort_values("matches", ascending=False).reset_index())
     st.dataframe(sec, hide_index=True, width="stretch", column_config={
-        "section": st.column_config.TextColumn("Section"), "matches": st.column_config.NumberColumn("Matches"),
+        "section": st.column_config.TextColumn("Section", width=300), "matches": st.column_config.NumberColumn("Matches"),
         "seasons": "Seasons", "first": st.column_config.DateColumn("First match", format="D MMM YYYY"),
         "last": st.column_config.DateColumn("Latest match", format="D MMM YYYY"), "format": "Format", "level": "Level"})
     st.subheader("Latest results", anchor=False)

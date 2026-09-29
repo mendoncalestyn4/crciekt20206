@@ -6,7 +6,7 @@ import streamlit as st
 from ccstats import analysis as A
 from ccstats.stats import WICKET_VALUE, Scope
 from ui import state
-from ui.charts import player_profile, CONFIG, _axis, _layout, fmt
+from ui.charts import player_profile, CONFIG, _axis, _layout, fmt, label_backing, place_labels
 from ui.theme import colours, explain_list, page_header
 
 career = state.current()
@@ -137,8 +137,14 @@ with right:
             st.markdown(f"**{len(meet)} meeting{'s' * (len(meet) != 1)}:** {a} {aw} – {bw} {b}"
                         + (f", {len(meet) - aw - bw} other" if len(meet) - aw - bw else ""))
             show = meet.sort_values("date", ascending=False)
-            st.dataframe(pd.DataFrame({"Date": show.date.dt.strftime("%d %b %Y"), "Match": [f"{h} v {w}" for h, w in zip(show.home, show.away)],
-                                       "Stage": show.stage, "Result": show.result}), hide_index=True, width="stretch")
+            lines = [f"**{r.date:%d %b %Y}**{' · ' + r.stage if r.stage else ''} · {r.home} v {r.away}  \n{r.result}"
+                     for r in show.head(8).itertuples()]
+            st.markdown("\n\n".join(lines))
+            if len(show) > 8:
+                with st.expander(f"All {len(show)} meetings"):
+                    st.dataframe(pd.DataFrame({"Date": show.date.dt.strftime("%d %b %Y"),
+                                               "Match": [f"{h} v {w}" for h, w in zip(show.home, show.away)],
+                                               "Result": show.result}), hide_index=True, width="stretch")
 
 # ---------------------------------------------------------------- players
 _, _, _, base = state.tables(career, base_scope)  # the section's averages
@@ -163,17 +169,13 @@ def two_team_scatter(key, da, db, x, y, x_label, y_label, slope, line_label, hov
         fig.add_trace(go.Scatter(x=d[x], y=d[y], mode="markers", name=team, marker=dict(size=11, color=colour, line=dict(color=c["surface"], width=2)),
                                  customdata=[hover(r) for r in d.itertuples()], hovertemplate="%{customdata}<extra></extra>"))
     ann = []
-    placed: list[tuple[float, float, int]] = []  # stack names whose dots sit close together
+    # each side's top three are named; names that would touch are stacked
     top = pd.concat([d.sort_values(y, ascending=False).head(3) for d in (da, db)]).sort_values(y, ascending=False)
-    for r in top.itertuples():
-        nx, ny = getattr(r, x) / xmax, getattr(r, y) / ymax
-        shift = 13
-        for px, py, ps in placed:
-            if abs(px - nx) < 0.14 and abs(py - ny) < 0.05:
-                shift = max(shift, ps + 14)
-        placed.append((nx, ny, shift))
-        ann.append(dict(x=getattr(r, x), y=getattr(r, y), text=r.player, showarrow=False, yshift=shift,
-                        font=dict(size=11, color=c["ink2"])))
+    spots = place_labels([(getattr(r, x), getattr(r, y), r.player) for r in top.itertuples()], (0, xmax), (0, ymax),
+                         height_px=330)
+    for r, (shift, anchor) in zip(top.itertuples(), spots):
+        ann.append(dict(x=getattr(r, x), y=getattr(r, y), text=r.player, showarrow=False, yshift=shift, xanchor=anchor,
+                        font=dict(size=11, color=c["ink2"]), bgcolor=label_backing(c), borderpad=1))
     ann.append(dict(x=xmax * 0.3, y=slope * xmax * 0.3, xanchor="left", yanchor="top", xshift=6, showarrow=False,
                     text=line_label, font=dict(size=11, color=c["muted"])))
     fig.update_layout(**_layout(c, height=440, showlegend=True, legend=dict(orientation="h", y=1.08, x=0), annotations=ann,

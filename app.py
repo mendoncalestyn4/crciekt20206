@@ -41,12 +41,16 @@ def watch_status() -> None:
     shown = state.current()
     refresh = False
     for folder in sorted(folders):
-        res = w.sync(folder)
-        if res and res.added:
+        try:
+            res = w.sync(folder)
+        except Exception:  # noqa: BLE001 - a half-written file or a busy disk: the next check tries again
+            continue
+        if res and (res.added or res.refreshed):
             n = len(res.added)
-            st.toast(f"{n} new match{'es' if n > 1 else ''} added to **{res.career.name}**", icon="🏏")
-            for msg in new_records(res.career, res.added)[:5]:
-                st.toast(msg, icon="🏆")
+            if n:
+                st.toast(f"{n} new match{'es' if n > 1 else ''} added to **{res.career.name}**", icon="🏏")
+                for msg in new_records(res.career, res.added)[:5]:
+                    st.toast(msg, icon="🏆")
             if shown is not None and res.career.name == shown.name:
                 st.session_state["career_obj"] = res.career
                 st.session_state.pop("stats_cache", None)

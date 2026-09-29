@@ -89,8 +89,9 @@ h2 { text-transform: uppercase; font-size: 1.7rem !important; }
 .kpi span { display: block; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: .14em;
   text-transform: uppercase; color: {muted}; font-weight: 700; }
 .kpi strong { display: block; font-family: 'Barlow Condensed', sans-serif; font-size: clamp(24px, 2.5vw, 38px); line-height: 1.05;
-  white-space: nowrap;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   font-weight: 800; font-variant-numeric: tabular-nums; color: {ink}; text-shadow: {glow}; }
+.kpi strong .small { font-size: .66em; letter-spacing: .04em; }
 
 /* ---------- scoreboard strip (latest result) ---------- */
 .board {
@@ -154,6 +155,9 @@ h2 { text-transform: uppercase; font-size: 1.7rem !important; }
 .explain .sw.dot.neg { background: {neg}; }
 .explain .sw.dot.orange { background: {s2}; }
 .side-status { font-size: 13px; line-height: 1.4; }
+a.btnlink { display: inline-block; padding: 7px 14px; border-radius: 10px; border: 1px solid {accent}; color: {accent} !important;
+  font-weight: 700; text-decoration: none !important; white-space: nowrap; }
+a.btnlink:hover { background: {accent_soft}; }
 </style>
 """
 

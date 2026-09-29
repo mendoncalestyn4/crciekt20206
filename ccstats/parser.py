@@ -145,6 +145,11 @@ POTM_RE = re.compile(r"^(?:man|player) of the match\s*[:\-]\s*(?P<name>.+)$", re
 RESULT_RE = re.compile(
     r"\bwon\b|\bbeat\b|\bdrawn\b|\bdraw\b|\btied\b|\bno result\b|\babandoned\b", re.I)
 SERIES_RE = re.compile(r"^(?P<no>\d+)(?:st|nd|rd|th)\s+(?P<name>.+?)\s*\(of\s+(?P<of>\d+)\)", re.I)
+# Internationals without "(of N)": "2nd Test Match", and "Only Test Match".  The game also
+# calls the first match of some tours "Only …" and the next one "2nd …", so "Only" is
+# match 1 of a series whose length isn't printed.
+INTL_NO_RE = re.compile(r"^(?:(?P<no>\d+)(?:st|nd|rd|th)|(?P<only>only))\s+(?:test match|test|one day international|odi|"
+                        r"20 over international|t20 international|t20i)\b", re.I)
 NUM = r"(?:\d+(?:\.\d+)?|-)"
 TRAILING_NUMS_RE = re.compile(rf"^(?P<body>.*?\S)\s+(?P<nums>{NUM}(?:\s+{NUM})*)\s*$")
 
@@ -595,6 +600,8 @@ def parse_scorecard(text: str, source: str = "") -> Match:
         match.date = parse_date(source)
     if sm := SERIES_RE.match(match.title):
         match.series_match_no, match.series_length = int(sm.group("no")), int(sm.group("of"))
+    elif sm := INTL_NO_RE.match(match.title):
+        match.series_match_no = 1 if sm.group("only") else int(sm.group("no"))
 
     teams = [match.team1, match.team2]
     for inn in match.innings + match.super_overs:

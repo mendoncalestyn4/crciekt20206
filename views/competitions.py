@@ -67,8 +67,9 @@ if leagues:
             st.caption(rule + ("" if not limited else " Net run rate: runs scored per over minus runs conceded per over; "
                                                       "a side bowled out counts as having used its full overs."))
     if not bilateral and (any(len(t) < 3 for _, t, _ in leagues) or len(leagues) > 1):
-        st.caption("Groups are worked out from who played whom (teams in different groups never meet), so they only "
-                   "separate cleanly once each team has played a couple of games.")
+        st.caption("Groups come from the group names on the scorecards (a team's row counts all its league games, "
+                   "cross-group ones too). Where the scorecards don't name them, they're worked out from who played "
+                   "whom, so they only separate cleanly once each team has played a couple of games.")
 
 # ---------------------------------------------------------------- knockouts
 ko = T.knockouts(career, ids)
@@ -113,7 +114,8 @@ if len(ser):
         with st.expander(f"{r.teams} · {r.score} · {r.result}"):
             g = m[m.match_id.isin(r.match_ids)].sort_values("date")
             st.dataframe(pd.DataFrame({
-                "Match": [f"{int(n)} of {int(o)}" if pd.notna(n) else "" for n, o in zip(g.series_match_no, g.series_length)],
+                "Match": [(f"{int(n)}" + (f" of {int(o)}" if pd.notna(o) else "")) if pd.notna(n) else ""
+                          for n, o in zip(g.series_match_no, g.series_length)],
                 "Date": g.date.dt.strftime("%d %b %Y"),
                 g.home.iloc[0]: [score(i, g.home.iloc[0]) for i in g.match_id],
                 g.away.iloc[0]: [score(i, g.away.iloc[0]) for i in g.match_id],

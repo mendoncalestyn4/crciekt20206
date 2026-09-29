@@ -205,11 +205,16 @@ class SyncResult:
     settings: CareerSettings
     added: list[str]  # sources of newly loaded matches
     failed: list[tuple[str, str]]  # (source, reason)
+    refreshed: bool = False  # the career was rebuilt without new matches (e.g. file times attached)
 
 
 def _result(career: Career, settings: CareerSettings) -> SyncResult:
     return SyncResult(career, settings, [r.source for r in career.report if r.status == "loaded"],
                       [(r.source, r.message) for r in career.report if r.status == "failed"])
+
+
+def _times(snap: dict[str, list]) -> dict[str, float]:
+    return {n: sig[0] for n, sig in snap.items()}
 
 
 class Watcher:
@@ -252,10 +257,10 @@ class Watcher:
             raise ValueError(f"{folder} is already watched by {self.owner(folder_key)}")
         data = self._all()
         snap = snapshot(folder)
-        career = Career.build(name, read_files(folder, list(snap)))
+        career = Career.build(name, read_files(folder, list(snap)), times=_times(snap))
         settings = CareerSettings(name=name, folder=folder_key)
         self.store.save(career, settings)
-        data[folder_key] = {"snapshot": snap, "career": name}
+        data[folder_key] = {"snapshot": snap, "career": name, "times": True}
         self._write(data)
         return _result(career, settings)
 
@@ -272,14 +277,23 @@ class Watcher:
             return None
         snap = snapshot(path)
         changed = [n for n, sig in snap.items() if entry["snapshot"].get(n) != sig]
+        if not changed and not entry.get("times"):
+            # a career made before file times were kept: attach them once, so games left
+            # over from an earlier playthrough of a season can be told apart
+            career, settings = self.store.load(name)
+            career = career.add_files([], times=_times(snap))
+            self.store.save(career, settings)
+            entry["snapshot"], entry["times"] = snap, True
+            self._write(data)
+            return SyncResult(career, settings, [], [], refreshed=True)
         if not changed:
             if snap != entry["snapshot"]:  # only deletions: remember them, nothing to load
                 entry["snapshot"] = snap
                 self._write(data)
             return None
         career, settings = self.store.load(name)
-        career = career.add_files(read_files(path, changed))
+        career = career.add_files(read_files(path, changed), times=_times(snap))
         self.store.save(career, settings)
-        entry["snapshot"] = snap
+        entry["snapshot"], entry["times"] = snap, True
         self._write(data)
         return _result(career, settings)

@@ -39,6 +39,41 @@ def fmt(v, decimals: int) -> str:
     return f"{v:.{decimals}f}" if decimals else f"{int(round(v))}"
 
 
+def label_backing(c: dict) -> str:
+    """A see-through panel colour behind a name written over the dots, so it stays readable."""
+    h = c["surface"].lstrip("#")
+    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    return f"rgba({r},{g},{b},0.78)"
+
+
+def place_labels(points, x_range, y_range, width_px: float = 400, height_px: float = 340) -> list[tuple[int, str]]:
+    """(y shift in px, x anchor) for names written above dots, so no two names overlap.
+
+    points: [(x, y, text)] in data units.  Each name's box is estimated from its
+    length (11px font); a name that would touch one already placed moves up a
+    line, and a name by the right edge ends at its dot instead of centring on it."""
+    (x0, x1), (y0, y1) = x_range, y_range
+    placed, out = [], []
+    for x, y, text in points:
+        px = (x - x0) / ((x1 - x0) or 1) * width_px
+        py = (y - y0) / ((y1 - y0) or 1) * height_px
+        w = 6.3 * len(str(text)) + 6
+        anchor = "right" if px + w / 2 > width_px else "left" if px - w / 2 < 0 else "center"
+        left = px - w if anchor == "right" else px if anchor == "left" else px - w / 2
+        shift = 13
+        while any(abs((left + w / 2) - (ol + ow / 2)) < (w + ow) / 2 + 2 and abs((py + shift) - (opy + os)) < 14
+                  for ol, ow, opy, os in placed):
+            shift += 14
+        placed.append((left, w, py, shift))
+        out.append((shift, anchor))
+    return out
+
+
+def say(word: str) -> str:
+    """A label as it's written in cricket: "Run out", "LBW", "No result"."""
+    return "LBW" if word.lower() == "lbw" else word[:1].upper() + word[1:]
+
+
 def ranked_bars(rows: pd.DataFrame, stat: Stat, best: bool, highlight: str = "") -> go.Figure:
     c = colours()
     colour = c["s1"] if best else c["neg"]
@@ -149,17 +184,12 @@ def dot_chart(pool: pd.DataFrame, ranked: pd.DataFrame, stat: Stat, best: bool, 
     ranked_dots = pool[pool.player.isin(top) & (pool.player != highlight)]
     hl = pool[pool.player == highlight]
     fig = go.Figure([trace(rest, c["dim"], 8), trace(ranked_dots, colour, 10)] + ([trace(hl, c["s2"], 13, True)] if len(hl) else []))
-    # name the top few; stack names whose dots sit on top of each other
-    placed: list[tuple[float, float, int]] = []
-    for _, p in ranked[ranked.player != highlight].head(label_top).iterrows():
-        nx, ny = p[d.x] / xmax, (p[d.y] - yr[0]) / (yr[1] - yr[0])
-        shift = 13
-        for px, py, ps in placed:
-            if abs(px - nx) < 0.08 and abs(py - ny) < 0.04:
-                shift = max(shift, ps + 16)
-        placed.append((nx, ny, shift))
-        annotations.append(dict(x=p[d.x], y=p[d.y], text=p.player, showarrow=False, yshift=shift,
-                                font=dict(size=11, color=c["ink2"])))
+    # name the top few; names that would touch are stacked
+    named = ranked[ranked.player != highlight].head(label_top)
+    spots = place_labels([(p[d.x], p[d.y], p.player) for _, p in named.iterrows()], (0, xmax), tuple(yr))
+    for (_, p), (shift, anchor) in zip(named.iterrows(), spots):
+        annotations.append(dict(x=p[d.x], y=p[d.y], text=p.player, showarrow=False, yshift=shift, xanchor=anchor,
+                                font=dict(size=11, color=c["ink2"]), bgcolor=label_backing(c), borderpad=1))
     # small counts (catches, 50s, hauls) get whole-number ticks; room at the top for stacked names
     ints = lambda s: len(s) and all(float(v).is_integer() for v in s)  # noqa: E731
     yextra = {"dtick": 1} if ints(y) and ymax <= 8 else {}

@@ -1,4 +1,5 @@
 import copy
+import html
 
 import pandas as pd
 import streamlit as st
@@ -14,11 +15,12 @@ if career is None:
     st.stop()
 
 page_header("Data check", "Check and fix",
-            "Things the scorecards leave unclear. Nothing here changes by itself: you decide, and every fix can be undone.")
+            "The scorecards leave a few things unclear. Each one is explained below, with a one-click fix where there's a "
+            "safe answer. Nothing changes until you click, and every change can be undone under Your changes.")
 
 
 def apply(fixes: Fixes, message: str) -> None:
-    with st.spinner("Rebuilding the stats with your fix…"):
+    with st.spinner("Updating every stat with your change…"):
         state.show(career.with_fixes(fixes))
     st.session_state["dc_done"] = message
     st.rerun()
@@ -28,95 +30,178 @@ def fixes_copy() -> Fixes:
     return copy.deepcopy(career.fixes)
 
 
+def note(text: str) -> str:
+    return f"<span style='opacity:.72;font-size:13.5px'>{text}</span>"
+
+
 done = st.session_state.pop("dc_done", None)
 if done:
     st.success(done)
 
 unc = checks.uncredited(career)
+sug = unc[unc.suggestion != ""]
+shared = checks.shared_names(career)
 merges = checks.merge_suggestions(career)
-splits = checks.split_suggestions(career)
-n_fixes = len(career.fixes.merges) + len(career.fixes.splits) + len(career.fixes.credits)
-tabs = st.tabs([f"Scorecards ({len(career.problems.match_id.unique())} problems)",
-                f"Unclear catches ({len(unc)})", f"Same player, two names? ({len(merges)})",
-                f"Two players, one name? ({len(splits)})", f"Your fixes ({n_fixes})"])
+conflicts = checks.replay_conflicts(career)
+left = career.leftovers
+bad_cards = career.problems.match_id.nunique()
+failed_files = [r for r in career.report if r.status == "failed"]
+fx = career.fixes
+n_changes = (len(fx.merges) + len(fx.splits) + len(fx.credits) + len(fx.include) + len(fx.exclude))
 
-# ---------------------------------------------------------------- scorecards
-with tabs[0]:
-    rep = pd.DataFrame([(r.source, r.status, r.message) for r in career.report], columns=["File", "Status", "Note"])
-    if len(rep):
-        counts = rep.Status.value_counts()
-        st.markdown(" · ".join(f"**{v}** {k}" for k, v in counts.items()))
-        bad = rep[rep.Status == "failed"]
-        if len(bad):
-            st.markdown("**Files that couldn't be read**")
-            st.dataframe(bad[["File", "Note"]], hide_index=True, width="stretch")
-    if career.problems.empty:
-        st.success(f"All {len(career.matches)} scorecards pass the self-check: runs, extras, wickets, bowling and fall of "
-                   "wickets all add up.")
-    else:
-        st.warning("These scorecards have numbers that don't add up. Their matches are still counted.")
-        st.dataframe(career.problems.rename(columns={"source": "File", "problem": "Problem"})[["File", "Problem"]],
-                     hide_index=True, width="stretch")
+# ---------------------------------------------------------------- what needs you
+todo, fine = [], []
+if len(unc):
+    todo.append(f"👉 **{len(unc)} catches or stumpings** don't say which fielder took them"
+                + (f" ({len(sug)} can be sorted in one click)" if len(sug) else "") + " → *Unclear catches*")
+if len(shared):
+    todo.append(f"👉 **{len(shared)} names** are used by two different players, so their stats are mixed together "
+                "(one click to keep them apart) → *Name shared by 2 players*")
+if len(merges):
+    todo.append(f"👉 **{len(merges)} players** may appear under two names → *Player with 2 names*")
+if len(conflicts):
+    todo.append(f"👉 **{conflicts.match_id.nunique()} knockout games** look like leftovers from a replayed season → *Games left out*")
+if bad_cards or failed_files:
+    todo.append(f"👉 **{bad_cards + len(failed_files)} scorecards** have a problem → *Scorecards*")
+if not bad_cards and not failed_files:
+    fine.append(f"✅ All {len(career.matches):,} scorecards add up")
+if not len(shared):
+    fine.append("✅ No name is used by two players")
+if not len(merges):
+    fine.append("✅ No player appears under two names")
+if len(left):
+    fine.append(f"ℹ️ {len(left)} game{'s' if len(left) > 1 else ''} left out on purpose (from an earlier playthrough"
+                f"{' or by you' if (~left.auto).any() else ''}) → *Games left out*")
+with st.container(border=True):
+    st.markdown("**What needs you**" if todo else "**Nothing needs you** 🎉")
+    if todo:
+        st.markdown("\n".join(f"- {t}" for t in todo))
+    st.markdown(" · ".join(fine))
+
+tabs = st.tabs([f"Unclear catches · {len(unc)}", f"Name shared by 2 players · {len(shared)}",
+                f"Player with 2 names · {len(merges)}", f"Games left out · {len(left)}",
+                f"Scorecards · {bad_cards + len(failed_files)}", f"Your changes · {n_changes}"])
+t_catch, t_shared, t_merge, t_left, t_cards, t_changes = tabs
 
 # ---------------------------------------------------------------- unclear catches
-with tabs[1]:
+with t_catch:
+    st.markdown("**Who took the catch?** The scorecard prints only the fielder's surname, like *c Mendis*. When a side "
+                "has two players with that surname (Sri Lanka's Kusal and Kamindu Mendis are both *K Mendis*), it can't "
+                "say which one took it. Until you choose, the catch counts for the team but for neither player.")
+    st.markdown(note("Already sorted out for you: a catcher can't be the bowler (that's printed <i>c & b</i>), a stumping "
+                     "is always the wicketkeeper, and a catch by a substitute fielder (<i>c Sub</i>) counts for the team "
+                     "but for no player, as in real cricket."), unsafe_allow_html=True)
     if unc.empty:
         st.success("Every catch and stumping is credited to a player.")
     else:
-        st.caption("Why these are unclear: the scorecard prints only the fielder's surname (e.g. 'c Patel', never "
-                   "'c A Patel'), and two or more players in that side share it. The certain cases are already sorted "
-                   "out for you: the catcher can't be the bowler (that would be printed 'c & b'), and only the "
-                   "wicketkeeper stumps, who doesn't bowl. What's left needs a decision. Until then these still count "
-                   "in the team's figures, just not for any one player.")
-        sug = unc[unc.suggestion != ""]
         if len(sug):
             with st.container(border=True):
-                st.markdown(f"**{len(sug)} of {len(unc)} have a strong suggestion**, e.g. the side's wicketkeeper, or a "
-                            "fielder who takes far more of the side's catches. Each one's reason is shown below.")
+                st.markdown(f"**{len(sug)} of these have a clear answer**, usually the side's wicketkeeper or the player who "
+                            "takes most of that side's catches. The reason is shown under each one below.")
                 if st.button(f"Accept all {len(sug)} suggestions", type="primary", key="dc_accept_all"):
                     f = fixes_copy()
                     f.credits.update(dict(zip(sug.credit_key, sug.suggestion)))
                     f.suggested = sorted(set(f.suggested) | set(sug.credit_key))
-                    apply(f, f"Credited {len(sug)} catches and stumpings as suggested. Undo them any time under Your fixes.")
-        st.caption("Or pick them one by one. The suggestion is already selected where there is one; players with "
-                   "that surname are listed first.")
+                    apply(f, f"Done: {len(sug)} catches and stumpings credited as suggested. "
+                             "You can undo them under Your changes.")
+        st.markdown(f"**Or choose yourself.** {'The suggestion is already picked where there is one. ' if len(sug) else ''}"
+                    "Leave any you're not sure about.")
         show = unc.head(40)
         with st.form("dc_credits"):
             picks = {}
+            h1, h2 = st.columns([3, 2])
+            h1.markdown("**The dismissal**")
+            h2.markdown("**Who took it?**")
             for r in show.itertuples():
-                c1, c2 = st.columns([3, 2])
+                c1, c2 = st.columns([3, 2], vertical_alignment="center")
                 verb = "c" if r.kind == "caught" else "st"
-                c1.markdown(f"**{r.match}** · {r.team} fielding  \n{r.batter} {verb} {r.printed} b {r.bowler}"
-                            + (f"  \n<span style='opacity:.7;font-size:13px'>Suggested: {r.suggestion} ({r.reason})</span>"
-                               if r.suggestion else ""), unsafe_allow_html=True)
-                options = ["Leave as it is"] + r.candidates
+                lines = [f"**{r.match}**",
+                         f"{html.escape(r.batter)} **{verb} {html.escape(r.printed)}** b {html.escape(r.bowler)}",
+                         note(f"{html.escape(r.team)} had " + " and ".join(map(html.escape, r.likely)) if len(r.likely) > 1
+                              else f"{html.escape(r.team)} fielding")]
+                if r.suggestion:
+                    lines.append(note(f"💡 Suggested: <b>{html.escape(r.suggestion)}</b>, because {html.escape(r.reason)}"))
+                c1.markdown("  \n".join(lines), unsafe_allow_html=True)
+                options = ["Not sure: leave it"] + r.candidates
                 picks[r.credit_key] = c2.selectbox("Who took it?", options, key=f"dc_c_{r.credit_key}",
                                                    index=options.index(r.suggestion) if r.suggestion in options else 0,
                                                    label_visibility="collapsed")
-            if st.form_submit_button("Save these", type="primary"):
-                chosen = {k: v for k, v in picks.items() if v != "Leave as it is"}
+            if st.form_submit_button("Save my choices", type="primary"):
+                chosen = {k: v for k, v in picks.items() if v != "Not sure: leave it"}
                 if chosen:
                     f = fixes_copy()
                     f.credits.update(chosen)
                     f.suggested = [k for k in f.suggested if k not in chosen]  # picked by hand now
-                    apply(f, f"Credited {len(chosen)} catch{'es' if len(chosen) > 1 else ''}/stumping{'s' if len(chosen) > 1 else ''}.")
+                    apply(f, f"Saved: {len(chosen)} catch{'es' if len(chosen) > 1 else ''} credited.")
         if len(unc) > len(show):
-            st.caption(f"Showing the first {len(show)} of {len(unc)}. Save these to see the rest.")
+            st.caption(f"Showing the first {len(show)} of {len(unc)}. Save these and the next ones appear.")
 
-# ---------------------------------------------------------------- merges
-with tabs[2]:
-    st.caption("Two names that could be one player: same surname and first initial, played for the same team, but never "
-               "in the same match. Merging puts all their matches under one name.")
+# ---------------------------------------------------------------- one name, two players
+with t_shared:
+    st.markdown("**Two different players with the same name.** The game prints only an initial and surname, so two "
+                "players can end up with the same name, like *R Patel* at Leicestershire and *R Patel* at Surrey. The "
+                "site then adds their runs and wickets together as if they were one person. A player can't play for two "
+                "teams in the same season of a competition, so each name below is almost certainly two people.")
+    if shared.empty:
+        st.success("No name is used by two players.")
+    else:
+        big = shared.loc[shared.games.map(lambda g: sum(g.values())).idxmax()]  # the best-known case as the example
+        with st.container(border=True):
+            st.markdown(f"**Keep all {len(shared)} apart.** Each name stays with the team it played most games for, and "
+                        "the player at the other team gets the team added to their name, e.g. "
+                        f"*{big.player} ({big.separate[0]})*.")
+            if st.button(f"Keep all {len(shared)} apart", type="primary", key="dc_split_all"):
+                f = fixes_copy()
+                have = {(x["player"], x["team"]) for x in f.splits}
+                f.splits += [{"player": r.player, "team": t, "new_name": f"{r.player} ({t})"}
+                             for r in shared.itertuples() for t in r.separate if (r.player, t) not in have]
+                apply(f, f"Done: {len(shared)} names now belong to one player each. You can undo any of them under "
+                         "Your changes.")
+        for i, r in enumerate(shared.itertuples()):
+            c1, c2 = st.columns([5, 1], vertical_alignment="center")
+            played = " and ".join(f"{html.escape(t)} ({r.games[t]} game{'s' if r.games[t] != 1 else ''})" for t in r.teams)
+            after = ", ".join(f"<b>{html.escape(r.player)} ({html.escape(t)})</b>" for t in r.separate)
+            c1.markdown(f"**{html.escape(r.player)}** played for {played}, in {html.escape(', '.join(r.where))}  \n"
+                        + note(f"After: <b>{html.escape(r.player)}</b> at {html.escape(r.keep)}, and {after}"),
+                        unsafe_allow_html=True)
+            if c2.button("Keep apart", key=f"dc_s_{i}"):
+                f = fixes_copy()
+                f.splits += [{"player": r.player, "team": t, "new_name": f"{r.player} ({t})"} for t in r.separate]
+                apply(f, f"Done: {r.player} at {r.keep} and {', '.join(f'{r.player} ({t})' for t in r.separate)} "
+                         "are now separate players.")
+    with st.expander("Separate any other name yourself"):
+        st.caption("For a name the site didn't spot: pick the player, the team where it's really someone else, and the "
+                   "name to show for them.")
+        players = sorted(set(career.batting.player) | set(career.bowling.player))
+        p = st.selectbox("Player", players, index=None, key="dc_sp", placeholder="Pick a player")
+        if p:
+            teams = sorted(set(career.batting[career.batting.player == p].team))
+            c1, c2 = st.columns(2)
+            t = c1.selectbox("The one playing for", teams, key="dc_spt")
+            new = c2.text_input("Show them as", value=f"{p} ({t})", key=f"dc_spn_{t}")
+            if st.button("Make them a separate player", disabled=not new.strip() or new.strip() == p, key="dc_sp_go"):
+                f = fixes_copy()
+                f.splits.append({"player": p, "team": t, "new_name": new.strip()})
+                apply(f, f"Done: {p} at {t} is now {new.strip()}.")
+
+# ---------------------------------------------------------------- one player, two names
+with t_merge:
+    st.markdown("**One player under two names.** Sometimes the same player shows up under two slightly different names. "
+                "The names below look like one player: same initial and surname, same team, and never in the same match "
+                "together.")
     if merges.empty:
-        st.success("No likely duplicates found.")
+        st.success("No player appears under two names.")
     for i, r in enumerate(merges.itertuples()):
-        c1, c2 = st.columns([4, 1], vertical_alignment="center")
-        c1.markdown(f"**{r.other}** ({r.other_matches} matches) → **{r.keep}** ({r.keep_matches} matches) · {r.teams}")
-        if c2.button("Merge", key=f"dc_m_{i}"):
+        c1, c2 = st.columns([5, 1], vertical_alignment="center")
+        c1.markdown(f"**{html.escape(r.other)}** ({r.other_matches} games) and **{html.escape(r.keep)}** ({r.keep_matches} "
+                    f"games) · {html.escape(r.teams)}  \n"
+                    + note(f"After: all {r.other_matches + r.keep_matches} games count for <b>{html.escape(r.keep)}</b>"),
+                    unsafe_allow_html=True)
+        if c2.button("Same player", key=f"dc_m_{i}"):
             f = fixes_copy()
             f.merges[r.other] = r.keep
-            apply(f, f"{r.other} is now counted as {r.keep}.")
-    with st.expander("Merge any two names yourself"):
+            apply(f, f"Done: {r.other}'s games now count for {r.keep}.")
+    with st.expander("Join any two names yourself"):
         players = sorted(set(career.batting.player) | set(career.bowling.player))
         c1, c2 = st.columns(2)
         a = c1.selectbox("This name…", players, index=None, key="dc_ma", placeholder="Pick a player")
@@ -125,76 +210,123 @@ with tabs[2]:
         together = bool(a and b and set(career.batting[career.batting.player == a].match_id)
                         & set(career.batting[career.batting.player == b].match_id))
         if together:
-            st.error(f"{a} and {b} played in the same match, so they can't be one player.")
-        if st.button("Merge", disabled=not (a and b) or together, key="dc_m_go"):
+            st.warning(f"{a} and {b} played in the same match, so they can't be one player.")
+        if st.button("Count them as one player", disabled=not (a and b) or together, key="dc_m_go"):
             f = fixes_copy()
             f.merges[a] = b
-            apply(f, f"{a} is now counted as {b}.")
+            apply(f, f"Done: {a}'s games now count for {b}.")
 
-# ---------------------------------------------------------------- splits
-with tabs[3]:
-    st.caption("A name that played for two different teams in one season of one competition. That's usually two "
-               "different players with the same name (e.g. two 'A Sharma's). Splitting gives the one at a team its own name.")
-    if splits.empty:
-        st.success("No name turned out for two teams in the same season.")
-    for i, r in enumerate(splits.itertuples()):
-        c1, c2, c3 = st.columns([3, 2, 1], vertical_alignment="center")
-        c1.markdown(f"**{r.player}** · {r.section} {r.season} · {' and '.join(r.teams)}")
-        team = c2.selectbox("Give a separate name to the one at", r.teams, key=f"dc_st_{i}", label_visibility="collapsed")
-        if c3.button("Split", key=f"dc_s_{i}"):
+# ---------------------------------------------------------------- games left out
+with t_left:
+    st.markdown("**Games from an earlier playthrough.** When you reload a save and play part of a season again, the game "
+                "saves each replayed match over its old file. But a knockout with different teams gets a new file, so "
+                "the old game stays in your Scorecards folder. That's how one IPL season can end up with three finals. "
+                "The site spots these from when each file was saved and leaves them out of every stat. Nothing to do, "
+                "unless one of them should count.")
+    if left.empty:
+        st.success("Every match counts: none are from an earlier playthrough.")
+    for i, r in enumerate(left.itertuples()):
+        c1, c2 = st.columns([5, 1], vertical_alignment="center")
+        c1.markdown(f"**{r.date:%d %b %Y} · {html.escape(r.competition)}{' · ' + r.stage if r.stage else ''} · "
+                    f"{html.escape(r.home)} v {html.escape(r.away)}** · {html.escape(r.result)}  \n"
+                    + note(html.escape(r.reason)), unsafe_allow_html=True)
+        if c2.button("Count it", key=f"dc_inc_{i}"):
             f = fixes_copy()
-            new = f"{r.player} ({team})"
-            f.splits.append({"player": r.player, "team": team, "new_name": new})
-            apply(f, f"{r.player} at {team} is now {new}, a separate player.")
-    with st.expander("Split any name yourself"):
-        players = sorted(set(career.batting.player) | set(career.bowling.player))
-        p = st.selectbox("Player", players, index=None, key="dc_sp", placeholder="Pick a player")
-        if p:
-            teams = sorted(set(career.batting[career.batting.player == p].team))
-            c1, c2 = st.columns(2)
-            t = c1.selectbox("While playing for", teams, key="dc_spt")
-            new = c2.text_input("New name", value=f"{p} ({t})", key=f"dc_spn_{t}")
-            if st.button("Split", disabled=not new.strip() or new.strip() == p, key="dc_sp_go"):
+            if r.auto:
+                f.include = sorted(set(f.include) | {r.match_id})
+            f.exclude = [x for x in f.exclude if x != r.match_id]
+            apply(f, f"Done: {r.home} v {r.away} ({r.date:%d %b %Y}) counts again.")
+    if len(conflicts):
+        st.warning("These knockout games can't all be from one playthrough (two finals, or a team in two knockouts on the "
+                   "same day), and their files came without the save times that tell which is older. Leave out the ones "
+                   "from the earlier playthrough.")
+        for i, r in enumerate(conflicts.itertuples()):
+            c1, c2 = st.columns([5, 1], vertical_alignment="center")
+            c1.markdown(f"**{r.group}** · {r.date:%d %b %Y} · {r.stage} · {r.home} v {r.away} · {r.result}")
+            if c2.button("Leave out", key=f"dc_exc_{i}"):
                 f = fixes_copy()
-                f.splits.append({"player": p, "team": t, "new_name": new.strip()})
-                apply(f, f"{p} at {t} is now {new.strip()}.")
-
-# ---------------------------------------------------------------- your fixes
-with tabs[4]:
-    fx = career.fixes
-    if not n_fixes:
-        st.caption("No fixes yet.")
-    for i, (a, b) in enumerate(list(fx.merges.items())):
-        c1, c2 = st.columns([5, 1], vertical_alignment="center")
-        c1.markdown(f"Merged **{a}** into **{b}**")
-        if c2.button("Undo", key=f"dc_um_{i}"):
+                f.exclude = sorted(set(f.exclude) | {r.match_id})
+                apply(f, f"Done: {r.home} v {r.away} ({r.date:%d %b %Y}) is left out.")
+    with st.expander("Leave out any other match"):
+        mm = career.matches.sort_values("date", ascending=False)
+        labels = {r.match_id: f"{r.date:%d %b %Y} · {r.home} v {r.away} · {r.event} · {r.result}" for r in mm.itertuples()}
+        pick = st.selectbox("Match", list(labels), format_func=labels.get, index=None, key="dc_exc_pick",
+                            placeholder="Type to search")
+        if st.button("Leave it out", disabled=pick is None, key="dc_exc_go"):
             f = fixes_copy()
-            f.merges.pop(a)
-            apply(f, f"Undone: {a} is separate again.")
-    for i, s in enumerate(list(fx.splits)):
+            f.exclude = sorted(set(f.exclude) | {pick})
+            f.include = [x for x in f.include if x != pick]
+            apply(f, "Done: that match is left out of every stat. It's listed above if you want it back.")
+
+# ---------------------------------------------------------------- scorecards
+with t_cards:
+    st.markdown("**Every scorecard is checked when it's read:** the batters' runs plus extras make the total, the bowlers' "
+                "runs, overs and wickets match the innings, and the dismissals match the fall of wickets.")
+    if failed_files:
+        st.error(f"{len(failed_files)} file(s) couldn't be read, so they aren't in any stat.")
+        st.dataframe(pd.DataFrame([(r.source, r.message) for r in failed_files], columns=["File", "Why"]),
+                     hide_index=True, width="stretch")
+    if career.problems.empty:
+        st.success(f"All {len(career.matches):,} scorecards add up.")
+    else:
+        st.warning("These scorecards have numbers that don't add up. They're still counted.")
+        st.dataframe(career.problems.rename(columns={"source": "File", "problem": "What doesn't add up"})
+                     [["File", "What doesn't add up"]], hide_index=True, width="stretch")
+
+# ---------------------------------------------------------------- your changes
+with t_changes:
+    if not n_changes:
+        st.caption("You haven't changed anything yet.")
+    bat = career.batting.set_index(["match_id", "innings_no", "position"])
+    games = career.matches.set_index("match_id")
+
+    def game(mid: str) -> str:
+        return f"{games.date[mid]:%d %b %Y} {games.home[mid]} v {games.away[mid]}" if mid in games.index else "a match"
+
+    def row(text: str, key: str, label: str = "Undo") -> bool:
         c1, c2 = st.columns([5, 1], vertical_alignment="center")
-        c1.markdown(f"Split **{s['player']}** at {s['team']} → **{s['new_name']}**")
-        if c2.button("Undo", key=f"dc_us_{i}"):
+        c1.markdown(text, unsafe_allow_html=True)
+        return c2.button(label, key=key)
+
+    if fx.suggested and row(f"**{len(fx.suggested)} catches and stumpings** credited from the suggestions (💡 below)",
+                            "dc_undo_sug", "Undo all"):
+        f = fixes_copy()
+        for k in f.suggested:
+            f.credits.pop(k, None)
+        f.suggested = []
+        apply(f, "Undone: the suggested catches are uncredited again.")
+    for i, s in enumerate(list(fx.splits)):
+        if row(f"**{html.escape(s['player'])}** at {html.escape(s['team'])} is a separate player: "
+               f"**{html.escape(s['new_name'])}**", f"dc_us_{i}"):
             f = fixes_copy()
             f.splits = [x for x in f.splits if x != s]
             apply(f, f"Undone: {s['new_name']} is {s['player']} again.")
-    if fx.suggested:
-        c1, c2 = st.columns([5, 1], vertical_alignment="center")
-        c1.markdown(f"**{len(fx.suggested)} catches/stumpings credited from suggestions** (marked 💡 below)")
-        if c2.button("Undo all", key="dc_undo_sug"):
+    for i, (a, b) in enumerate(list(fx.merges.items())):
+        if row(f"**{html.escape(a)}** counts as **{html.escape(b)}**", f"dc_um_{i}"):
             f = fixes_copy()
-            for k in f.suggested:
-                f.credits.pop(k, None)
-            f.suggested = []
-            apply(f, "Undone: the suggested credits are uncredited again.")
+            f.merges.pop(a)
+            apply(f, f"Undone: {a} is a separate player again.")
+    for i, mid in enumerate(list(fx.exclude)):
+        if row(f"You left out **{html.escape(game(mid))}**", f"dc_ue_{i}"):
+            f = fixes_copy()
+            f.exclude = [x for x in f.exclude if x != mid]
+            apply(f, "Undone: that match counts again.")
+    for i, mid in enumerate(list(fx.include)):
+        if row(f"You count **{html.escape(game(mid))}** again (it looked like it was from an earlier playthrough)",
+               f"dc_ui_{i}"):
+            f = fixes_copy()
+            f.include = [x for x in f.include if x != mid]
+            apply(f, "Undone: that game is left out again.")
     for i, (k, v) in enumerate(list(fx.credits.items())):
         mid, inn, pos = k.split("|")
-        row = career.matches[career.matches.match_id == mid]
-        label = f"{row.date.iloc[0]:%d %b %Y} · {row.home.iloc[0]} v {row.away.iloc[0]}" if len(row) else mid
-        c1, c2 = st.columns([5, 1], vertical_alignment="center")
-        c1.markdown(f"{'💡 ' if k in fx.suggested else ''}Credited **{v}** with a dismissal · {label}, innings {inn}, batter at {pos}")
-        if c2.button("Undo", key=f"dc_uc_{i}"):
+        try:
+            b = bat.loc[(mid, int(inn), int(pos))]
+            what, by = f"{html.escape(b.player)} {html.escape(b.dismissal)}", ("stumped" if b.how_out == "stumped" else "caught")
+        except (KeyError, ValueError):
+            what, by = "a dismissal", "taken"
+        if row(f"{'💡 ' if k in fx.suggested else ''}{html.escape(game(mid))}: {what} → {by} by **{html.escape(v)}**",
+               f"dc_uc_{i}"):
             f = fixes_copy()
             f.credits.pop(k)
             f.suggested = [x for x in f.suggested if x != k]
-            apply(f, "Undone: that dismissal is uncredited again.")
+            apply(f, "Undone: that catch is uncredited again.")

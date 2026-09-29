@@ -119,16 +119,16 @@ def test_groups_from_who_played_whom():
     import pandas as pd
     north, south = ["A", "B", "C", "D"], ["E", "F", "G", "H"]
     named = pd.DataFrame(_round_robin(north, "North Group", "2026-06-01") + _round_robin(south, "South Group", "2026-06-02"))
-    got = {label: set(g.home) | set(g.away) for label, g in T._groups(named)}
+    got = {label: set(g.home) | set(g.away) for label, g, _ in T._groups(named)}
     assert got == {"North Group": set(north), "South Group": set(south)}
     # the game only said "Group Match": the groups get letters, in order of their first game
     plain = pd.DataFrame(_round_robin(north, "Group", "2026-06-01") + _round_robin(south, "Group", "2026-06-02"))
-    got = {label: set(g.home) | set(g.away) for label, g in T._groups(plain)}
+    got = {label: set(g.home) | set(g.away) for label, g, _ in T._groups(plain)}
     assert got == {"Group A": set(north), "Group B": set(south)}
     # mixed labels for the same group still give one table per group
     mixed = named.copy()
     mixed.loc[mixed.index[:2], "stage"] = "Group"
-    got = {label: set(g.home) | set(g.away) for label, g in T._groups(mixed)}
+    got = {label: set(g.home) | set(g.away) for label, g, _ in T._groups(mixed)}
     assert got == {"North Group": set(north), "South Group": set(south)}
     # one league (IPL-style): one table
-    assert [l for l, _ in T._groups(pd.DataFrame(_round_robin(north + south, "", "2026-04-01")))] == ["League"]
+    assert [l for l, _, _ in T._groups(pd.DataFrame(_round_robin(north + south, "", "2026-04-01")))] == ["League"]

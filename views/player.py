@@ -6,7 +6,7 @@ from ccstats import analysis as A
 from ccstats import extras as E
 from ccstats.stats import Scope
 from ui import state
-from ui.charts import CONFIG, bars, fmt, form_chart, paired_bars
+from ui.charts import CONFIG, bars, fmt, form_chart, paired_bars, say
 from ui.theme import explain_list, kpis, page_header, safe_section
 
 career = state.current()
@@ -155,7 +155,7 @@ if "Batting" in tabs:
                 if ho.empty:
                     st.caption("Never dismissed.")
                 else:
-                    st.plotly_chart(bars([h.title() for h in ho.index], ho.values, "Dismissals"), width="stretch",
+                    st.plotly_chart(bars([say(h) for h in ho.index], ho.values, "Dismissals"), width="stretch",
                                     config=CONFIG, key="pl_howout")
         with st.container(border=True):
             st.markdown(f"**Every season in {section}** · the same columns as the table at the top")
@@ -165,8 +165,8 @@ if "Batting" in tabs:
         st.subheader("Average in different situations", anchor=False)
         st.caption(f"Each chart splits the same innings one way. The dashed line is their overall average ({fmt(b.average, 1)}).")
         sp = [("Batting first or chasing", inns.assign(s=np.where(inns.batting_first, "Batting first", "Chasing")), "s"),
-              ("In wins, defeats and draws", inns.assign(s=inns.outcome.str.title()), "s"),
-              ("Home or away", inns.assign(s=inns.venue.str.title()), "s"),
+              ("In wins, defeats and draws", inns.assign(s=inns.outcome.map(say)), "s"),
+              ("Home or away", inns.assign(s=inns.venue.map(say)), "s"),
               ("Against stronger or weaker teams", inns.assign(s=A.opposition_strength(inns, strength)), "s")]
         cols = st.columns(2, gap="medium")
         for i, (title, d, col) in enumerate(sp):
@@ -310,7 +310,7 @@ if "Bowling" in tabs:
                 if wt.empty:
                     st.caption("No wickets yet.")
                 else:
-                    st.plotly_chart(bars([h.title() for h in wt.index], wt.values, "Wickets"), width="stretch", config=CONFIG, key="pl_wtypes")
+                    st.plotly_chart(bars([say(h) for h in wt.index], wt.values, "Wickets"), width="stretch", config=CONFIG, key="pl_wtypes")
         with st.container(border=True):
             st.markdown(f"**Every season in {section}** · the same columns as the table at the top")
             record_table(A.bowling_record(career, ids, player, by="season").sort_values("season", ascending=False),

@@ -31,11 +31,29 @@ def points_rule(competition: str, fmt: str) -> tuple[str, dict]:
     return "The scorecards don't tell us this competition's points system, so teams are ordered by wins, then fewest defeats.", {}
 
 
-def _groups(matches: pd.DataFrame) -> list[tuple[str, pd.DataFrame]]:
-    """Split league matches into groups by who played whom (teams in different
-    groups never meet), so a team is only ever in one table.  Each group is
-    named from its matches' stage ("North Group"), or Group A, B, … when the
-    scorecards only say "Group Match"."""
+def _groups(matches: pd.DataFrame) -> list[tuple[str, pd.DataFrame, set]]:
+    """Split league matches into groups: [(name, the group's matches, its teams)].
+
+    Where the scorecards name the groups ("T20 Blast - North"), each team is in
+    the group it played most of its named-group games in, and its table row counts
+    all its league games, cross-group ones included (the Blast has some titled just
+    "Group Match").  Otherwise groups are worked out from who played whom (teams in
+    different groups never meet) and named Group A, B, …"""
+    named = matches[~matches.stage.isin(["", "Group"]) & ~matches.stage.str.startswith("Division")]
+    if len(named):
+        count: dict[str, dict[str, int]] = {}
+        for stage, h, a in zip(named.stage, named.home, named.away):
+            for t in (h, a):
+                count.setdefault(t, {}).setdefault(stage, 0)
+                count[t][stage] += 1
+        home = {t: max(c, key=c.get) for t, c in count.items()}
+        everyone = set(matches.home) | set(matches.away)
+        if set(home) == everyone and len(set(home.values())) > 1:
+            out = []
+            for g in sorted(set(home.values()), key=lambda g: named[named.stage == g].date.min()):
+                teams = {t for t, gg in home.items() if gg == g}
+                out.append((g, matches[matches.home.isin(teams) | matches.away.isin(teams)], teams))
+            return out
     teams = sorted(set(matches.home) | set(matches.away))
     parent = {t: t for t in teams}
 
@@ -53,16 +71,16 @@ def _groups(matches: pd.DataFrame) -> list[tuple[str, pd.DataFrame]]:
     parts = sorted(comps.values(), key=lambda s: matches[matches.home.isin(s) | matches.away.isin(s)].date.min())
 
     def name_of(gm: pd.DataFrame) -> str:
-        named = gm.stage[~gm.stage.isin(["", "Group"]) & ~gm.stage.str.startswith("Division")]
-        return named.mode().iloc[0] if len(named) else ""
+        n = gm.stage[~gm.stage.isin(["", "Group"]) & ~gm.stage.str.startswith("Division")]
+        return n.mode().iloc[0] if len(n) else ""
 
     if len(parts) == 1 or any(len(p) < 3 for p in parts):
         # one group, or too few games yet to tell the groups apart
-        return [(name_of(matches) if len(parts) == 1 and name_of(matches) else "League", matches)]
+        return [(name_of(matches) if len(parts) == 1 and name_of(matches) else "League", matches, set(teams))]
     out, letters = [], iter("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
     for p in parts:
         gm = matches[matches.home.isin(p) | matches.away.isin(p)]
-        out.append((name_of(gm) or f"Group {next(letters)}", gm))
+        out.append((name_of(gm) or f"Group {next(letters)}", gm, p))
     return out
 
 
@@ -85,10 +103,13 @@ def league_tables(career, ids) -> list[tuple[str, pd.DataFrame, str]]:
     inn = career.innings[career.innings.match_id.isin(m.match_id)]
     first = inn[inn.team_innings == 1].groupby(["match_id", "team"]).runs.sum()
     out = []
-    for label, gm in ([("Every team", m)] if bilateral else _groups(m)):
+    groups = [("Every team", m, set(m.home) | set(m.away))] if bilateral else _groups(m)
+    for label, gm, members in groups:
         tt = A.team_table(career, gm.match_id).set_index("team")
         rows = []
         for team in tt.index:
+            if team not in members:
+                continue  # a cross-group opponent: it has its own group's table
             mine = gm[(gm.home == team) | (gm.away == team)]
             # a tie settled by a super over counts as a win for the side that won it
             so = (mine.result_type == "tie") & (mine.tiebreak_winner != "") if fmt in LIMITED else mine.result_type == "none"

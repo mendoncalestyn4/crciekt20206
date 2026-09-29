@@ -7,7 +7,7 @@ from ccstats import extras as E
 from ui.theme import colours
 from ccstats.stats import Scope
 from ui import state
-from ui.charts import CONFIG, bars, fmt
+from ui.charts import CONFIG, bars, fmt, say
 from ui.theme import explain_list, kpis, page_header
 
 career = state.current()
@@ -48,7 +48,7 @@ cur = sk["current"]
 kpis([("Played", f"{int(me.played)}"), ("Won–Lost", f"{int(me.won)}–{int(me.lost)}"), ("Win %", f"{me.win_pct:.0f}%")]
      + ([("Net run rate", f"{me.nrr:+.2f}")] if limited else [("Drawn", f"{int(me.drawn)}")])
      + [("Current run", f"{cur[1]} {dict(W='won', L='lost', D='drawn', T='tied', NR='no result').get(cur[0], '')}" if cur[0] else "–"),
-        ("Last 5", " ".join(sk["last5"]) or "–")])
+        ("Last 5", f"<span class='small'>{' '.join(sk['last5'])}</span>" if sk["last5"] else "–")])  # fits the tile
 st.caption(f"Longest winning run: {sk['longest_win']} · longest losing run: {sk['longest_loss']}")
 
 keep = A.keepers(career, ids, team)
@@ -148,11 +148,16 @@ with right:
         if col.empty:
             st.caption("No collapses. Nice.")
         else:
-            st.dataframe(pd.DataFrame({"Date": col.date.dt.strftime("%d %b %Y"),
+            st.dataframe(pd.DataFrame({"Date": col.date.dt.strftime("%d %b %y"),
                                        "Against": [a if h == team else h for h, a in zip(col.home, col.away)],
                                        "Slide": [f"{f} → {t}" for f, t in zip(col.from_score, col.to_score)],
                                        "Lost": [f"{w} for {r}" for w, r in zip(col.wickets, col.runs)],
-                                       "Finished on": col.total}), hide_index=True, width="stretch")
+                                       "Total": col.total}), hide_index=True, width="stretch",
+                         column_config={"Date": st.column_config.TextColumn(width=80),
+                                        "Against": st.column_config.TextColumn(width=115),
+                                        "Slide": st.column_config.TextColumn(width=120),
+                                        "Lost": st.column_config.TextColumn(width=70),
+                                        "Total": st.column_config.TextColumn(width=60)})
 
 # ---------------------------------------------------------------- team style
 style = E.team_style(career, ids)
@@ -197,7 +202,7 @@ if team in set(style.team):
 with st.container(border=True):
     st.markdown("**Results**")
     res = tm.sort_values("date", ascending=False)
-    table_res = pd.DataFrame({"Date": res.date.dt.strftime("%d %b %Y"), "Opponent": res.opponent, "Venue": res.venue.str.title(),
+    table_res = pd.DataFrame({"Date": res.date.dt.strftime("%d %b %Y"), "Opponent": res.opponent, "Venue": res.venue.map(say),
                               "Stage": res.stage, "Result": res.result, "": res.outcome})
     if not res.stage.astype(bool).any():
         table_res = table_res.drop(columns="Stage")

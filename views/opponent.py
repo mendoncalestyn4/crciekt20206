@@ -5,7 +5,7 @@ from ccstats import analysis as A
 from ccstats import extras as E
 from ccstats.stats import Scope
 from ui import state
-from ui.charts import CONFIG, bars, fmt
+from ui.charts import CONFIG, bars, fmt, say
 from ui.theme import kpis, page_header
 
 career = state.current()
@@ -30,7 +30,7 @@ pv = E.opponent_preview(career, ids, opp)
 tm = pv["matches"]
 rec = A.team_record(tm)
 sk = A.streaks(list(tm.outcome))
-form = "".join(pv["recent"].outcome) or "–"
+form = f"<span class='small'>{' '.join(pv['recent'].outcome)}</span>" if len(pv["recent"]) else "–"
 kpis([("Played", f"{rec['played']}"), ("Won–Lost", f"{rec['won']}–{rec['lost']}"),
       ("Win %", fmt(rec["win_pct"], 0) + "%" if rec["played"] else "–"), ("Last 5", form),
       ("Collapses", f"{pv['collapses']}")])
@@ -69,7 +69,7 @@ with left:
         if how.empty:
             st.caption("Not dismissed yet.")
         else:
-            st.plotly_chart(bars([h.title() for h in how.index], how.values, "% of dismissals", 0),
+            st.plotly_chart(bars([say(h) for h in how.index], how.values, "% of dismissals", 0),
                             width="stretch", config=CONFIG, key="op_how")
             main = how.index[0]
             st.caption(f"Most often **{main}** ({how.iloc[0]:.0f}%). A high bowled/lbw share means attacking the stumps "

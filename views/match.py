@@ -48,7 +48,8 @@ if not mid:
 row = m[m.match_id == mid].iloc[0]
 st.divider()
 stage = f" · {row.stage}" if row.stage else ""
-series = f" · Match {int(row.series_match_no)} of {int(row.series_length)}" if pd.notna(row.series_match_no) else ""
+series = (f" · Match {int(row.series_match_no)}" + (f" of {int(row.series_length)}" if pd.notna(row.series_length) else "")
+          if pd.notna(row.series_match_no) else "")
 scoreboard(f"{shown_name(row.section, row.event)}{stage}{series} · {row.date:%d %b %Y}", row.home, score_of(mid, row.home), row.away,
            score_of(mid, row.away), row.result + (f" (super over: {row.super_over})" if row.super_over else "")
            + (f" · Player of the match: {row.player_of_match}" if row.player_of_match else ""))

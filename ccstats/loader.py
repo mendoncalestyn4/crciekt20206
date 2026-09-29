@@ -11,8 +11,10 @@ from __future__ import annotations
 import io
 import json
 import re
+import time
 import zipfile
 from dataclasses import dataclass, field
+from datetime import timedelta
 from typing import Iterable
 
 import pandas as pd
@@ -22,6 +24,7 @@ from .competitions import (FIRST_CLASS, INTERNATIONAL, INTERNATIONAL_SECTION, TE
 from .parser import Match, ScorecardError, parse_scorecard, validate_match
 
 MULTI_DAY = {TEST, FIRST_CLASS}
+SUB_RE = re.compile(r"^(sub|substitute)\b", re.I)  # "c Sub b Cook": taken by a substitute fielder
 
 
 # --------------------------------------------------------------------------- #
@@ -46,15 +49,18 @@ class Fixes:
     splits: list[dict] = field(default_factory=list)
     credits: dict[str, str] = field(default_factory=dict)
     suggested: list[str] = field(default_factory=list)
+    include: list[str] = field(default_factory=list)  # match ids: count these even though they look like leftovers
+    exclude: list[str] = field(default_factory=list)  # match ids: leave these out of every figure
 
     def to_json(self) -> str:
         return json.dumps({"merges": self.merges, "splits": self.splits, "credits": self.credits,
-                           "suggested": self.suggested}, indent=1)
+                           "suggested": self.suggested, "include": self.include, "exclude": self.exclude}, indent=1)
 
     @classmethod
     def from_json(cls, text: str) -> "Fixes":
         d = json.loads(text or "{}")
-        return cls(d.get("merges", {}), d.get("splits", []), d.get("credits", {}), d.get("suggested", []))
+        return cls(d.get("merges", {}), d.get("splits", []), d.get("credits", {}), d.get("suggested", []),
+                   d.get("include", []), d.get("exclude", []))
 
     def rename(self, name: str, team: str) -> str:
         for s in self.splits:
@@ -93,19 +99,35 @@ def decode(data: bytes) -> str:
     return data.decode("latin-1")
 
 
-def expand(files: Iterable[tuple[str, bytes]]) -> Iterable[tuple[str, bytes]]:
-    """Yield (name, bytes) for every file, looking inside zips (and zips in zips)."""
-    for name, data in files:
+def _zip_time(info: zipfile.ZipInfo) -> float | None:
+    try:
+        return time.mktime(info.date_time + (0, 0, -1))
+    except (OverflowError, ValueError):
+        return None
+
+
+def expand(files: Iterable[tuple]) -> Iterable[tuple[str, bytes, float | None]]:
+    """Yield (name, bytes, modified time or None) for every file, looking inside zips
+    (and zips in zips).  Items are (name, bytes) or (name, bytes, modified time)."""
+    for item in files:
+        name, data = item[0], item[1]
+        mtime = item[2] if len(item) > 2 else None
         if name.lower().endswith(".zip") or data[:4] == b"PK\x03\x04":
             try:
                 with zipfile.ZipFile(io.BytesIO(data)) as zf:
-                    inner = [(f"{name}/{i.filename}", zf.read(i)) for i in zf.infolist() if not i.is_dir()]
+                    inner = [(f"{name}/{i.filename}", zf.read(i), _zip_time(i)) for i in zf.infolist() if not i.is_dir()]
             except zipfile.BadZipFile:
-                yield name, data
+                yield name, data, mtime
                 continue
             yield from expand(inner)
         else:
-            yield name, data
+            yield name, data, mtime
+
+
+def _leaf(source: str) -> str:
+    """The file name a career file stores a scorecard under ("24 may 2026-mid v sry.txt" ->
+    "24_may_2026-mid_v_sry.txt").  Careers saved before names were kept only have this."""
+    return re.sub(r"[^\w.\-]+", "_", source.split("/")[-1]) or "scorecard.txt"
 
 
 def _signature(m: Match) -> tuple:
@@ -121,6 +143,9 @@ def _signature(m: Match) -> tuple:
 PACK_TEXTS = "scorecards/"
 PACK_FIXES = "fixes.json"
 PACK_INFO = "career.json"
+PACK_SOURCES = "sources.json"  # stored file name -> the scorecard's own file name
+PACK_TIMES = "times.json"  # stored file name -> when the game saved it
+LEFTOVER_COLUMNS = ["match_id", "source", "date", "competition", "stage", "home", "away", "result", "saved", "reason", "auto"]
 
 
 @dataclass
@@ -136,21 +161,35 @@ class Career:
     fielding: pd.DataFrame
     fow: pd.DataFrame
     problems: pd.DataFrame  # self-check failures, per match
+    times: dict[str, float] = field(default_factory=dict)  # source -> when the game saved the file
+    # matches kept in the career but left out of every figure: games from an earlier
+    # playthrough of a season, and any the user left out on the data check page
+    leftovers: pd.DataFrame = field(default_factory=lambda: pd.DataFrame(columns=LEFTOVER_COLUMNS))
 
     # ------------------------------------------------------------ building
     @classmethod
-    def build(cls, name: str, files: Iterable[tuple[str, bytes]], fixes: Fixes | None = None,
-              existing: dict[str, str] | None = None) -> "Career":
+    def build(cls, name: str, files: Iterable[tuple], fixes: Fixes | None = None,
+              existing: dict[str, str] | None = None, times: dict[str, float] | None = None) -> "Career":
         """Read files (plain .txt or zips) into a career.  `existing` are texts
-        already in the career, so adding a new batch keeps what was there."""
+        already in the career, so adding a new batch keeps what was there; `times`
+        are when the game saved each file (from the Scorecards folder), used to
+        spot games left over from an earlier playthrough of a season."""
         fixes = fixes or Fixes()
         texts: dict[str, str] = dict(existing or {})
+        saved: dict[str, float] = dict(times or {})
         report: list[FileReport] = []
         parsed: dict[str, Match] = {}
         seen_ids: dict[str, str] = {}
         seen_sigs: dict[tuple, str] = {}
 
-        def admit(source: str, text: str, is_new: bool) -> None:
+        def forget(source: str) -> None:
+            parsed.pop(source)
+            texts.pop(source, None)
+            for d in (seen_ids, seen_sigs):
+                for k in [k for k, v in d.items() if v == source]:
+                    del d[k]
+
+        def admit(source: str, text: str, is_new: bool, mtime: float | None = None) -> None:
             try:
                 m = parse_scorecard(text, source)
             except ScorecardError as e:
@@ -162,6 +201,18 @@ class Career:
             if m.date is None:
                 report.append(FileReport(source, "failed", "no match date found"))
                 return
+            if mtime is not None:
+                saved[source] = mtime
+            if is_new:
+                # The game saved this file again (a replayed match): the new version
+                # replaces the old one.  Careers saved by older versions stored the
+                # file under a tidied name, so that counts as the same file too.
+                old = source if source in parsed else _leaf(source) if _leaf(source) in parsed else None
+                if old is not None:
+                    if parsed[old].match_id == m.match_id:  # saved again unchanged
+                        report.append(FileReport(source, "duplicate", f"same match as {old}", m.match_id))
+                        return
+                    forget(old)
             dup = seen_ids.get(m.match_id) or seen_sigs.get(_signature(m))
             if dup:
                 if is_new:
@@ -176,20 +227,32 @@ class Career:
 
         for source, text in (existing or {}).items():
             admit(source, text, is_new=False)
-        for source, data in expand(files):
+        for source, data, mtime in expand(files):
             if not source.lower().endswith(".txt"):
                 report.append(FileReport(source, "skipped", "not a .txt scorecard"))
                 continue
-            admit(source, decode(data), is_new=True)
+            admit(source, decode(data), is_new=True, mtime=mtime)
         texts = {s: t for s, t in texts.items() if s in parsed}
-        tables = build_tables(list(parsed.values()), fixes)
-        return cls(name, texts, fixes, report, **tables)
+        by_leaf = {_leaf(s): t for s, t in saved.items()}
+        saved = {s: saved.get(s, by_leaf.get(_leaf(s))) for s in parsed}
+        saved = {s: t for s, t in saved.items() if t is not None}
+        left = find_leftovers(parsed, saved, fixes)
+        tables = build_tables([m for s, m in parsed.items() if s not in left], fixes)
+        rows = []
+        for s, (reason, auto) in left.items():
+            m = parsed[s]
+            c = classify(m)
+            rows.append(dict(match_id=m.match_id, source=s, date=pd.Timestamp(m.date), competition=c.competition,
+                             stage=c.stage, home=m.team1, away=m.team2, result=m.result,
+                             saved=pd.Timestamp(saved[s], unit="s") if s in saved else pd.NaT, reason=reason, auto=auto))
+        leftovers = pd.DataFrame(rows, columns=LEFTOVER_COLUMNS).sort_values("date").reset_index(drop=True)
+        return cls(name, texts, fixes, report, **tables, times=saved, leftovers=leftovers)
 
-    def add_files(self, files: Iterable[tuple[str, bytes]]) -> "Career":
-        return Career.build(self.name, files, self.fixes, existing=self.texts)
+    def add_files(self, files: Iterable[tuple], times: dict[str, float] | None = None) -> "Career":
+        return Career.build(self.name, files, self.fixes, existing=self.texts, times={**self.times, **(times or {})})
 
     def with_fixes(self, fixes: Fixes) -> "Career":
-        c = Career.build(self.name, [], fixes, existing=self.texts)
+        c = Career.build(self.name, [], fixes, existing=self.texts, times=self.times)
         c.report = self.report
         return c
 
@@ -199,13 +262,18 @@ class Career:
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
             zf.writestr(PACK_INFO, json.dumps({"name": self.name, "version": 1}))
             zf.writestr(PACK_FIXES, self.fixes.to_json())
-            used = set()
+            used, sources, times = set(), {}, {}
             for source, text in self.texts.items():
-                leaf = re.sub(r"[^\w.\-]+", "_", source.split("/")[-1]) or "scorecard.txt"
+                leaf = _leaf(source)
                 while leaf in used:
                     leaf = "_" + leaf
                 used.add(leaf)
                 zf.writestr(PACK_TEXTS + leaf, text)
+                sources[leaf] = source
+                if source in self.times:
+                    times[leaf] = self.times[source]
+            zf.writestr(PACK_SOURCES, json.dumps(sources, indent=0))
+            zf.writestr(PACK_TIMES, json.dumps(times, indent=0))
         return buf.getvalue()
 
     @staticmethod
@@ -220,10 +288,72 @@ class Career:
     def from_pack(cls, data: bytes) -> "Career":
         with zipfile.ZipFile(io.BytesIO(data)) as zf:
             info = json.loads(zf.read(PACK_INFO))
-            fixes = Fixes.from_json(zf.read(PACK_FIXES).decode()) if PACK_FIXES in zf.namelist() else Fixes()
-            files = [(n[len(PACK_TEXTS):], zf.read(n)) for n in zf.namelist() if n.startswith(PACK_TEXTS)]
+            names = zf.namelist()
+            fixes = Fixes.from_json(zf.read(PACK_FIXES).decode()) if PACK_FIXES in names else Fixes()
+            sources = json.loads(zf.read(PACK_SOURCES)) if PACK_SOURCES in names else {}
+            times = json.loads(zf.read(PACK_TIMES)) if PACK_TIMES in names else {}
+            files = []
+            for n in names:
+                if n.startswith(PACK_TEXTS):
+                    leaf = n[len(PACK_TEXTS):]
+                    files.append((sources.get(leaf, leaf), zf.read(n), times.get(leaf)))
         c = cls.build(info.get("name", "My career"), files, fixes)
         return c
+
+
+# --------------------------------------------------------------------------- #
+# Games left over from an earlier playthrough of a season
+# --------------------------------------------------------------------------- #
+
+SAVE_SLACK = 5  # seconds: files saved together can carry slightly different times
+
+
+def find_leftovers(parsed: dict[str, Match], saved: dict[str, float], fixes: Fixes) -> dict[str, tuple[str, bool]]:
+    """{source: (reason, found automatically)} for matches left out of every figure.
+
+    When a save is reloaded and part of a season played again, the game writes each
+    replayed match over its old file, but a knockout game with different teams gets
+    a new file name, so the old one stays in the folder (e.g. three IPL finals).
+    Such a game gives itself away by the file times: another match of the same
+    competition and season, played *before* it, was saved *after* it (the season
+    was rewound past it), or a knockout on the same day with one of the same teams
+    was saved after it.  Only knockout games are judged, and only with file times.
+    The user can count any of them again, or leave out any other match, on the
+    data check page."""
+    out: dict[str, tuple[str, bool]] = {}
+    items = list(parsed.items())
+    cls = [classify(m) for _, m in items]
+    seasons = assign_seasons([(c.competition, m.date) for c, (_, m) in zip(cls, items)])
+    groups: dict[tuple, list[int]] = {}
+    for i, (c, season) in enumerate(zip(cls, seasons)):
+        groups.setdefault((c.competition, season), []).append(i)
+
+    def when(t: float) -> str:
+        return time.strftime("%d %b %Y", time.localtime(t)).lstrip("0")
+
+    for idxs in groups.values():
+        for i in idxs:
+            src, m = items[i]
+            if not cls[i].knockout or src not in saved:
+                continue
+            span = timedelta(days=5) if cls[i].format in MULTI_DAY else timedelta(0)  # a multi-day game can end later
+            for j in idxs:
+                other, o = items[j]
+                if j == i or other not in saved or saved[other] <= saved[src] + SAVE_SLACK:
+                    continue
+                rewound = o.date + span < m.date
+                clash = cls[j].knockout and o.date == m.date and {o.team1, o.team2} & {m.team1, m.team2}
+                if rewound or clash:
+                    later = "played again" if rewound else "replayed from this round"
+                    out[src] = (f"From an earlier playthrough: saved {when(saved[src])}, before this season was "
+                                f"{later} on {when(saved[other])}.", True)
+                    break
+    for src, m in parsed.items():
+        if m.match_id in fixes.include:
+            out.pop(src, None)
+        elif m.match_id in fixes.exclude:
+            out[src] = ("Left out by you on the data check page.", False)
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -315,15 +445,29 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
                     fours=b.fours, sixes=b.sixes, out=b.did_bat and not b.not_out, how_out=b.how_out,
                     dismissal=b.dismissal, bowler=bowler, fielder=fielder if b.fielder else "",
                     fielder_resolved=resolved if b.fielder else False))
-                if b.how_out in ("caught", "stumped") and b.fielder:
+                if b.how_out in ("caught", "stumped") and b.fielder and not SUB_RE.match(b.fielder):
+                    # (a catch by a substitute fielder, "c Sub", belongs to no one in the XI)
                     F.append(dict(
                         match_id=m.match_id, innings_no=inn.number, team=inn.bowling_team,
                         opposition=inn.team, player=fielder if resolved else "", printed=b.fielder if not resolved else fielder,
                         kind=b.how_out, batter=player, bowler=bowler, resolved=resolved, credit_key=key))
-            for w in inn.bowling:
+            # Two players the game prints the same way ("K Mendis" for Kusal and Kamindu) can
+            # both bowl in one innings.  Like the batting list, where the one lower in the
+            # order is "K Mendis (2)", they are kept apart.  The scorecard can't say which
+            # bowling line is whose, so the one who bowled more is taken to be the one who
+            # bats lower (specialist bowlers bat lower down).
+            suffix: dict[int, str] = {}
+            by_name: dict[str, list[int]] = {}
+            for j, w in enumerate(inn.bowling):
+                by_name.setdefault(w.player, []).append(j)
+            for name, idx in by_name.items():
+                for n, j in enumerate(sorted(idx, key=lambda j: inn.bowling[j].balls), start=1):
+                    suffix[j] = name if n == 1 else f"{name} ({n})"
+            for j, w in enumerate(inn.bowling):
+                raw = suffix[j]
                 W.append(dict(
                     match_id=m.match_id, innings_no=inn.number, team=inn.bowling_team, opposition=inn.team,
-                    player=fixes.rename(w.player, inn.bowling_team), balls=w.balls, runs=w.runs,
+                    player=fixes.rename(raw, inn.bowling_team), balls=w.balls, runs=w.runs,
                     wickets=w.wickets, maidens=w.maidens, dots=w.dots, counted_in_balls=inn.counted_in_balls))
 
     frames = dict(

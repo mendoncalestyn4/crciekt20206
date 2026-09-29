@@ -91,7 +91,7 @@ def run_page(career, **state):
 def test_data_check_page_renders(career):
     at = run_page(career)
     assert not at.exception, at.exception
-    assert len(at.tabs) == 5
+    assert len(at.tabs) == 6
 
 
 def test_search_lists_everything(career):

@@ -53,25 +53,35 @@ fresh = set(RC.recent_sources(career))
 GROUPS = [("Team", ["Highest team totals", "Lowest completed totals", "Biggest wins by runs", "Innings wins"]),
           ("Batting", ["Highest individual scores", "Most runs in a season", "Most sixes in an innings", "Highest partnerships"]),
           ("Bowling", ["Best bowling in an innings", "Best bowling in a match", "Most wickets in a season"])]
+def record_table(name: str) -> None:
+    t = recs[name]
+    with st.container(border=True):
+        st.markdown(f"**{name}**")
+        show = pd.DataFrame({
+            "#": [str(r) for r in t["rank"]],
+            "Who": [f"{h} 🆕" if s in fresh else h for h, s in zip(t.holder, t.source)], "Record": t.value,
+            "Against": [a if a else "" for a in t.against], "Date": t.date.dt.strftime("%d %b %Y")})
+        if "season" in name:
+            show = show.drop(columns=["Against", "Date"])
+        st.dataframe(show, hide_index=True, width="stretch", column_config={"#": st.column_config.TextColumn(width=40)})
+
+
 for group, names in GROUPS:
     names = [n for n in names if n in recs]
     if not names:
         continue
     st.subheader(group, anchor=False)
-    cols = st.columns(2, gap="medium")
-    for i, name in enumerate(names):
-        t = recs[name]
-        with cols[i % 2]:
-            with st.container(border=True):
-                st.markdown(f"**{name}**")
-                show = pd.DataFrame({
-                    "#": [str(r) for r in t["rank"]],
-                    "Who": [f"{h} 🆕" if s in fresh else h for h, s in zip(t.holder, t.source)], "Record": t.value,
-                    "Against": [a if a else "" for a in t.against], "Date": t.date.dt.strftime("%d %b %Y")})
-                if "season" in name:
-                    show = show.drop(columns=["Against", "Date"])
-                st.dataframe(show, hide_index=True, width="stretch",
-                             column_config={"#": st.column_config.TextColumn(width=36)})
+    # tables with an opponent and a date get the full width, so nothing is cut off on a smaller screen;
+    # the short season tables sit side by side
+    wide = [n for n in names if "season" not in n]
+    short = [n for n in names if "season" in n]
+    for name in wide:
+        record_table(name)
+    for i in range(0, len(short), 2):
+        cols = st.columns(2, gap="medium")
+        for col, name in zip(cols, short[i:i + 2]):
+            with col:
+                record_table(name)
 st.caption("Equal records share a place. Partnerships come from the fall of wickets; * means unbroken at the end of "
            "the innings. The fastest fifties and hundreds can't be worked out because scorecards don't record when "
            "each run was scored.")

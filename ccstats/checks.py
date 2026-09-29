@@ -41,7 +41,7 @@ def uncredited(career) -> pd.DataFrame:
     No suggestion is made when the evidence is even."""
     f = career.fielding[~career.fielding.resolved]
     cols = ["credit_key", "match_id", "date", "match", "innings_no", "team", "printed", "kind", "batter", "bowler",
-            "candidates", "suggestion", "reason"]
+            "candidates", "likely", "suggestion", "reason"]
     if f.empty:
         return pd.DataFrame(columns=cols)
     m = career.matches.set_index("match_id")
@@ -90,7 +90,7 @@ def uncredited(career) -> pd.DataFrame:
         rows.append(dict(credit_key=r.credit_key, match_id=r.match_id, date=mm.date,
                          match=f"{mm.date:%d %b %Y} · {mm.home} v {mm.away}", innings_no=r.innings_no, team=r.team,
                          printed=r.printed, kind=r.kind, batter=r.batter, bowler=r.bowler,
-                         candidates=cands + [p for p in side if p not in cands],
+                         candidates=cands + [p for p in side if p not in cands], likely=cands,
                          suggestion=suggestion, reason=reason))
     return pd.DataFrame(rows, columns=cols).sort_values(["date", "innings_no"]).reset_index(drop=True)
 
@@ -126,3 +126,49 @@ def split_suggestions(career) -> pd.DataFrame:
     rows = [dict(player=p, section=sec, season=season, teams=teams)
             for (p, sec, season), teams in g.items() if len(teams) > 1]
     return pd.DataFrame(rows, columns=["player", "section", "season", "teams"])
+
+
+def replay_conflicts(career) -> pd.DataFrame:
+    """Knockout games that can't all belong to one playthrough of a season, among
+    the games still counted: two finals, or one team in two knockouts on the same
+    day.  (With file times these are set aside automatically; this is for careers
+    whose files came without them.)"""
+    m = career.matches[career.matches.knockout]
+    rows = []
+    for (event, season), g in m.groupby(["event", "season"]):
+        flagged = set()
+        finals = g[g.stage == "Final"]
+        if len(finals) > 1:
+            flagged |= set(finals.match_id)
+        for day, d in g.groupby("date"):
+            teams = list(d.home) + list(d.away)
+            clash = {t for t in teams if teams.count(t) > 1}
+            flagged |= set(d[d.home.isin(clash) | d.away.isin(clash)].match_id)
+        for r in g[g.match_id.isin(flagged)].itertuples():
+            rows.append(dict(match_id=r.match_id, group=f"{event} {season}", date=r.date, stage=r.stage,
+                             home=r.home, away=r.away, result=r.result))
+    return pd.DataFrame(rows, columns=["match_id", "group", "date", "stage", "home", "away", "result"])
+
+
+def shared_names(career) -> pd.DataFrame:
+    """One row per name that turned out for two or more teams in the same season of a
+    competition, so almost certainly two different players printed the same way
+    ("R Patel" at Leicestershire and at Surrey).  With the usual fix: the name stays
+    with the team it played most games for, and the player at each other team gets
+    the team added to the name ("R Patel (Surrey)")."""
+    cols = ["player", "teams", "games", "where", "keep", "separate"]
+    sp = split_suggestions(career)
+    if sp.empty:
+        return pd.DataFrame(columns=cols)
+    appear = pd.concat([career.batting[["match_id", "team", "player"]],
+                        career.bowling[["match_id", "team", "player"]]]).drop_duplicates()
+    rows = []
+    for player, g in sp.groupby("player", sort=True):
+        teams = sorted({t for ts in g.teams for t in ts})
+        mine = appear[appear.player == player]
+        games = {t: int(mine[mine.team == t].match_id.nunique()) for t in teams}
+        order = sorted(teams, key=lambda t: (-games[t], t))
+        rows.append(dict(player=player, teams=order, games=games,
+                         where=list(dict.fromkeys(f"{s} {y}" for s, y in zip(g.section, g.season))),
+                         keep=order[0], separate=order[1:]))
+    return pd.DataFrame(rows, columns=cols)

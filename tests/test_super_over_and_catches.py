@@ -122,14 +122,14 @@ def test_every_key_names_exactly_one_row():
         assert not df.duplicated(keys).any(), name
 
 
-def test_a_bowler_listed_twice_is_added_up_and_reported():
+def test_a_name_on_two_bowling_lines_is_two_bowlers():
     text = SUPER[1].read_text().replace("J Duffy         4      6     47     1     11.75",
                                         "J Duffy         4      6     47     1     11.75\n"
                                         "J Duffy         1      0     10     1     10.00", 1)
     c = Career.build("d", [("twice.txt", text.encode())])
-    w = c.bowling[c.bowling.player == "J Duffy"]
-    assert len(w) == 1 and w.runs.iloc[0] == 57 and w.wickets.iloc[0] == 2
-    assert c.problems.problem.str.contains("appears twice").any()
+    w = c.bowling[c.bowling.player.str.startswith("J Duffy")].set_index("player")
+    assert w.runs["J Duffy"] == 10 and w.runs["J Duffy (2)"] == 47  # the one who bowled more is "(2)"
+    assert not c.problems.problem.str.contains("appears twice").any()
     at = AppTest.from_file(str(ROOT / "views" / "player.py"), default_timeout=120)
     at.session_state["career_obj"] = c
     at.session_state["pl_player"] = "J Duffy"
@@ -234,3 +234,28 @@ def test_the_key_guard_handles_every_kind_of_repeat():
         assert not frames[name].duplicated(keys).any(), name
     assert frames["problems"].source.map(lambda s: isinstance(s, str)).all()
     assert frames["problems"].problem.str.contains("appears twice").sum() == 5
+
+
+def test_two_bowlers_with_the_same_printed_name_are_kept_apart():
+    """WI v SL and RSA v BAN: two 'K Mendis' / 'M Hasan' in one XI, both bowling in
+    the same innings.  That's not an error: like batting, the second is '(2)'."""
+    p = Path(__file__).parent / "fixtures" / "19_aug_2026-eng_v_pak_1st_tst.txt"
+    text = p.read_text().replace("N Shah", "N Ali").replace("b Shah", "b Ali")  # Pakistan now has two "N Ali"
+    c = Career.build("same", [("same_name.txt", text.encode())])
+    assert c.problems.empty
+    w = c.bowling[c.bowling.innings_no == 1].set_index("player")
+    # the one who bowled more (Naseem, 17 overs) is taken to be the one batting lower ("(2)", no. 10)
+    assert (w.runs["N Ali (2)"], w.wickets["N Ali (2)"]) == (89, 1)
+    assert (w.runs["N Ali"], w.wickets["N Ali"]) == (52, 4)
+    bat = c.batting[c.batting.innings_no == 2].set_index("position").player
+    assert (bat[9], bat[10]) == ("N Ali", "N Ali (2)")
+    for player in ("N Ali", "N Ali (2)"):
+        at = AppTest.from_file(str(ROOT / "views" / "player.py"), default_timeout=120)
+        at.session_state["career_obj"] = c
+        at.session_state["pl_player"] = player
+        at.run()
+        assert not at.exception and not [x for x in at.warning if "couldn't be shown" in x.value], player
+    at = AppTest.from_file(str(ROOT / "views" / "home.py"), default_timeout=120)
+    at.session_state["career_obj"] = c
+    at.run()
+    assert not at.exception and not [x for x in at.warning if "self-check" in x.value]

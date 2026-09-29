@@ -74,7 +74,7 @@ The pages are grouped in the menu:
 | **Hall of fame** | Player of the Match leaderboard, deadly catcher-and-bowler duos, best all-round match performances |
 | **Rankings** | Player ratings (recent form counts most) and team Elo |
 | **Insights** | Is this total enough? Home advantage, how scoring changes season to season, breakout players |
-| **Data check** | Fix what the scorecards leave unclear: who took "c Patel" when there are four Patels, two players with one name, one player with two names. Nothing changes unless you say so, and every fix can be undone. |
+| **Data check** | Starts with a short list of what needs you. **Unclear catches**: who took "c Patel" when a side has two Patels (one click accepts the suggestions). **Name shared by 2 players**: e.g. *R Patel* at Leicestershire and at Surrey, kept apart in one click. **Player with 2 names**. **Games left out**: knockouts from an earlier playthrough of a season (see below). Nothing changes unless you click, and every change can be undone under *Your changes*. |
 
 **Hover** over any bar or dot to see the player's full figures and rank. Hover a chart and click the
 **camera** in its top-right corner to save it as a picture.
@@ -83,6 +83,13 @@ The pages are grouped in the menu:
 **Settings → Theme**.
 
 ---
+
+## Replayed a season?
+
+If you reload a save and play part of a season again, the game saves each replayed match over its old file, but a
+knockout with different teams gets a new file, so the old one stays in your Scorecards folder (that's how one IPL
+season can end up with three finals). The Stats Pack spots these from when each file was saved and leaves them out
+of every stat. They're listed on **Data check → Games left out**, where you can count any of them again.
 
 ## Your data is safe
 

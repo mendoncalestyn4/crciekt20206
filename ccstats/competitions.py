@@ -117,7 +117,7 @@ GENERIC = {
 }
 
 INTERNATIONAL_RE = re.compile(
-    r"^(?P<no>\d+)(?:st|nd|rd|th)\s+(?P<kind>test match|test|one day international|odi|"
+    r"^(?:(?P<no>\d+)(?:st|nd|rd|th)|only)\s+(?P<kind>test match|test|one day international|odi|"
     r"20 over international|t20 international|t20i)(?:\s*\(of\s+(?P<of>\d+)\))?$",
     re.I,
 )
@@ -138,6 +138,9 @@ STAGES = {
     "final": ("Final", True),
     "qualifier 1": ("Qualifier 1", True), "qualifier 2": ("Qualifier 2", True),
     "eliminator": ("Eliminator", True),
+    # The Hundred's eliminator (2nd v 3rd) is titled "Preliminary-Final" by the game
+    "preliminary-final": ("Eliminator", True), "preliminary final": ("Eliminator", True),
+    "play-off": ("Eliminator", True), "playoff": ("Eliminator", True),
 }
 
 
@@ -311,16 +314,19 @@ def assign_series(matches: list[tuple[str, str, str, int | None, int | None, dat
     counter = 0
     for i in order:
         fmt, t1, t2, no, of, d = matches[i]
-        if no is None:
+        if no is None or no != no:  # no match number (NaN from a table counts as none)
             continue
-        key = (fmt, frozenset((t1, t2)), of)
+        key = (fmt, frozenset((t1, t2)))
         prev = open_series.get(key)
-        if prev and no > prev[1] and d - prev[2] <= timedelta(days=60):
+        # the same series: match numbers go up, no long gap, and the lengths agree
+        # where both are printed ("Only Test Match" then "2nd Test Match" print none)
+        if prev and no > prev[1] and d - prev[2] <= timedelta(days=60) and (of is None or prev[3] is None or of == prev[3]):
             sid = prev[0]
+            of = of if of is not None else prev[3]
         else:
             counter += 1
             sid = f"{fmt}-{counter}"
-        open_series[key] = (sid, no, d)
+        open_series[key] = (sid, no, d, of)
         ids[i] = sid
     return ids
 
