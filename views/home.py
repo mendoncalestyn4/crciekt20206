@@ -8,6 +8,7 @@ from ccstats import checks
 from ccstats.competitions import shown_name
 from ccstats.loader import Career
 from ccstats.extras import headlines
+from ccstats.records import played_order
 from ccstats.local import default_scorecards_folder
 from ui import state
 from ui.pick_folder import choose_folder
@@ -154,7 +155,8 @@ if m.empty:
     st.info("No matches yet. Play a match in Cricket Captain (with Autosave scorecards on) and it will appear here "
             "within about 20 seconds.")
 else:
-    last = m.sort_values(["date", "match_id"]).iloc[-1]
+    played = played_order(career)  # the order you played them in, not the date on the scorecard
+    last = played.iloc[-1]
     inn = career.innings[career.innings.match_id == last.match_id]
 
     def score(team):
@@ -214,7 +216,7 @@ else:
         "seasons": "Seasons", "first": st.column_config.DateColumn("First match", format="D MMM YYYY"),
         "last": st.column_config.DateColumn("Latest match", format="D MMM YYYY"), "format": "Format", "level": "Level"})
     st.subheader("Latest results", anchor=False)
-    latest = m.sort_values("date", ascending=False).head(12)[["date", "section", "stage", "home", "away", "result", "player_of_match"]]
+    latest = played[::-1].head(12)[["date", "section", "stage", "home", "away", "result", "player_of_match"]]
     st.dataframe(latest, hide_index=True, width="stretch", height=35 * (len(latest) + 1) + 3, column_config={
         "date": st.column_config.DateColumn("Date", format="D MMM YYYY"), "section": "Section", "stage": "Stage",
         "home": "Home", "away": "Away", "result": "Result", "player_of_match": "Player of the match"})

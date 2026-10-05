@@ -131,7 +131,7 @@ def test_stat_page_runs_for_every_batting_position(career):
                 at = AppTest.from_file(str(ROOT / "views" / "stat_by_stat.py"), default_timeout=30)
                 at.session_state["career_obj"] = career
                 at.session_state["sbs_section"] = section
-                at.session_state["sbs_pos"] = pos
+                at.session_state["sbs_pos"] = [pos]
                 at.session_state["sbs_stat_Batting"] = stat.label
                 at.run()
                 assert not at.exception, (section, pos, stat.label, at.exception)

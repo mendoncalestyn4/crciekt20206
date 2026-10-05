@@ -448,37 +448,68 @@ def trophy_cabinet(career, team: str) -> pd.DataFrame:
 # --------------------------------------------------------------------------- #
 
 
-def headlines(career, n_matches: int = 10, limit: int = 8) -> list[str]:
-    """Short news lines about the most recent matches."""
-    from .records import new_records
-    m = career.matches.sort_values(["date", "match_id"])
-    recent = m.tail(n_matches)
-    out = []
+def _short_label(r) -> str:
+    """'Indian Premier League, 25 Apr' for a headline's match."""
+    from .competitions import shown_name
+    return f"{shown_name(r.section, r.event)}, {r.date.day} {r.date:%b}"
+
+
+def headlines(career, n_matches: int = 10, limit: int = 8, max_records: int = 3) -> list[str]:
+    """Short news lines about the most recently played matches, newest first.
+
+    "Most recent" is the order you played them in (when the game saved each file),
+    not the match date: the game saves some scorecards dated months ahead.  Every
+    line names its match; new records are mixed in with their match and capped at
+    `max_records`, so one record-breaking game can't push everything else out."""
+    from . import partnerships as P
+    from .records import new_record_lines, played_order
+    order = played_order(career)
+    recent = order.tail(n_matches)
+    by_date = career.matches.sort_values(["date", "match_id"])
+    rec_lines = new_record_lines(career, list(recent.source), min_matches=2)
+    recs_by_src: dict[str, list[str]] = {}
+    for src, msg in rec_lines:
+        section, rest = msg.removeprefix("New record in ").split("! ", 1)
+        recs_by_src.setdefault(src, []).append(f"🏅 New {section} record · {rest}")
+    out: list[str] = []
+    n_recs = 0
     for r in recent[::-1].itertuples():
+        tag = f" ({_short_label(r)})"
         stage = f" in the {r.stage.lower()}" if r.knockout and r.stage else ""
+        lines = []
+        for line in recs_by_src.get(r.source, []):
+            if n_recs < max_records:
+                lines.append(line + tag)
+                n_recs += 1
         bat = career.batting[(career.batting.match_id == r.match_id) & career.batting.did_bat]
         bowl = career.bowling[career.bowling.match_id == r.match_id]
-        season_ids = m[(m.section == r.section) & (m.season == r.season) & (m.date <= r.date)].match_id
+        season_ids = by_date[(by_date.section == r.section) & (by_date.season == r.season) & (by_date.date <= r.date)].match_id
         for b in bat[bat.runs >= 100].itertuples():
             n = int(((career.batting.match_id.isin(season_ids)) & (career.batting.player == b.player)
                      & (career.batting.runs >= 100)).sum())
             line = f"💯 {b.player} hits {b.runs}{'' if b.out else '*'} for {b.team} v {b.opposition}{stage}"
             if n > 1:
-                line += f" — {n}{'nd' if n == 2 else 'rd' if n == 3 else 'th'} hundred in {r.section} in {r.season}"
-            out.append(line)
+                line += f" — {n}{P.suffix(n)} hundred in {r.section} in {r.season}"
+            lines.append(line)
         for w in bowl[bowl.wickets >= 5].itertuples():
-            out.append(f"🎯 {w.player} takes {w.wickets}/{w.runs} for {w.team} v {w.opposition}{stage}")
-        finals = m[(m.event == r.event) & (m.season == r.season) & (m.stage == "Final")]
+            lines.append(f"🎯 {w.player} takes {w.wickets}/{w.runs} for {w.team} v {w.opposition}{stage}")
+        for s_ in P.stands(career, [r.match_id]).query("runs >= 100").itertuples():
+            said = f"{s_.batter1} & {s_.batter2}" if s_.known else s_.team
+            score = f"{s_.runs}{'*' if s_.unbroken else ''}"
+            if any(("stand" in ln or "partnerships" in ln) and said in ln and f" {score} " in ln for ln in lines):
+                continue  # already a record line for this stand
+            who = f"{s_.batter1} and {s_.batter2} put on" if s_.known else f"{s_.team} put on"
+            lines.append(f"🤝 {who} {s_.runs}{'*' if s_.unbroken else ''} for the {s_.wicket}{P.suffix(s_.wicket)} "
+                         f"wicket for {s_.team} v {s_.opposition}{stage}")
+        finals = career.matches[(career.matches.event == r.event) & (career.matches.season == r.season)
+                                & (career.matches.stage == "Final")]
         if r.knockout and r.stage == "Final" and (r.winner or r.tiebreak_winner) and len(finals) == 1:
-            out.append(f"🏆 {r.winner or r.tiebreak_winner} win the {r.event} {r.season}")
+            lines.append(f"🏆 {r.winner or r.tiebreak_winner} win the {r.event} {r.season}")
         for c in A.collapses(career, [r.match_id], r.home).itertuples():
-            out.append(f"📉 {r.home} collapse from {c.from_score} to {c.to_score} v {r.away}")
+            lines.append(f"📉 {r.home} collapse from {c.from_score} to {c.to_score} v {r.away}")
         for c in A.collapses(career, [r.match_id], r.away).itertuples():
-            out.append(f"📉 {r.away} collapse from {c.from_score} to {c.to_score} v {r.home}")
-        if len(out) >= limit * 2:
+            lines.append(f"📉 {r.away} collapse from {c.from_score} to {c.to_score} v {r.home}")
+        out += [ln if ln.endswith(tag) else ln + tag for ln in lines]
+        if len(out) >= limit:
             break
-    recs = []
-    for s in new_records(career, list(recent.source)):  # "New record in IPL! Highest totals: …"
-        section, rest = s.removeprefix("New record in ").split("! ", 1)
-        recs.append(f"🏅 New {section} record · {rest}")
-    return (recs + out)[:limit]
+    return out[:limit]

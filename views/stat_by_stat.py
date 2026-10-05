@@ -19,29 +19,73 @@ m = career.matches
 sections = m.section.value_counts()
 labels = {s: f"{s} · {n} match{'es' if n > 1 else ''}" for s, n in sections.items()}
 
-c1, c2, c3 = st.columns([2.2, 1.2, 1.3])
+c1, c2, c3 = st.columns([2.2, 1.6, 1.3])
 section = c1.selectbox("Section", list(sections.index), format_func=labels.get, key="sbs_section")
-seasons = sorted(m[m.section == section].season.unique(), reverse=True)
-season = c2.selectbox("Season", ["All seasons"] + seasons, key="sbs_season")
+combine = c1.toggle("Combine sections", key="sbs_combine",
+                    help="Count several sections together. Every player is then measured against the average of the "
+                         "chosen sections, so only combine sections of the same kind (e.g. two T20 leagues).")
+chosen = [section]
+if combine:
+    others = [x for x in sections.index if x != section]
+    chosen = [section] + st.multiselect("Sections to add", others, key="sbs_more_sections", format_func=labels.get,
+                                        placeholder="Pick sections to add to " + section)
+in_sections = m[m.section.isin(chosen)]
+seasons = sorted(in_sections.season.unique(), reverse=True)
+picked_seasons = c2.multiselect("Seasons", seasons, key="sbs_seasons", placeholder="All seasons")
 disc = c3.segmented_control("Discipline", ["Batting", "Bowling", "Fielding"], default="Batting", key="sbs_disc") or "Batting"
 
-position = "Any"
+f1, f2, f3, f4 = st.columns([1.4, 1.6, 1.1, 1.2])
+events = sorted(in_sections.event.unique())
+picked_events = f1.multiselect("Competitions", events, key="sbs_events", placeholder="All competitions",
+                               disabled=len(events) < 2,
+                               help="A section can hold more than one competition: e.g. ODIs has World Cups and "
+                                    "bilateral series.")
+base_scope = Scope(sections=chosen, seasons=picked_seasons, events=picked_events)
+sec_ids = base_scope.match_ids(m)
+here = m[m.match_id.isin(sec_ids)]
+teams_here = sorted(set(here.home) | set(here.away))
+picked_teams = f2.multiselect("Teams", teams_here, key="sbs_teams", placeholder="All teams",
+                              help="Only the players' games for these teams count. The average player is still the "
+                                   "whole section's.")
+VENUES = {"Home": "home", "Away": "away", "Neutral": "neutral"}
+picked_venues = f3.multiselect("Venue", list(VENUES), key="sbs_venues", placeholder="Anywhere",
+                               help="From the player's own team: home games, away games or neutral grounds. The "
+                                    "average player is then the average at these venues too.")
+HOW = ["caught", "bowled", "lbw", "run out", "stumped", "not out", "retired hurt"]
+picked_how = []
 if disc == "Batting":
-    position = st.segmented_control(
-        "Batting position", ["Any"] + list(POSITION_GROUPS), default="Any", key="sbs_pos",
-        help="Only count innings played at these positions. The average line is then the average batter at that "
-             "position, so openers are measured against openers.") or "Any"
-scope = Scope(sections=[section], seasons=[] if season == "All seasons" else [season],
-              positions=POSITION_GROUPS.get(position, []))
-sec_ids = scope.match_ids(m)
-teams_here = sorted(set(m[m.match_id.isin(sec_ids)].home) | set(m[m.match_id.isin(sec_ids)].away))
-t1, t2 = st.columns([1.2, 2.6])
-team = t1.selectbox("Team", ["All teams"] + teams_here, key="sbs_team")
-# per player-and-team rows when one team is picked, so only their games for that team count;
-# the average line always comes from the whole section
-bat, bowl, fld, base = state.tables(career, scope, by_team=team != "All teams")
-if team != "All teams":
-    bat, bowl, fld = (t[t.team == team] for t in (bat, bowl, fld))
+    picked_how = f4.multiselect("How out", HOW, key="sbs_how", placeholder="Any innings",
+                                help="Only innings that ended this way (the average batter too).")
+
+positions: list[int] = []
+where = ""
+if disc == "Batting":
+    p1, p2 = st.columns([4, 1.2], vertical_alignment="bottom")
+    single = p2.toggle("Single positions", key="sbs_pos_single", help="Pick positions 1 to 11 one by one instead of groups.")
+    if single:
+        picked_pos = p1.pills("Batting positions", [str(i) for i in range(1, 12)], selection_mode="multi",
+                              key="sbs_pos_one", help="Only count innings at these positions. The average line is then "
+                                                      "the average batter at these positions.") or []
+        positions = sorted(int(x) for x in picked_pos)
+        if positions:
+            where = ", batting at no. " + ", ".join(str(x) for x in positions)
+    else:
+        picked_pos = p1.pills("Batting positions", list(POSITION_GROUPS), selection_mode="multi", key="sbs_pos",
+                              help="Only count innings at these positions; pick more than one to combine them. The "
+                                   "average line is then the average batter at these positions, so openers are "
+                                   "measured against openers.") or []
+        positions = sorted({x for g in picked_pos for x in POSITION_GROUPS.get(g, [])})
+        if picked_pos:
+            where = ", batting " + " + ".join(("as openers" if g == "Openers (1-2)" else f"at {g.lower()}")
+                                               for g in sorted(picked_pos, key=list(POSITION_GROUPS).index))
+scope = Scope(sections=chosen, seasons=picked_seasons, events=picked_events, positions=positions,
+              venues=[VENUES[v] for v in picked_venues], how_out=picked_how if disc == "Batting" else [],
+              teams=picked_teams)
+if picked_how:
+    where += ", innings ending " + " / ".join(picked_how)
+if picked_venues:
+    where += ", " + " / ".join(v.lower() for v in picked_venues) + " games"
+bat, bowl, fld, base = state.tables(career, scope)
 defs = stat_definitions(base)[{"Batting": "bat", "Bowling": "bowl", "Fielding": "field"}[disc]]
 table = {"Batting": bat, "Bowling": bowl, "Fielding": fld}[disc]
 
@@ -64,7 +108,7 @@ minimum = c6.selectbox("Minimum to qualify", options, index=options.index(defaul
                        format_func=lambda v: "Anyone" if v == 0 else f"{v}+ {unit}", key=f"sbs_min_{disc}_{base.kind}")
 names = sorted(table.player.unique())
 highlight = c7.selectbox("Find a player", ["—"] + names, key="sbs_find")
-only = t2.multiselect("Only these players", names, key="sbs_only", placeholder="Everyone (or pick players to compare)")
+only = st.multiselect("Only these players", names, key="sbs_only", placeholder="Everyone (or pick players to compare)")
 highlight = "" if highlight == "—" else highlight
 
 stat_label = st.pills("Stat", [s.label for s in defs], default=defs[0].label, key=f"sbs_stat_{disc}") or defs[0].label
@@ -80,10 +124,15 @@ ranked = rank(pool, stat, best=best)
 shown = ranked.head(top)
 
 better = "Higher is better." if stat.better == "high" else "Lower is better."
-where = {"Any": "", "Openers (1-2)": ", batting as openers", "No. 3": ", batting at no. 3"}.get(
-    position, f", batting at {position}")
-st.markdown(f"<p class='statdef'><b>{stat.label}</b>: {stat.definition} <span class='note'>{section}"
-            f"{'' if season == 'All seasons' else ' ' + season}{where}: {len(pool)} players qualify "
+title = " + ".join(chosen) + (" (against the average of the chosen sections)" if len(chosen) > 1 else "")
+if picked_events:
+    title += " · " + ", ".join(picked_events)
+if picked_seasons:
+    title += " " + ", ".join(sorted(picked_seasons))
+if picked_teams:
+    title += " · for " + ", ".join(picked_teams)
+st.markdown(f"<p class='statdef'><b>{stat.label}</b>: {stat.definition} <span class='note'>{title}"
+            f"{where}: {len(pool)} players qualify "
             f"({'anyone' if not minimum else f'{minimum}+ {unit}'}). {better}</span></p>", unsafe_allow_html=True)
 
 if pool.empty:
@@ -102,7 +151,7 @@ with right:
         st.plotly_chart(dot_chart(pool, shown, stat, best, highlight), width="stretch", config=CONFIG, key="sbs_dots")
         better_side = "below" if d.better_below else "above"
         explain_list([
-            ("line", f"<b>Dashed line</b>: the average player in this section{where}: {d.line_label}. A dot on the line is exactly average."),
+            ("line", f"<b>Dashed line</b>: the average player in {'these sections' if len(chosen) > 1 else 'this section'}{where}: {d.line_label}. A dot on the line is exactly average."),
             ("shade", f"<b>Shaded area ({better_side} the line)</b>: {d.below if d.better_below else d.above} This is the better side."),
             ("", f"<b>{'Above' if d.better_below else 'Below'} the line</b>: {d.above if d.better_below else d.below}"),
             ("", f"<b>Further right</b>: {d.right} The further right a dot is, the more you can trust its position."),
@@ -128,7 +177,7 @@ if stat.column not in cols:  # the ranked stat is always in the table (e.g. 50+ 
     cols = {**dict(list(cols.items())[:3]), stat.column: stat.label, **dict(list(cols.items())[3:])}
 out = shown[list(cols)].rename(columns=cols).reset_index(drop=True)
 out.index = out.index + 1
-roles = A.role_labels(career, sec_ids, base.kind).set_index("player")
+roles = A.role_labels(career, scope.match_ids(m), base.kind).set_index("player")
 out.insert(2, "Role", [" · ".join([roles.role[p]] + list(roles.tags[p])) if p in roles.index else "–" for p in shown.player])
 # decimals as text so a missing value reads "–" (never dismissed, no wicket) rather than "None"
 two_dp = {"economy"}
@@ -146,4 +195,4 @@ with st.container(border=True):
                  | {v: st.column_config.Column(v, width=54) for k, v in cols.items()
                     if k not in ("player", "teams")})
     st.download_button("Download this table (CSV)", out.to_csv(index_label="#").encode(),
-                       file_name=f"{section} {stat.label}.csv".replace("/", "-"), key="sbs_dl")
+                       file_name=f"{' + '.join(chosen)} {stat.label}.csv".replace("/", "-"), key="sbs_dl")

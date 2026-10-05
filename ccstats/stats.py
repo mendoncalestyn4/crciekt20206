@@ -36,6 +36,11 @@ class Scope:
     opponent: str = ""
     stages: str = "all"  # all / league / knockout
     positions: list[int] = field(default_factory=list)  # batting positions to count (empty = all); batting only
+    events: list[str] = field(default_factory=list)  # competitions as run, e.g. "ODI World Cup" (empty = any)
+    # row filters: which players' rows count (the matches stay the same, so the average player is still the section's)
+    teams: list[str] = field(default_factory=list)  # only rows for these teams (empty = any)
+    venues: list[str] = field(default_factory=list)  # home / away / neutral, from the player's own team (empty = any)
+    how_out: list[str] = field(default_factory=list)  # batting only: innings ending this way ("not out" included)
 
     def match_ids(self, matches: pd.DataFrame) -> pd.Index:
         m = matches
@@ -43,6 +48,8 @@ class Scope:
             m = m[m.section.isin(self.sections)]
         if self.competitions:
             m = m[m.competition.isin(self.competitions)]
+        if self.events:
+            m = m[m.event.isin(self.events)]
         if self.formats:
             m = m[m.format.isin(self.formats)]
         if self.seasons:
@@ -58,6 +65,21 @@ class Scope:
             if self.opponent:
                 m = m[(m.home == self.opponent) | (m.away == self.opponent)]
         return pd.Index(m.match_id)
+
+
+def venue_of(rows: pd.DataFrame, matches: pd.DataFrame) -> pd.Series:
+    """home / away / neutral for each row (batting, bowling or fielding), from that row's team."""
+    info = matches.set_index("match_id")[["home", "neutral"]]
+    home = rows.match_id.map(info.home)
+    neutral = rows.match_id.map(info.neutral).fillna(False).astype(bool)
+    return pd.Series(np.where(neutral, "neutral", np.where(rows.team == home, "home", "away")), index=rows.index)
+
+
+def _rows(df: pd.DataFrame, scope: "Scope", matches: pd.DataFrame) -> pd.DataFrame:
+    """Rows kept by the scope's venue filter (this one changes the average player too)."""
+    if scope.venues and len(df):
+        df = df[venue_of(df, matches).isin(scope.venues)]
+    return df
 
 
 POSITION_GROUPS = {"Openers (1-2)": [1, 2], "No. 3": [3], "4 and 5": [4, 5], "6 and 7": [6, 7],
@@ -110,13 +132,16 @@ def player_tables(career, scope: Scope | None = None, by_team: bool = False) -> 
     kind = kind_of(matches)
     keys = ["player", "team"] if by_team else ["player"]
 
-    bat = career.batting[career.batting.match_id.isin(ids)]
+    bat = _rows(career.batting[career.batting.match_id.isin(ids)], scope, matches)
     if scope.positions:  # innings at these positions only; the baseline is then the average batter there too
         bat = bat[bat.position.isin(scope.positions)]
+    if scope.how_out:  # innings that ended this way only (the baseline too)
+        bat = bat[bat.how_out.isin(scope.how_out)]
+    bat_scope = bat
     if scope.team:
-        bat_scope = bat[bat.team == scope.team]
-    else:
-        bat_scope = bat
+        bat_scope = bat_scope[bat_scope.team == scope.team]
+    if scope.teams:
+        bat_scope = bat_scope[bat_scope.team.isin(scope.teams)]
     batted = bat_scope[bat_scope.did_bat]
 
     # ---------------- batting
@@ -152,10 +177,12 @@ def player_tables(career, scope: Scope | None = None, by_team: bool = False) -> 
     b = b.reset_index()
 
     # ---------------- bowling
-    bowl = career.bowling[career.bowling.match_id.isin(ids)]
+    all_bowl = _rows(career.bowling[career.bowling.match_id.isin(ids)], scope, matches)
+    bowl = all_bowl
     if scope.team:
         bowl = bowl[bowl.team == scope.team]
-    all_bowl = career.bowling[career.bowling.match_id.isin(ids)]
+    if scope.teams:
+        bowl = bowl[bowl.team.isin(scope.teams)]
     tb_runs, tb_balls, tb_wkts = all_bowl.runs.sum(), all_bowl.balls.sum(), all_bowl.wickets.sum()
     base_econ = _safe(tb_runs, tb_balls) * 6
     base_bsr = _safe(tb_balls, tb_wkts)
@@ -194,9 +221,11 @@ def player_tables(career, scope: Scope | None = None, by_team: bool = False) -> 
     w = w.reset_index()
 
     # ---------------- fielding
-    fld = career.fielding[career.fielding.match_id.isin(ids) & career.fielding.resolved]
+    fld = _rows(career.fielding[career.fielding.match_id.isin(ids) & career.fielding.resolved], scope, matches)
     if scope.team:
         fld = fld[fld.team == scope.team]
+    if scope.teams:
+        fld = fld[fld.team.isin(scope.teams)]
     fk = fld.assign(catch=fld.kind == "caught", stump=fld.kind == "stumped").groupby(keys).agg(
         catches=("catch", "sum"), stumpings=("stump", "sum"))
     f = appearances[["matches", "teams"]].join(fk, how="left").fillna({"catches": 0, "stumpings": 0})

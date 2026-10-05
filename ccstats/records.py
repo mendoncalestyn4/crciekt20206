@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import pandas as pd
 
+from . import partnerships as P
 from .analysis import _overs
 
 
@@ -74,43 +75,56 @@ def records(career, ids, top: int = 10) -> dict[str, pd.DataFrame]:
     finish("Most wickets in a season", season_w, season_w.player,
            [f"{w} (avg {r / w:.1f}, {s})" if w else f"0 ({s})" for w, r, s in zip(season_w.wickets, season_w.runs, season_w.season)],
            season_w.wickets * 100000 - season_w.runs, season_w.team, [""] * len(season_w))
-    # ---- partnerships (from the fall of wickets; unbroken stands at the end of an innings count too)
-    fow = career.fow[career.fow.match_id.isin(ids)].sort_values(["match_id", "innings_no", "wicket"])
-    stands = []
-    for (mid, no), g in fow.groupby(["match_id", "innings_no"]):
-        prev = 0
-        for wk, sc in zip(g.wicket, g.score):
-            stands.append((mid, no, int(wk), int(sc - prev), False))
-            prev = sc
-    fell = fow.groupby(["match_id", "innings_no"]).score.agg(["max", "size"])
-    for r in inn[~inn.all_out].itertuples():
-        k = (r.match_id, r.innings_no)
-        last, n = (int(fell.loc[k, "max"]), int(fell.loc[k, "size"])) if k in fell.index else (0, 0)
-        stands.append((r.match_id, r.innings_no, n + 1, int(r.runs - last), True))
-    if stands:
-        st_ = pd.DataFrame(stands, columns=["match_id", "innings_no", "wicket", "runs", "unbroken"]).merge(
-            inn[["match_id", "innings_no", "team", "opposition", "date", "source"]], on=["match_id", "innings_no"])
-        suffix = {1: "st", 2: "nd", 3: "rd"}
-        finish("Highest partnerships", st_, [f"{t}, {w}{suffix.get(w, 'th')} wicket" for t, w in zip(st_.team, st_.wicket)],
+    # ---- partnerships (from the fall of wickets; unbroken stands at the end of an innings count too),
+    # with the two batters named where the scorecard lets us tell who they were
+    st_ = P.stands(career, ids)
+    if len(st_):
+        st_ = st_.merge(inn[["match_id", "innings_no", "date", "source"]], on=["match_id", "innings_no"])
+        finish("Highest partnerships", st_,
+               [f"{b1} & {b2} ({t}), {w}{P.suffix(w)} wkt" if k else f"{t}, {w}{P.suffix(w)} wicket"
+                for t, w, k, b1, b2 in zip(st_.team, st_.wicket, st_.known, st_.batter1, st_.batter2)],
                [f"{r}{'*' if u else ''}" for r, u in zip(st_.runs, st_.unbroken)], st_.runs, st_.team, st_.opposition)
     return out
 
 
+def played_order(career) -> pd.DataFrame:
+    """Matches oldest first, in the order you played them.  The game saves some
+    scorecards with dates far ahead (a tour later in the year), so the date alone
+    doesn't say what you played last: the time the game saved each file does.
+    Files saved together keep their date order; a match with no file time (an
+    upload) goes with the newest saved match dated on or before it."""
+    m = career.matches.sort_values(["date", "match_id"]).reset_index(drop=True)
+    times = getattr(career, "times", {}) or {}
+    t = m.source.map(times).astype(float)
+    if t.notna().any():
+        # only matches without a time are filled in: with the latest time of any match dated on or before them
+        t = t.fillna(t.ffill().cummax()).fillna(t.min())
+    else:
+        t = pd.Series(0.0, index=m.index)
+    m["saved_at"] = t
+    m["_d"] = range(len(m))
+    return m.sort_values(["saved_at", "_d"], kind="stable").drop(columns="_d").reset_index(drop=True)
+
+
 def recent_sources(career, n: int = 10) -> list[str]:
     """The files of the n most recently played matches."""
-    return list(career.matches.sort_values(["date", "match_id"]).source.tail(n))
+    return list(played_order(career).source.tail(n))
 
 
-def new_records(career, sources: list[str]) -> list[str]:
-    """Records set by the newly added scorecards: in each section, any list
-    whose number 1 comes from one of these files (and wasn't shared)."""
+def new_record_lines(career, sources: list[str], min_matches: int = 5) -> list[tuple[str, str]]:
+    """(source, message) for every record whose number 1 now comes from one of these
+    files (and isn't shared): the record lists, plus the best stand for each wicket
+    (50 or more).
+    Sections with fewer than `min_matches` games are skipped (every match there sets
+    a record)."""
     if not sources:
         return []
+    sources = list(sources)
     new = career.matches[career.matches.source.isin(sources)]
-    msgs = []
+    out = []
     for section in new.section.unique():
         ids = career.matches[career.matches.section == section].match_id
-        if len(ids) < 5:  # the first few matches of a section set every record; not worth shouting about
+        if len(ids) < max(min_matches, 2):  # a section's first match sets every record; nothing broken yet
             continue
         for name, t in records(career, ids, top=2).items():
             if t.empty or "season" in name:  # a season total grows every match; only one-match records get an alert
@@ -118,5 +132,25 @@ def new_records(career, sources: list[str]) -> list[str]:
             first = t.iloc[0]
             if first.source in sources and (len(t) < 2 or t.iloc[1]["rank"] != 1):
                 who = f"{first.holder} {first.value}"
-                msgs.append(f"New record in {section}! {name}: {who}" + (f" v {first.against}" if first.against else ""))
-    return msgs
+                out.append((first.source, f"New record in {section}! {name}: {who}"
+                            + (f" v {first.against}" if first.against else "")))
+        st_ = P.stands(career, ids)
+        if len(st_) >= 2:
+            src = career.matches.set_index("match_id").source
+            overall = st_.sort_values("runs", ascending=False).index[0]  # already shouted about as "Highest partnerships"
+            for w, g in st_.groupby("wicket"):
+                g = g.sort_values("runs", ascending=False)
+                if len(g) < 2 or g.runs.iloc[0] < 50 or g.runs.iloc[1] == g.runs.iloc[0] or g.index[0] == overall:
+                    continue
+                top_ = g.iloc[0]
+                s_ = src.get(top_.match_id, "")
+                if s_ in sources:
+                    who = f"{top_.batter1} & {top_.batter2}" if top_.known else top_.team
+                    out.append((s_, f"New record in {section}! Best {w}{P.suffix(w)}-wicket stand: {who} "
+                                    f"{top_.runs}{'*' if top_.unbroken else ''} for {top_.team} v {top_.opposition}"))
+    return out
+
+
+def new_records(career, sources: list[str], min_matches: int = 5) -> list[str]:
+    """Records set by the newly added scorecards (see new_record_lines)."""
+    return [msg for _, msg in new_record_lines(career, sources, min_matches)]

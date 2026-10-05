@@ -42,10 +42,10 @@ def go_to(career: Career, kind: str, value: str) -> None:
         ss["tm_team"] = value
     elif kind == "section":
         ss["sbs_section"] = value
-        ss["sbs_season"] = "All seasons"
-        ss["sbs_team"] = "All teams"
         ss["sbs_find"] = "—"
-        ss.pop("sbs_only", None)
+        for k in ("sbs_only", "sbs_seasons", "sbs_teams", "sbs_events", "sbs_venues", "sbs_how", "sbs_combine",
+                  "sbs_more_sections"):
+            ss.pop(k, None)
     elif kind == "match":
         ss["mt_section"] = "All sections"
         ss["mt_team"] = "All teams"
