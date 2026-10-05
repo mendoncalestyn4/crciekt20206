@@ -113,7 +113,15 @@ def test_new_record_alert_when_a_match_breaks_one(career):
     # re-adding an old match that holds no record says nothing
     held = {t.source.iloc[0] for k, t in RC.records(career, Scope(sections=["T20 Blast"]).match_ids(career.matches), top=1).items()
             if "season" not in k}
-    quiet = [s for s in career.matches[career.matches.section == "T20 Blast"].source if s not in held]
+    # ...nor one that holds the best stand for a wicket (50 or more, not shared)
+    from ccstats import partnerships as P
+    blast = career.matches[career.matches.section == "T20 Blast"]
+    st_ = P.stands(career, blast.match_id).merge(blast[["match_id", "source"]], on="match_id")
+    for _, g in st_.groupby("wicket"):
+        g = g.sort_values("runs", ascending=False)
+        if len(g) >= 2 and g.runs.iloc[0] >= 50 and g.runs.iloc[1] < g.runs.iloc[0]:
+            held.add(g.source.iloc[0])
+    quiet = [s for s in blast.source if s not in held]
     assert quiet
     assert RC.new_records(career, quiet) == []
 
