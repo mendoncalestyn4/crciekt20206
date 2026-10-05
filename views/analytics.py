@@ -168,7 +168,7 @@ with tabs[5], safe_section("style maps"):
                                                base.strike_rate, ("Scores lots, scores fast", "Fast but out often",
                                                                   "Scores lots, steadily", "Slow and out often")),
                                 width="stretch", config=CONFIG, key="an_bstyle")
-                best_c = (b.style == "Scores lots, scores fast").mean() * 100
+                best_c = (b["style"] == "Scores lots, scores fast").mean() * 100
                 chart_note(f"{best_c:.0f}% of the {len(b)} batters are in the top-right corner: above the average of "
                            f"{base.average:.1f} and the strike rate of {base.strike_rate:.1f} at the same time.",
                            "Tells you how each batter scores: fast or steady, reliable or not. Use it to pick a "
@@ -185,7 +185,7 @@ with tabs[5], safe_section("style maps"):
                                                ("Costly and few wickets", "Tight but few wickets", "Wicket-taker but costly",
                                                 "Wicket-taker and tight"), x_better_low=True, y_better_low=True),
                                 width="stretch", config=CONFIG, key="an_wstyle")
-                best_w = (w.style == "Wicket-taker and tight").mean() * 100
+                best_w = (w["style"] == "Wicket-taker and tight").mean() * 100
                 chart_note(f"{best_w:.0f}% of the {len(w)} bowlers are in the bottom-left corner: cheaper than "
                            f"{base.economy:.2f} an over and quicker to a wicket than every {base.bowl_strike_rate:.0f} balls.",
                            "Tells you who takes wickets and who keeps it tight, so you know who to bowl when you need a "
