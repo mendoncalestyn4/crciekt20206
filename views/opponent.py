@@ -7,8 +7,8 @@ from ccstats import extras as E
 from ccstats import preview as PV
 from ccstats import teamplay as TP
 from ui import state
-from ui.charts import CONFIG, bars, fmt, say
-from ui.theme import (esc, form_strip, html_table, kpis, match_link, page_header, player_link, safe_section)
+from ui.charts import pct, CONFIG, bars, fmt, say
+from ui.theme import (chart_note, esc, form_strip, html_table, kpis, match_link, page_header, player_link, safe_section)
 
 career = state.current()
 if career is None:
@@ -185,6 +185,11 @@ with tab_them:
                     f"{i} innings · average {fmt(a, 1)} · strike rate {fmt(s, 1)} · best {b}"
                     for i, a, s, b in zip(top.innings, top.average, top.strike_rate, top.best)]),
                     width="stretch", config=CONFIG, key="op_bat")
+                tot = pv["batters"].runs.sum()
+                share = top.runs.iloc[0] / tot * 100 if tot else 0
+                chart_note(f"{top.player.iloc[0]} has {top.runs.iloc[0]} runs in their last 10 games, {share:.0f}% of "
+                           f"the {tot} runs {opp}'s batters made in that time.",
+                           "Who is scoring for them right now: the batters to plan for and get out early.")
     with right:
         with st.container(border=True):
             st.markdown("**Bowlers in form** · wickets in their last 10 matches")
@@ -196,6 +201,11 @@ with tab_them:
                     f"{i} innings · economy {fmt(e, 2)} · average {fmt(a, 1)}"
                     for i, e, a in zip(top.innings, top.economy, top.average)]),
                     width="stretch", config=CONFIG, key="op_bowl")
+                totw = pv["bowlers"].wickets.sum()
+                share = top.wickets.iloc[0] / totw * 100 if totw else 0
+                chart_note(f"{top.player.iloc[0]} has {int(top.wickets.iloc[0])} wickets in their last 10 games, "
+                           f"{share:.0f}% of the {int(totw)} {opp} took.",
+                           "Who is taking their wickets right now: the bowlers to see off or play carefully.")
 
     left, right = st.columns(2, gap="medium")
     with left:
@@ -205,7 +215,7 @@ with tab_them:
             if kw.empty:
                 st.caption("Not enough games yet.")
             else:
-                rows = [[player_link(x.player), x.innings, f"{fmt(x.win_good, 0)}%", f"{fmt(x.win_bad, 0)}%",
+                rows = [[player_link(x.player), x.innings, f"{pct(x.win_good)}", f"{pct(x.win_bad)}",
                          f"{x.gap:+.0f}"] for x in kw.head(5).itertuples()]
                 html_table(rows, ["Batter", "Inns", f"Win % when {kw.attrs['bar']}+", "Win % when not", "Gap"],
                            numeric={1, 2, 3, 4}, raw={0}, row_class=["hi"] + [""] * (len(rows) - 1))
@@ -222,11 +232,14 @@ with tab_them:
                                      texts=[f"{v:+.0f}% · {a:.0f} v {b:.0f}" for v, a, b in zip(ws.vs, ws.average, ws["all"])],
                                      notes=[f"{n} stands" for n in ws.stands]),
                                 width="stretch", config=CONFIG, key="op_weak")
-                worst = ws[ws.wicket <= 7].sort_values("vs").head(1)
-                if len(worst) and worst.vs.iloc[0] < 0:
-                    w = int(worst.wicket.iloc[0])
-                    st.caption(f"Their weakest stand is the {w}{'st' if w == 1 else 'nd' if w == 2 else 'rd' if w == 3 else 'th'} "
-                               f"wicket: {worst.average.iloc[0]:.0f} on average, against {worst['all'].iloc[0]:.0f} for every team.")
+                best_ = ws.sort_values("vs").iloc[-1]
+                worst_ = ws.sort_values("vs").iloc[0]
+                chart_note(f"Their {int(best_.wicket)}{'st' if best_.wicket == 1 else 'nd' if best_.wicket == 2 else 'rd' if best_.wicket == 3 else 'th'} "
+                           f"wicket stand is {best_.vs:+.0f}% against every team's ({best_.average:.0f} v {best_['all']:.0f} "
+                           f"runs); the {int(worst_.wicket)}{'st' if worst_.wicket == 1 else 'nd' if worst_.wicket == 2 else 'rd' if worst_.wicket == 3 else 'th'} "
+                           f"is {worst_.vs:+.0f}% ({worst_.average:.0f} v {worst_['all']:.0f}). Blue: better than "
+                           "average; red: worse.",
+                           "Finds where their batting order is soft, so you know which wicket to push hardest for.")
 
     left, right = st.columns(2, gap="medium")
     with left:
@@ -261,8 +274,8 @@ with tab_them:
             ce = state.memo(PV.chase_extremes, career, ids, opp)
             second = "Batting second" if ce["multi"] else "Chasing"
             st.markdown(f"**Batting first or {second.lower()}**")
-            html_table([["Batting first", TP.wdl(ce["first"]), f"{fmt(ce['first']['win_pct'], 0)}%"],
-                        [second, TP.wdl(ce["second"]), f"{fmt(ce['second']['win_pct'], 0)}%"]],
+            html_table([["Batting first", TP.wdl(ce["first"]), f"{pct(ce['first']['win_pct'])}"],
+                        [second, TP.wdl(ce["second"]), f"{pct(ce['second']['win_pct'])}"]],
                        ["", "W–L", "Win %"], numeric={2})
             notes = []
             if ce["best_chase"]:
@@ -281,18 +294,18 @@ with tab_them:
             where = st.segmented_control("You are", ["Home", "Away", "Neutral"], default="Home", key="op_where") or "Home"
             theirs = {"Home": "away", "Away": "home", "Neutral": "neutral"}[where]
             r_ = vr[theirs]
-            html_table([[f"{v.title()} games", TP.wdl(vr[v]), f"{fmt(vr[v]['win_pct'], 0)}%"] for v in ("home", "away", "neutral")
+            html_table([[f"{v.title()} games", TP.wdl(vr[v]), f"{pct(vr[v]['win_pct'])}"] for v in ("home", "away", "neutral")
                         if vr[v]["played"]], ["", "W–L", "Win %"], numeric={2},
                        row_class=["hi" if v == theirs else "" for v in ("home", "away", "neutral") if vr[v]["played"]])
             st.caption(f"With you at {where.lower()}, they are {'at a neutral ground' if theirs == 'neutral' else theirs}: "
-                       + (f"{TP.wdl(r_)} there ({fmt(r_['win_pct'], 0)}%)." if r_["played"] else "no games like that yet."))
+                       + (f"{TP.wdl(r_)} there ({pct(r_['win_pct'])})." if r_["played"] else "no games like that yet."))
 
     left, right = st.columns(2, gap="medium")
     with left:
         with safe_section("big matches"), st.container(border=True):
             bm = state.memo(PV.big_matches, career, ids, opp)
             st.markdown("**🏆 Big-match record**")
-            rows = [[label, TP.wdl(r_), f"{fmt(r_['win_pct'], 0)}%"] for label, r_ in
+            rows = [[label, TP.wdl(r_), f"{pct(r_['win_pct'])}"] for label, r_ in
                     (("Knockouts", bm["knockouts"]), ("Finals", bm["finals"]), ("Series deciders", bm["deciders"]))
                     if r_["played"]]
             if rows:
@@ -304,7 +317,7 @@ with tab_them:
             tr = state.memo(PV.trend, career, ids, opp)
             st.markdown("**📈 Trend**")
             st.markdown(f"Last 5: {form_strip(tr['last'])}", unsafe_allow_html=True)
-            parts = [f"Win % last 5: **{fmt(tr['recent']['win_pct'], 0)}%** (before that {fmt(tr['before']['win_pct'], 0)}%)."]
+            parts = [f"Win % last 5: **{pct(tr['recent']['win_pct'])}** (before that {pct(tr['before']['win_pct'])})."]
             if np.isfinite(tr["elo_now"]):
                 d = tr["elo_now"] - tr["elo_then"]
                 parts.append(f"Elo rating **{tr['elo_now']:.0f}** ({d:+.0f} over the last 5), "
@@ -321,13 +334,21 @@ with tab_them:
             else:
                 st.plotly_chart(bars([say(h) for h in how.index], how.values, "% of dismissals", 0),
                                 width="stretch", config=CONFIG, key="op_how")
+                chart_note(f"{how.iloc[0]:.0f}% of their dismissals are {say(how.index[0]).lower()}"
+                           + (f" and {how.iloc[1]:.0f}% {say(how.index[1]).lower()}" if len(how) > 1 else "") + ".",
+                           "How to get them out: a high bowled or lbw share means attacking the stumps works; a high "
+                           "caught share means set fields and wait for the mistake.")
     with right:
         with st.container(border=True):
             st.markdown("**Where their runs come from**")
             dep = pv["depth"]
             st.plotly_chart(bars(dep.group, dep.share, "% of their runs", 0, notes=[f"{r} runs" for r in dep.runs]),
                             width="stretch", config=CONFIG, key="op_depth")
-            st.caption("If most runs come from the top order, early wickets hurt them most.")
+            if len(dep):
+                d0 = dep.sort_values("share", ascending=False).iloc[0]
+                chart_note(f"{d0.share:.0f}% of their runs come from the {d0.group.lower()} ({d0.runs} runs).",
+                           "If most runs come from the top order, early wickets hurt them most; if the middle or tail "
+                           "score a lot, keep attacking after the top order is gone.")
 
 # ---------------------------------------------------------------- 79 · side by side
 with tab_sbs:

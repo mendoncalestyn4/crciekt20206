@@ -39,6 +39,19 @@ def fmt(v, decimals: int) -> str:
     return f"{v:.{decimals}f}" if decimals else f"{int(round(v))}"
 
 
+def pct(v, decimals: int = 0) -> str:
+    """'54%', or '–' when there's nothing to show (never '–%' or 'nan%')."""
+    t = fmt(v, decimals)
+    return t if t == "–" else t + "%"
+
+
+def signed(v, decimals: int = 0) -> str:
+    """'+12' / '−3', or '–' when there's nothing to show."""
+    if v is None or (isinstance(v, float) and not np.isfinite(v)):
+        return "–"
+    return f"{v:+.{decimals}f}"
+
+
 def label_backing(c: dict) -> str:
     """A see-through panel colour behind a name written over the dots, so it stays readable."""
     h = c["surface"].lstrip("#")

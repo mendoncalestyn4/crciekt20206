@@ -6,7 +6,7 @@ from ccstats import records as RC
 from ui.charts import CONFIG, bars
 from ccstats.stats import Scope
 from ui import state
-from ui.theme import page_header
+from ui.theme import chart_note, page_header
 
 career = state.current()
 if career is None:
@@ -46,6 +46,12 @@ if info is not None and len(pace):
                                      x_range=[0, max(p.projected.max(), p.record.iloc[0]) * 1.75],
                                      notes=[f"{t} · record: {h or '–'}" for t, h in zip(p.team, p.record_holder)]),
                                 width="stretch", config=CONFIG, key=f"rc_pace_{what}")
+                p0 = p.iloc[0]
+                rec_ = p0.record
+                chart_note(f"{p0.player} is on course for {p0.projected} {what} (now {p0.so_far} in {p0.matches} matches)"
+                           + (f", {(p0.projected - rec_) / rec_ * 100:+.0f}% against the season record of {int(rec_)}."
+                              if pd.notna(rec_) and rec_ else "."),
+                           f"Who could break the season {what} record (the dashed line) if they keep this up.")
         st.caption("Projected = what they have so far, per match, times the number of matches their team played last "
                    "season. 🔥 = on course to break the season record (the dashed line).")
 fresh = set(RC.recent_sources(career))

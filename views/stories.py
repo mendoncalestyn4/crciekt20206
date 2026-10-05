@@ -3,8 +3,8 @@ import streamlit as st
 from ccstats import players as PL
 from ccstats.stats import Scope
 from ui import state
-from ui.charts import CONFIG, bars, fmt
-from ui.theme import html_table, match_link, page_header, player_link, safe_section
+from ui.charts import signed, pct, CONFIG, bars, fmt
+from ui.theme import chart_note, html_table, match_link, page_header, player_link, safe_section
 
 career = state.current()
 if career is None:
@@ -94,8 +94,8 @@ with tabs[2], safe_section("win when they fire"):
             if d.empty:
                 st.caption(f"Nobody has 3+ {what} yet.")
             else:
-                rows = [[player_link(r.player), r.team, r.times, f"{fmt(r.pct_when, 0)}%", f"{fmt(r.pct_other, 0)}%",
-                         f"{r.lift:+.0f}"] for r in d.head(20).itertuples()]
+                rows = [[player_link(r.player), r.team, r.times, f"{pct(r.pct_when)}", f"{pct(r.pct_other)}",
+                         signed(r.lift)] for r in d.head(20).itertuples()]
                 html_table(rows, ["Player", "Team", "Times", "Win % then", "Win % otherwise", "Lift"],
                            numeric={2, 3, 4, 5}, raw={0}, row_class=mark(d.head(20).team))
 
@@ -142,6 +142,10 @@ with tabs[4], safe_section("carried the team"):
                                  notes=[f"{r} of {t} runs in {i} innings · {tm}" for r, t, i, tm in
                                         zip(top.runs, top.team_runs, top.innings, top.team)]),
                             width="stretch", config=CONFIG, key="st_carried")
+            t0 = top.iloc[0]
+            chart_note(f"{t0.player} makes {t0.share:.1f}% of {t0.team}'s runs in the innings they bat ({t0.runs} of "
+                       f"{t0.team_runs}). An even share across 11 batters would be about 9%.",
+                       "Shows which teams lean on one batter: if they fail, the team usually does too.")
 
 # ---------------------------------------------------------------- 11
 with tabs[5], safe_section("quirks"):

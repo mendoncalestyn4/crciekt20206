@@ -4,7 +4,7 @@ import streamlit as st
 from ccstats import rankings as R
 from ui import state
 from ui.charts import CONFIG, _axis, _layout, bars, fmt
-from ui.theme import colours, page_header
+from ui.theme import chart_note, colours, page_header
 
 career = state.current()
 if career is None:
@@ -36,6 +36,11 @@ with tab_p:
                                             for tm, b, w, bi, wi in zip(t.team, t.batting, t.bowling, t.batting_innings, t.bowling_innings)],
                                      reference=500, reference_label="the average specialist"),
                                 width="stretch", config=CONFIG, key="rk_bars")
+                if len(t):
+                    r0 = t.iloc[0]
+                    chart_note(f"{r0.player} is top on {fmt(r0[col], 0)}, {(r0[col] - 500) / 5:+.0f}% on the average "
+                               f"specialist's 500. {int((t[col] >= 500).sum())} of these {len(t)} are above 500.",
+                               "Who is playing best right now: recent innings count most, so it moves with form.")
         with right:
             with st.container(border=True):
                 st.markdown("**How the ratings work**")
@@ -66,6 +71,10 @@ with tab_p:
                                                     xaxis=_axis(c, "Innings in this section"), yaxis=_axis(c, f"{kind} rating"),
                                                     margin=dict(l=10, r=16, t=40, b=10)))
                         st.plotly_chart(fig, width="stretch", config=CONFIG, key="rk_hist")
+                        ends = h.sort_values("innings").groupby("player").rating.agg(["first", "last"])
+                        bits = [f"{p} {ends.loc[p, 'first']:.0f} → {ends.loc[p, 'last']:.0f}" for p in picks if p in ends.index]
+                        chart_note("From their first innings here to now: " + ", ".join(bits) + ".",
+                                   "Shows who is rising and who is falling, innings by innings.")
         with st.expander("Every rated player"):
             st.dataframe(table.sort_values(col, ascending=False), hide_index=True, width="stretch", column_config={
                 "player": "Player", "team": "Latest team", "batting": st.column_config.NumberColumn("Batting", format="%d"),
@@ -86,6 +95,10 @@ with tab_t:
                                      "Points above or below 1500", 0, signed=True,
                                      notes=[f"{n} matches · best {p:.0f}" for n, p in zip(elo.played, elo.peak)]),
                                 width="stretch", config=CONFIG, key="rk_elo")
+                e0, e1 = elo.iloc[0], elo.iloc[-1]
+                chart_note(f"{e0.team} lead on {e0.elo:.0f} ({e0.elo - 1500:+.0f}); {e1.team} are lowest on {e1.elo:.0f} "
+                           f"({e1.elo - 1500:+.0f}).",
+                           "The strongest teams right now, allowing for who they beat: beating a top side counts for more.")
         with right:
             with st.container(border=True):
                 st.markdown("**Elo over time** · every match moves both teams")
@@ -104,6 +117,9 @@ with tab_t:
                                             xaxis=_axis(c, "Date"), yaxis=_axis(c, "Elo rating"),
                                             margin=dict(l=10, r=16, t=40, b=10)))
                 st.plotly_chart(fig, width="stretch", config=CONFIG, key="rk_elo_hist")
+                rise = elo.assign(gain=elo.elo - 1500).sort_values("peak", ascending=False).iloc[0]
+                chart_note(f"The highest anyone has been: {rise.team} at {rise.peak:.0f}; now {rise.elo:.0f}.",
+                           "Shows each team's strength over the season: rising lines are teams on a run.")
         st.caption(f"Every team starts at 1500. The winner takes points from the loser: up to {R.ELO_K:g} in a league "
                    f"match and {R.ELO_K_KNOCKOUT:g} in a knockout, more for beating a stronger side. A draw or tie moves "
                    "the two sides towards each other. Points are only swapped, so the average stays at 1500.")

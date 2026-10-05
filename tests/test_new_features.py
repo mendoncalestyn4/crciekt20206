@@ -430,3 +430,30 @@ def test_opponent_preview_with_internationals_switch(season):
         at.run()
         assert not at.exception, f
         assert at.selectbox(key="op_opp").value == "New Zealand"
+
+
+def test_low_score_alerts_are_only_for_batters(season):
+    """A no. 8 bowler on a few low scores is no news: only top-7 batters get the alert."""
+    for team in sorted(set(season.matches.home) | set(season.matches.away)):
+        for sec in MT.sections_of(season, team):
+            se = MT.latest_season(season, team, sec)
+            sq = MT.squad(season, team, sec, se).set_index("player")
+            for line in MT.alerts(season, team, sec, se):
+                if line.startswith("📉"):
+                    who = line.removeprefix("📉 ").split(" has been out")[0]
+                    assert sq.usual_position[who] <= 7, (team, line)
+    fb, _ = PL.form_guide(season, Scope(sections=[IPL]).match_ids(season.matches))
+    bat = season.batting[season.batting.did_bat]
+    pos = bat[bat.match_id.isin(Scope(sections=[IPL]).match_ids(season.matches))].groupby("player").position.median()
+    assert (pos[fb.player] <= 7).all()
+
+
+def test_every_chart_is_explained():
+    """Every chart on every page has a 'What it shows / What it's for' note right after it."""
+    missing = []
+    for f in sorted((ROOT / "views").glob("*.py")):
+        lines = f.read_text().split("\n")
+        for i, ln in enumerate(lines):
+            if "st.plotly_chart(" in ln and "chart_note(" not in "\n".join(lines[i:i + 30]):
+                missing.append(f"{f.name}:{i + 1}")
+    assert not missing, missing

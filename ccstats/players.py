@@ -304,7 +304,7 @@ def form_guide(career, ids, last: int = 5, min_innings: int = 6) -> tuple[pd.Dat
     inn = innings(career, ids)
     rows = []
     for p, g in inn.groupby("player"):
-        if len(g) < min_innings:
+        if len(g) < min_innings or g.position.median() > 7:  # batters only: a tail-ender's low scores are no news
             continue
         r = g.tail(last)
         avg = g.runs.sum() / max(g.out.sum(), 1)

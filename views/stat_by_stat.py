@@ -1,10 +1,12 @@
+import numpy as np
+import pandas as pd
 import streamlit as st
 
 from ccstats import analysis as A
 from ccstats.stats import POSITION_GROUPS, Scope, rank, stat_definitions
 from ui import state
 from ui.charts import CONFIG, dot_chart, fmt, ranked_bars
-from ui.theme import explain_list, page_header
+from ui.theme import chart_note, explain_list, page_header
 
 career = state.current()
 if career is None:
@@ -144,12 +146,27 @@ with left:
     with st.container(border=True):
         st.markdown(f"**{view} {min(top, len(pool))} · {stat.label}**")
         st.plotly_chart(ranked_bars(shown, stat, best, highlight), width="stretch", config=CONFIG, key="sbs_bars")
+        r0 = shown.iloc[0]
+        v0 = r0[stat.column]
+        ref = stat.reference
+        vs = (f", {(v0 - ref) / abs(ref) * 100:+.0f}% on the average of {fmt(ref, max(stat.decimals, 1))}"
+              if ref is not None and np.isfinite(ref) and ref else "")
+        chart_note(f"{'Top' if best else 'Bottom'}: {r0.player} with {fmt(v0, stat.decimals)}{vs}. "
+                   f"{len(pool)} players qualify.",
+                   f"{stat.definition} Ranks who is {'best' if best else 'worst'} at this one thing.")
 with right:
     with st.container(border=True):
         d = stat.dot
         st.markdown(f"**Where everyone sits · {d.y_label} vs {d.x_label.lower()}**")
         st.plotly_chart(dot_chart(pool, shown, stat, best, highlight), width="stretch", config=CONFIG, key="sbs_dots")
         better_side = "below" if d.better_below else "above"
+        xs, ys = pool[d.x].astype(float), pool[d.y].astype(float)
+        line_y = xs * d.value if d.line == "slope" else pd.Series(d.value, index=pool.index)
+        on_better = ((ys < line_y) if d.better_below else (ys > line_y)).mean() * 100
+        chart_note(f"{on_better:.0f}% of the {len(pool)} qualifying players are on the better side of the average line "
+                   f"({d.line_label}).",
+                   "Shows everyone at once, so you can tell a great figure from a lucky one: the further right a dot, "
+                   "the more games it rests on.")
         explain_list([
             ("line", f"<b>Dashed line</b>: the average player in {'these sections' if len(chosen) > 1 else 'this section'}{where}: {d.line_label}. A dot on the line is exactly average."),
             ("shade", f"<b>Shaded area ({better_side} the line)</b>: {d.below if d.better_below else d.above} This is the better side."),

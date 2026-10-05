@@ -7,8 +7,8 @@ from ccstats import extras as E
 from ccstats import players as PL
 from ccstats.stats import Scope
 from ui import state
-from ui.charts import CONFIG, bars, fmt, form_chart, paired_bars, say
-from ui.theme import explain_list, html_table, kpis, match_link, page_header, safe_section
+from ui.charts import pct, CONFIG, bars, fmt, form_chart, paired_bars, say
+from ui.theme import chart_note, explain_list, html_table, kpis, match_link, page_header, safe_section
 
 career = state.current()
 if career is None:
@@ -64,6 +64,21 @@ def record_table(df: pd.DataFrame, first: str, bowling: bool, key: str) -> None:
 
 
 all_ids = my_matches.match_id
+
+
+def split_shows(t: pd.DataFrame, col: str, value: str, overall: float, what: str, low_better: bool = False,
+                dec: int = 1) -> str:
+    """'Best: X 45.2 (+31% on their 34.5 overall); worst: Y 20.1 (−42%).' for one split chart."""
+    t = t[t[value].notna()]
+    if t.empty or not np.isfinite(overall) or not overall:
+        return f"Not enough {what} to compare yet."
+    t = t.sort_values(value, ascending=low_better)
+    hi, lo = t.iloc[0], t.iloc[-1]
+    pc = lambda v: f"{(v - overall) / overall * 100:+.0f}%"  # noqa: E731
+    out = f"Best {say(str(hi[col])).lower()}: {fmt(hi[value], dec)} ({pc(hi[value])} on their {fmt(overall, dec)} overall)"
+    if len(t) > 1:
+        out += f"; worst {say(str(lo[col])).lower()}: {fmt(lo[value], dec)} ({pc(lo[value])})"
+    return out + "."
 order = list(my_matches.section.value_counts().index)  # most-played section first
 
 
@@ -142,6 +157,13 @@ if "Batting" in tabs:
             explain_list([("", "<b>Grey bars</b>: runs in each innings, oldest on the left."),
                           ("dot", "<b>Blue line</b>: average over the last 10 innings (5 for a shorter career). Rising means in form, falling means out of form."),
                           ("line", "<b>Dashed line</b>: average over every innings shown.")])
+            n_ = min(10, len(inns))
+            last_ = inns.tail(n_)
+            recent_avg = last_.runs.sum() / max(last_.out.sum(), 1)
+            chart_note(f"{len(inns)} innings. Their last {n_} average {recent_avg:.1f} against {fmt(b.average, 1)} "
+                       f"overall ({(recent_avg - b.average) / b.average * 100:+.0f}%)." if np.isfinite(b.average) and b.average
+                       else f"{len(inns)} innings, never dismissed.",
+                       "Shows whether they are in form right now, not just how good they are over the whole career.")
 
         left, right = st.columns(2, gap="medium")
         with left:
@@ -150,6 +172,10 @@ if "Batting" in tabs:
                 ss = A.split_batting(inns, "season").sort_values("season", ascending=False)
                 st.plotly_chart(bars(ss.season, ss.runs, "Runs", notes=[f"{i} innings · average {fmt(a, 1)}" for i, a in zip(ss.innings, ss.average)]),
                                 width="stretch", config=CONFIG, key="pl_seasons")
+                bs_ = ss.sort_values("runs", ascending=False).iloc[0]
+                chart_note(f"Most runs in {bs_.season}: {bs_.runs} ({bs_.runs / max(ss.runs.sum(), 1) * 100:.0f}% of their "
+                           f"{ss.runs.sum()} here), average {fmt(bs_.average, 1)}.",
+                           "Shows whether they are getting better or fading, season by season.")
         with right:
             with st.container(border=True):
                 st.markdown("**How they get out**")
@@ -159,6 +185,10 @@ if "Batting" in tabs:
                 else:
                     st.plotly_chart(bars([say(h) for h in ho.index], ho.values, "Dismissals"), width="stretch",
                                     config=CONFIG, key="pl_howout")
+                    chart_note(f"{ho.iloc[0] / ho.sum() * 100:.0f}% of their {int(ho.sum())} dismissals are "
+                               f"{say(ho.index[0]).lower()}.",
+                               "How bowlers get them out: a weakness to work on with your own players, or to attack in an "
+                               "opponent.")
         with st.container(border=True):
             st.markdown(f"**Every season in {section}** · the same columns as the table at the top")
             record_table(A.batting_record(career, ids, player, by="season").sort_values("season", ascending=False),
@@ -179,6 +209,11 @@ if "Batting" in tabs:
                     st.plotly_chart(bars(t[col], t.average, "Average", 1, reference=b.average,
                                          notes=[f"{n} innings, {r} runs, strike rate {fmt(s, 1)}" for n, r, s in zip(t.innings, t.runs, t.strike_rate)]),
                                     width="stretch", config=CONFIG, key=f"pl_split_{i}")
+                    chart_note(split_shows(t, col, "average", b.average, "innings"),
+                               {0: "Shows whether they are better at setting a total or chasing one.",
+                                1: "Shows whether their runs come when the team wins, or when the game is already lost.",
+                                2: "Shows how much home conditions help them.",
+                                3: "Shows whether they score against the good sides too, or fill their boots against the weak ones."}[i])
         with st.container(border=True):
             st.markdown("**Stronger and weaker teams** · teams ranked by their win % in this section; the top half are the stronger teams. "
                         f"Stronger half: {', '.join(sorted(t for t, v in strength.items() if v > np.median(list(strength.values())))) or '–'}.")
@@ -195,8 +230,13 @@ if "Batting" in tabs:
                 best = pr[pr.innings >= 3].assign(edge=lambda d: d.average - d.section_average).dropna(subset=["edge"])
                 if len(best) > 1:
                     top = best.sort_values("edge", ascending=False).iloc[0]
-                    st.caption(f"Best position: **{top.group}**, where they average {fmt(top.average, 1)} against "
-                               f"{fmt(top.section_average, 1)} for the average batter there (at least 3 innings).")
+                    edge_pct = (top.average - top.section_average) / top.section_average * 100 if top.section_average else 0
+                    chart_note(f"Best position: {top.group}, where they average {fmt(top.average, 1)} against "
+                               f"{fmt(top.section_average, 1)} for the average batter there ({edge_pct:+.0f}%, at least 3 innings).",
+                               "Tells you where to bat them: blue is them, grey the average batter in that position.")
+                else:
+                    chart_note("They have batted in only one position with 3+ innings so far.",
+                               "Tells you where to bat them: blue is them, grey the average batter in that position.")
 
         # came in at
         st.subheader("When they came in", anchor=False)
@@ -214,9 +254,11 @@ if "Batting" in tabs:
                                      notes=[f"{n} innings" for n in t.innings]), width="stretch", config=CONFIG, key="pl_situation")
                 if len(ci):
                     wk = float(ci.came_in_wickets.mean())
-                    st.caption(f"On average they came in at **{ci.came_in_score.mean():.0f} for "
-                               f"{fmt(wk, 0 if wk.is_integer() else 1)}**. "
-                               "The score comes from the fall of wickets: the number 5 walks in when the 3rd wicket falls.")
+                    chart_note(split_shows(t, "situation", "average", b.average, "innings")
+                               + f" On average they came in at {ci.came_in_score.mean():.0f} for "
+                                 f"{fmt(wk, 0 if wk.is_integer() else 1)}.",
+                               "Shows whether they handle pressure. The score comes from the fall of wickets: the number "
+                               "5 walks in when the 3rd wicket falls.")
         with right:
             with st.container(border=True):
                 st.markdown("**Best rescue innings** · came in with 3 or more down for 60 or fewer")
@@ -249,6 +291,11 @@ if "Batting" in tabs:
                     st.caption("No bowler has dismissed them yet.")
                 else:
                     st.plotly_chart(bars(n.bowler, n.dismissals, "Times dismissed"), width="stretch", config=CONFIG, key="pl_nemesis")
+                    outs_ = int(inns.out.sum())
+                    chart_note(f"{n.bowler.iloc[0]} has got them out {n.dismissals.iloc[0]} times, "
+                               f"{n.dismissals.iloc[0] / max(outs_, 1) * 100:.0f}% of their {outs_} dismissals.",
+                               "The bowlers who have their number: keep them away from these bowlers, or bring these "
+                               "bowlers on when this batter comes in.")
 
         left, right = st.columns(2, gap="medium")
         with left:
@@ -281,6 +328,9 @@ if "Batting" in tabs:
             st.plotly_chart(bars(t.opposition, t.average, "Average", 1, reference=b.average,
                                  notes=[f"{n} innings, {r} runs, best {h}" for n, r, h in zip(t.innings, t.runs, t.high)]),
                             width="stretch", config=CONFIG, key="pl_vs")
+            chart_note(split_shows(t[t.innings >= 2] if (t.innings >= 2).any() else t, "opposition", "average", b.average,
+                                   "innings") + " (teams they have batted against at least twice)",
+                       "Shows which opponents they like and which ones keep them quiet.")
 
 # ================================================================ bowling
 if "Bowling" in tabs:
@@ -298,6 +348,11 @@ if "Bowling" in tabs:
             explain_list([("", "<b>Grey bars</b>: wickets in each innings bowled."),
                           ("dot", "<b>Blue line</b>: wickets per innings over the last 10 (5 for a shorter career)."),
                           ("line", "<b>Dashed line</b>: wickets per innings over everything shown.")])
+            n_ = min(10, len(spells))
+            rw_, aw_ = spells.tail(n_).wickets.mean(), spells.wickets.mean()
+            chart_note(f"{len(spells)} innings bowled. Their last {n_} average {rw_:.2f} wickets an innings against "
+                       f"{aw_:.2f} overall" + (f" ({(rw_ - aw_) / aw_ * 100:+.0f}%)." if aw_ else "."),
+                       "Shows whether they are taking wickets right now, not just over the whole career.")
         left, right = st.columns(2, gap="medium")
         with left:
             with st.container(border=True):
@@ -305,6 +360,11 @@ if "Bowling" in tabs:
                 ss = A.split_bowling(spells, "season").sort_values("season", ascending=False)
                 st.plotly_chart(bars(ss.season, ss.wickets, "Wickets", notes=[f"average {fmt(a, 1)} · economy {fmt(e, 2)}" for a, e in zip(ss.average, ss.economy)]),
                                 width="stretch", config=CONFIG, key="pl_bseasons")
+                bw_ = ss.sort_values("wickets", ascending=False).iloc[0]
+                chart_note(f"Most wickets in {bw_.season}: {int(bw_.wickets)} "
+                           f"({bw_.wickets / max(ss.wickets.sum(), 1) * 100:.0f}% of their {int(ss.wickets.sum())} here), "
+                           f"economy {fmt(bw_.economy, 2)}.",
+                           "Shows whether they are getting better or fading, season by season.")
         with right:
             with st.container(border=True):
                 st.markdown("**How they take wickets**")
@@ -313,6 +373,10 @@ if "Bowling" in tabs:
                     st.caption("No wickets yet.")
                 else:
                     st.plotly_chart(bars([say(h) for h in wt.index], wt.values, "Wickets"), width="stretch", config=CONFIG, key="pl_wtypes")
+                    chart_note(f"{wt.iloc[0] / wt.sum() * 100:.0f}% of their {int(wt.sum())} wickets are "
+                               f"{say(wt.index[0]).lower()}.",
+                               "How they get batters out: bowled and lbw mean they hit the stumps; catches mean they "
+                               "need the fielders, so set the field for them.")
         with st.container(border=True):
             st.markdown(f"**Every season in {section}** · the same columns as the table at the top")
             record_table(A.bowling_record(career, ids, player, by="season").sort_values("season", ascending=False),
@@ -326,7 +390,9 @@ if "Bowling" in tabs:
                     st.plotly_chart(bars(["Top order (1-3)", "Middle order (4-7)", "Tail (8-11)"],
                                          [q["top_order"], q["middle_order"], q["tail"]], "Wickets"),
                                     width="stretch", config=CONFIG, key="pl_quality")
-                    st.caption(f"{q['top_seven_pct']:.0f}% of their wickets are specialist batters (positions 1-7).")
+                    chart_note(f"{q['top_seven_pct']:.0f}% of their {q['total']} wickets are specialist batters (positions "
+                               f"1-7): {q['top_order']} top order, {q['middle_order']} middle order, {q['tail']} tail.",
+                               "Shows whether their wickets are the ones that matter or mostly tail-enders.")
                 else:
                     st.caption("No wickets yet.")
         with right:
@@ -337,6 +403,10 @@ if "Bowling" in tabs:
                     st.caption("No wickets yet.")
                 else:
                     st.plotly_chart(bars(bn.player, bn.dismissals, "Times dismissed"), width="stretch", config=CONFIG, key="pl_bunnies")
+                    tw_ = int(spells.wickets.sum())
+                    chart_note(f"They have got {bn.player.iloc[0]} out {bn.dismissals.iloc[0]} times, "
+                               f"{bn.dismissals.iloc[0] / max(tw_, 1) * 100:.0f}% of their {tw_} wickets.",
+                               "The batters they have the wood on: bring them on when these batters come in.")
         with st.container(border=True):
             st.markdown("**Streaks** · innings bowled in a row")
             srows = E.bowling_streaks(spells)
@@ -353,6 +423,10 @@ if "Bowling" in tabs:
                     st.plotly_chart(bars(t[col], t.economy, "Economy (runs per over)", 2, reference=w.economy,
                                          notes=[f"{wk} wickets, average {fmt(a, 1)}" for wk, a in zip(t.wickets, t.average)]),
                                     width="stretch", config=CONFIG, key=f"pl_bsplit_{i}")
+                    chart_note(split_shows(t[t.balls >= 12] if (t.balls >= 12).any() else t, col, "economy", w.economy,
+                                           "overs", low_better=True, dec=2) + " Lower is better.",
+                               "Shows whether they bowl better defending a total or chasing one." if i == 0 else
+                               "Shows which teams they keep quiet and which ones get after them.")
 
 # ================================================================ fielding
 with tabs["Fielding"], safe_section("fielding"):
@@ -385,7 +459,7 @@ with tabs["Story"]:
                 r = d[d.player == player]
                 if len(r):
                     r = r.iloc[0]
-                    rows.append([label, r.times, f"{fmt(r.pct_when, 0)}%", f"{fmt(r.pct_other, 0)}%"])
+                    rows.append([label, r.times, f"{pct(r.pct_when)}", f"{pct(r.pct_other)}"])
             if rows:
                 html_table(rows, ["", "Times", "Win % then", "Win % otherwise"], numeric={1, 2, 3})
             else:

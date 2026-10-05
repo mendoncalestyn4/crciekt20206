@@ -5,7 +5,7 @@ from ccstats import extras as E
 from ccstats.stats import Scope
 from ui import state
 from ui.charts import CONFIG, bars, fmt
-from ui.theme import page_header
+from ui.theme import chart_note, page_header
 
 career = state.current()
 if career is None:
@@ -49,6 +49,10 @@ with left:
             st.plotly_chart(bars([f"{p} ({t})" for p, t in zip(top.player, top.team)], top.runs, "Runs", notes=[
                 f"{i} innings · average {fmt(av, 1)}" for i, av in zip(top.innings, top.average)]),
                 width="stretch", config=CONFIG, key="rv_runs")
+            tr = int(runs.runs.sum())
+            chart_note(f"{top.player.iloc[0]} has {top.runs.iloc[0]} runs in these games, {top.runs.iloc[0] / max(tr, 1) * 100:.0f}% "
+                       f"of the {tr} scored by everyone in them.",
+                       "The batters who love this fixture.")
 with right:
     with st.container(border=True):
         st.markdown(f"**Most wickets in {a} v {b}**")
@@ -59,6 +63,10 @@ with right:
             st.plotly_chart(bars([f"{p} ({t})" for p, t in zip(top.player, top.team)], top.wickets, "Wickets", notes=[
                 f"average {fmt(av, 1)} · {bl} balls" for av, bl in zip(top.average, top.balls)]),
                 width="stretch", config=CONFIG, key="rv_wkts")
+            tw = int(wkts.wickets.sum())
+            chart_note(f"{top.player.iloc[0]} has {int(top.wickets.iloc[0])} wickets in these games, "
+                       f"{top.wickets.iloc[0] / max(tw, 1) * 100:.0f}% of the {tw} taken.",
+                       "The bowlers who do the damage in this fixture.")
 g = m[m.match_id.isin(ids) & (((m.home == a) & (m.away == b)) | ((m.home == b) & (m.away == a)))].sort_values("date", ascending=False)
 with st.container(border=True):
     st.markdown("**Every meeting**")

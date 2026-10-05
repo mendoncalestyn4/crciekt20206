@@ -4,8 +4,8 @@ from ccstats import players as PL
 from ccstats import teamplay as TP
 from ccstats.stats import Scope
 from ui import state
-from ui.charts import CONFIG, bars, fmt, quadrant_chart
-from ui.theme import html_table, page_header, player_link, safe_section
+from ui.charts import pct, CONFIG, bars, fmt, quadrant_chart
+from ui.theme import chart_note, html_table, page_header, player_link, safe_section
 
 career = state.current()
 if career is None:
@@ -43,8 +43,14 @@ with tabs[0], safe_section("runs above expected"):
                                  notes=[f"{r} runs in {i} innings, {e:.0f} expected · usually bats {p}"
                                         for r, i, e, p in zip(top.runs, top.innings, top.expected, top.usual_position)]),
                             width="stretch", config=CONFIG, key="an_rae")
-            st.caption("A no. 7 who makes 30 coming in at 5 down has done more than an opener making 30 at 0 for 0. "
-                       "Situations are grouped by wickets down when they came in: 0, 1, 2, 3-4, 5+.")
+            t0 = top.iloc[0]
+            edge_pct = t0.above / t0.expected * 100 if t0.expected else 0
+            chart_note(f"{t0.player} has made {t0.above:+.0f} runs more than an average batter would have in the same "
+                       f"spots ({t0.runs} runs against {t0.expected:.0f} expected, {edge_pct:+.0f}%), the most in {where}. "
+                       f"Blue bars are above what was expected, red below.",
+                       "Fair credit for batting position: a no. 7 who makes 30 coming in at 5 down has done more than an "
+                       "opener making 30 at 0 for 0. Situations are grouped by wickets down when they came in: 0, 1, 2, "
+                       "3-4, 5+.")
             rows = [[player_link(r.player), r.team, r.innings, r.runs, f"{r.expected:.0f}", f"{r.above:+.0f}",
                      f"{r.per_innings:+.1f}"] for r in rae.head(30).itertuples()]
             html_table(rows, ["Player", "Team", "Inns", "Runs", "Expected", "Above", "Per innings"],
@@ -93,8 +99,12 @@ with tabs[2], safe_section("what wins games"):
                                  texts=[f"{p:.0f}%" for p in ww.won_pct], notes=[f"{n} games" for n in ww.games]),
                             width="stretch", config=CONFIG, key="an_ww")
             top = ww.iloc[0]
-            st.caption(f"The side with the {top.measure[0].lower() + top.measure[1:]} won {top.won_pct:.0f}% of "
-                       f"{top.games} games. Games where both sides were level on a measure are left out of it.")
+            low = ww.iloc[-1]
+            chart_note(f"The side with the {top.measure[0].lower() + top.measure[1:]} won {top.won_pct:.0f}% of "
+                       f"{top.games} games, the strongest sign of a win here; '{low.measure.lower()}' won only "
+                       f"{low.won_pct:.0f}%. The dashed line at 50% is a coin toss.",
+                       "Shows what to aim for in this competition: the longer the bar, the more that thing decides "
+                       "games. Games where both sides were level on a measure are left out of it.")
 
 # ---------------------------------------------------------------- 43
 with tabs[3], safe_section("expected wins"):
@@ -107,9 +117,14 @@ with tabs[3], safe_section("expected wins"):
             st.plotly_chart(bars(ew.team, ew.luck, "Wins above expected", 1, signed=True,
                                  notes=[f"won {w} of {d}, expected {e:.1f}" for w, d, e in zip(ew.won, ew.decided, ew.expected)]),
                             width="stretch", config=CONFIG, key="an_ew")
-            st.caption("Expected wins come from the share of runs a team scores (per wicket in multi-day cricket), "
-                       "fitted to these games. Above zero: they won more than their runs deserved (close games, or "
-                       "knowing how to win them). Below: unlucky, or they lose the tight ones.")
+            hi_, lo_ = ew.iloc[0], ew.iloc[-1]
+            chart_note(f"{hi_.team} won {hi_.won} of {hi_.decided} ({pct(hi_.win_pct)}) when their runs pointed to "
+                       f"{hi_.expected:.1f} ({hi_.expected_pct:.0f}%): {hi_.luck:+.1f} wins. {lo_.team} won {lo_.won}, "
+                       f"{lo_.luck:+.1f} on what their runs deserved ({lo_.expected_pct:.0f}% expected, "
+                       f"{pct(lo_.win_pct)} actual).",
+                       "Separates luck from quality. Expected wins come from the share of runs a team scores (per "
+                       "wicket in multi-day cricket), fitted to these games. Above zero: they win the close ones; "
+                       "below: unlucky, or they lose the tight ones, so their results should improve.")
 
 # ---------------------------------------------------------------- 44, 45
 with tabs[4], safe_section("match-winners"):
@@ -121,7 +136,7 @@ with tabs[4], safe_section("match-winners"):
             if mw.empty:
                 st.caption("No wins yet.")
             else:
-                rows = [[player_link(r.player), r.team, r.match_winning, f"{fmt(r.share, 0)}%"] for r in mw.head(15).itertuples()]
+                rows = [[player_link(r.player), r.team, r.match_winning, f"{pct(r.share)}"] for r in mw.head(15).itertuples()]
                 html_table(rows, ["Player", "Team", "Wins", "Share of team's wins"], numeric={2, 3}, raw={0},
                            row_class=["hi" if r.team in mine else "" for r in mw.head(15).itertuples()])
                 st.caption("Contribution = runs, plus each wicket worth the section's runs per wicket.")
@@ -132,7 +147,7 @@ with tabs[4], safe_section("match-winners"):
             if dp.empty:
                 st.caption("Not enough games yet.")
             else:
-                rows = [[r.team, player_link(r.player), f"{fmt(r.pct_fired, 0)}%", f"{fmt(r.pct_not, 0)}%", f"{r.gap:+.0f}"]
+                rows = [[r.team, player_link(r.player), f"{pct(r.pct_fired)}", f"{pct(r.pct_not)}", f"{r.gap:+.0f}"]
                         for r in dp.itertuples()]
                 html_table(rows, ["Team", "Player", "When fires", "When not", "Gap"], numeric={2, 3, 4}, raw={1},
                            row_class=["hi" if r.team in mine else "" for r in dp.itertuples()])
@@ -153,6 +168,11 @@ with tabs[5], safe_section("style maps"):
                                                base.strike_rate, ("Scores lots, scores fast", "Fast but out often",
                                                                   "Scores lots, steadily", "Slow and out often")),
                                 width="stretch", config=CONFIG, key="an_bstyle")
+                best_c = (b.style == "Scores lots, scores fast").mean() * 100
+                chart_note(f"{best_c:.0f}% of the {len(b)} batters are in the top-right corner: above the average of "
+                           f"{base.average:.1f} and the strike rate of {base.strike_rate:.1f} at the same time.",
+                           "Tells you how each batter scores: fast or steady, reliable or not. Use it to pick a "
+                           "finisher (high strike rate) or an anchor (high average).")
     with right:
         w = PL.bowling_styles(bowl[bowl.balls >= mins], base)
         with st.container(border=True):
@@ -165,6 +185,11 @@ with tabs[5], safe_section("style maps"):
                                                ("Costly and few wickets", "Tight but few wickets", "Wicket-taker but costly",
                                                 "Wicket-taker and tight"), x_better_low=True, y_better_low=True),
                                 width="stretch", config=CONFIG, key="an_wstyle")
+                best_w = (w.style == "Wicket-taker and tight").mean() * 100
+                chart_note(f"{best_w:.0f}% of the {len(w)} bowlers are in the bottom-left corner: cheaper than "
+                           f"{base.economy:.2f} an over and quicker to a wicket than every {base.bowl_strike_rate:.0f} balls.",
+                           "Tells you who takes wickets and who keeps it tight, so you know who to bowl when you need a "
+                           "wicket and who when you need to stop the runs.")
     st.caption("The dashed lines are the section's average batter and bowler. Blue dots are in the best corner.")
 
 # ---------------------------------------------------------------- 47
@@ -182,6 +207,13 @@ with tabs[6], safe_section("boom or bust"):
                                            ("Boom or bust", "Reliable and big", "Struggling", "Steady, rarely big"),
                                            x_better_low=True),
                             width="stretch", config=CONFIG, key="an_boom")
+            share_b = (bb.label == "Boom or bust").mean() * 100
+            share_r = (bb.label == "Reliable and big").mean() * 100
+            chart_note(f"Of {len(bb)} batters, {share_r:.0f}% are reliable and make big scores (top left) and "
+                       f"{share_b:.0f}% are boom or bust (top right). The middle batter is out for under 10 in "
+                       f"{bb.attrs['low_median']:.0f}% of innings and makes {big}+ in {bb.attrs['big_median']:.0f}%.",
+                       "Shows how dependable each batter is, not just how good: a boom-or-bust player can win you a "
+                       "game but needs a steady one alongside.")
             rows = [[player_link(r.player), r.innings, f"{r.mean:.1f}", f"{r.low_pct:.0f}%", f"{r.big_pct:.0f}%",
                      f"{r.spread:.2f}", r.label] for r in bb.head(25).itertuples()]
             html_table(rows, ["Player", "Inns", "Runs per inns", "Under 10", f"{big}+", "Spread", "Type"],
@@ -222,8 +254,8 @@ with tabs[8], safe_section("bat or bowl first"):
             sure = "a clear edge" if abs(diff) >= 10 and a["decided"] >= 20 else "a slight edge" if abs(diff) >= 4 \
                 else "no real edge either way"
             st.markdown(f"### {pick if sure != 'no real edge either way' else 'Either: no real edge'}")
-            st.caption(f"The side batting first won {fmt(a['win_pct'], 0)}% of {a['decided']} decided games"
-                       + (f" (W–D–L {a['won']}–{a['drawn']}–{a['lost']}); batting second {fmt(b['win_pct'], 0)}%"
+            st.caption(f"The side batting first won {pct(a['win_pct'])} of {a['decided']} decided games"
+                       + (f" (W–D–L {a['won']}–{a['drawn']}–{a['lost']}); batting second {pct(b['win_pct'])}"
                           if multi else "") + f": {sure}.")
             rows = []
             for r in bft.sort_values("team").itertuples():
@@ -231,7 +263,7 @@ with tabs[8], safe_section("bat or bowl first"):
                     continue
                 d = (r.bf_win_pct or 0) - (r.ch_win_pct or 0)
                 adv = "Bat first" if d >= 10 else "Bowl first" if d <= -10 else "Either"
-                rows.append([r.team, f"{fmt(r.bf_win_pct, 0)}% ({r.bf_decided})", f"{fmt(r.ch_win_pct, 0)}% ({r.ch_decided})",
+                rows.append([r.team, f"{pct(r.bf_win_pct)} ({r.bf_decided})", f"{pct(r.ch_win_pct)} ({r.ch_decided})",
                              adv])
             if rows:
                 st.markdown("**Team by team** · their own win % each way (decided games in brackets)")

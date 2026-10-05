@@ -171,6 +171,8 @@ table.tbl tr.dim td { opacity: .45; }
 table.tbl a { color: {ink} !important; text-decoration: none; border-bottom: 1px dotted {muted}; }
 table.tbl a:hover { color: {accent} !important; border-bottom-color: {accent}; }
 .tick { color: {good}; font-weight: 800; }
+.chartnote { font-size: 13.5px; color: {ink2}; margin: 2px 0 6px; line-height: 1.45; display: grid; gap: 3px; }
+.chartnote b { color: {ink}; }
 /* ---------- match cards ---------- */
 .mcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
 .mcard { border: 1px solid {panel_edge}; border-radius: 12px; padding: 9px 12px; background: {panel}; font-size: 13.5px; }
@@ -273,3 +275,9 @@ def html_table(rows: list[list], columns: list[str], numeric: set[int] | None = 
 
 def form_strip(outcomes: list[str]) -> str:
     return "<span class='form'>" + "".join(f"<span class='{o}'>{o}</span>" for o in outcomes) + "</span>" if outcomes else "–"
+
+
+def chart_note(shows: str, purpose: str) -> None:
+    """Under every chart: what this chart says right now (with its numbers), then what the chart is for."""
+    st.markdown(f"<div class='chartnote'><div><b>What it shows:</b> {shows}</div>"
+                f"<div><b>What it's for:</b> {purpose}</div></div>", unsafe_allow_html=True)

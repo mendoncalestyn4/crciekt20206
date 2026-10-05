@@ -114,9 +114,10 @@ def squad(career, team: str, section: str, season: str) -> pd.DataFrame:
                          last5=" ".join(f"{r}{'' if o else '*'}" for r, o in zip(bb.runs.tail(5), bb.out.tail(5))),
                          form=form_arrow(list(bb.runs), bb.runs.mean() if len(bb) else np.nan),
                          recent=bool(set(g.match_id) & last3),
-                         low_run=_low_run(list(bb.runs), list(bb.out))))
+                         low_run=_low_run(list(bb.runs), list(bb.out)),
+                         usual_position=float(bb.position.median()) if len(bb) else np.nan))
     d = pd.DataFrame(rows, columns=["player", "games", "runs", "average", "strike_rate", "wickets", "economy", "last5",
-                                    "form", "recent", "low_run"])
+                                    "form", "recent", "low_run", "usual_position"])
     return d.sort_values(["games", "runs"], ascending=False).reset_index(drop=True)
 
 
@@ -134,7 +135,8 @@ def _low_run(runs: list[int], outs: list[bool]) -> int:
 def alerts(career, team: str, section: str, season: str) -> list[str]:
     sq = squad(career, team, section, season)
     out = []
-    for r in sq[sq.low_run >= 3].itertuples():
+    # only the batters (usually in the top 7): a no. 8 bowler making a few low scores is no news
+    for r in sq[(sq.low_run >= 3) & (sq.usual_position <= 7)].itertuples():
         out.append(f"📉 {r.player} has been out for under 10 in {r.low_run} innings in a row.")
     if len(sq):
         avg_runs = sq.runs.sum() / max(sq.games.sum(), 1)

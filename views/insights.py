@@ -6,8 +6,8 @@ from ccstats import insights as I
 from ccstats import teamplay as TP
 from ccstats.stats import Scope, kind_of
 from ui import state
-from ui.charts import CONFIG, _axis, _layout, bars, fmt
-from ui.theme import colours, html_table, page_header, safe_section
+from ui.charts import pct, CONFIG, _axis, _layout, bars, fmt
+from ui.theme import chart_note, colours, html_table, page_header, safe_section
 
 career = state.current()
 if career is None:
@@ -44,10 +44,10 @@ with tab_total:
         a, b = ch["at_least"], ch["below"]
         st.markdown(
             f"<div class='board'><div class='label'>{section}{'' if season == 'All seasons' else ' ' + season}</div>"
-            f"<div class='line'><span class='score'>{fmt(a['pct'], 0)}%</span><span class='vs'>won with {score} or more "
+            f"<div class='line'><span class='score'>{pct(a['pct'])}</span><span class='vs'>won with {score} or more "
             f"({a['won']} of {a['matches']})</span></div>"
             f"<div class='res'>With less than {score}: won {b['won']} of {b['matches']} "
-            f"({fmt(b['pct'], 0)}%)</div></div>", unsafe_allow_html=True)
+            f"({pct(b['pct'])})</div></div>", unsafe_allow_html=True)
         st.write("")
         # ---------------------------------------------------------------- 52 · both sides of a score
         with safe_section("score chances"):
@@ -73,11 +73,11 @@ with tab_total:
                             continue
                         few = " · few matches, treat with care" if r["decided"] < 8 else ""
                         if kind == "multi":
-                            st.markdown(f"<div class='kpi'><span>Won · drawn · lost</span><strong>{fmt(r['win_pct'], 0)}% "
+                            st.markdown(f"<div class='kpi'><span>Won · drawn · lost</span><strong>{pct(r['win_pct'])} "
                                         f"<span class='small'>{r['won']}–{r['drawn']}–{r['lost']}</span></strong></div>",
                                         unsafe_allow_html=True)
                         else:
-                            st.markdown(f"<div class='kpi'><span>Chance of winning</span><strong>{fmt(r['win_pct'], 0)}%"
+                            st.markdown(f"<div class='kpi'><span>Chance of winning</span><strong>{pct(r['win_pct'])}"
                                         f"</strong></div>", unsafe_allow_html=True)
                         st.caption(f"Won {r['won']} of {r['decided']} ({band}){few}."
                                    + (f" {r['tied']} tied and {r['no_result']} with no result left out."
@@ -96,9 +96,24 @@ with tab_total:
                                         + f" · {n} matches" for w, l, d, t, n in
                                         zip(table.won[::-1], table.lost[::-1], table.drawn[::-1], table.tied[::-1], table.matches[::-1])]),
                             width="stretch", config=CONFIG, key="in_t_bars")
-            st.caption("Highest scores at the top. Hover a bar for how many matches it rests on: a band with only one "
-                       "or two matches is a small sample." + (" In multi-day cricket many matches are drawn, so the win % "
-                                                             "stays lower." if kind == "multi" else ""))
+            solid = table[table.matches >= 3]
+            par = solid.iloc[0:0]
+            for i in range(len(solid) - 1, -1, -1):  # from the top down, while every band wins half or more
+                if solid.win_pct.iloc[i] < 50:
+                    break
+                par = solid.iloc[i:i + 1]
+            if len(par):
+                p0 = par.iloc[0]
+                shows = (f"From {p0.band} upwards the side batting first wins more often than not: {p0.win_pct:.0f}% "
+                         f"({p0.won} of {p0.matches}) in that band.")
+            else:
+                shows = "No band with 3 or more matches has the side batting first winning half its games yet."
+            big = table.iloc[-1]
+            shows += f" The highest band, {big.band}, won {big.win_pct:.0f}% ({big.won} of {big.matches})."
+            chart_note(shows, "Tells you what a winning score looks like here, so you know when you have enough and when "
+                              "to keep pushing. Highest scores at the top; hover a bar for how many matches it rests "
+                              "on (one or two matches is a small sample)."
+                       + (" In multi-day cricket many matches are drawn, so the win % stays lower." if kind == "multi" else ""))
 
 # ---------------------------------------------------------------- home advantage
 with tab_home:
@@ -129,8 +144,13 @@ with tab_home:
                                                    tickfont=dict(size=12, color=c["ink"])),
                                         margin=dict(l=10, r=16, t=40, b=10)))
             st.plotly_chart(fig, width="stretch", config=CONFIG, key="in_h_bars")
-            st.caption("The first-named team on a scorecard is the home side. World Cups and other ICC events are left "
-                       "out because they're at neutral grounds.")
+            hi = h.sort_values("home_pct", ascending=False).iloc[0]
+            lo = h.sort_values("home_pct").iloc[0]
+            chart_note(f"Home sides win most in {hi.section}: {hi.home_pct:.0f}% against {hi.away_pct:.0f}% for away "
+                       f"sides; least in {lo.section}: {lo.home_pct:.0f}% against {lo.away_pct:.0f}%.",
+                       "Shows how much playing at home is worth in each competition, so you know how much to read into "
+                       "a home or away result. The first-named team on a scorecard is the home side; World Cups and "
+                       "other ICC events are left out because they're at neutral grounds.")
 
 # ---------------------------------------------------------------- season by season
 with tab_seasons:
@@ -144,6 +164,12 @@ with tab_seasons:
                 ("Sixes per match", "sixes_per_match", 1), ("Share of runs in boundaries (%)", "boundary_pct", 1),
                 ("Average first-innings score", "first_innings_avg", 0),
                 ("Win % batting first", "bat_first_win_pct", 0)]
+    PURPOSE = {"runs_per_wicket": "Is batting getting easier or harder? More runs per wicket = a batter's game.",
+               "run_rate": "How fast teams score, so you know what scoring rate keeps you in a game.",
+               "sixes_per_match": "How much big hitting there is: more sixes usually means higher totals.",
+               "boundary_pct": "How much of the scoring comes in fours and sixes rather than running.",
+               "first_innings_avg": "The typical score batting first: a quick guide to par.",
+               "bat_first_win_pct": "Whether batting first or chasing pays off more, season by season."}
     cols = st.columns(2, gap="medium")
     for i, (label, col, dec) in enumerate(measures):
         with cols[i % 2]:
@@ -160,6 +186,17 @@ with tab_seasons:
                                             yaxis=_axis(c, label, range=[0, top * 1.25 or 1]),
                                             margin=dict(l=10, r=16, t=16, b=10)))
                 st.plotly_chart(fig, width="stretch", config=CONFIG, key=f"in_s_{col}")
+                vals = bs[["season", col]].dropna()
+                if len(vals) >= 2:
+                    a0, a1 = vals.iloc[0], vals.iloc[-1]
+                    ch = (a1[col] - a0[col]) / a0[col] * 100 if a0[col] else 0
+                    shows = (f"{fmt(a0[col], dec)} in {a0.season}, {fmt(a1[col], dec)} in {a1.season} "
+                             f"({ch:+.0f}%).")
+                elif len(vals):
+                    shows = f"{fmt(vals.iloc[0][col], dec)} in {vals.iloc[0].season}, the only season so far."
+                else:
+                    shows = "No figures yet."
+                chart_note(shows, PURPOSE.get(col, "How this has changed from season to season."))
 
 # ---------------------------------------------------------------- breakouts
 with tab_break:
@@ -187,6 +224,11 @@ with tab_break:
                                              notes=[f"{season_b}: {fmt(n, 1)} ({ni} inns) · before: {fmt(b, 1)} ({bi} inns)"
                                                     for n, ni, b, bi in zip(top.now, top.now_innings, top.before, top.before_innings)]),
                                         width="stretch", config=CONFIG, key=f"in_b_{title}")
+                        r0 = top.iloc[0]
+                        chart_note(f"{r0.player} improved most: {fmt(r0.now, 1)} {unit} in {season_b} against "
+                                   f"{fmt(r0.before, 1)} before ({r0.jump:+.1f}).",
+                                   f"Spots the {title.lower()} who have stepped up this season, so you can give them a "
+                                   "bigger role (or sign them).")
         st.caption("Each season is measured against that season's own average, so a year when everyone scored more "
                    "doesn't make everyone look improved. Hover a bar for the before-and-after figures.")
 
@@ -214,16 +256,19 @@ with tab_tests:
                                             for n, t, r, a in zip(ib.innings_played, ib.average_total, ib.run_rate,
                                                                   ib.all_out_pct)]),
                                 width="stretch", config=CONFIG, key="in_m_bars")
-                if len(ib) == 4:
-                    st.caption(f"The 4th innings averages {ib.runs_per_wicket.iloc[3]:.1f} runs per wicket against "
-                               f"{first:.1f} in the 1st.")
+                last_ = ib.iloc[-1]
+                chart_note(f"The {int(last_.innings)}{'st' if last_.innings == 1 else 'nd' if last_.innings == 2 else 'rd' if last_.innings == 3 else 'th'} "
+                           f"innings averages {last_.runs_per_wicket:.1f} runs per wicket against {first:.1f} in the 1st "
+                           f"({(last_.runs_per_wicket - first) / first * 100:+.0f}%).",
+                           "Shows how much harder batting gets as the pitch wears, which tells you how big a "
+                           "fourth-innings target really is and whether to bat first.")
         fo = TP.follow_on_and_declarations(career, ids_m)
         with st.container(border=True):
             st.markdown("**Follow-on and declarations** · how often each led to a win")
             if fo.empty:
                 st.caption("No follow-ons or declarations yet.")
             else:
-                html_table([[r.situation, r.times, f"{r.won}–{r.drawn}–{r.lost}", f"{fmt(r.win_pct, 0)}%"]
+                html_table([[r.situation, r.times, f"{r.won}–{r.drawn}–{r.lost}", f"{pct(r.win_pct)}"]
                             for r in fo.itertuples()], ["", "Times", "Won–drawn–lost", "Win %"], numeric={1, 3})
                 st.caption("A follow-on is spotted when the side batting second batted again straight away. Won-drawn-lost "
                            "is from the point of view of the side in that row.")

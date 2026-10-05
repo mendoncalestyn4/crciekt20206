@@ -8,8 +8,8 @@ from ccstats import teamplay as TP
 from ui.theme import colours
 from ccstats.stats import Scope
 from ui import state
-from ui.charts import CONFIG, bars, fmt, race_chart, say
-from ui.theme import explain_list, html_table, kpis, page_header, safe_section
+from ui.charts import pct, CONFIG, bars, fmt, race_chart, say
+from ui.theme import chart_note, html_table, kpis, page_header, safe_section
 
 career = state.current()
 if career is None:
@@ -85,20 +85,18 @@ with tab_over:
         st.plotly_chart(bars(labels, diffs, "% better than the average team", 0, notes=notes, signed=True, texts=texts),
                         width="stretch", config=CONFIG, key="tm_vsavg")
         # explain the numbers with this team's own figures
-        ex = []
+        parts = []
         good = max(rows, key=lambda r: r[1]) if rows else None
         bad = min(rows, key=lambda r: r[1]) if rows else None
         for r in [x for x in (good, bad) if x is not None and (x is good or x[1] < 0)]:
             label, d, vt, at, better = r
             word = ("better" if d >= 0 else "worse")
-            how = ("higher" if (d >= 0) == (better == "high") else "lower")
-            ex.append(("", f"<b>{d:+.0f}% on {label.lower()}</b>: {team} {vt}, the average team {at}. {team} are {abs(d):.0f}% "
-                           f"{how}, which is {word}" + ("" if better == "high" else " because lower is better here") + "."))
-        ex.append(("", "<b>The number on each bar</b> is how much better (+, blue) or worse (−, red) this team is than the "
-                       f"average of all {len(table)} teams, then the team's figure v the average team's."))
-        ex.append(("", "<b>Runs per wicket conceded and economy</b>: lower is better, so conceding less than average is a "
-                       "plus and shows blue."))
-        explain_list(ex)
+            parts.append(f"<b>{abs(d):.0f}% {word}</b> than the average team on {label.lower()} ({team} {vt}, average "
+                         f"team {at}" + ("" if better == "high" else "; lower is better here") + ")")
+        chart_note(f"{team} are " + ", and ".join(parts) + "." if parts else "Not enough games yet.",
+                   f"Shows at a glance where {team} are strong and weak against the other {len(table) - 1} teams. Each "
+                   "bar is how much better (+, blue) or worse (−, red) they are than the average team; for runs "
+                   "conceded and economy lower is better, so conceding less shows blue.")
 
     left, right = st.columns(2, gap="medium")
     bat_t, bowl_t, _, _ = state.tables(career, scope, by_team=True)
@@ -110,11 +108,23 @@ with tab_over:
             st.markdown("**Top run-scorers**")
             st.plotly_chart(bars(my_bat.player, my_bat.runs, "Runs", notes=[f"average {fmt(a, 1)} · strike rate {fmt(s, 1)}" for a, s in zip(my_bat.average, my_bat.strike_rate)]),
                             width="stretch", config=CONFIG, key="tm_topbat")
+            if len(my_bat):
+                team_runs = bat_t[bat_t.team == team].runs.sum()
+                chart_note(f"{my_bat.player.iloc[0]} has {my_bat.runs.iloc[0]} runs, {my_bat.runs.iloc[0] / team_runs * 100:.0f}% "
+                           f"of {team}'s {team_runs} runs; the top {len(my_bat)} together make "
+                           f"{my_bat.runs.sum() / team_runs * 100:.0f}%.",
+                           "Who carries the batting, and how much the team leans on its top run-scorers.")
     with right:
         with st.container(border=True):
             st.markdown("**Top wicket-takers**")
             st.plotly_chart(bars(my_bowl.player, my_bowl.wickets, "Wickets", notes=[f"average {fmt(a, 1)} · economy {fmt(e, 2)}" for a, e in zip(my_bowl.average, my_bowl.economy)]),
                             width="stretch", config=CONFIG, key="tm_topbowl")
+            if len(my_bowl):
+                team_w = bowl_t[bowl_t.team == team].wickets.sum()
+                chart_note(f"{my_bowl.player.iloc[0]} has {int(my_bowl.wickets.iloc[0])} wickets, "
+                           f"{my_bowl.wickets.iloc[0] / team_w * 100:.0f}% of {team}'s {int(team_w)}; the top "
+                           f"{len(my_bowl)} take {my_bowl.wickets.sum() / team_w * 100:.0f}%.",
+                           "Who takes the wickets, and whether the attack is spread or rests on one or two bowlers.")
 
     left, right = st.columns(2, gap="medium")
     with left:
@@ -125,6 +135,12 @@ with tab_over:
             ref = all_dep.groupby("group", sort=False).share.mean()
             st.plotly_chart(bars(dep.group, dep.share, "% of runs", 0, notes=[f"{r} runs · average team {ref.get(g, 0):.0f}%" for g, r in zip(dep.group, dep.runs)]),
                             width="stretch", config=CONFIG, key="tm_depth")
+            if len(dep) and dep.runs.sum():
+                top_g = dep.sort_values("share", ascending=False).iloc[0]
+                chart_note(f"{top_g.share:.0f}% of {team}'s runs come from the {top_g.group.lower()} (the average team: "
+                           f"{ref.get(top_g.group, 0):.0f}%). The tail (8-11) makes {dep.share.iloc[-1]:.0f}%.",
+                           "Shows how deep the batting goes: if the top order makes most of the runs, early wickets hurt "
+                           "this team more than most.")
     with right:
         with st.container(border=True):
             st.markdown("**Average partnership for each wicket**")
@@ -132,6 +148,13 @@ with tab_over:
             st.plotly_chart(bars([f"{int(w)}{'st' if w == 1 else 'nd' if w == 2 else 'rd' if w == 3 else 'th'} wicket" for w in pw.wicket],
                                  pw.average, "Average stand (runs)", 1, notes=[f"{n} stands · best {b}" for n, b in zip(pw.stands, pw.best)]),
                             width="stretch", config=CONFIG, key="tm_pship")
+            if len(pw):
+                b_ = pw.sort_values("average", ascending=False).iloc[0]
+                n_ = int(b_.wicket)
+                chart_note(f"Their best stand is for the {n_}{'st' if n_ == 1 else 'nd' if n_ == 2 else 'rd' if n_ == 3 else 'th'} "
+                           f"wicket: {b_.average:.1f} runs on average over {int(b_.stands)} stands (best {int(b_.best)}). "
+                           f"The opening stand averages {pw.average.iloc[0]:.1f}.",
+                           "Shows which partnerships hold the innings together and where it tends to fall apart.")
 
     left, right = st.columns(2, gap="medium")
     with left:
@@ -184,8 +207,11 @@ with tab_over:
                                      colour=colours()["s2"], x_range=[min(min(diffs), 0) - (max(diffs) - min(min(diffs), 0)) * 1.1 - 8,
                                                                       max(max(diffs), 0) + (max(max(diffs), 0) - min(diffs)) * 0.9 + 8]),
                                 width="stretch", config=CONFIG, key="tm_style")
-                st.caption("This is style, not quality: a team can win either way. Each bar compares this team's figure "
-                           "with the average of all teams in the section.")
+                i_max = int(np.argmax(np.abs(diffs))) if diffs else 0
+                chart_note((f"{team}'s biggest difference is {labels[i_max].lower()}: {diffs[i_max]:+.0f}% against "
+                            "the average team.") if diffs else "Not enough games yet.",
+                           "Shows how they play, not how well: a team can win either way. Each bar compares this "
+                           "team's figure with the average of all teams in the section.")
         # ---------------------------------------------------------------- discipline (extras)
         disc = E.discipline(career, ids)
         with right:
@@ -199,9 +225,12 @@ with tab_over:
                                 width="stretch", config=CONFIG, key="tm_disc")
                 if team in set(disc.team):
                     r = disc.set_index("team").loc[team]
-                    st.caption(f"{team}: {fmt(r.extras_per_match, 1)} extras a match ({fmt(r.wides_per_match, 1)} wides, "
-                               f"{fmt(r.no_balls_per_match, 1)} no-balls), {int(list(disc.team).index(team)) + 1} of {len(disc)} "
-                               f"for discipline. Section average {fmt(disc.extras_per_match.mean(), 1)}.")
+                    avg_x = disc.extras_per_match.mean()
+                    chart_note(f"{team} give away {fmt(r.extras_per_match, 1)} extras a match ({fmt(r.wides_per_match, 1)} "
+                               f"wides, {fmt(r.no_balls_per_match, 1)} no-balls), "
+                               f"{(r.extras_per_match - avg_x) / avg_x * 100:+.0f}% against the average of {fmt(avg_x, 1)}: "
+                               f"{int(list(disc.team).index(team)) + 1} of {len(disc)} for discipline.",
+                               "Free runs given away. A few extras a match can be the difference in a close game.")
 
     with st.container(border=True):
         st.markdown(f"**Every team in {section}**" + ("" if venue == "all" else f" · {venue_label.lower()} games only"))
@@ -246,11 +275,11 @@ with tab_win:
                 rows = [["Batting first", f"{int(me_bf.bf_played)}",
                          TP.wdl(dict(won=int(me_bf.bf_won), lost=int(me_bf.bf_lost), drawn=int(me_bf.bf_drawn),
                                      tied=int(me_bf.bf_tied), no_result=int(me_bf.bf_no_result))),
-                         f"{fmt(me_bf.bf_win_pct, 0)}%", f"{fmt(a1['win_pct'], 0)}%"],
+                         f"{pct(me_bf.bf_win_pct)}", f"{pct(a1['win_pct'])}"],
                         [second, f"{int(me_bf.ch_played)}",
                          TP.wdl(dict(won=int(me_bf.ch_won), lost=int(me_bf.ch_lost), drawn=int(me_bf.ch_drawn),
                                      tied=int(me_bf.ch_tied), no_result=int(me_bf.ch_no_result))),
-                         f"{fmt(me_bf.ch_win_pct, 0)}%", f"{fmt(a2['win_pct'], 0)}%"]]
+                         f"{pct(me_bf.ch_win_pct)}", f"{pct(a2['win_pct'])}"]]
                 html_table(rows, ["", "Played", "W–D–L" if multi else "W–L", f"{team} win %", "Every team"],
                            numeric={1, 3, 4})
                 better = "batting first" if (me_bf.bf_win_pct or 0) >= (me_bf.ch_win_pct or 0) else second.lower()
@@ -262,8 +291,8 @@ with tab_win:
         cg = state.memo(TP.close_games, career, ids, team)
         with st.container(border=True):
             st.markdown("**Close games** · won or lost by under 10 runs or by 1-2 wickets, or tied")
-            html_table([["Close games", TP.wdl(cg["close"]), f"{fmt(cg['close']['win_pct'], 0)}%"],
-                        ["Other games", TP.wdl(cg["other"]), f"{fmt(cg['other']['win_pct'], 0)}%"]],
+            html_table([["Close games", TP.wdl(cg["close"]), f"{pct(cg['close']['win_pct'])}"],
+                        ["Other games", TP.wdl(cg["other"]), f"{pct(cg['other']['win_pct'])}"]],
                        ["", "Record", "Win %"], numeric={2})
             if len(cg["rows"]):
                 rows = [[f"{r.date:%d %b %Y}", r.opponent, {"W": "Won", "L": "Lost", "T": "Tied"}.get(r.outcome, r.outcome),
@@ -276,7 +305,7 @@ with tab_win:
         sa = state.memo(TP.start_split, career, ids, "")
         with st.container(border=True):
             st.markdown("**The openers' start** · result when the first wicket fell…")
-            rows = [[label, TP.wdl(ss[k]), f"{fmt(ss[k]['win_pct'], 0)}%", f"{fmt(sa[k]['win_pct'], 0)}%"]
+            rows = [[label, TP.wdl(ss[k]), f"{pct(ss[k]['win_pct'])}", f"{pct(sa[k]['win_pct'])}"]
                     for k, label in (("good", "at 50 or more"), ("middle", "between 20 and 49"), ("bad", "under 20"))]
             html_table(rows, ["First wicket fell", "Record", f"{team} win %", "Every team"], numeric={2, 3})
             st.caption("Their first innings of each game. A good start is worth this much to them.")
@@ -294,9 +323,9 @@ with tab_win:
                     if not (r.chase_played or r.defend_played):
                         continue
                     rows.append([r.bucket, f"{r.chase_won}/{r.chase_played}" if r.chase_played else "–",
-                                 f"{fmt(r.chase_pct, 0)}%" if r.chase_played else "–", f"{fmt(a_.chase_pct, 0)}%",
+                                 f"{pct(r.chase_pct)}" if r.chase_played else "–", f"{pct(a_.chase_pct)}",
                                  f"{r.defend_won}/{r.defend_played}" if r.defend_played else "–",
-                                 f"{fmt(r.defend_pct, 0)}%" if r.defend_played else "–", f"{fmt(a_.defend_pct, 0)}%"])
+                                 f"{pct(r.defend_pct)}" if r.defend_played else "–", f"{pct(a_.defend_pct)}"])
                 html_table(rows, ["Target" if multi else "Total", "Chased (won/played)", "Win %", "Every team",
                                   "Defended (won/played)", "Win %", "Every team"], numeric={2, 3, 5, 6})
                 st.caption("Chasing: batting last. Defending: setting the target. 'Every team' is the same for all sides "
@@ -309,13 +338,13 @@ with tab_opp:
         sr = state.memo(TP.stage_record, career, ids, team)
         with st.container(border=True):
             st.markdown("**League games and knockouts**")
-            rows = [[r.stage, r.played, TP.wdl(r._asdict()), f"{fmt(r.win_pct, 0)}%"] for r in sr.itertuples() if r.played]
+            rows = [[r.stage, r.played, TP.wdl(r._asdict()), f"{pct(r.win_pct)}"] for r in sr.itertuples() if r.played]
             html_table(rows, ["", "Played", "Record", "Win %"], numeric={1, 3})
     with right, safe_section("bounce back"):
         ar = state.memo(TP.after_result, career, ids, team)
         with st.container(border=True):
             st.markdown("**Bouncing back** · their next game after…")
-            rows = [[r.after, r.played, TP.wdl(r._asdict()), f"{fmt(r.win_pct, 0)}%"] for r in ar.itertuples()]
+            rows = [[r.after, r.played, TP.wdl(r._asdict()), f"{pct(r.win_pct)}"] for r in ar.itertuples()]
             if rows:
                 html_table(rows, ["", "Games", "Record", "Win %"], numeric={1, 3})
             else:
@@ -325,15 +354,15 @@ with tab_opp:
         with st.container(border=True):
             st.markdown("**Every opponent** · ⭐ favourite and 👻 bogey team (met at least twice)")
             rows = [[("⭐ " if r.favourite else "👻 " if r.bogey else "") + r.opponent, r.played, TP.wdl(r._asdict()),
-                     f"{fmt(r.win_pct, 0)}%", f"{r.last:%d %b %Y}"] for r in op.itertuples()]
+                     f"{pct(r.win_pct)}", f"{r.last:%d %b %Y}"] for r in op.itertuples()]
             html_table(rows, ["Opponent", "Played", "Record", "Win %", "Last met"], numeric={1, 3},
                        row_class=["hi" if r.favourite or r.bogey else "" for r in op.itertuples()])
     with safe_section("revenge"):
         rv = state.memo(TP.revenge, career, ids, team)
         with st.container(border=True):
             st.markdown("**Revenge games** · against a side that beat them the last time they met")
-            html_table([["Revenge games", TP.wdl(rv["revenge"]), f"{fmt(rv['revenge']['win_pct'], 0)}%"],
-                        ["Every other game", TP.wdl(rv["other"]), f"{fmt(rv['other']['win_pct'], 0)}%"]],
+            html_table([["Revenge games", TP.wdl(rv["revenge"]), f"{pct(rv['revenge']['win_pct'])}"],
+                        ["Every other game", TP.wdl(rv["other"]), f"{pct(rv['other']['win_pct'])}"]],
                        ["", "Record", "Win %"], numeric={2})
 
 # ---------------------------------------------------------------- 7, 29 · season
@@ -357,7 +386,12 @@ with tab_season:
                 else:
                     race = race[race.group == grp]
                     st.plotly_chart(race_chart(race, team), width="stretch", config=CONFIG, key="tm_race_chart")
-                    st.caption(f"{grp}: the same order as the league table (points, then net run rate). Hover a line for points.")
+                    mine_r = race[race.team == team].sort_values("round")
+                    chart_note(f"{team} are {int(mine_r.position.iloc[-1])} of {race.team.nunique()} after "
+                               f"{int(mine_r.played.iloc[-1])} games; their best was {int(mine_r.position.min())} and "
+                               f"their lowest {int(mine_r.position.max())}.",
+                               f"Shows how the season unfolded: when {team} climbed or slipped. Positions follow the league "
+                               "table (points, then net run rate). Hover a line for points.")
     with safe_section("early and late season"):
         sh = state.memo(TP.season_halves, career, ids, team)
         with st.container(border=True):
@@ -365,8 +399,8 @@ with tab_season:
             if sh.empty:
                 st.caption("No league games yet.")
             else:
-                rows = [[r.season, TP.wdl(r.early), f"{fmt(r.early['win_pct'], 0)}%", TP.wdl(r.late),
-                         f"{fmt(r.late['win_pct'], 0)}%"] for r in sh.itertuples()]
+                rows = [[r.season, TP.wdl(r.early), f"{pct(r.early['win_pct'])}", TP.wdl(r.late),
+                         f"{pct(r.late['win_pct'])}"] for r in sh.itertuples()]
                 html_table(rows, ["Season", "First half", "Win %", "Second half", "Win %"], numeric={2, 4},
                            row_class=[""] * (len(rows) - 1) + ["hi"])
 
@@ -384,14 +418,14 @@ with tab_series:
                     st.caption("No finished series yet.")
                 else:
                     every = fa.set_index("start").win_pct
-                    rows = [[r.start, r.series, f"{r.won}–{r.drawn}–{r.lost}", f"{fmt(r.win_pct, 0)}%",
-                             f"{fmt(every.get(r.start, np.nan), 0)}%"] for r in fb.itertuples()]
+                    rows = [[r.start, r.series, f"{r.won}–{r.drawn}–{r.lost}", f"{pct(r.win_pct)}",
+                             f"{pct(every.get(r.start, np.nan))}"] for r in fb.itertuples()]
                     html_table(rows, ["", "Series", "Won–drawn–lost", "Series won", "Every team"], numeric={1, 3, 4})
         with right, safe_section("deciders and dead rubbers"):
             si = state.memo(TP.situations, career, ids, team)
             with st.container(border=True):
                 st.markdown("**Deciders and dead rubbers**")
-                rows = [[r.situation, r.played, TP.wdl(r._asdict()), f"{fmt(r.win_pct, 0)}%"] for r in si.itertuples() if r.played]
+                rows = [[r.situation, r.played, TP.wdl(r._asdict()), f"{pct(r.win_pct)}"] for r in si.itertuples() if r.played]
                 if rows:
                     html_table(rows, ["", "Games", "Record", "Win %"], numeric={1, 3})
                 else:
@@ -405,7 +439,7 @@ with tab_series:
                 if fo.empty:
                     st.caption("No follow-ons or declarations yet.")
                 else:
-                    html_table([[r.situation, r.times, f"{r.won}–{r.drawn}–{r.lost}", f"{fmt(r.win_pct, 0)}%"]
+                    html_table([[r.situation, r.times, f"{r.won}–{r.drawn}–{r.lost}", f"{pct(r.win_pct)}"]
                                 for r in fo.itertuples()], ["", "Times", "Won–drawn–lost", "Win %"], numeric={1, 3})
     if not has_series and not multi:
         st.info("Bilateral series and multi-day games only: this section has neither.")

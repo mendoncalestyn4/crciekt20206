@@ -8,7 +8,7 @@ from ccstats import teamplay as TP
 from ccstats.stats import WICKET_VALUE, Scope
 from ui import state
 from ui.charts import player_profile, CONFIG, _axis, _layout, fmt, label_annotations
-from ui.theme import colours, explain_list, page_header
+from ui.theme import chart_note, colours, explain_list, page_header
 
 career = state.current()
 if career is None:
@@ -128,8 +128,9 @@ with left:
                                     yaxis=dict(showgrid=False, tickfont=dict(size=12, color=c["ink"]), automargin=True, fixedrange=True),
                                     margin=dict(l=10, r=10, t=36, b=10)))
         st.plotly_chart(fig, width="stretch", config=CONFIG, key="tv_tape")
-        st.caption("Each row is one measure. The longer bar is the bigger number; the tick marks the better team "
-                   "(for runs conceded and economy, lower is better).")
+        chart_note(f"{a} are better on {a_wins} of {a_wins + b_wins} measures, {b} on {b_wins}.",
+                   "A quick verdict on which side is stronger, measure by measure. The longer bar is the bigger number; "
+                   "the tick marks the better team (for runs conceded and economy, lower is better).")
 with right:
     with st.container(border=True):
         st.markdown("**Head to head**")
@@ -200,6 +201,10 @@ with left:
         two_team_scatter("tv_bat", bat_a[bat_a.balls > 0], bat_b[bat_b.balls > 0], "balls", "runs", "Balls faced", "Runs",
                          base.strike_rate / 100, f"section strike rate {fmt(base.strike_rate, 1)}",
                          lambda r: f"<b>{r.player}</b> · {r.team}<br>{player_profile(r)}")
+        fast = lambda d: (d[d.balls > 0].runs / d[d.balls > 0].balls * 100 > base.strike_rate).mean() * 100  # noqa: E731
+        chart_note(f"{fast(bat_a):.0f}% of {a}'s batters and {fast(bat_b):.0f}% of {b}'s score faster than the section's "
+                   f"{fmt(base.strike_rate, 1)} per 100 balls.",
+                   "Compares the two batting line-ups player by player: who scores quickly and who has faced the most.")
         explain_list([("dot", f"<b>Blue</b>: {a}. <b>Orange</b>: {b}."),
                       ("line", "<b>Dashed line</b>: the section's average scoring rate."),
                       ("shade", "<b>Shaded area (above the line)</b>: scores faster than the average batter in this section."),
@@ -210,6 +215,10 @@ with right:
         two_team_scatter("tv_bowl", bowl_a, bowl_b, "balls", "wickets", "Balls bowled", "Wickets", 1 / base.bowl_strike_rate,
                          f"a wicket every {fmt(base.bowl_strike_rate, 1)} balls",
                          lambda r: f"<b>{r.player}</b> · {r.team}<br>{player_profile(r)}")
+        often = lambda d: (d[d.balls > 0].wickets / d[d.balls > 0].balls * base.bowl_strike_rate > 1).mean() * 100  # noqa: E731
+        chart_note(f"{often(bowl_a):.0f}% of {a}'s bowlers and {often(bowl_b):.0f}% of {b}'s take wickets more often than "
+                   f"one every {fmt(base.bowl_strike_rate, 1)} balls.",
+                   "Compares the two attacks bowler by bowler: who takes wickets and who has done the most bowling.")
         explain_list([("line", "<b>Dashed line</b>: the section's average wicket rate."),
                       ("shade", "<b>Shaded area (above the line)</b>: takes wickets more often than the average bowler."),
                       ("", "<b>Further right</b>: bowled more. Top-right dots are the main strike bowlers.")])
@@ -238,13 +247,21 @@ with left:
         st.markdown("**Every batter: runs above average**")
         team_bars("tv_raa", bat_a[bat_a.innings > 0], bat_b[bat_b.innings > 0], "runs_above_average", "Runs above average",
                   lambda r: f"<b>{r.player}</b> · {r.team}<br>{player_profile(r)}")
-        st.caption("Runs scored minus what an average batter in this section would have made. Right of the line beat the average.")
+        pa, pb = (bat_a.runs_above_average > 0).mean() * 100, (bat_b.runs_above_average > 0).mean() * 100
+        chart_note(f"{pa:.0f}% of {a}'s batters and {pb:.0f}% of {b}'s beat the average batter. Team totals: {a} "
+                   f"{bat_a.runs_above_average.sum():+.0f}, {b} {bat_b.runs_above_average.sum():+.0f} runs.",
+                   "Runs scored minus what an average batter in this section would have made: who is pulling their "
+                   "weight. Right of the line beat the average.")
 with right:
     with st.container(border=True):
         st.markdown("**Every bowler: runs saved**")
         team_bars("tv_saved", bowl_a, bowl_b, "runs_saved", "Runs saved",
                   lambda r: f"<b>{r.player}</b> · {r.team}<br>{player_profile(r)}")
-        st.caption("Runs kept below the section average, with extra wickets turned into runs. Right of the line beat the average.")
+        pa, pb = (bowl_a.runs_saved > 0).mean() * 100, (bowl_b.runs_saved > 0).mean() * 100
+        chart_note(f"{pa:.0f}% of {a}'s bowlers and {pb:.0f}% of {b}'s beat the average bowler. Team totals: {a} "
+                   f"{bowl_a.runs_saved.sum():+.0f}, {b} {bowl_b.runs_saved.sum():+.0f} runs saved.",
+                   "Runs kept below the section average, with extra wickets turned into runs: which bowlers really "
+                   "help. Right of the line beat the average.")
 
 with st.container(border=True):
     st.markdown("**Top performers side by side**")

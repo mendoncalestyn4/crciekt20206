@@ -7,7 +7,7 @@ from ccstats import analysis as A
 from ccstats.stats import Scope, stat_definitions
 from ui import state
 from ui.charts import CONFIG, _axis, _layout, fmt
-from ui.theme import colours, page_header
+from ui.theme import chart_note, colours, page_header
 
 career = state.current()
 if career is None:
@@ -90,6 +90,16 @@ for i, stat in enumerate(defs):
                                                    automargin=True),
                                         margin=dict(l=10, r=52, t=24, b=10)))
             st.plotly_chart(fig, width="stretch", config=CONFIG, key=f"cp_{stat.id}")
+            ok = [(p, float(v)) for p, v in zip(chosen, vals) if pd.notna(v)]
+            if ok:
+                bp, bv = (max if stat.better == "high" else min)(ok, key=lambda x: x[1])
+                ref = stat.reference
+                vs = (f" ({(bv - ref) / abs(ref) * 100:+.0f}% on the section average of {fmt(ref, max(stat.decimals, 1))})"
+                      if ref is not None and np.isfinite(ref) and ref else "")
+                shows = f"{bp} is best on this one: {fmt(bv, stat.decimals)}{vs}."
+            else:
+                shows = "No figures yet for these players."
+            chart_note(shows, f"{stat.definition}")
 
 # ---------------------------------------------------------------- career curves
 ids = scope.match_ids(m)
@@ -110,4 +120,17 @@ with st.container(border=True):
                                 xaxis=_axis(c, "Innings played"), yaxis=_axis(c, f"Total {what}"),
                                 margin=dict(l=10, r=90, t=40, b=10)))
     st.plotly_chart(fig, width="stretch", config=CONFIG, key="cp_curve")
-    st.caption("A steeper line means more per innings. Where a line ends shows how many innings they've played.")
+    ends = []
+    for p in chosen:
+        d = A.batting_innings(career, ids, p) if disc == "Batting" else A.bowling_spells(career, ids, p)
+        if len(d):
+            ends.append((p, int(d[what].sum()), len(d)))
+    if ends:
+        lead = max(ends, key=lambda x: x[1])
+        rate = max(ends, key=lambda x: x[1] / x[2])
+        shows = (f"{lead[0]} has the most {what}: {lead[1]} in {lead[2]} innings. "
+                 f"{rate[0]} gets there fastest: {rate[1] / rate[2]:.{2 if what == 'wickets' else 1}f} an innings.")
+    else:
+        shows = "No innings yet."
+    chart_note(shows, "Shows how each career has built up. A steeper line means more per innings; where a line ends "
+                      "shows how many innings they've played.")

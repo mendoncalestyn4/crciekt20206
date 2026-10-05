@@ -4,8 +4,8 @@ import streamlit as st
 from ccstats import extras as E
 from ccstats.stats import Scope
 from ui import state
-from ui.charts import CONFIG, bars, fmt
-from ui.theme import page_header
+from ui.charts import pct, CONFIG, bars, fmt
+from ui.theme import chart_note, page_header
 
 career = state.current()
 if career is None:
@@ -35,9 +35,14 @@ with t_potm:
                 top = p.head(12)
                 st.markdown("**Most Player of the Match awards**")
                 st.plotly_chart(bars(top.player, top.awards, "Awards", notes=[
-                    f"{t} · {a} in {n} matches ({fmt(r, 0)}% of their games) · {k} in knockouts, {f} in finals"
+                    f"{t} · {a} in {n} matches ({pct(r)} of their games) · {k} in knockouts, {f} in finals"
                     for t, a, n, r, k, f in zip(top.team, top.awards, top.matches, top.rate, top.knockouts, top.finals)]),
                     width="stretch", config=CONFIG, key="hf_potm")
+                t0 = top.iloc[0]
+                chart_note(f"{t0.player} has {t0.awards} awards in {t0.matches} matches: {pct(t0.rate)} of their "
+                           f"games, {t0.knockouts} of them in knockouts.",
+                           "Who wins matches on their own most often. Rate = awards as a share of the matches they "
+                           "played here.")
         with right:
             with st.container(border=True):
                 st.markdown("**Big-game players** · awards in knockouts and finals")
@@ -64,6 +69,12 @@ with t_duo:
                                      notes=[f"{t} · {'caught' if k == 'caught' else 'stumped'} {f}, bowled {b}"
                                             for t, k, f, b in zip(top.team, top.kind, top.player, top.bowler)]),
                                 width="stretch", config=CONFIG, key="hf_duo")
+                d0 = top.iloc[0]
+                tot = int(duo.wickets.sum())
+                chart_note(f"{d0.player} and {d0.bowler} have combined for {d0.wickets} wickets, {d0.wickets / max(tot, 1) * 100:.0f}% "
+                           f"of the {tot} catches and stumpings here.",
+                           "The fielder-and-bowler pairs that work: keep the fielder where the catches go when that "
+                           "bowler is on.")
     with right:
         with st.container(border=True):
             st.markdown("**Caught and bowled** · bowlers who took the catch themselves")
@@ -89,5 +100,9 @@ with t_ar:
                                  notes=[f"{t} · {'won' if w else 'did not win'} · match score {fmt(s, 0)}"
                                         for t, w, s in zip(top.team, top.won, top.score)]),
                             width="stretch", config=CONFIG, key="hf_ar")
-            st.caption(f"Each wicket counts as {fmt(wv, 1)} runs, the average runs per wicket in {section}, so runs and "
-                       "wickets can be added up. Only players who both scored and took a wicket in the match are listed.")
+            a0 = top.iloc[0]
+            chart_note(f"The best: {a0.player} v {a0.against}, {a0.figures}, a match score of {fmt(a0.score, 0)}"
+                       f" ({'won' if a0.won else 'did not win'}).",
+                       f"Ranks the best all-round games. Each wicket counts as {fmt(wv, 1)} runs, the average runs per "
+                       f"wicket in {section}, so runs and wickets can be added up. Only players who both scored and took "
+                       "a wicket in the match are listed.")

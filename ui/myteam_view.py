@@ -12,7 +12,7 @@ from ccstats import teamplay as TP
 from ccstats.competitions import shown_name
 
 from . import state
-from .charts import fmt
+from .charts import pct, fmt
 from .theme import esc, form_strip, html_table, kpis, match_link, player_link, safe_section, scoreboard
 
 
@@ -140,8 +140,8 @@ def render(career, team: str, key: str) -> None:
             if team in set(bft.team):
                 r = bft.set_index("team").loc[team]
                 second = "batting second" if avg["multi"] else "chasing"
-                st.markdown(f"Batting first **{fmt(r.bf_win_pct, 0)}%** ({int(r.bf_won)} of {int(r.bf_decided)}) · "
-                            f"{second} **{fmt(r.ch_win_pct, 0)}%** ({int(r.ch_won)} of {int(r.ch_decided)}).")
+                st.markdown(f"Batting first **{pct(r.bf_win_pct)}** ({int(r.bf_won)} of {int(r.bf_decided)}) · "
+                            f"{second} **{pct(r.ch_win_pct)}** ({int(r.ch_won)} of {int(r.ch_decided)}).")
                 g = tg[(tg.team == team) & tg.batted_first & tg.first_score.notna()]
                 won = g[g.outcome == "W"]
                 if len(won) >= 2 and not avg["multi"]:
@@ -152,7 +152,7 @@ def render(career, team: str, key: str) -> None:
             op = state.memo(TP.opponents, career, ids_all, team)
             st.markdown("**Rivals at a glance** · most-played opponents here")
             rows = [[("⭐ " if r.favourite else "👻 " if r.bogey else "") + r.opponent, r.played, TP.wdl(r._asdict()),
-                     f"{fmt(r.win_pct, 0)}%"] for r in op.head(6).itertuples()]
+                     f"{pct(r.win_pct)}"] for r in op.head(6).itertuples()]
             if rows:
                 html_table(rows, ["Opponent", "Played", "Record", "Win %"], numeric={1, 3})
             # ---------------------------------------------------------------- next opponent
@@ -189,7 +189,7 @@ def render(career, team: str, key: str) -> None:
         with safe_section("history"), st.container(border=True):
             hi = state.memo(MT.history, career, team)
             st.markdown("**Season by season**")
-            html_table([[f"{r.season}", r.section, TP.wdl(r._asdict()), f"{fmt(r.win_pct, 0)}%", r.finish or "–"]
+            html_table([[f"{r.season}", r.section, TP.wdl(r._asdict()), f"{pct(r.win_pct)}", r.finish or "–"]
                         for r in hi.itertuples()], ["Season", "Section", "Record", "Win %", "Finished"], numeric={3})
     lg = MT.last_game(career, team)
     if lg is not None:

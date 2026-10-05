@@ -2,11 +2,12 @@ import pandas as pd
 import streamlit as st
 
 from ccstats import extras as E
+from ccstats import partnerships as P
 from ccstats.competitions import shown_name
 from ccstats.parser import balls_to_overs
 from ui import state
 from ui.charts import CONFIG, fmt, wicket_timeline
-from ui.theme import explain_list, page_header, scoreboard
+from ui.theme import chart_note, explain_list, page_header, scoreboard
 
 career = state.current()
 if career is None:
@@ -82,6 +83,15 @@ with st.container(border=True):
                               "Above it = ahead of the game; below it = behind. It stops where too few innings get that far."))
     notes.append(("", "The scorecard gives the score at each wicket but not the over, so this shows wickets, not overs."))
     explain_list(notes)
+    st_ = P.stands(career, [mid])
+    if len(st_):
+        big = st_.sort_values("runs", ascending=False).iloc[0]
+        n_ = int(big.wicket)
+        who = f" by {big.batter1} and {big.batter2}" if big.known else ""
+        tot_ = career.innings[(career.innings.match_id == mid) & (career.innings.team == big.team)].runs.sum()
+        chart_note(f"The biggest stand was {big.runs}{'*' if big.unbroken else ''} for the {n_}{P.suffix(n_)} wicket"
+                   f"{who} for {big.team}, {big.runs / max(tot_, 1) * 100:.0f}% of their runs in the match.",
+                   "Shows how each innings was built and where it fell apart, wicket by wicket.")
 
 # ---------------------------------------------------------------- top performers
 top_bat = bat[bat.did_bat].sort_values(["runs", "balls"], ascending=[False, True]).head(3)
