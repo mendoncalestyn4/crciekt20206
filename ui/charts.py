@@ -46,26 +46,53 @@ def label_backing(c: dict) -> str:
     return f"rgba({r},{g},{b},0.78)"
 
 
-def place_labels(points, x_range, y_range, width_px: float = 400, height_px: float = 340) -> list[tuple[int, str]]:
-    """(y shift in px, x anchor) for names written above dots, so no two names overlap.
+def label_annotations(named, dots, x_range, y_range, c: dict, width_px: float = 400,
+                      height_px: float = 350) -> list[dict]:
+    """Annotations naming some dots, each placed right next to its own dot.
 
-    points: [(x, y, text)] in data units.  Each name's box is estimated from its
-    length (11px font); a name that would touch one already placed moves up a
-    line, and a name by the right edge ends at its dot instead of centring on it."""
+    named: [(x, y, text)] to label, most important first; dots: [(x, y)] for every
+    dot on the chart.  Each name tries spots close around its dot (above, below,
+    beside, diagonals) and takes the first that touches no other name and no dot;
+    if every close spot is taken it moves further out, and then a thin line joins
+    the name to its dot, so a name is never left floating away from its player."""
     (x0, x1), (y0, y1) = x_range, y_range
-    placed, out = [], []
-    for x, y, text in points:
-        px = (x - x0) / ((x1 - x0) or 1) * width_px
-        py = (y - y0) / ((y1 - y0) or 1) * height_px
-        w = 6.3 * len(str(text)) + 6
-        anchor = "right" if px + w / 2 > width_px else "left" if px - w / 2 < 0 else "center"
-        left = px - w if anchor == "right" else px if anchor == "left" else px - w / 2
-        shift = 13
-        while any(abs((left + w / 2) - (ol + ow / 2)) < (w + ow) / 2 + 2 and abs((py + shift) - (opy + os)) < 14
-                  for ol, ow, opy, os in placed):
-            shift += 14
-        placed.append((left, w, py, shift))
-        out.append((shift, anchor))
+
+    def px(x, y):
+        return (x - x0) / ((x1 - x0) or 1) * width_px, (y - y0) / ((y1 - y0) or 1) * height_px
+
+    dot_px = [px(x, y) for x, y in dots]
+    boxes: list[tuple[float, float, float, float]] = []  # placed names: centre x, centre y, half width, half height
+    out = []
+    for x, y, text in named:
+        cx, cy = px(x, y)
+        hw, hh = (6.3 * len(str(text)) + 8) / 2, 8
+        best = None
+        for ring in (1, 2, 3, 4):
+            gap = 10 + (ring - 1) * 16
+            for dx, dy in ((0, gap + hh), (0, -(gap + hh)), (gap + hw, 0), (-(gap + hw), 0),
+                           (gap + hw, gap + hh), (-(gap + hw), gap + hh), (gap + hw, -(gap + hh)),
+                           (-(gap + hw), -(gap + hh))):
+                bx, by = cx + dx, cy + dy
+                if bx - hw < -4 or bx + hw > width_px + 4 or by - hh < -6 or by + hh > height_px + 30:
+                    continue  # off the chart
+                if any(abs(bx - ox) < hw + ow + 3 and abs(by - oy) < hh + oh + 2 for ox, oy, ow, oh in boxes):
+                    continue  # on another name
+                covered = sum(1 for qx, qy in dot_px if abs(bx - qx) < hw + 5 and abs(by - qy) < hh + 5)
+                if best is None or covered < best[0]:
+                    best = (covered, dx, dy)
+                if covered == 0:
+                    break
+            if best is not None and best[0] == 0:
+                break
+        if best is None:  # nowhere free: straight above, joined by a line
+            best = (0, 0, 70 + 16 * len(out))
+        _, dx, dy = best
+        boxes.append((cx + dx, cy + dy, hw, hh))
+        far = abs(dx) > hw + 14 or abs(dy) > hh + 14
+        out.append(dict(x=x, y=y, text=text, showarrow=True, ax=dx, ay=-dy, axref="pixel", ayref="pixel",
+                        arrowhead=0, arrowwidth=1, standoff=5,
+                        arrowcolor=c["muted"] if far else "rgba(0,0,0,0)",
+                        font=dict(size=11, color=c["ink2"]), bgcolor=label_backing(c), borderpad=1))
     return out
 
 
@@ -184,12 +211,10 @@ def dot_chart(pool: pd.DataFrame, ranked: pd.DataFrame, stat: Stat, best: bool, 
     ranked_dots = pool[pool.player.isin(top) & (pool.player != highlight)]
     hl = pool[pool.player == highlight]
     fig = go.Figure([trace(rest, c["dim"], 8), trace(ranked_dots, colour, 10)] + ([trace(hl, c["s2"], 13, True)] if len(hl) else []))
-    # name the top few; names that would touch are stacked
+    # name the top few, each right next to its own dot
     named = ranked[ranked.player != highlight].head(label_top)
-    spots = place_labels([(p[d.x], p[d.y], p.player) for _, p in named.iterrows()], (0, xmax), tuple(yr))
-    for (_, p), (shift, anchor) in zip(named.iterrows(), spots):
-        annotations.append(dict(x=p[d.x], y=p[d.y], text=p.player, showarrow=False, yshift=shift, xanchor=anchor,
-                                font=dict(size=11, color=c["ink2"]), bgcolor=label_backing(c), borderpad=1))
+    annotations += label_annotations([(p[d.x], p[d.y], p.player) for _, p in named.iterrows()],
+                                     list(zip(x, y)), (0, xmax), tuple(yr), c)
     # small counts (catches, 50s, hauls) get whole-number ticks; room at the top for stacked names
     ints = lambda s: len(s) and all(float(v).is_integer() for v in s)  # noqa: E731
     yextra = {"dtick": 1} if ints(y) and ymax <= 8 else {}

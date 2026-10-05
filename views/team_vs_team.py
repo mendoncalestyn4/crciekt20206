@@ -6,7 +6,7 @@ import streamlit as st
 from ccstats import analysis as A
 from ccstats.stats import WICKET_VALUE, Scope
 from ui import state
-from ui.charts import player_profile, CONFIG, _axis, _layout, fmt, label_backing, place_labels
+from ui.charts import player_profile, CONFIG, _axis, _layout, fmt, label_annotations
 from ui.theme import colours, explain_list, page_header
 
 career = state.current()
@@ -168,14 +168,10 @@ def two_team_scatter(key, da, db, x, y, x_label, y_label, slope, line_label, hov
     for d, colour, team in ((da, col_a, a), (db, col_b, b)):
         fig.add_trace(go.Scatter(x=d[x], y=d[y], mode="markers", name=team, marker=dict(size=11, color=colour, line=dict(color=c["surface"], width=2)),
                                  customdata=[hover(r) for r in d.itertuples()], hovertemplate="%{customdata}<extra></extra>"))
-    ann = []
-    # each side's top three are named; names that would touch are stacked
+    # each side's top three are named, each right next to its own dot
     top = pd.concat([d.sort_values(y, ascending=False).head(3) for d in (da, db)]).sort_values(y, ascending=False)
-    spots = place_labels([(getattr(r, x), getattr(r, y), r.player) for r in top.itertuples()], (0, xmax), (0, ymax),
-                         height_px=330)
-    for r, (shift, anchor) in zip(top.itertuples(), spots):
-        ann.append(dict(x=getattr(r, x), y=getattr(r, y), text=r.player, showarrow=False, yshift=shift, xanchor=anchor,
-                        font=dict(size=11, color=c["ink2"]), bgcolor=label_backing(c), borderpad=1))
+    ann = label_annotations([(getattr(r, x), getattr(r, y), r.player) for r in top.itertuples()],
+                            list(zip(alld[x], alld[y])), (0, xmax), (0, ymax), c, height_px=330)
     ann.append(dict(x=xmax * 0.3, y=slope * xmax * 0.3, xanchor="left", yanchor="top", xshift=6, showarrow=False,
                     text=line_label, font=dict(size=11, color=c["muted"])))
     fig.update_layout(**_layout(c, height=440, showlegend=True, legend=dict(orientation="h", y=1.08, x=0), annotations=ann,
