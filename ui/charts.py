@@ -367,3 +367,61 @@ def wicket_timeline(innings: list[dict], par: list[tuple[int, float]] | None = N
                                 yaxis=_axis(c, "Score", range=[0, top * 1.08]),
                                 margin=dict(l=10, r=16, t=40, b=10)))
     return fig
+
+
+def race_chart(race: pd.DataFrame, team: str) -> go.Figure:
+    """League position after each match day: the chosen team in colour, the rest in grey."""
+    c = colours()
+    fig = go.Figure()
+    n = int(race.position.max()) if len(race) else 1
+    for t, g in sorted(race.groupby("team"), key=lambda x: x[0] == team):
+        mine = t == team
+        fig.add_trace(go.Scatter(
+            x=g.date, y=g.position, mode="lines+markers" if mine else "lines", name=t,
+            line=dict(color=c["s1"] if mine else c["dim"], width=3.5 if mine else 1.2, shape="hv"),
+            marker=dict(size=6, color=c["s1"]), customdata=np.stack([g.points, g.played], axis=1),
+            hovertemplate=f"<b>{t}</b><br>%{{x|%d %b}}: position %{{y}}<br>%{{customdata[0]}} points from "
+                          "%{customdata[1]} games<extra></extra>"))
+        last = g.iloc[-1]
+        fig.add_annotation(x=last.date, y=last.position, text=t if mine else t.split()[0], showarrow=False, xanchor="left",
+                           xshift=6, font=dict(size=11 if mine else 9, color=c["ink"] if mine else c["muted"]))
+    fig.update_layout(**_layout(c, height=max(320, 26 * n + 80),
+                                xaxis=_axis(c, "Match day"),
+                                yaxis=_axis(c, "League position", autorange="reversed", dtick=1, range=[n + 0.5, 0.5]),
+                                margin=dict(l=10, r=110, t=10, b=10)))
+    return fig
+
+
+def quadrant_chart(d: pd.DataFrame, x: str, y: str, x_label: str, y_label: str, x_ref: float, y_ref: float,
+                   corners: tuple[str, str, str, str], label_top: int = 10, highlight: list[str] | None = None,
+                   x_better_low: bool = False, y_better_low: bool = False) -> go.Figure:
+    """Every player as a dot, split into four by the average lines. `corners`: names for
+    top-right, top-left, bottom-right, bottom-left (in that order)."""
+    c = colours()
+    highlight = highlight or []
+    xs, ys = d[x].astype(float), d[y].astype(float)
+    good = ((xs <= x_ref) if x_better_low else (xs >= x_ref)) & ((ys <= y_ref) if y_better_low else (ys >= y_ref))
+    col = [c["s2"] if p in highlight else (c["s1"] if g else c["dim"]) for p, g in zip(d.player, good)]
+    fig = go.Figure(go.Scatter(x=xs, y=ys, mode="markers", marker=dict(size=9, color=col, line=dict(width=0)),
+                               text=d.player, customdata=d.get("style", d.player),
+                               hovertemplate="<b>%{text}</b><br>" + x_label + ": %{x:.1f}<br>" + y_label +
+                                             ": %{y:.1f}<br>%{customdata}<extra></extra>"))
+    x0, x1 = float(min(xs.min(), x_ref)), float(max(xs.max(), x_ref))
+    y0, y1 = float(min(ys.min(), y_ref)), float(max(ys.max(), y_ref))
+    px_, py_ = (x1 - x0) * 0.08 or 1, (y1 - y0) * 0.08 or 1
+    xr, yr = (x0 - px_, x1 + px_), (y0 - py_, y1 + py_)
+    shapes = [dict(type="line", x0=x_ref, x1=x_ref, y0=yr[0], y1=yr[1], line=dict(color=c["muted"], dash="dash", width=1)),
+              dict(type="line", x0=xr[0], x1=xr[1], y0=y_ref, y1=y_ref, line=dict(color=c["muted"], dash="dash", width=1))]
+    ann = []
+    for (ax, ay, xa, ya), text in zip(((xr[1], yr[1], "right", "top"), (xr[0], yr[1], "left", "top"),
+                                       (xr[1], yr[0], "right", "bottom"), (xr[0], yr[0], "left", "bottom")), corners):
+        ann.append(dict(x=ax, y=ay, xanchor=xa, yanchor=ya, text=f"<b>{text}</b>", showarrow=False,
+                        font=dict(size=11, color=c["muted"])))
+    named = d.assign(_k=(xs - x_ref).abs() / ((x1 - x0) or 1) + (ys - y_ref).abs() / ((y1 - y0) or 1))
+    named = pd.concat([named[named.player.isin(highlight)], named.sort_values("_k", ascending=False).head(label_top)]) \
+        .drop_duplicates("player")
+    ann += label_annotations([(getattr(r, x), getattr(r, y), r.player) for r in named.itertuples()],
+                             list(zip(xs, ys)), xr, yr, c)
+    fig.update_layout(**_layout(c, height=470, shapes=shapes, annotations=ann,
+                                xaxis=_axis(c, x_label, range=list(xr)), yaxis=_axis(c, y_label, range=list(yr))))
+    return fig

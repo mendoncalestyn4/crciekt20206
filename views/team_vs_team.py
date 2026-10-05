@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from ccstats import analysis as A
+from ccstats import teamplay as TP
 from ccstats.stats import WICKET_VALUE, Scope
 from ui import state
 from ui.charts import player_profile, CONFIG, _axis, _layout, fmt, label_annotations
@@ -54,6 +55,12 @@ col_a, col_b = c["s1"], c["s2"]
 rec_a = A.team_table(career, ids_a).set_index("team").loc[a]
 rec_b = A.team_table(career, ids_b).set_index("team").loc[b]
 limited = np.isfinite(rec_a.nrr) and np.isfinite(rec_b.nrr)
+# 1 · won batting first / chasing, for the tale of the tape
+for rec, team, ids_ in ((rec_a, a, ids_a), (rec_b, b, ids_b)):
+    bft_, _ = state.memo(TP.bat_first_table, career, ids_)
+    row_ = bft_.set_index("team").loc[team] if team in set(bft_.team) else None
+    rec["bf_pct"] = row_.bf_win_pct if row_ is not None else np.nan
+    rec["ch_pct"] = row_.ch_win_pct if row_ is not None else np.nan
 
 
 def high_total(team, ids):
@@ -83,7 +90,8 @@ st.write("")
 # ---------------------------------------------------------------- tale of the tape
 rows = [("Win %", "win_pct", "high", 0), ("Runs per wicket (batting)", "rpw_for", "high", 1), ("Run rate (batting)", "rr_for", "high", 2),
         ("Avg score batting first", "first_innings_avg", "high", 0), ("Runs per wicket conceded", "rpw_against", "low", 1),
-        ("Economy (bowling)", "rr_against", "low", 2), ("Wickets taken per match", "wkts_per_match", "high", 1)]
+        ("Economy (bowling)", "rr_against", "low", 2), ("Wickets taken per match", "wkts_per_match", "high", 1),
+        ("Win % batting first", "bf_pct", "high", 0), ("Win % chasing" if limited else "Win % batting second", "ch_pct", "high", 0)]
 labels, ax, bx, at, bt, aop, bop = [], [], [], [], [], [], []
 a_wins = b_wins = 0
 for label, col, better, d in rows:

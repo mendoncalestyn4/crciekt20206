@@ -79,6 +79,19 @@ with st.sidebar:
         if settings and settings.folder:
             st.caption("New matches from your Scorecards folder are added automatically.")
         st.caption(f"{len(career.matches):,} matches")
+        all_teams = sorted(set(career.matches.home) | set(career.matches.away))
+        if all_teams:
+            st.session_state["sb_my_teams"] = state.my_teams(career)
+
+            def _save_my_teams():
+                c = state.current()
+                if c is not None:
+                    state.set_my_teams(c, st.session_state.get("sb_my_teams", []))
+
+            st.multiselect("My team", all_teams, key="sb_my_teams", on_change=_save_my_teams,
+                           placeholder="The team(s) you play as",
+                           help="Home opens on your team, and the planner, previews and lists start from it. "
+                                "Saved with this career.")
         search_box(career)
     watch_status()
 
@@ -91,9 +104,12 @@ pages = {
         st.Page("views/teams.py", title="Teams", icon=":material/groups:"),
         st.Page("views/team_vs_team.py", title="Team vs team", icon=":material/swords:"),
         st.Page("views/opponent.py", title="Opponent preview", icon=":material/visibility:"),
+        st.Page("views/planner.py", title="Team planner", icon=":material/strategy:"),
+        st.Page("views/stories.py", title="Player stories", icon=":material/auto_stories:"),
     ],
     "Matches and competitions": [
         st.Page("views/match.py", title="Matches", icon=":material/scoreboard:"),
+        st.Page("views/season.py", title="Season", icon=":material/calendar_month:"),
         st.Page("views/competitions.py", title="Competitions", icon=":material/emoji_events:"),
         st.Page("views/honours.py", title="Honours board", icon=":material/workspace_premium:"),
         st.Page("views/rivalries.py", title="Rivalries", icon=":material/sports_cricket:"),
@@ -103,6 +119,7 @@ pages = {
         st.Page("views/hall_of_fame.py", title="Hall of fame", icon=":material/star:"),
         st.Page("views/rankings.py", title="Rankings", icon=":material/trending_up:"),
         st.Page("views/insights.py", title="Insights", icon=":material/insights:"),
+        st.Page("views/analytics.py", title="Analytics", icon=":material/analytics:"),
     ],
     "Tools": [st.Page("views/data_check.py", title="Data check", icon=":material/fact_check:")],
 }

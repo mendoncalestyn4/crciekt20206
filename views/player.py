@@ -4,10 +4,11 @@ import streamlit as st
 
 from ccstats import analysis as A
 from ccstats import extras as E
+from ccstats import players as PL
 from ccstats.stats import Scope
 from ui import state
 from ui.charts import CONFIG, bars, fmt, form_chart, paired_bars, say
-from ui.theme import explain_list, kpis, page_header, safe_section
+from ui.theme import explain_list, html_table, kpis, match_link, page_header, safe_section
 
 career = state.current()
 if career is None:
@@ -123,6 +124,7 @@ is_bowler = (roles.loc[player, "role"] == "Bowler" if player in roles.index  # t
 if is_bowler and "Bowling" in tab_names:
     # a bowler's page opens on their bowling, then fielding; batting comes last
     tab_names = ["Bowling", "Fielding"] + [t for t in tab_names if t not in ("Bowling", "Fielding")]
+tab_names.append("Story")
 tabs = dict(zip(tab_names, st.tabs(tab_names)))
 
 # ================================================================ batting
@@ -361,3 +363,86 @@ with tabs["Fielding"], safe_section("fielding"):
         st.caption("No fielding record in this section.")
     st.caption("Catches and stumpings are credited under the player's own name, so 'c de Kock' counts for Q de Kock. "
                "Run outs aren't credited to fielders because the scorecard doesn't name them.")
+
+# ================================================================ story
+with tabs["Story"]:
+    left, right = st.columns([1.1, 1], gap="medium")
+    with left, safe_section("career firsts"), st.container(border=True):
+        fi = state.memo(PL.firsts, career, player)
+        st.markdown("**Career firsts** · every competition")
+        if fi.empty:
+            st.caption("Nothing yet.")
+        else:
+            html_table([[f"{r.date:%d %b %Y}", r.what, r.detail, match_link(r.match_id, f"v {r.against}")]
+                        for r in fi.itertuples()], ["Date", "", "", "Match"], raw={3})
+    with right:
+        with safe_section("team wins"), st.container(border=True):
+            st.markdown(f"**When {player} fires** · their team's win % in {section}"
+                        f"{'' if season == 'All seasons' else ' ' + season}")
+            wb, ww = state.memo(PL.win_when, career, ids, 1)
+            rows = []
+            for d, label in ((wb, "50+ with the bat"), (ww, "3+ wickets")):
+                r = d[d.player == player]
+                if len(r):
+                    r = r.iloc[0]
+                    rows.append([label, r.times, f"{fmt(r.pct_when, 0)}%", f"{fmt(r.pct_other, 0)}%"])
+            if rows:
+                html_table(rows, ["", "Times", "Win % then", "Win % otherwise"], numeric={1, 2, 3})
+            else:
+                st.caption("No 50+ scores or 3-wicket hauls here yet.")
+        with safe_section("quirks"), st.container(border=True):
+            st.markdown("**Odd ones**")
+            q = state.memo(PL.quirks, career, ids)
+            nine = q["nineties"][q["nineties"].player == player]
+            pairs = q["pairs"][q["pairs"].player == player]
+            nots = q["not_outs"][q["not_outs"].player == player]
+            ci, cp = state.memo(PL.carried, career, ids, 1)
+            share = cp[cp.player == player]
+            ah = state.memo(PL.after_hundred, career, ids)
+            ah = ah[ah.player == player]
+            lines = []
+            if len(nine):
+                lines.append(f"😬 Out in the nineties {nine.times.iloc[0]} time(s): {nine.scores.iloc[0]}.")
+            if len(pairs):
+                lines.append(f"🥚🥚 {pairs.pairs.iloc[0]} pair(s): out for 0 in both innings.")
+            if len(nots):
+                lines.append(f"🛡️ Not out in {nots.not_outs.iloc[0]} of {nots.innings.iloc[0]} innings ({nots.pct.iloc[0]:.0f}%).")
+            if len(share):
+                lines.append(f"🏋️ Makes {share.share.iloc[0]:.1f}% of their team's runs in the innings they bat.")
+            if len(ah):
+                lines.append(f"💯➡️ After a hundred: {ah.next_scores.iloc[0]} (average {fmt(ah.next_avg.iloc[0], 1)} "
+                             f"against {fmt(ah.average.iloc[0], 1)} overall).")
+            st.markdown("  \n".join(lines) if lines else "Nothing unusual yet.")
+    with safe_section("compare seasons"), st.container(border=True):
+        st.markdown(f"**Compare two seasons** · {section}")
+        all_seasons = sorted(my_matches[my_matches.section == section].season.unique(), reverse=True)
+        if len(all_seasons) < 2:
+            st.caption("Only one season in this section so far.")
+        else:
+            s1, s2 = st.columns(2)
+            a_ = s1.selectbox("Season", all_seasons, index=0, key="pl_cmp_a")
+            b_ = s2.selectbox("Against", [x for x in all_seasons if x != a_], index=0, key="pl_cmp_b")
+            sec_ids = m[m.section == section].match_id
+            br = A.batting_record(career, sec_ids, player, by="season").set_index("season")
+            wr = A.bowling_record(career, sec_ids, player, by="season").set_index("season")
+            rows = []
+            for col, dec, better in (("Mat", 0, None), ("Inns", 0, None), ("Runs", 0, "high"), ("Avg", 2, "high"),
+                                     ("SR", 1, "high"), ("100", 0, "high"), ("50", 0, "high")):
+                va = br[col].get(a_, np.nan) if col in br else np.nan
+                vb = br[col].get(b_, np.nan) if col in br else np.nan
+                rows.append(["Batting " + col, va, vb, dec, better])
+            if len(wr):
+                for col, dec, better in (("Wkts", 0, "high"), ("Avg", 2, "low"), ("Econ", 2, "low"), ("SR", 1, "low")):
+                    rows.append(["Bowling " + col, wr[col].get(a_, np.nan), wr[col].get(b_, np.nan), dec, better])
+            out = []
+            for label, va, vb, dec, better in rows:
+                fa = fmt(float(va), dec) if pd.notna(va) else "–"
+                fb = fmt(float(vb), dec) if pd.notna(vb) else "–"
+                if better and pd.notna(va) and pd.notna(vb) and va != vb:
+                    if (va > vb) == (better == "high"):
+                        fa = "<span class='tick'>✓</span> " + fa
+                    else:
+                        fb = "<span class='tick'>✓</span> " + fb
+                out.append([label, fa, fb])
+            html_table(out, ["", a_, b_], raw={1, 2}, numeric={1, 2})
+            st.caption("✓ marks the better season on each (for bowling average, economy and strike rate, lower is better).")

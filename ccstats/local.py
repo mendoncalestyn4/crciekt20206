@@ -12,7 +12,7 @@ import json
 import os
 import re
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from .loader import Career
@@ -73,6 +73,7 @@ class CareerSettings:
     name: str
     folder: str = ""  # watched Scorecards folder, "" if none
     updated: float = 0.0
+    my_teams: list = field(default_factory=list)  # the teams you play as (the "My team" page)
 
 
 def _slug(name: str) -> str:
@@ -111,7 +112,13 @@ class CareerStore:
     def load_settings(self, name: str) -> tuple[Path, CareerSettings]:
         d = self._dir(name)
         raw = json.loads((d / "settings.json").read_text())
-        return d, CareerSettings(**{k: v for k, v in raw.items() if k in ("name", "folder", "updated")})
+        return d, CareerSettings(**{k: v for k, v in raw.items() if k in ("name", "folder", "updated", "my_teams")})
+
+    def save_settings(self, settings: CareerSettings) -> None:
+        """Only the settings (e.g. My team), without rewriting the career file."""
+        d = self._dir(settings.name)
+        if d.is_dir():
+            (d / "settings.json").write_text(json.dumps(asdict(settings), indent=1))
 
     def load(self, name: str) -> tuple[Career, CareerSettings]:
         d, settings = self.load_settings(name)

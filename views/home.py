@@ -12,6 +12,7 @@ from ccstats.records import played_order
 from ccstats.local import default_scorecards_folder
 from ui import state
 from ui.pick_folder import choose_folder
+from ui.myteam_view import render as render_my_team
 from ui.theme import kpis, page_header, scoreboard
 
 
@@ -150,76 +151,90 @@ if report:
         with st.expander(f"{len(bad)} file(s) could not be read"):
             st.dataframe(pd.DataFrame([(r.source, r.message) for r in bad], columns=["File", "Reason"]), hide_index=True)
 
-m = career.matches
-if m.empty:
-    st.info("No matches yet. Play a match in Cricket Captain (with Autosave scorecards on) and it will appear here "
-            "within about 20 seconds.")
+mine = state.my_teams(career) if not career.matches.empty else []
+if mine:
+    tabs = st.tabs([f"🏏 {t}" for t in mine] + ["Everything"])
+    for i, t in enumerate(mine):
+        with tabs[i]:
+            render_my_team(career, t, key=str(i))
+    overview = tabs[-1]
 else:
-    played = played_order(career)  # the order you played them in, not the date on the scorecard
-    last = played.iloc[-1]
-    inn = career.innings[career.innings.match_id == last.match_id]
+    if not career.matches.empty:
+        st.info("**Make this your home page:** pick the team you play as under **My team** in the sidebar (more than "
+                "one if you manage a franchise and a country). Home then opens on your team: results, form, stars, "
+                "report cards, milestones, rivals and a preview of your next opponent.")
+    overview = st.container()
+with overview:
+    m = career.matches
+    if m.empty:
+        st.info("No matches yet. Play a match in Cricket Captain (with Autosave scorecards on) and it will appear here "
+                "within about 20 seconds.")
+    else:
+        played = played_order(career)  # the order you played them in, not the date on the scorecard
+        last = played.iloc[-1]
+        inn = career.innings[career.innings.match_id == last.match_id]
 
-    def score(team):
-        parts = []
-        for _, r in inn[inn.team == team].sort_values("innings_no").iterrows():
-            parts.append(f"{r.runs}" if r.all_out else f"{r.runs}/{r.wickets}{'d' if r.declared else ''}")
-        return " & ".join(parts) or "–"
+        def score(team):
+            parts = []
+            for _, r in inn[inn.team == team].sort_values("innings_no").iterrows():
+                parts.append(f"{r.runs}" if r.all_out else f"{r.runs}/{r.wickets}{'d' if r.declared else ''}")
+            return " & ".join(parts) or "–"
 
-    stage = f" · {last.stage}" if last.stage else ""
-    scoreboard(f"Latest result · {shown_name(last.section, last.event)}{stage} · {last.date:%d %b %Y}",
-               last.home, score(last.home), last.away, score(last.away),
-               f"{last.result} · Player of the match: {last.player_of_match}" if last.player_of_match else last.result)
-    st.write("")
-    kpis([("Matches", f"{len(m):,}"), ("Sections", f"{m.section.nunique()}"), ("Seasons", f"{m.season.nunique()}"),
-          ("Players", f"{career.batting.player.nunique():,}"),
-          ("Runs", f"{int(career.innings.runs.sum()):,}"), ("Wickets", f"{int(career.innings.wickets.sum()):,}")])
-    if not career.problems.empty:
-        st.warning(f"{career.problems.match_id.nunique()} scorecard(s) failed the self-check (numbers that don't add up). "
-                   "They'll be listed on the Data check page.")
-    auto_left = int(career.leftovers.auto.sum()) if len(career.leftovers) else 0
-    if auto_left:
-        st.info(f"{auto_left} game{'s' if auto_left > 1 else ''} from an earlier playthrough of a season "
-                f"{'are' if auto_left > 1 else 'is'} left out of every figure (you reloaded a save and the knockouts "
-                "went differently). See Data check → Games left out.")
-    shared = checks.shared_names(career)
-    unclear = int((~career.fielding.resolved).sum())
-    if len(shared) or unclear:
+        stage = f" · {last.stage}" if last.stage else ""
+        scoreboard(f"Latest result · {shown_name(last.section, last.event)}{stage} · {last.date:%d %b %Y}",
+                   last.home, score(last.home), last.away, score(last.away),
+                   f"{last.result} · Player of the match: {last.player_of_match}" if last.player_of_match else last.result)
+        st.write("")
+        kpis([("Matches", f"{len(m):,}"), ("Sections", f"{m.section.nunique()}"), ("Seasons", f"{m.season.nunique()}"),
+              ("Players", f"{career.batting.player.nunique():,}"),
+              ("Runs", f"{int(career.innings.runs.sum()):,}"), ("Wickets", f"{int(career.innings.wickets.sum()):,}")])
+        if not career.problems.empty:
+            st.warning(f"{career.problems.match_id.nunique()} scorecard(s) failed the self-check (numbers that don't add up). "
+                       "They'll be listed on the Data check page.")
+        auto_left = int(career.leftovers.auto.sum()) if len(career.leftovers) else 0
+        if auto_left:
+            st.info(f"{auto_left} game{'s' if auto_left > 1 else ''} from an earlier playthrough of a season "
+                    f"{'are' if auto_left > 1 else 'is'} left out of every figure (you reloaded a save and the knockouts "
+                    "went differently). See Data check → Games left out.")
+        shared = checks.shared_names(career)
+        unclear = int((~career.fielding.resolved).sum())
+        if len(shared) or unclear:
+            with st.container(border=True):
+                c1, c2 = st.columns([4, 1], vertical_alignment="center")
+                items = []
+                if len(shared):
+                    ex = shared.loc[shared.games.map(lambda g: sum(g.values())).idxmax()]  # the best-known case
+                    items.append(f"**{len(shared)} name{'s are' if len(shared) > 1 else ' is'} used by two different players**, "
+                                 f"so their stats are mixed together (e.g. *{ex.player}* at {ex.teams[0]} and {ex.teams[1]}). "
+                                 "One click keeps them apart.")
+                if unclear:
+                    items.append(f"**{unclear} catch{'es' if unclear > 1 else ''}** where the scorecard only printed a surname "
+                                 "shared by two players: pick who took them, or accept the suggestions.")
+                c1.markdown("**Worth a minute of your time**  \n" + "  \n".join(f"👉 {t}" for t in items))
+                c2.markdown("<a class='btnlink' href='data_check' target='_self'>Open Data check →</a>", unsafe_allow_html=True)
+        st.write("")
+        news = headlines(career)
         with st.container(border=True):
-            c1, c2 = st.columns([4, 1], vertical_alignment="center")
-            items = []
-            if len(shared):
-                ex = shared.loc[shared.games.map(lambda g: sum(g.values())).idxmax()]  # the best-known case
-                items.append(f"**{len(shared)} name{'s are' if len(shared) > 1 else ' is'} used by two different players**, "
-                             f"so their stats are mixed together (e.g. *{ex.player}* at {ex.teams[0]} and {ex.teams[1]}). "
-                             "One click keeps them apart.")
-            if unclear:
-                items.append(f"**{unclear} catch{'es' if unclear > 1 else ''}** where the scorecard only printed a surname "
-                             "shared by two players: pick who took them, or accept the suggestions.")
-            c1.markdown("**Worth a minute of your time**  \n" + "  \n".join(f"👉 {t}" for t in items))
-            c2.markdown("<a class='btnlink' href='data_check' target='_self'>Open Data check →</a>", unsafe_allow_html=True)
-    st.write("")
-    news = headlines(career)
-    with st.container(border=True):
-        st.markdown("**📰 Headlines** · hundreds, five-fors, collapses, titles and new records from your 10 most recent matches")
-        if news:
-            st.markdown("\n".join(f"- {h}" for h in news))
-        else:
-            st.caption("Nothing big in your last 10 matches. Hundreds, five-wicket hauls, collapses, titles and new "
-                       "records show up here, and records also pop up as a message while you play.")
-    st.subheader("Sections", anchor=False)
-    sec = (m.groupby("section")
-           .agg(matches=("match_id", "size"), seasons=("season", lambda s: ", ".join(sorted(set(s)))),
-                first=("date", "min"), last=("date", "max"), format=("format", "first"), level=("level", "first"))
-           .sort_values("matches", ascending=False).reset_index())
-    st.dataframe(sec, hide_index=True, width="stretch", column_config={
-        "section": st.column_config.TextColumn("Section", width=300), "matches": st.column_config.NumberColumn("Matches"),
-        "seasons": "Seasons", "first": st.column_config.DateColumn("First match", format="D MMM YYYY"),
-        "last": st.column_config.DateColumn("Latest match", format="D MMM YYYY"), "format": "Format", "level": "Level"})
-    st.subheader("Latest results", anchor=False)
-    latest = played[::-1].head(12)[["date", "section", "stage", "home", "away", "result", "player_of_match"]]
-    st.dataframe(latest, hide_index=True, width="stretch", height=35 * (len(latest) + 1) + 3, column_config={
-        "date": st.column_config.DateColumn("Date", format="D MMM YYYY"), "section": "Section", "stage": "Stage",
-        "home": "Home", "away": "Away", "result": "Result", "player_of_match": "Player of the match"})
+            st.markdown("**📰 Headlines** · hundreds, five-fors, collapses, titles and new records from your 10 most recent matches")
+            if news:
+                st.markdown("\n".join(f"- {h}" for h in news))
+            else:
+                st.caption("Nothing big in your last 10 matches. Hundreds, five-wicket hauls, collapses, titles and new "
+                           "records show up here, and records also pop up as a message while you play.")
+        st.subheader("Sections", anchor=False)
+        sec = (m.groupby("section")
+               .agg(matches=("match_id", "size"), seasons=("season", lambda s: ", ".join(sorted(set(s)))),
+                    first=("date", "min"), last=("date", "max"), format=("format", "first"), level=("level", "first"))
+               .sort_values("matches", ascending=False).reset_index())
+        st.dataframe(sec, hide_index=True, width="stretch", column_config={
+            "section": st.column_config.TextColumn("Section", width=300), "matches": st.column_config.NumberColumn("Matches"),
+            "seasons": "Seasons", "first": st.column_config.DateColumn("First match", format="D MMM YYYY"),
+            "last": st.column_config.DateColumn("Latest match", format="D MMM YYYY"), "format": "Format", "level": "Level"})
+        st.subheader("Latest results", anchor=False)
+        latest = played[::-1].head(12)[["date", "section", "stage", "home", "away", "result", "player_of_match"]]
+        st.dataframe(latest, hide_index=True, width="stretch", height=35 * (len(latest) + 1) + 3, column_config={
+            "date": st.column_config.DateColumn("Date", format="D MMM YYYY"), "section": "Section", "stage": "Stage",
+            "home": "Home", "away": "Away", "result": "Result", "player_of_match": "Player of the match"})
 
 with st.expander("Add another career (a different Scorecards folder)"):
     new_career_form(first=False)

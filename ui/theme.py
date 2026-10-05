@@ -158,6 +158,49 @@ h2 { text-transform: uppercase; font-size: 1.7rem !important; }
 a.btnlink { display: inline-block; padding: 7px 14px; border-radius: 10px; border: 1px solid {accent}; color: {accent} !important;
   font-weight: 700; text-decoration: none !important; white-space: nowrap; }
 a.btnlink:hover { background: {accent_soft}; }
+
+/* ---------- small tables with links ---------- */
+.tblwrap { overflow-x: auto; }
+table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+table.tbl th { text-align: left; font-family: 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase;
+  font-size: 12px; color: {muted}; font-weight: 700; padding: 4px 8px; border-bottom: 1px solid {panel_edge}; white-space: nowrap; }
+table.tbl td { padding: 5px 8px; border-bottom: 1px solid {grid}; color: {ink2}; vertical-align: top; }
+table.tbl td.num, table.tbl th.num { text-align: right; }
+table.tbl tr.hi td { color: {ink}; font-weight: 700; background: {accent_soft}; }
+table.tbl tr.dim td { opacity: .45; }
+table.tbl a { color: {ink} !important; text-decoration: none; border-bottom: 1px dotted {muted}; }
+table.tbl a:hover { color: {accent} !important; border-bottom-color: {accent}; }
+.tick { color: {good}; font-weight: 800; }
+/* ---------- match cards ---------- */
+.mcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
+.mcard { border: 1px solid {panel_edge}; border-radius: 12px; padding: 9px 12px; background: {panel}; font-size: 13.5px; }
+.mcard .top { display: flex; justify-content: space-between; gap: 8px; color: {muted}; font-size: 12px; }
+.mcard .side { display: flex; justify-content: space-between; gap: 8px; color: {ink}; font-weight: 600; margin-top: 3px; }
+.mcard .side b { font-variant-numeric: tabular-nums; }
+.mcard .who { color: {ink2}; font-size: 12.5px; margin: 0 0 2px; }
+.mcard .story { color: {ink2}; margin-top: 5px; font-size: 13px; }
+.mcard a { color: {accent} !important; font-size: 12.5px; text-decoration: none; font-weight: 700; }
+.form { display: inline-flex; gap: 4px; }
+.form span { display: inline-block; min-width: 22px; text-align: center; border-radius: 6px; padding: 0 4px; font-weight: 800;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 15px; }
+.form .W { background: {pos}; color: #fff; } .form .L { background: {neg}; color: #fff; }
+.form .D, .form .T, .form .NR { background: {mid}; color: {ink}; }
+/* ---------- calendar ---------- */
+table.cal { width: 100%; border-collapse: separate; border-spacing: 4px; table-layout: fixed; }
+table.cal th { font-size: 11.5px; color: {muted}; font-weight: 700; text-align: center; letter-spacing: .1em; }
+table.cal td { height: 64px; vertical-align: top; border: 1px solid {grid}; border-radius: 8px; padding: 3px 5px;
+  font-size: 11.5px; color: {ink2}; background: {panel}; overflow: hidden; }
+table.cal td.out { opacity: .35; }
+table.cal td .d { font-size: 11px; color: {muted}; }
+table.cal td a { display: block; text-decoration: none; color: {ink} !important; border-radius: 4px; padding: 1px 3px;
+  margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+table.cal td a.W { background: rgba(57,135,229,.25); } table.cal td a.L { background: rgba(230,103,103,.25); }
+table.cal td a.D, table.cal td a.T, table.cal td a.NR { background: {mid}; }
+.grade { display: inline-block; min-width: 34px; text-align: center; border-radius: 8px; padding: 2px 6px;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 20px; }
+.grade.A { background: {pos}; color: #fff; } .grade.B { background: rgba(57,135,229,.45); color: {ink}; }
+.grade.C { background: {mid}; color: {ink}; } .grade.D { background: rgba(230,103,103,.45); color: {ink}; }
+.grade.E { background: {neg}; color: #fff; }
 </style>
 """
 
@@ -196,3 +239,37 @@ def explain_list(rows: list[tuple[str, str]]) -> None:
     """rows: (swatch class, html text)."""
     items = "".join(f'<li><span class="sw {sw}"></span><span>{txt}</span></li>' for sw, txt in rows)
     st.markdown(f'<ul class="explain">{items}</ul>', unsafe_allow_html=True)
+
+
+def esc(v) -> str:
+    import html
+    return html.escape(str(v))
+
+
+def player_link(name: str) -> str:
+    from urllib.parse import quote
+    return f"<a href='player?player={quote(str(name))}' target='_self'>{esc(name)}</a>"
+
+
+def match_link(mid: str, text: str) -> str:
+    return f"<a href='match?match={esc(mid)}' target='_self'>{esc(text)}</a>"
+
+
+def html_table(rows: list[list], columns: list[str], numeric: set[int] | None = None, row_class: list[str] | None = None,
+               raw: set[int] | None = None) -> None:
+    """A small table whose cells can hold links. `raw`: column numbers whose cells are
+    already HTML (links); everything else is escaped. `numeric` columns are right-aligned."""
+    numeric, raw = numeric or set(), raw or set()
+    head = "".join(f"<th class='{'num' if i in numeric else ''}'>{esc(c)}</th>" for i, c in enumerate(columns))
+    body = []
+    for k, r in enumerate(rows):
+        cls = row_class[k] if row_class else ""
+        cells = "".join(f"<td class='{'num' if i in numeric else ''}'>{v if i in raw else esc(v)}</td>"
+                        for i, v in enumerate(r))
+        body.append(f"<tr class='{cls}'>{cells}</tr>")
+    st.markdown(f"<div class='tblwrap'><table class='tbl'><thead><tr>{head}</tr></thead><tbody>{''.join(body)}</tbody>"
+                "</table></div>", unsafe_allow_html=True)
+
+
+def form_strip(outcomes: list[str]) -> str:
+    return "<span class='form'>" + "".join(f"<span class='{o}'>{o}</span>" for o in outcomes) + "</span>" if outcomes else "–"

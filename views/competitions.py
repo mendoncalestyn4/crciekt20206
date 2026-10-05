@@ -3,7 +3,9 @@ import html
 import pandas as pd
 import streamlit as st
 
+from ccstats import players as PL
 from ccstats import tables as T
+from ccstats import teamplay as TP
 from ui import state
 from ui.theme import page_header
 
@@ -59,13 +61,23 @@ if leagues:
             else:
                 cols["rpw_for"] = "Runs/wkt"
                 cols["rpw_against"] = "Conceded/wkt"
+            # batting first or chasing: wins each way in these games
+            gm = state.memo(TP.games, career, ids)
+            gm = gm[~gm.knockout]
+            t = t.assign(bat_first=[f"{int(((gm.team == x) & gm.batted_first & (gm.outcome == 'W')).sum())}/"
+                                    f"{int(((gm.team == x) & gm.batted_first).sum())}" for x in t.team],
+                         chased=[f"{int(((gm.team == x) & ~gm.batted_first & (gm.outcome == 'W')).sum())}/"
+                                 f"{int(((gm.team == x) & ~gm.batted_first).sum())}" for x in t.team])
+            cols["bat_first"] = "Won batting 1st"
+            cols["chased"] = "Won chasing" if limited else "Won batting 2nd"
             st.dataframe(t[list(cols)].rename(columns=cols), width="stretch",
                          column_config={"NRR": st.column_config.NumberColumn(format="%+.3f"),
                                         "Pts": st.column_config.NumberColumn(format="%d"),
                                         "Runs/wkt": st.column_config.NumberColumn(format="%.2f"),
                                         "Conceded/wkt": st.column_config.NumberColumn(format="%.2f")})
             st.caption(rule + ("" if not limited else " Net run rate: runs scored per over minus runs conceded per over; "
-                                                      "a side bowled out counts as having used its full overs."))
+                                                      "a side bowled out counts as having used its full overs.")
+                       + " Won batting 1st / chasing: wins out of games played that way.")
     if not bilateral and (any(len(t) < 3 for _, t, _ in leagues) or len(leagues) > 1):
         st.caption("Groups come from the group names on the scorecards (a team's row counts all its league games, "
                    "cross-group ones too). Where the scorecards don't name them, they're worked out from who played "
@@ -107,9 +119,15 @@ ser = T.series_table(career, ids)
 if len(ser):
     shown_any = True
     st.subheader("Series", anchor=False)
+    pos = state.memo(PL.player_of_series, career, ids).set_index("series_id")
     st.dataframe(pd.DataFrame({"Started": ser.start.dt.strftime("%d %b %Y"), "Series": ser.teams, "Score": ser.score,
                                "Result": ser.result, "Drawn": ser.drawn, "Most runs": ser.top_runs,
-                               "Most wickets": ser.top_wickets}), hide_index=True, width="stretch")
+                               "Most wickets": ser.top_wickets,
+                               "Player of the Series": [f"{pos.player[s_]} ({pos.runs[s_]} runs, {pos.wickets[s_]} wkts)"
+                                                        if s_ in pos.index else "–" for s_ in ser.series_id]}),
+                 hide_index=True, width="stretch")
+    st.caption("Player of the Series: the most impact over the series (runs, plus each wicket worth the section's "
+               "runs per wicket).")
     for r in ser.itertuples():
         with st.expander(f"{r.teams} · {r.score} · {r.result}"):
             g = m[m.match_id.isin(r.match_ids)].sort_values("date")

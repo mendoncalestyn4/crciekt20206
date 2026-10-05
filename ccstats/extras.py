@@ -454,16 +454,19 @@ def _short_label(r) -> str:
     return f"{shown_name(r.section, r.event)}, {r.date.day} {r.date:%b}"
 
 
-def headlines(career, n_matches: int = 10, limit: int = 8, max_records: int = 3) -> list[str]:
+def headlines(career, n_matches: int = 10, limit: int = 8, max_records: int = 3, team: str = "") -> list[str]:
     """Short news lines about the most recently played matches, newest first.
 
     "Most recent" is the order you played them in (when the game saved each file),
     not the match date: the game saves some scorecards dated months ahead.  Every
     line names its match; new records are mixed in with their match and capped at
-    `max_records`, so one record-breaking game can't push everything else out."""
+    `max_records`, so one record-breaking game can't push everything else out.
+    With `team`: that team's most recent games only."""
     from . import partnerships as P
     from .records import new_record_lines, played_order
     order = played_order(career)
+    if team:  # only this team's games
+        order = order[(order.home == team) | (order.away == team)]
     recent = order.tail(n_matches)
     by_date = career.matches.sort_values(["date", "match_id"])
     rec_lines = new_record_lines(career, list(recent.source), min_matches=2)

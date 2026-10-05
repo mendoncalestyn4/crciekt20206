@@ -75,3 +75,47 @@ def tables(c: Career, scope: Scope, by_team: bool = False):
             cache.clear()
         cache[key] = player_tables(c, scope, by_team)
     return cache[key]
+
+
+# --------------------------------------------------------------------------- my team
+def my_teams(c: Career | None) -> list[str]:
+    """The teams you play as in this career (saved with the career on this PC)."""
+    if c is None:
+        return []
+    teams = set(c.matches.home) | set(c.matches.away)
+    s = settings_of(c.name) if c.name in career_names() else None
+    picked = s.my_teams if s is not None else st.session_state.get(f"my_teams::{c.name}", [])
+    return [t for t in picked if t in teams]
+
+
+def set_my_teams(c: Career, teams: list[str]) -> None:
+    if c.name in career_names():
+        s = settings_of(c.name)
+        if s is not None:
+            s.my_teams = list(teams)
+            store().save_settings(s)
+            return
+    st.session_state[f"my_teams::{c.name}"] = list(teams)
+
+
+# --------------------------------------------------------------------------- cache
+def _key(v):
+    import pandas as pd
+    if isinstance(v, (pd.Index, pd.Series, list, tuple, set)):
+        return tuple(sorted(map(str, v)))
+    return v
+
+
+def memo(fn, c: Career, *args, **kw):
+    """fn(c, *args, **kw), cached per career for this browser session."""
+    cache = st.session_state.setdefault("memo_cache", {})
+    if cache.get("__career") != (c.name, id(c)):
+        cache.clear()
+        cache["__career"] = (c.name, id(c))
+    key = (fn.__module__, fn.__name__, tuple(_key(a) for a in args), tuple(sorted((k, _key(v)) for k, v in kw.items())))
+    if key not in cache:
+        if len(cache) > 400:
+            cache.clear()
+            cache["__career"] = (c.name, id(c))
+        cache[key] = fn(c, *args, **kw)
+    return cache[key]
