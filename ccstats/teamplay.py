@@ -14,7 +14,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from .stats import KIND
+from .stats import KIND, bars_for
 
 GAME_COLUMNS = ["match_id", "date", "section", "event", "season", "format", "kind", "knockout", "stage", "series_id",
                 "team", "opponent", "venue", "outcome", "batted_first", "first_score", "target", "own_first",
@@ -47,7 +47,8 @@ def games(career, ids) -> pd.DataFrame:
         kind = KIND.get(r.format, "t20")
         bat1 = first.team.get(r.match_id, r.batted_first or "")
         score1 = first.runs.get(r.match_id, np.nan)
-        close = bool(r.result_type == "tie" or (pd.notna(r.margin_runs) and r.margin_runs < 10 and not r.innings_win)
+        close_runs = bars_for(kind)["close_runs"]  # under 10 runs in a T20, 20 in one-day, 50 in a Test
+        close = bool(r.result_type == "tie" or (pd.notna(r.margin_runs) and r.margin_runs < close_runs and not r.innings_win)
                      or (pd.notna(r.margin_wickets) and r.margin_wickets <= 2))
         for team, opp in ((r.home, r.away), (r.away, r.home)):
             venue = "neutral" if r.neutral else ("home" if team == r.home else "away")
@@ -309,13 +310,18 @@ def opening_starts(career, ids) -> pd.DataFrame:
     return g.merge(inn[["match_id", "team", "opening"]], on=["match_id", "team"], how="inner")
 
 
-def start_split(career, ids, team: str = "", good: int = 50, bad: int = 20) -> dict:
-    """Win % when the opening stand reached `good` and when the first wicket fell under `bad`."""
+def start_split(career, ids, team: str = "", good: int | None = None, bad: int | None = None) -> dict:
+    """Win % when the opening stand reached `good` and when the first wicket fell under `bad`
+    (by default the format's bars: 50/15 in T20, 60/20 one-day, 100/25 in Tests)."""
+    from .players import kind_of_ids
+    b = bars_for(kind_of_ids(career, ids))
+    good = b["good_start"] if good is None else good
+    bad = b["bad_start"] if bad is None else bad
     o = opening_starts(career, ids)
     if team:
         o = o[o.team == team]
     return dict(good=record(o[o.opening >= good]), bad=record(o[o.opening < bad]),
-                middle=record(o[(o.opening >= bad) & (o.opening < good)]), all=record(o))
+                middle=record(o[(o.opening >= bad) & (o.opening < good)]), all=record(o), good_bar=good, bad_bar=bad)
 
 
 def season_halves(career, ids, team: str) -> pd.DataFrame:

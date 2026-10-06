@@ -10,7 +10,6 @@ import pandas as pd
 from . import teamplay as TP
 from .players import kind_of_ids
 
-DECENT = {"t20": 20, "one": 30, "multi": 30}
 
 
 def _score_text(career, mid: str, team: str) -> str:
@@ -169,9 +168,10 @@ def _squad(career, ids, team: str) -> set[str]:
 
 def key_wicket(career, ids, team: str, min_innings: int = 5) -> pd.DataFrame:
     """The batters whose score decides their results: team win % when they make a
-    decent score (20 in T20, 30 otherwise) against when they don't."""
+    decent score (20 in T20, 30 in one-day, 50 in a Test match) against when they don't."""
+    from .stats import bars_for
     kind = kind_of_ids(career, ids)
-    bar = DECENT[kind]
+    bar = bars_for(kind)["decent"]
     g = TP.games(career, ids)
     res = g[g.team == team].set_index("match_id").outcome
     multi = kind == "multi"

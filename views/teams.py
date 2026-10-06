@@ -6,7 +6,7 @@ from ccstats import analysis as A
 from ccstats import extras as E
 from ccstats import teamplay as TP
 from ui.theme import colours
-from ccstats.stats import Scope
+from ccstats.stats import Scope, bars_for, kind_of
 from ui import state
 from ui.charts import pct, CONFIG, bars, fmt, race_chart, say
 from ui.theme import chart_note, html_table, kpis, page_header, safe_section
@@ -26,6 +26,7 @@ season = c2.selectbox("Season", ["All seasons"] + seasons, key="tm_season")
 scope = Scope(sections=[section], seasons=[] if season == "All seasons" else [season])
 ids = scope.match_ids(m)
 here = m[m.match_id.isin(ids)]
+base_kind = kind_of(here)  # t20 / one / multi: the bars for close games, good starts and so on
 teams = sorted(set(here.home) | set(here.away))
 team = c3.selectbox("Team", teams, key="tm_team")
 venue_label = c4.segmented_control("Venue", ["Overall", "Home", "Away"], default="Overall", key="tm_venue") or "Overall"
@@ -290,7 +291,8 @@ with tab_win:
     with left, safe_section("close games"):
         cg = state.memo(TP.close_games, career, ids, team)
         with st.container(border=True):
-            st.markdown("**Close games** · won or lost by under 10 runs or by 1-2 wickets, or tied")
+            st.markdown(f"**Close games** · won or lost by under {bars_for(base_kind)['close_runs']} runs or by 1-2 "
+                        "wickets, or tied")
             html_table([["Close games", TP.wdl(cg["close"]), f"{pct(cg['close']['win_pct'])}"],
                         ["Other games", TP.wdl(cg["other"]), f"{pct(cg['other']['win_pct'])}"]],
                        ["", "Record", "Win %"], numeric={2})
@@ -305,8 +307,10 @@ with tab_win:
         sa = state.memo(TP.start_split, career, ids, "")
         with st.container(border=True):
             st.markdown("**The openers' start** · result when the first wicket fell…")
+            gb, bb_ = ss["good_bar"], ss["bad_bar"]
             rows = [[label, TP.wdl(ss[k]), f"{pct(ss[k]['win_pct'])}", f"{pct(sa[k]['win_pct'])}"]
-                    for k, label in (("good", "at 50 or more"), ("middle", "between 20 and 49"), ("bad", "under 20"))]
+                    for k, label in (("good", f"at {gb} or more"), ("middle", f"between {bb_} and {gb - 1}"),
+                                     ("bad", f"under {bb_}"))]
             html_table(rows, ["First wicket fell", "Record", f"{team} win %", "Every team"], numeric={2, 3})
             st.caption("Their first innings of each game. A good start is worth this much to them.")
     with safe_section("targets"):

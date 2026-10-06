@@ -150,10 +150,11 @@ def how_out(inns: pd.DataFrame) -> pd.Series:
 
 def consistency(inns: pd.DataFrame, fmt_kind: str) -> dict:
     """How reliably a batter gets going: share of innings past a 'decent score'
-    (20 in T20, 30 in one-day and multi-day), and how often 50s become 100s."""
+    (20 in T20, 30 in one-day, 50 in multi-day), and how often 50s become 100s."""
+    from .stats import bars_for
     if inns.empty:
         return {}
-    bar = 20 if fmt_kind == "t20" else 30
+    bar = bars_for(fmt_kind)["decent"]
     fifties = int(((inns.runs >= 50) & (inns.runs < 100)).sum())
     hundreds = int((inns.runs >= 100).sum())
     return {

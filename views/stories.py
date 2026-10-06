@@ -42,7 +42,7 @@ with tabs[0], safe_section("form guide"):
             st.caption("Batters need 6+ innings.")
         else:
             rows = [[player_link(r.player), r.team, r.last, fmt(r.recent_avg, 1), fmt(r.career_avg, 1),
-                     "▲" if r.trend > 5 else "▼" if r.trend < -5 else "▬"] for r in fb.head(30).itertuples()]
+                     "▲" if r.trend > 0.25 * r.career_avg else "▼" if r.trend < -0.25 * r.career_avg else "▬"] for r in fb.head(30).itertuples()]
             html_table(rows, ["Player", "Team", "Last 5", "Avg last 5", "Avg", ""], numeric={3, 4}, raw={0},
                        row_class=mark(fb.head(30).team))
     with right, st.container(border=True):
@@ -51,11 +51,11 @@ with tabs[0], safe_section("form guide"):
             st.caption("Bowlers need 6+ innings.")
         else:
             rows = [[player_link(r.player), r.team, r.last, fmt(r.recent_wpi, 1), fmt(r.career_wpi, 1),
-                     fmt(r.recent_econ, 2), "▲" if r.trend > 0.4 else "▼" if r.trend < -0.4 else "▬"]
+                     fmt(r.recent_econ, 2), "▲" if r.trend > 0.25 * r.career_wpi else "▼" if r.trend < -0.25 * r.career_wpi else "▬"]
                     for r in fw.head(30).itertuples()]
             html_table(rows, ["Player", "Team", "Last 5", "Wkts/inns last 5", "Wkts/inns", "Econ last 5", ""],
                        numeric={3, 4, 5}, raw={0}, row_class=mark(fw.head(30).team))
-    st.caption("▲ hotter than usual · ▼ colder · ▬ about normal. Your team's players are highlighted. "
+    st.caption("▲ hotter than usual (25%+ above their own average) · ▼ colder · ▬ about normal. Your team's players are highlighted. "
                "Analytics → Is the form real? says whether a hot run is more than luck.")
 
 # ---------------------------------------------------------------- 9, 64
@@ -87,8 +87,9 @@ with tabs[1], safe_section("milestones"):
 with tabs[2], safe_section("win when they fire"):
     wb, ww = state.memo(PL.win_when, career, ids)
     left, right = st.columns(2, gap="medium")
-    for box, d, title, what in ((left, wb, "When they make 50+", "50+ scores"), (right, ww, "When they take 3+ wickets",
-                                                                                  "3-fors")):
+    big_, haul_ = wb.attrs.get("big", 50), wb.attrs.get("haul", 3)
+    for box, d, title, what in ((left, wb, f"When they make {big_}+", f"{big_}+ scores"),
+                                (right, ww, f"When they take {haul_}+ wickets", f"{haul_}-wicket hauls")):
         with box, st.container(border=True):
             st.markdown(f"**{title}** · their team's win % in those games and in the rest")
             if d.empty:
@@ -192,9 +193,10 @@ with tabs[7], safe_section("pairs"):
     with left, st.container(border=True):
         bp = state.memo(PL.batting_pairs, career, ids)
         st.markdown("**Batting partners** · stands together (2+)")
-        rows = [[r.pair, r.team, r.stands, r.runs, f"{r.average:.1f}", r.best, r.fifty_plus] for r in bp.head(20).itertuples()]
+        rows = [[r.pair, r.team, r.stands, r.runs, f"{r.average:.1f}", r.best, r.big_stands] for r in bp.head(20).itertuples()]
         if rows:
-            html_table(rows, ["Pair", "Team", "Stands", "Runs", "Avg", "Best", "50+"], numeric={2, 3, 4, 5, 6},
+            html_table(rows, ["Pair", "Team", "Stands", "Runs", "Avg", "Best", f"{bp.attrs.get('stand', 50)}+"],
+                       numeric={2, 3, 4, 5, 6},
                        row_class=mark(bp.head(20).team))
         else:
             st.caption("No pairs yet.")

@@ -116,13 +116,21 @@ with tabs[2], safe_section("bowling plan"):
         if bp.empty:
             st.caption("No bowler has bowled 30+ balls yet.")
         else:
-            html_table([[player_link(r.player), r.innings, r.wickets, r.top, r.middle, r.tail, fmt(r.economy, 2),
+            by_avg = bp.attrs.get("by_average", False)
+            html_table([[player_link(r.player), r.innings, r.wickets, r.top, r.middle, r.tail,
+                         fmt(r.economy, 2) if not by_avg else fmt(r.economy / 6 * r.strike_rate, 1) if r.wickets else "–",
                          fmt(r.strike_rate, 1), r.tags] for r in bp.itertuples()],
-                       ["Bowler", "Inns", "Wkts", "Top 3", "4-7", "8-11", "Econ", "SR", "Use as"],
+                       ["Bowler", "Inns", "Wkts", "Top 3", "4-7", "8-11", "Avg" if by_avg else "Econ", "SR", "Use as"],
                        numeric={1, 2, 3, 4, 5, 6, 7}, raw={0})
-            st.caption(f"Section average: economy {bp.attrs['economy']:.2f}, strike rate {bp.attrs['strike_rate']:.1f}. "
-                       "Top-order hunters for the new ball; tail cleaners to finish an innings off; the cheap ones "
-                       "for the overs you need to control.")
+            if by_avg:
+                st.caption(f"Section average: {bp.attrs['average']:.1f} runs per wicket, a wicket every "
+                           f"{bp.attrs['strike_rate']:.0f} balls. In multi-day cricket the cost of each wicket matters "
+                           "more than the run rate, so 'cheap' and 'costly' go by bowling average. Top-order hunters for "
+                           "the new ball; tail cleaners to finish an innings off.")
+            else:
+                st.caption(f"Section average: economy {bp.attrs['economy']:.2f}, strike rate {bp.attrs['strike_rate']:.1f}. "
+                           "Top-order hunters for the new ball; tail cleaners to finish an innings off; the cheap ones "
+                           "for the overs you need to control.")
 
 # ---------------------------------------------------------------- 63
 with tabs[3], safe_section("knocking on the door"):
@@ -145,8 +153,8 @@ with tabs[4], safe_section("partnerships"):
         if bpairs.empty:
             st.caption("No pairs with 2+ stands yet.")
         else:
-            html_table([[r.pair, r.stands, r.runs, f"{r.average:.1f}", r.best, r.fifty_plus] for r in bpairs.head(15).itertuples()],
-                       ["Pair", "Stands", "Runs", "Avg", "Best", "50+"], numeric={1, 2, 3, 4, 5})
+            html_table([[r.pair, r.stands, r.runs, f"{r.average:.1f}", r.best, r.big_stands] for r in bpairs.head(15).itertuples()],
+                       ["Pair", "Stands", "Runs", "Avg", "Best", f"{bpairs.attrs.get('stand', 50)}+"], numeric={1, 2, 3, 4, 5})
     with right, st.container(border=True):
         wpairs = state.memo(PL.bowling_pairs, career, ids, team)
         st.markdown("**Bowling partners** · bowled in the same innings 3+ times")

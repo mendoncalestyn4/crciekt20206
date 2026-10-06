@@ -13,7 +13,6 @@ import pandas as pd
 from . import analysis as A
 from .stats import Scope, kind_of, player_tables
 
-DECENT = {"t20": 20, "one": 30, "multi": 30}  # a "decent score" in each format (as in consistency)
 
 
 # --------------------------------------------------------------------------- #
@@ -34,28 +33,30 @@ def batting_streaks(inns: pd.DataFrame, kind: str) -> list[dict]:
     """Longest and current runs for a player's innings (oldest first)."""
     if inns.empty:
         return []
-    bar = DECENT[kind]
+    from .stats import bars_for
+    b = bars_for(kind)
     runs, out = inns.runs.to_numpy(), inns.out.to_numpy()
     rows = []
-    for label, flags in ((f"Innings in a row with {bar}+", runs >= bar),
-                         ("Innings in a row with 50+", runs >= 50),
-                         ("Innings in a row reaching double figures", runs >= 10),
+    marks = list(dict.fromkeys([b["decent"], b["big"]]))  # a decent score and a big one: 20 and 50 in T20, 50 and 100 in Tests
+    for label, flags in ([(f"Innings in a row with {m}+", runs >= m) for m in marks] +
+                         [("Innings in a row reaching double figures", runs >= 10),
                          ("Innings in a row without a duck", ~((runs == 0) & out)),
-                         ("Ducks in a row", (runs == 0) & out)):
+                         ("Ducks in a row", (runs == 0) & out)]):
         best, now = _longest(flags)
         rows.append(dict(streak=label, longest=best, current=now))
     return rows
 
 
-def bowling_streaks(spells: pd.DataFrame) -> list[dict]:
+def bowling_streaks(spells: pd.DataFrame, kind: str = "t20") -> list[dict]:
+    """Wicket streaks; the steps follow the format (1+, 2+, 3+ in T20; 1+, 2+, 4+ one-day; 1+, 3+, 5+ in Tests)."""
+    from .stats import bars_for
     if spells.empty:
         return []
     w = spells.wickets.to_numpy()
     rows = []
-    for label, flags in (("Innings in a row taking a wicket", w >= 1),
-                         ("Innings in a row with 2+ wickets", w >= 2),
-                         ("Innings in a row with 3+ wickets", w >= 3),
-                         ("Wicketless innings in a row", w == 0)):
+    steps = bars_for(kind)["wicket_steps"]
+    for label, flags in ([("Innings in a row taking a wicket" if k == 1 else f"Innings in a row with {k}+ wickets", w >= k)
+                          for k in steps] + [("Wicketless innings in a row", w == 0)]):
         best, now = _longest(flags)
         rows.append(dict(streak=label, longest=best, current=now))
     return rows
@@ -494,8 +495,14 @@ def headlines(career, n_matches: int = 10, limit: int = 8, max_records: int = 3,
             if n > 1:
                 line += f" — {n}{P.suffix(n)} hundred in {r.section} in {r.season}"
             lines.append(line)
-        for w in bowl[bowl.wickets >= 5].itertuples():
+        from .stats import KIND, bars_for
+        kind_r = KIND.get(r.format, "t20")
+        for w in bowl[bowl.wickets >= bars_for(kind_r)["headline_haul"]].itertuples():  # 4-fors make news in a T20
             lines.append(f"🎯 {w.player} takes {w.wickets}/{w.runs} for {w.team} v {w.opposition}{stage}")
+        if kind_r == "multi":  # ten in the match
+            tm_ = bowl.groupby(["player", "team", "opposition"])[["wickets", "runs"]].sum().reset_index()
+            for w in tm_[tm_.wickets >= 10].itertuples():
+                lines.append(f"🔟 {w.player} takes {w.wickets}/{w.runs} in the match for {w.team} v {w.opposition}{stage}")
         for s_ in P.stands(career, [r.match_id]).query("runs >= 100").itertuples():
             said = f"{s_.batter1} & {s_.batter2}" if s_.known else s_.team
             score = f"{s_.runs}{'*' if s_.unbroken else ''}"

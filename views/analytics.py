@@ -143,7 +143,8 @@ with tabs[4], safe_section("match-winners"):
     with right:
         dp = state.memo(PL.dependence, career, ids)
         with st.container(border=True):
-            st.markdown("**Who each team leans on** · win % when their key player fires (50+ or 3+ wickets) v when not")
+            st.markdown(f"**Who each team leans on** · win % when their key player fires ({dp.attrs.get('big', 50)}+ "
+                        f"or {dp.attrs.get('haul', 3)}+ wickets) v when not")
             if dp.empty:
                 st.caption("Not enough games yet.")
             else:

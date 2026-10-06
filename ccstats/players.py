@@ -13,10 +13,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from .stats import KIND
+from .stats import KIND, bars_for
 
-BIG_SCORE = {"t20": 50, "one": 50, "multi": 50}
-DECENT = {"t20": 20, "one": 30, "multi": 30}
 SHRINK = {"t20": 8, "one": 6, "multi": 5}  # dismissals of "average" added when settling an average
 RELIABLE = {"t20": 15, "one": 12, "multi": 10}  # dismissals before an average is called reliable
 
@@ -78,18 +76,21 @@ def _matches_of(career, ids) -> pd.DataFrame:
 
 
 def win_when(career, ids, min_times: int = 3) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """(batters: team win % in matches where they made 50+, against every other
-    match they played; bowlers: the same for 3+ wickets in an innings)."""
+    """(batters: team win % in matches where they made a big score (50+ in white-ball
+    cricket, 100+ in Tests), against every other match they played; bowlers: the
+    same for a haul in an innings (3+ wickets in T20, 4+ in one-day, 5+ in Tests)).
+    The bars used are in each frame's attrs."""
     kind = kind_of_ids(career, ids)
+    bar = bars_for(kind)
     multi = kind == "multi"
     out = _outcomes(career, ids)
     played = _matches_of(career, ids)
     played = played.assign(result=[out.get((a, t), "NR") for a, t in zip(played.match_id, played.team)])
     inn = innings(career, ids)
-    big = set(zip(inn[inn.runs >= 50].match_id, inn[inn.runs >= 50].player))
+    big = set(zip(inn[inn.runs >= bar["big"]].match_id, inn[inn.runs >= bar["big"]].player))
     sp = spells(career, ids)
     haul = sp.groupby(["match_id", "player"]).wickets.max()
-    hauls = set(haul[haul >= 3].index)
+    hauls = set(haul[haul >= bar["haul"]].index)
     res = []
     for flagset, label in ((big, "fifty"), (hauls, "three_wkts")):
         rows = []
@@ -103,7 +104,9 @@ def win_when(career, ids, min_times: int = 3) -> tuple[pd.DataFrame, pd.DataFram
                              other_games=len(no), pct_other=_win_pct(no.result, multi)))
         d = pd.DataFrame(rows, columns=["player", "team", "times", "won_when", "pct_when", "other_games", "pct_other"])
         d["lift"] = d.pct_when - d.pct_other
-        res.append(d.sort_values(["pct_when", "times"], ascending=False).reset_index(drop=True))
+        d = d.sort_values(["pct_when", "times"], ascending=False).reset_index(drop=True)
+        d.attrs.update(big=bar["big"], haul=bar["haul"])
+        res.append(d)
     return res[0], res[1]
 
 
@@ -516,7 +519,8 @@ def what_wins(career, ids) -> pd.DataFrame:
     per["More fours"] = (bat.groupby(["match_id", "team"]).fours.sum(), True)
     per["More sixes"] = (bat.groupby(["match_id", "team"]).sixes.sum(), True)
     per["Higher top score (one batter)"] = (bat.groupby(["match_id", "team"]).runs.max(), True)
-    per["More 50+ stands"] = (st_[st_.runs >= 50].groupby(["match_id", "team"]).size(), True)
+    stand = bars_for(kind_of_ids(career, ids))["stand"]
+    per[f"More {stand}+ stands"] = (st_[st_.runs >= stand].groupby(["match_id", "team"]).size(), True)
     per["Best bowling figures (most wickets by one bowler)"] = (bowl.groupby(["match_id", "team"]).wickets.max(), True)
     ext = inn.assign(ex=inn.extras).groupby(["match_id", "opposition"]).ex.sum()
     ext.index = ext.index.set_names(["match_id", "team"])
@@ -600,18 +604,20 @@ def match_winners(career, ids) -> pd.DataFrame:
 
 
 def dependence(career, ids, min_games: int = 5) -> pd.DataFrame:
-    """For every team, its most important player: team win % when they made 50+
-    or took 3+ wickets ('fired') against when they didn't.  A big gap means the
-    team leans on them."""
+    """For every team, its most important player: team win % when they made a big
+    score or took a haul ('fired': 50+ or 3+ wickets in T20, 50+ or 4+ in one-day,
+    100+ or 5+ in Tests) against when they didn't.  A big gap means the team leans
+    on them."""
     kind = kind_of_ids(career, ids)
+    bar = bars_for(kind)
     multi = kind == "multi"
     out = _outcomes(career, ids)
     played = _matches_of(career, ids)
     played = played.assign(result=[out.get((a, t), "NR") for a, t in zip(played.match_id, played.team)])
     b = career.batting[career.batting.match_id.isin(ids)]
     w = career.bowling[career.bowling.match_id.isin(ids)]
-    fired = set(zip(b[b.runs >= 50].match_id, b[b.runs >= 50].player)) | set(
-        zip(w[w.wickets >= 3].match_id, w[w.wickets >= 3].player))
+    fired = set(zip(b[b.runs >= bar["big"]].match_id, b[b.runs >= bar["big"]].player)) | set(
+        zip(w[w.wickets >= bar["haul"]].match_id, w[w.wickets >= bar["haul"]].player))
     played["fired"] = [(a, p) in fired for a, p in zip(played.match_id, played.player)]
     rows = []
     for (team, player), g in played.groupby(["team", "player"]):
@@ -623,7 +629,9 @@ def dependence(career, ids, min_games: int = 5) -> pd.DataFrame:
     d = pd.DataFrame(rows, columns=["team", "player", "games", "fired", "pct_fired", "pct_not"])
     d["gap"] = d.pct_fired - d.pct_not
     d = d.dropna(subset=["gap"]).sort_values("gap", ascending=False)
-    return d.groupby("team").head(1).reset_index(drop=True)
+    d = d.groupby("team").head(1).reset_index(drop=True)
+    d.attrs.update(big=bar["big"], haul=bar["haul"])
+    return d
 
 
 # --------------------------------------------------------------------------- #
@@ -650,10 +658,10 @@ def bowling_styles(bowl: pd.DataFrame, base) -> pd.DataFrame:
 
 def boom_or_bust(career, ids, min_innings: int = 8) -> pd.DataFrame:
     """How a batter's scores are spread: % of low scores (under 10) and % of big
-    ones (30+ in T20, 50+ otherwise), and how much the scores bounce around
-    (spread compared with their average).  Labels: boom or bust, steady, ..."""
+    ones (30+ in T20, 50+ in one-day, 100+ in Tests), and how much the scores bounce
+    around (spread compared with their average).  Labels: boom or bust, steady, ..."""
     kind = kind_of_ids(career, ids)
-    big = 30 if kind == "t20" else 50
+    big = bars_for(kind)["boom"]
     inn = innings(career, ids)
     rows = []
     for p, g in inn.groupby("player"):
@@ -738,6 +746,8 @@ def bowling_plan(career, ids, team: str, min_balls: int = 30) -> pd.DataFrame:
     allw = career.bowling[career.bowling.match_id.isin(ids)]
     econ0 = allw.runs.sum() / max(allw.balls.sum(), 1) * 6
     sr0 = allw.balls.sum() / max(allw.wickets.sum(), 1)
+    avg0 = allw.runs.sum() / max(allw.wickets.sum(), 1)
+    by_average = bars_for(kind_of_ids(career, ids))["bowl_measure"] == "average"  # Tests: cost per wicket matters
     rows = []
     for p, g in w.groupby("player"):
         if g.balls.sum() < min_balls:
@@ -752,15 +762,21 @@ def bowling_plan(career, ids, team: str, min_balls: int = 30) -> pd.DataFrame:
             tags.append("Top-order hunter")
         if wk and tail / max(top + mid + tail, 1) >= 0.45 and tail >= 3:
             tags.append("Tail cleaner")
-        tags.append("Cheap" if econ <= econ0 * 0.95 else "Costly" if econ >= econ0 * 1.05 else "Around average cost")
+        if by_average:
+            avg = g.runs.sum() / wk if wk else np.inf
+            tags.append("Cheap wickets" if avg <= avg0 * 0.9 else "Costly wickets" if avg >= avg0 * 1.1
+                        else "Around average cost")
+        else:
+            tags.append("Cheap" if econ <= econ0 * 0.95 else "Costly" if econ >= econ0 * 1.05 else "Around average cost")
         if np.isfinite(sr) and sr <= sr0 * 0.9:
             tags.append("Strikes often")
         rows.append(dict(player=p, innings=len(g), balls=int(g.balls.sum()), wickets=wk, top=int(top), middle=int(mid),
                          tail=int(tail), economy=econ, strike_rate=sr, tags=" · ".join(tags)))
     d = pd.DataFrame(rows, columns=["player", "innings", "balls", "wickets", "top", "middle", "tail", "economy",
                                     "strike_rate", "tags"])
-    d.attrs.update(economy=econ0, strike_rate=sr0)
-    return d.sort_values("wickets", ascending=False).reset_index(drop=True)
+    d = d.sort_values("wickets", ascending=False).reset_index(drop=True)
+    d.attrs.update(economy=econ0, strike_rate=sr0, average=avg0, by_average=by_average)
+    return d
 
 
 def knocking(career, ids, team: str, share: float = 0.4) -> pd.DataFrame:
@@ -803,10 +819,13 @@ def batting_pairs(career, ids, team: str = "", min_stands: int = 2) -> pd.DataFr
     if team:
         s = s[s.team == team]
     s = s.assign(pair=[" & ".join(sorted([a, b])) for a, b in zip(s.batter1, s.batter2)])
+    stand = bars_for(kind_of_ids(career, ids))["stand"]
     g = s.groupby(["pair", "team"]).agg(stands=("runs", "size"), runs=("runs", "sum"), best=("runs", "max"),
-                                        fifty_plus=("runs", lambda x: int((x >= 50).sum()))).reset_index()
+                                        big_stands=("runs", lambda x: int((x >= stand).sum()))).reset_index()
     g["average"] = g.runs / g.stands
-    return g[g.stands >= min_stands].sort_values("runs", ascending=False).reset_index(drop=True)
+    g = g[g.stands >= min_stands].sort_values("runs", ascending=False).reset_index(drop=True)
+    g.attrs["stand"] = stand
+    return g
 
 
 def bowling_pairs(career, ids, team: str = "", min_innings: int = 3) -> pd.DataFrame:

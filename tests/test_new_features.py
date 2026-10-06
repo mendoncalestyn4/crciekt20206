@@ -457,3 +457,31 @@ def test_every_chart_is_explained():
             if "st.plotly_chart(" in ln and "chart_note(" not in "\n".join(lines[i:i + 30]):
                 missing.append(f"{f.name}:{i + 1}")
     assert not missing, missing
+
+
+def test_bars_follow_the_format(career):
+    """A big score is 100 in Tests but 50 in white-ball cricket; a haul is 5 wickets in Tests, 4 one-day, 3 in T20."""
+    from ccstats import extras as E_
+    from ccstats.stats import bars_for
+    assert (bars_for("multi")["big"], bars_for("one")["big"], bars_for("t20")["big"]) == (100, 50, 50)
+    assert (bars_for("multi")["haul"], bars_for("one")["haul"], bars_for("t20")["haul"]) == (5, 4, 3)
+    tests = Scope(sections=["Tests"]).match_ids(career.matches)
+    wb, ww = PL.win_when(career, tests, min_times=1)
+    assert wb.attrs["big"] == 100 and ww.attrs["haul"] == 5
+    bat = career.batting[career.batting.match_id.isin(tests) & career.batting.did_bat]
+    hundreds = bat[bat.runs >= 100].groupby("player").match_id.nunique()
+    assert dict(zip(wb.player, wb.times)) == hundreds.to_dict()  # 100s, not 50s
+    labels = [r["streak"] for r in E_.batting_streaks(pd.DataFrame({"runs": [60, 120], "out": [True, True]}), "multi")]
+    assert "Innings in a row with 50+" in labels and "Innings in a row with 100+" in labels
+    steps = [r["streak"] for r in E_.bowling_streaks(pd.DataFrame({"wickets": [5, 1]}), "multi")]
+    assert "Innings in a row with 5+ wickets" in steps and "Innings in a row with 3+ wickets" in steps
+    # a Test won by 40 runs is close; a T20 won by 40 isn't
+    g = TP.games(career, tests)
+    won_by_runs = g[g.margin_runs.notna() & (g.outcome == "W")]
+    assert (won_by_runs.close == (won_by_runs.margin_runs < 50)).all()
+    ipl = Scope(sections=[IPL]).match_ids(career.matches)
+    gi = TP.games(career, ipl)
+    wi = gi[gi.margin_runs.notna() & (gi.outcome == "W")]
+    assert (wi.close == (wi.margin_runs < 10)).all()
+    ss = TP.start_split(career, tests)
+    assert (ss["good_bar"], ss["bad_bar"]) == (100, 25)

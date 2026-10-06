@@ -70,7 +70,7 @@ def test_splits_add_up(career):
         s = A.split_batting(inns, by)
         assert s.runs.sum() == 254 and s.innings.sum() == 5
     c = A.consistency(inns, "multi")
-    assert c["bar"] == 30 and round(c["past_bar_pct"]) == 40  # 119 and 96 of 3,119,28,96,8
+    assert c["bar"] == 50 and round(c["past_bar_pct"]) == 40  # a decent Test score is 50: 119 and 96 of 3,119,28,96,8
 
 
 def test_player_record_tables(career):

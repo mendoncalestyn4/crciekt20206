@@ -5,7 +5,7 @@ import streamlit as st
 from ccstats import analysis as A
 from ccstats import extras as E
 from ccstats import players as PL
-from ccstats.stats import Scope
+from ccstats.stats import Scope, bars_for
 from ui import state
 from ui.charts import pct, CONFIG, bars, fmt, form_chart, paired_bars, say
 from ui.theme import chart_note, explain_list, html_table, kpis, match_link, page_header, safe_section
@@ -241,9 +241,12 @@ if "Batting" in tabs:
         # came in at
         st.subheader("When they came in", anchor=False)
         ci = inns.dropna(subset=["came_in_score"]).copy()
+        bar_ = bars_for(kind)  # pressure and platform depend on the format: 3 down for 40 in a T20 is trouble, 250 a platform in a Test
+        press, plat = bar_["pressure_score"], bar_["platform"]
+        pressure_label = f"Under pressure (3+ down for {press} or fewer)"
         ci["situation"] = np.select(
-            [ci.came_in_wickets == 0, (ci.came_in_wickets >= 3) & (ci.came_in_score <= 60), ci.came_in_score >= 150],
-            ["Opening the innings", "Under pressure (3+ down for 60 or fewer)", "Big platform (150+ on the board)"],
+            [ci.came_in_wickets == 0, (ci.came_in_wickets >= 3) & (ci.came_in_score <= press), ci.came_in_score >= plat],
+            ["Opening the innings", pressure_label, f"Big platform ({plat}+ on the board)"],
             "Normal")
         left, right = st.columns(2, gap="medium")
         with left:
@@ -261,7 +264,7 @@ if "Batting" in tabs:
                                "5 walks in when the 3rd wicket falls.")
         with right:
             with st.container(border=True):
-                st.markdown("**Best rescue innings** · came in with 3 or more down for 60 or fewer")
+                st.markdown(f"**Best rescue innings** · came in with 3 or more down for {press} or fewer")
                 r = ci[ci.situation.str.startswith("Under")].sort_values("runs", ascending=False).head(5)
                 if r.empty:
                     st.caption("No innings started in that kind of trouble yet.")
@@ -409,7 +412,7 @@ if "Bowling" in tabs:
                                "The batters they have the wood on: bring them on when these batters come in.")
         with st.container(border=True):
             st.markdown("**Streaks** · innings bowled in a row")
-            srows = E.bowling_streaks(spells)
+            srows = E.bowling_streaks(spells, kind)
             st.dataframe(pd.DataFrame({"Streak": [r["streak"] for r in srows], "Longest": [r["longest"] for r in srows],
                                        "Current": [r["current"] for r in srows]}), hide_index=True, width="stretch")
         cols = st.columns(2, gap="medium")
@@ -455,7 +458,7 @@ with tabs["Story"]:
                         f"{'' if season == 'All seasons' else ' ' + season}")
             wb, ww = state.memo(PL.win_when, career, ids, 1)
             rows = []
-            for d, label in ((wb, "50+ with the bat"), (ww, "3+ wickets")):
+            for d, label in ((wb, f"{wb.attrs.get('big', 50)}+ with the bat"), (ww, f"{ww.attrs.get('haul', 3)}+ wickets")):
                 r = d[d.player == player]
                 if len(r):
                     r = r.iloc[0]
@@ -463,7 +466,7 @@ with tabs["Story"]:
             if rows:
                 html_table(rows, ["", "Times", "Win % then", "Win % otherwise"], numeric={1, 2, 3})
             else:
-                st.caption("No 50+ scores or 3-wicket hauls here yet.")
+                st.caption(f"No {wb.attrs.get('big', 50)}+ scores or {ww.attrs.get('haul', 3)}-wicket hauls here yet.")
         with safe_section("quirks"), st.container(border=True):
             st.markdown("**Odd ones**")
             q = state.memo(PL.quirks, career, ids)

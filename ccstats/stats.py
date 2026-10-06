@@ -86,6 +86,23 @@ POSITION_GROUPS = {"Openers (1-2)": [1, 2], "No. 3": [3], "4 and 5": [4, 5], "6 
                    "8 to 11": [8, 9, 10, 11]}
 
 
+# What counts as a good day differs by format: a 50 is a big innings in a T20 but only a start in a Test, and
+# three wickets is a haul in a T20 but five is the mark in a Test.  Every feature reads its bars from here.
+BARS = {
+    "t20": dict(decent=20, big=50, boom=30, low=10, haul=3, headline_haul=4, wicket_steps=(1, 2, 3), close_runs=10,
+                good_start=50, bad_start=15, stand=50, platform=100, pressure_score=40, bowl_measure="economy"),
+    "one": dict(decent=30, big=50, boom=50, low=10, haul=4, headline_haul=5, wicket_steps=(1, 2, 4), close_runs=20,
+                good_start=60, bad_start=20, stand=50, platform=150, pressure_score=60, bowl_measure="economy"),
+    "multi": dict(decent=50, big=100, boom=100, low=10, haul=5, headline_haul=5, wicket_steps=(1, 3, 5), close_runs=50,
+                  good_start=100, bad_start=25, stand=100, platform=250, pressure_score=80, bowl_measure="average"),
+}
+
+
+def bars_for(kind: str) -> dict:
+    """The bars for one kind of cricket (t20 / one / multi)."""
+    return BARS.get(kind, BARS["t20"])
+
+
 def kind_of(matches: pd.DataFrame) -> str:
     """multi / one / t20 for the formats in play (the most common one wins)."""
     if matches.empty:
