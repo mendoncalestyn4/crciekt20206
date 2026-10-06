@@ -4,10 +4,11 @@ import streamlit as st
 
 from ccstats import insights as I
 from ccstats import teamplay as TP
+from ccstats import winprob as WP
 from ccstats.stats import Scope, kind_of
 from ui import state
 from ui.charts import pct, CONFIG, _axis, _layout, bars, fmt
-from ui.theme import chart_note, colours, html_table, page_header, safe_section
+from ui.theme import kpis, chart_note, colours, html_table, page_header, safe_section
 
 career = state.current()
 if career is None:
@@ -18,9 +19,9 @@ m = career.matches
 page_header("Insights", "The bigger picture",
             "Questions about a whole competition: what total wins games, how much home matters, how scoring changes from "
             "season to season, and who has suddenly got better.")
-tab_total, tab_home, tab_seasons, tab_break, tab_tests = st.tabs(["Is this total enough?", "Home advantage",
-                                                                   "Season by season", "Breakout players",
-                                                                   "Innings by innings"])
+tab_total, tab_chase, tab_home, tab_seasons, tab_break, tab_tests = st.tabs(
+    ["Is this total enough?", "Chase calculator", "Home advantage", "Season by season", "Breakout players",
+     "Innings by innings"])
 sections = m.section.value_counts()
 c = colours()
 
@@ -114,6 +115,64 @@ with tab_total:
                               "to keep pushing. Highest scores at the top; hover a bar for how many matches it rests "
                               "on (one or two matches is a small sample)."
                        + (" In multi-day cricket many matches are drawn, so the win % stays lower." if kind == "multi" else ""))
+
+        # ---------------------------------------------------------------- 109 · par by opponent strength
+        with safe_section("par by opponent"), st.container(border=True):
+            pbs = I.par_by_strength(career, ids)
+            st.markdown(f"**Is it enough against a good side?** · win % batting first by {what}, against the stronger "
+                        "and the weaker half of the teams (ranked by win % here)")
+            rows = [[r.band, f"{pct(r.stronger_pct)} ({r.stronger_n})" if r.stronger_n else "–",
+                     f"{pct(r.weaker_pct)} ({r.weaker_n})" if r.weaker_n else "–"] for r in pbs.itertuples()]
+            if rows:
+                html_table(rows, [what[0].upper() + what[1:], "v stronger half", "v weaker half"], numeric={1, 2})
+                sp = pbs[(pbs.stronger_n >= 3) & (pbs.stronger_pct >= 50)]
+                wp = pbs[(pbs.weaker_n >= 3) & (pbs.weaker_pct >= 50)]
+                st.caption((f"Against the stronger half you need about {int(sp.low.min())}+ to win more often than not"
+                            if len(sp) else "Against the stronger half no band (3+ games) wins half its games yet")
+                           + (f"; against the weaker half about {int(wp.low.min())}+." if len(wp) else ".")
+                           + " Matches in brackets.")
+
+# ---------------------------------------------------------------- 108 · chase calculator
+with tab_chase:
+    c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
+    section_c = c1.selectbox("Section", list(sections.index), key="in_c_section",
+                             format_func=lambda s: f"{s} · {sections[s]} matches")
+    ids_c = Scope(sections=[section_c]).match_ids(m)
+    kind_c = kind_of(m[m.match_id.isin(ids_c)])
+    defaults = {"t20": (181, 60), "one": (281, 120), "multi": (250, 80)}[kind_c]
+    target = c2.number_input("Target", 1, 1000, defaults[0], key=f"in_c_target_{kind_c}")
+    score_c = c3.number_input("Score now", 0, 1000, defaults[1], key=f"in_c_score_{kind_c}")
+    wk_c = c4.number_input("Wickets down", 0, 9, 3, key="in_c_wkts")
+    with safe_section("chase calculator"):
+        st_c = state.memo(WP.states, career, ids_c)
+        if score_c >= target:
+            st.success("That's the target reached: the chase is won.")
+        else:
+            ch = WP.chase_chance(st_c, kind_c, int(target), int(score_c), int(wk_c))
+            need = target - score_c
+            with st.container(border=True):
+                if not ch["n"]:
+                    st.caption("No games like this yet.")
+                else:
+                    if kind_c == "multi":
+                        kpis([("Chasers win", pct(ch["win"])), ("Draw", pct(ch["draw"])), ("Defenders win", pct(ch["lose"]))])
+                    else:
+                        kpis([("Chasers win", pct(ch["win"])), ("Defenders win", pct(ch["lose"]))])
+                    lo_w, hi_w = ch["wickets_used"]
+                    wtxt = f"{lo_w} down" if lo_w == hi_w else f"{lo_w}-{hi_w} down"
+                    st.markdown(f"Needing **{need}** with **{10 - wk_c} wickets** left: from {ch['n']} {section_c} "
+                                f"chases in the same spot ({wtxt}, needing within {ch['band']:.0f} runs of {need}).")
+                    rows = []
+                    for w_ in sorted({max(0, wk_c - 1), wk_c, min(9, wk_c + 1)}):
+                        c_ = WP.chase_chance(st_c, kind_c, int(target), int(score_c), w_)
+                        rows.append([f"{w_} down", pct(c_["win"])] + ([pct(c_["draw"])] if kind_c == "multi" else []) +
+                                    [c_["n"]])
+                    html_table(rows, ["Wickets", "Chasers win"] + (["Draw"] if kind_c == "multi" else []) + ["Games"],
+                               numeric={1, 2, 3})
+                    st.caption("How much one wicket either way is worth. The scorecards have no overs, so this is runs "
+                               "and wickets only: early in a chase it can't tell a quick start from a slow one."
+                               + (" In a Test the draw depends on time left, which the scorecards don't show either."
+                                  if kind_c == "multi" else ""))
 
 # ---------------------------------------------------------------- home advantage
 with tab_home:
@@ -262,6 +321,19 @@ with tab_tests:
                            f"({(last_.runs_per_wicket - first) / first * 100:+.0f}%).",
                            "Shows how much harder batting gets as the pitch wears, which tells you how big a "
                            "fourth-innings target really is and whether to bat first.")
+        fl = WP.first_innings_lead(career, ids_m)
+        with st.container(border=True):
+            st.markdown("**First-innings lead** · what happened to the side that led after the first innings")
+            if fl.matches.sum() == 0:
+                st.caption("No finished games yet.")
+            else:
+                html_table([[r.band, r.matches, pct(r.won), pct(r.drawn), pct(r.lost)] for r in fl.itertuples() if r.matches],
+                           ["Lead", "Games", "Won", "Drawn", "Lost"], numeric={1, 2, 3, 4})
+                big = fl[(fl.matches >= 3)].sort_values("won", ascending=False).head(1)
+                if len(big):
+                    st.caption(f"A lead of {big.band.iloc[0]} won {big.won.iloc[0]:.0f}% of {int(big.matches.iloc[0])} "
+                               "games. Bigger leads also mean fewer draws, because the side behind has to bat twice to "
+                               "catch up.")
         fo = TP.follow_on_and_declarations(career, ids_m)
         with st.container(border=True):
             st.markdown("**Follow-on and declarations** · how often each led to a win")

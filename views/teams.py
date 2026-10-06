@@ -5,11 +5,12 @@ import streamlit as st
 from ccstats import analysis as A
 from ccstats import extras as E
 from ccstats import teamplay as TP
+from ccstats import winprob as WP
 from ui.theme import colours
 from ccstats.stats import Scope, bars_for, kind_of
 from ui import state
 from ui.charts import pct, CONFIG, bars, fmt, race_chart, say
-from ui.theme import chart_note, html_table, kpis, page_header, safe_section
+from ui.theme import chart_note, html_table, kpis, match_link, page_header, safe_section
 
 career = state.current()
 if career is None:
@@ -334,6 +335,23 @@ with tab_win:
                                   "Defended (won/played)", "Win %", "Every team"], numeric={2, 3, 5, 6})
                 st.caption("Chasing: batting last. Defending: setting the target. 'Every team' is the same for all sides "
                            f"in {section}.")
+
+    # ---------------------------------------------------------------- 133 · comebacks
+    with safe_section("comebacks"), st.container(border=True):
+        with st.spinner("Working out the win chance through every match…"):
+            cb_all = state.memo(WP.comebacks, career, ids)
+        cb = cb_all[cb_all.winner == team]
+        against = cb_all[cb_all.loser == team]
+        st.markdown(f"**Comebacks** · {team} wins from a losing position (their chance fell under 25%)")
+        if cb.empty:
+            st.caption("No comeback wins yet.")
+        else:
+            html_table([[match_link(r.match_id, f"{r.date:%d %b %Y}"), r.loser, f"{r.low:.0f}%", r.at, r.result]
+                        for r in cb.itertuples()], ["Match", "Against", "Lowest chance", "When", "Result"],
+                       numeric={2}, raw={0})
+        st.caption(f"{len(cb)} comeback win{'s' if len(cb) != 1 else ''} for {team}, and {len(against)} game"
+                   f"{'s' if len(against) != 1 else ''} they lost from a winning position. The chance is from "
+                   "the Matches page's win-chance line: games in the same spot (innings, wickets down, lead).")
 
 # ---------------------------------------------------------------- 5, 6, 30, 31 · opponents and stages
 with tab_opp:

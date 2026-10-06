@@ -110,3 +110,27 @@ def breakouts(career, section: str, season: str, min_innings: int = 5) -> tuple[
         return out.sort_values("jump", ascending=False).reset_index().rename(columns={"index": "player"})
 
     return compare(now_b, before_b, "runs_above_average", "bat"), compare(now_w, before_w, "runs_saved", "bowl")
+
+
+def par_by_strength(career, ids) -> pd.DataFrame:
+    """Win % batting first by first-innings score band (twice the usual band width),
+    split by whether the side bowling first is in the stronger or weaker half
+    (teams ranked by win % in these matches)."""
+    from .analysis import team_strength
+    d = first_innings(career, ids)
+    if d.empty:
+        return pd.DataFrame(columns=["band", "low", "stronger_n", "stronger_pct", "weaker_n", "weaker_pct"])
+    m = career.matches.set_index("match_id")
+    d["opponent"] = [m.away[a] if m.home[a] == t else m.home[a] for a, t in zip(d.match_id, d.team)]
+    strength = team_strength(career, ids)
+    med = float(np.median(list(strength.values()))) if strength else 0
+    d["stronger"] = d.opponent.map(lambda t: strength.get(t, 0) > med)
+    size = BUCKET[kind_of(career.matches[career.matches.match_id.isin(ids)])] * 2
+    d["low"] = (d.runs // size) * size
+    rows = []
+    for lo, g in d.groupby("low"):
+        a, b = g[g.stronger], g[~g.stronger]
+        rows.append(dict(band=f"{lo}–{lo + size - 1}", low=lo, stronger_n=len(a),
+                         stronger_pct=(a.outcome == "won").mean() * 100 if len(a) else np.nan,
+                         weaker_n=len(b), weaker_pct=(b.outcome == "won").mean() * 100 if len(b) else np.nan))
+    return pd.DataFrame(rows)

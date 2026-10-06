@@ -2,7 +2,9 @@ import calendar
 
 import streamlit as st
 
+from ccstats import rankings as R
 from ccstats import tables as T
+from ccstats import winprob as WP
 from ccstats.competitions import shown_name
 from ui import state
 from ui.theme import colours, esc, html_table, page_header, safe_section
@@ -82,10 +84,26 @@ with tab_series, safe_section("series tracker"):
         done = sr[sr.played >= sr.length]
         if len(live):
             with st.container(border=True):
-                st.markdown("**Still going**")
-                html_table([[f"{r.start:%d %b %Y}", r.section, r.teams, r.score, f"{r.played} of {r.length}",
-                             r.result.split(' · ')[0], r.top_runs, r.top_wickets] for r in live.itertuples()],
-                           ["Started", "Format", "Series", "Score", "Played", "Now", "Top runs", "Top wickets"])
+                st.markdown("**Still going** · with each side's chance of winning the series")
+                rows_ = []
+                for r in live.itertuples():
+                    g_ = m[m.match_id.isin(r.match_ids)]
+                    a_, b_ = g_.home.iloc[0], g_.away.iloc[0]
+                    wa_, wb_ = int((g_.winner == a_).sum()), int((g_.winner == b_).sum())
+                    sec_ids_ = m[m.section == r.section].match_id
+                    elo_, _ = state.memo(R.team_elo, career, r.section)
+                    e_ = elo_.set_index("team").elo
+                    p_ = 1 / (1 + 10 ** ((e_.get(b_, 1500) - e_.get(a_, 1500)) / 400))
+                    d_ = WP.draw_rate(career, sec_ids_) if r.section == "Tests" else 0.0
+                    odds = WP.series_odds(p_ * (1 - d_), d_, wa_, wb_, int(r.length - r.played))
+                    chance_ = f"{a_} {odds['A']:.0f}% · " + (f"drawn {odds['level']:.0f}% · " if odds["level"] >= 0.5 else "") + \
+                        f"{b_} {odds['B']:.0f}%"
+                    rows_.append([f"{r.start:%d %b %Y}", r.section, r.teams, r.score, f"{r.played} of {r.length}",
+                                  chance_, r.top_runs, r.top_wickets])
+                html_table(rows_, ["Started", "Format", "Series", "Score", "Played", "Series chances", "Top runs",
+                                   "Top wickets"])
+                st.caption("Series chances: every way the games left could go, each game won by the side with the higher "
+                           "Elo rating more often (and drawn as often as Tests here are drawn).")
         with st.container(border=True):
             st.markdown("**Finished series** · newest first")
             if done.empty:

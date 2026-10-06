@@ -485,3 +485,38 @@ def test_bars_follow_the_format(career):
     assert (wi.close == (wi.margin_runs < 10)).all()
     ss = TP.start_split(career, tests)
     assert (ss["good_bar"], ss["bad_bar"]) == (100, 25)
+
+
+# ---------------------------------------------------------------- win chance (100-110, 125, 133, 137)
+from ccstats import winprob as WP  # noqa: E402
+
+
+def test_win_chance_engine(season, career):
+    ids = Scope(sections=[IPL]).match_ids(season.matches)
+    st_ = WP.states(season, ids)
+    m = season.matches[season.matches.match_id.isin(ids) & (season.matches.result_type != "no result")]
+    assert st_.match_id.nunique() == len(m)
+    # every state starts each innings at 0 wickets, and leads add up: innings 2 starts at the first innings total
+    s2 = st_[(st_.innings_no == 2) & (st_.wickets == 0)].set_index("match_id").lead
+    first = season.innings[(season.innings.innings_no == 1)].set_index("match_id").runs
+    assert (s2 == first.loc[s2.index]).all()
+    mid = m.match_id.iloc[5]
+    line = WP.match_line(season, mid, st_, "t20")
+    assert len(line) == len(st_[st_.match_id == mid])
+    ok = line.dropna(subset=["W"])
+    assert ((ok.W + ok.D + ok.L + ok["T"] - 100).abs() < 1e-6).all()
+    assert (ok.W > 0).all() and (ok.W < 100).all()  # small samples are pulled away from certainty
+    ch = WP.chase_chance(st_, "t20", 181, 60, 3)
+    assert abs(ch["win"] + ch["lose"] + ch["draw"] + ch["tie"] - 100) < 1e-6
+    tests = Scope(sections=["Tests"]).match_ids(career.matches)
+    fl = WP.first_innings_lead(career, tests)
+    assert fl.matches.sum() <= len(tests)
+    score, why = WP.match_rating(season, mid, line)
+    assert 0 <= score <= 10 and isinstance(why, list)
+    assert WP.match_report(season, mid, line).endswith(".")
+    o = WP.series_odds(0.5, 0.0, 1, 0, 2)
+    assert abs(sum(o.values()) - 100) < 1e-9 and abs(o["A"] - 75) < 1e-9  # 1-0 up with 2 to play at 50/50
+    pr = WP.predict(season, ids, "Mumbai Indians", "Chennai Super Kings", "home")
+    assert abs(pr["win"] + pr["lose"] + pr["draw"] - 100) < 1e-6
+    cb = WP.comebacks(season, ids)
+    assert (cb.low < 25).all()

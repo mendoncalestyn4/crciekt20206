@@ -6,6 +6,7 @@ from ccstats import analysis as A
 from ccstats import extras as E
 from ccstats import preview as PV
 from ccstats import teamplay as TP
+from ccstats import winprob as WP
 from ui import state
 from ui.charts import pct, CONFIG, bars, fmt, say
 from ui.theme import (chart_note, esc, form_strip, html_table, kpis, match_link, page_header, player_link, safe_section)
@@ -64,6 +65,22 @@ kpis([("Played", f"{rec['played']}"), ("Won–Lost", f"{rec['won']}–{rec['lost
       ("Collapses", f"{pv['collapses']}")])
 st.caption(f"{opp} in {where_note}. Last 5: W won, L lost, D drawn, T tied, oldest first. Collapses: innings where they "
            f"lost 4 or more wickets for 30 runs or fewer, out of {pv['innings']} innings.")
+
+# ---------------------------------------------------------------- 110 · predicted result
+if mine:
+    with safe_section("predicted result"), st.container(border=True):
+        p1, p2 = st.columns([3, 1.4], vertical_alignment="center")
+        where_p = p2.segmented_control("Where", ["Home", "Away", "Neutral"], default="Neutral", key="op_pred_where") \
+            or "Neutral"
+        pr = state.memo(WP.predict, career, ids, mine, opp, where_p.lower())
+        parts = [f"**{mine} {pr['win']:.0f}%**"] + ([f"draw {pr['draw']:.0f}%"] if pr["multi"] else []) + \
+            [f"**{opp} {pr['lose']:.0f}%**"]
+        p1.markdown("**🔮 Predicted result** · " + " · ".join(parts))
+        rows = [[name, why, (f"{val:.0f}%" if i == 0 else f"{val:+.1f}") ] for i, (name, why, val) in enumerate(pr["steps"])]
+        html_table(rows, ["Step", "Why", f"{mine} chance (start, then change)"], numeric={2})
+        st.caption("Built in steps: the Elo chance first, then small nudges for recent form, head to head and home "
+                   "ground, each capped so no single one can swing it far."
+                   + (" In multi-day cricket the draw share comes from how often games here are drawn." if pr["multi"] else ""))
 
 # ---------------------------------------------------------------- 80 · game plan
 if mine:

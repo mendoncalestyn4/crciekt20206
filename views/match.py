@@ -3,11 +3,12 @@ import streamlit as st
 
 from ccstats import extras as E
 from ccstats import partnerships as P
+from ccstats import winprob as W
 from ccstats.competitions import shown_name
 from ccstats.parser import balls_to_overs
 from ui import state
-from ui.charts import CONFIG, fmt, wicket_timeline
-from ui.theme import chart_note, explain_list, page_header, scoreboard
+from ui.charts import CONFIG, fmt, win_chance_chart, wicket_timeline
+from ui.theme import chart_note, explain_list, html_table, match_link, page_header, safe_section, scoreboard
 
 career = state.current()
 if career is None:
@@ -44,6 +45,23 @@ if wanted in labels and "mt_match" not in st.session_state:
 mid = st.selectbox(f"Match ({len(labels)} to choose from, newest first)", list(labels), format_func=labels.get,
                    key="mt_match", index=None, placeholder="Type to search, e.g. 'Final' or 'Kent'")
 if not mid:
+    # ---------------------------------------------------------------- 102 · the best games
+    with safe_section("best games"), st.container(border=True):
+        if section == "All sections":
+            st.markdown("**Best games you've played** · pick a section above to see its most exciting matches")
+        else:
+            sec_ids = career.matches[career.matches.section == section].match_id
+            with st.spinner("Rating every match…"):
+                best = state.memo(W.best_matches, career, sec_ids, 15)
+            if team != "All teams":
+                best = best[(best.home == team) | (best.away == team)]
+            st.markdown(f"**Best games you've played in {section}** · rated 0-10 for excitement")
+            html_table([[f"{r.rating:.1f}", match_link(r.match_id, f"{r.home} v {r.away}"), f"{r.date:%d %b %Y}",
+                         r.stage or "", r.why] for r in best.itertuples()],
+                       ["Rating", "Match", "Date", "Stage", "Why"], numeric={0}, raw={1})
+            st.caption("Points for a close finish, a tie or super over, a comeback (the winner's chance fell low), a "
+                       "final or knockout, a hundred, a big haul and high scoring. The closeness and haul bars follow "
+                       "the format.")
     st.stop()
 
 row = m[m.match_id == mid].iloc[0]
@@ -55,6 +73,37 @@ scoreboard(f"{shown_name(row.section, row.event)}{stage}{series} · {row.date:%d
            score_of(mid, row.away), row.result + (f" (super over: {row.super_over})" if row.super_over else "")
            + (f" · Player of the match: {row.player_of_match}" if row.player_of_match else ""))
 st.write("")
+
+# ---------------------------------------------------------------- 100, 101, 102 · report, rating, win chance
+with safe_section("match report"):
+    sec_ids_ = career.matches[career.matches.section == row.section].match_id
+    states_ = state.memo(W.states, career, sec_ids_)
+    kind_ = W.kind_of_ids(career, sec_ids_)
+    line = W.match_line(career, mid, states_, kind_)
+    score_, why_ = W.match_rating(career, mid, line)
+    with st.container(border=True):
+        st.markdown(f"**Match report** · <span class='grade {'A' if score_ >= 6 else 'B' if score_ >= 4 else 'C'}'>"
+                    f"{score_:.1f}</span> / 10 for excitement" + (f" ({', '.join(why_)})" if why_ else ""),
+                    unsafe_allow_html=True)
+        st.markdown(W.match_report(career, mid, line))
+    if len(line) > 1:
+        with st.container(border=True):
+            t1, t2 = line.attrs["team1"], line.attrs["team2"]
+            multi_ = kind_ == "multi"
+            st.markdown(f"**Win chance through the match** · {'won / drawn / lost' if multi_ else 'chance'} for {t1}, "
+                        "at the start of each innings and after every wicket")
+            st.plotly_chart(win_chance_chart(line, t1, t2, multi_), width="stretch", config=CONFIG, key="mt_winchance")
+            sw = W.biggest_swing(line)
+            low = W.lowest_for_winner(line)
+            shows = (f"The biggest swing came at {sw['at']}: {t1}'s chance went from {sw['before']:.0f}% to "
+                     f"{sw['after']:.0f}%." if sw else "")
+            if low:
+                shows += f" The winner's lowest point was {low[0]:.0f}% at {low[1]}."
+            chart_note(shows or "Not enough similar games yet.",
+                       f"Shows how the game swung. Each point is how often {row.section} games in the same spot (same "
+                       "innings, same wickets down, a similar lead) ended in a win"
+                       + (", draw or defeat" if multi_ else "") + ". The scorecards have no overs, so it uses runs and "
+                       "wickets only; hover a point for how many games it rests on.")
 
 inns = inn_all[inn_all.match_id == mid].sort_values("innings_no")
 bat = career.batting[career.batting.match_id == mid]
