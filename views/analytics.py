@@ -4,7 +4,7 @@ from ccstats import players as PL
 from ccstats import teamplay as TP
 from ccstats.stats import Scope
 from ui import state
-from ui.charts import pct, CONFIG, bars, fmt, quadrant_chart
+from ui.charts import _n, pct, CONFIG, bars, fmt, quadrant_chart
 from ui.theme import chart_note, html_table, page_header, player_link, safe_section
 
 career = state.current()
@@ -103,7 +103,7 @@ with tabs[2], safe_section("what wins games"):
             top = ww.iloc[0]
             low = ww.iloc[-1]
             chart_note(f"The side with the {top.measure[0].lower() + top.measure[1:]} won {top.won_pct:.0f}% of "
-                       f"{top.games} games, the strongest sign of a win here; '{low.measure.lower()}' won only "
+                       f"{_n(top.games, 'game')}, the strongest sign of a win here; '{low.measure.lower()}' won only "
                        f"{low.won_pct:.0f}%. The dashed line at 50% is a coin toss.",
                        "Shows what to aim for in this competition: the longer the bar, the more that thing decides "
                        "games. Games where both sides were level on a measure are left out of it.")
