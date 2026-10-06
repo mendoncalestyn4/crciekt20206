@@ -1,7 +1,9 @@
+import pandas as pd
 import streamlit as st
 
 from ccstats import players as PL
 from ccstats import playerdeep as PD
+from ccstats import teamdeep as TD
 from ccstats.stats import Scope
 from ui import state
 from ui.charts import signed, pct, CONFIG, bars, fmt
@@ -32,7 +34,7 @@ def mark(teams) -> list[str]:
 
 tabs = st.tabs(["Form guide", "Milestones and records", "Win when they fire", "Heroes in defeat", "Carried the team",
                 "Quirks", "After a hundred", "Pairs", "Player of the Series", "Upsets", "Fastest to", "Match impact",
-                "Badges", "Batter v bowler"])
+                "Badges", "Batter v bowler", "Clutch"])
 
 # ---------------------------------------------------------------- 18
 with tabs[0], safe_section("form guide"):
@@ -213,6 +215,33 @@ with tabs[7], safe_section("pairs"):
         else:
             st.caption("No pairs yet.")
 
+    # ---------------------------------------------------------------- 128 · chemistry · 131 · strike-rate pressure
+    left, right = st.columns(2, gap="medium")
+    with left, safe_section("chemistry"), st.container(border=True):
+        ch = state.memo(TD.chemistry, career, ids)
+        st.markdown("**Partnership chemistry** · named pairs (3+ stands) against the average stand for the same wickets")
+        if ch.empty:
+            st.caption("No pair has 3 named stands yet.")
+        else:
+            html_table([[r.pair, r.team, r.stands, f"{r.average:.1f}", f"{r.expected:.1f}", signed(r.chemistry) + "%"]
+                        for r in ch.head(15).itertuples()], ["Pair", "Team", "Stands", "Avg", "Expected", "Chemistry"],
+                       numeric={2, 3, 4, 5}, row_class=mark(ch.head(15).team))
+            st.caption("Expected: what the average pair makes for the same wickets here, so an opening pair is compared "
+                       "with opening stands. +50% = half as much again.")
+    with right, safe_section("strike-rate pressure"), st.container(border=True):
+        sp_ = state.memo(TD.sr_pressure, career, ids)
+        st.markdown("**Strike-rate pressure** · how fast their partners score when batting with them")
+        if sp_.empty:
+            st.caption("White-ball cricket only, and batters need 3+ named stands.")
+        else:
+            show_ = pd.concat([sp_.head(6), sp_.tail(6)]).drop_duplicates("player")
+            html_table([[player_link(r.player), r.team, r.innings, fmt(r.partner_sr_with, 1), fmt(r.partner_sr_without, 1),
+                         signed(r.effect) + "%"] for r in show_.itertuples()],
+                       ["Batter", "Team", "Inns", "Partners' SR with them", "Partners' SR otherwise", "Effect"],
+                       numeric={2, 3, 4, 5}, raw={0}, row_class=mark(show_.team))
+            st.caption("The slowest-scoring partnerships first, then the fastest. The scorecards don't split a stand's "
+                       "runs, so this uses the partners' whole innings: a hint, not proof.")
+
 # ---------------------------------------------------------------- 16
 with tabs[8], safe_section("player of the series"):
     ps = state.memo(PL.player_of_series, career, ids)
@@ -340,3 +369,30 @@ with tabs[13], safe_section("batter v bowler"):
                        ["Match", "", "Batter's score", "How out", "Bowler's figures"], raw={0})
             st.caption("The scorecards don't say which bowler each run came off, so these are the batter's whole innings "
                        "when the two met. ✔ = this bowler got them out.")
+
+# ---------------------------------------------------------------- 127
+with tabs[14], safe_section("clutch"):
+    cb_, cw_ = state.memo(TD.clutch, career, ids)
+    multi_ = cb_.attrs.get("kind") == "multi"
+    st.caption("Big games: knockouts, close games (by this format's margins) and series deciders"
+               + (", plus the 4th innings of a multi-day game." if multi_ else ".") + " Players need 3+ innings each way.")
+    left, right = st.columns(2, gap="medium")
+    with left, st.container(border=True):
+        st.markdown("**Batters in big games** · average then against average otherwise")
+        if cb_.empty:
+            st.caption("Not enough big games yet.")
+        else:
+            html_table([[player_link(r.player), r.team, r.clutch_innings, fmt(r.clutch_avg, 1), fmt(r.other_avg, 1),
+                         signed(r.lift) + "%"] for r in cb_.head(15).itertuples()],
+                       ["Batter", "Team", "Big-game inns", "Avg then", "Avg otherwise", "Lift"], numeric={2, 3, 4, 5},
+                       raw={0}, row_class=mark(cb_.head(15).team))
+    with right, st.container(border=True):
+        st.markdown("**Bowlers in big games** · wickets per innings then against otherwise")
+        if cw_.empty:
+            st.caption("Not enough big games yet.")
+        else:
+            html_table([[player_link(r.player), r.team, r.clutch_innings, f"{r.clutch_wpi:.2f}", f"{r.other_wpi:.2f}",
+                         fmt(r.clutch_avg, 1) if multi_ else fmt(r.clutch_econ, 2), signed(r.lift) + "%"]
+                        for r in cw_.head(15).itertuples()],
+                       ["Bowler", "Team", "Big-game inns", "Wkts/inns then", "Otherwise", "Avg then" if multi_ else "Econ then",
+                        "Lift"], numeric={2, 3, 4, 5, 6}, raw={0}, row_class=mark(cw_.head(15).team))

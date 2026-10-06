@@ -2,9 +2,10 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from ccstats import rankings as R
+from ccstats import teamdeep as TD
 from ui import state
 from ui.charts import CONFIG, _axis, _layout, bars, fmt
-from ui.theme import chart_note, colours, page_header
+from ui.theme import html_table, safe_section, chart_note, colours, page_header
 
 career = state.current()
 if career is None:
@@ -123,3 +124,14 @@ with tab_t:
         st.caption(f"Every team starts at 1500. The winner takes points from the loser: up to {R.ELO_K:g} in a league "
                    f"match and {R.ELO_K_KNOCKOUT:g} in a knockout, more for beating a stronger side. A draw or tie moves "
                    "the two sides towards each other. Points are only swapped, so the average stays at 1500.")
+    # ---------------------------------------------------------------- 99 · batting and bowling ratings
+    with safe_section("batting and bowling ratings"), st.container(border=True):
+        ur = TD.unit_ratings(career, career.matches[career.matches.section == section].match_id)
+        st.markdown("**Batting and bowling ratings** · each half of every team, 1000 = average")
+        mine_ = set(state.my_teams(career))
+        html_table([[r.team, f"{r.batting:.0f}", r.batting_rank, f"{r.bowling:.0f}", r.bowling_rank, r.matches]
+                    for r in ur.itertuples()], ["Team", "Batting", "#", "Bowling", "#", "Matches"],
+                   numeric={1, 2, 3, 4, 5}, row_class=["hi" if r.team in mine_ else "" for r in ur.itertuples()])
+        st.caption("Batting: runs per wicket against what each opponent's bowlers usually allow"
+                   " (and, in white-ball cricket, the run rate against their usual economy). Bowling: the same the other "
+                   "way round. 1100 = 10% better than an average side against the same opponents. Recent games count most.")

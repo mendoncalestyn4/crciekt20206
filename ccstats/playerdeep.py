@@ -99,18 +99,25 @@ def fastest(career, ids) -> pd.DataFrame:
     ms = MILESTONES[kind]
     inn = innings(career, ids)
     sp = spells(career, ids)
+    if ms["unit"] == "matches":
+        # every match played counts, batted / bowled in it or not (as in real Test records)
+        dates = career.matches.set_index("match_id").date
+        played = career.batting[career.batting.match_id.isin(ids)][["match_id", "team", "player"]].drop_duplicates()
+        played = played.assign(date=played.match_id.map(dates)).sort_values(["date", "match_id"])
     rows = []
     for what, d, col in (("runs", inn, "runs"), ("wickets", sp, "wickets")):
+        tot = d.groupby(["player", "match_id"])[col].sum()
         for p, g in d.groupby("player"):
             if ms["unit"] == "matches":
-                per = g.groupby("match_id", sort=False).agg(v=(col, "sum"), date=("date", "first"))
+                per = played[played.player == p]
+                per = per.assign(v=[tot.get((p, x), 0) for x in per.match_id])[["v", "date", "team"]]
             else:
-                per = g.assign(v=g[col])[["v", "date"]]
+                per = g.assign(v=g[col])[["v", "date", "team"]]
             run = per.v.cumsum().to_numpy()
             for target in ms[what]:
                 hit = np.argmax(run >= target) if (run >= target).any() else None
                 if hit is not None:
-                    rows.append(dict(what=what, milestone=target, player=p, team=g.team.iloc[min(hit, len(g) - 1)],
+                    rows.append(dict(what=what, milestone=target, player=p, team=per.team.iloc[hit],
                                      taken=int(hit + 1), date=per.date.iloc[hit]))
     df = pd.DataFrame(rows, columns=["what", "milestone", "player", "team", "taken", "date"])
     df["rank"] = df.groupby(["what", "milestone"]).taken.rank(method="min").astype(int) if len(df) else []
@@ -316,7 +323,7 @@ def team_achievements(career, team: str) -> pd.DataFrame:
         if g.complete.all() and len(g) >= 3 and (g.outcome == "W").all():
             rows.append(dict(badge=f"Clean sweep {len(g)}–0", detail=f"v {g.opponent.iloc[0]}", date=g.date.max()))
     for (ev, se), g in m[~m.knockout & ((m.home == team) | (m.away == team))].groupby(["event", "season"]):
-        if len(g) >= 5 and g.competition.iloc[0] not in ("Test", "ODI", "T20I") and not (g.loser == team).any():
+        if len(g) >= 5 and g.level.iloc[0] != "International" and not (g.loser == team).any():
             rows.append(dict(badge="Unbeaten league season", detail=f"{ev} {se}", date=g.date.max()))
     h = honours(career)
     for r in h[h.champion_teams.map(lambda t: team in t) & ~h.how.str.contains("so far")].itertuples():

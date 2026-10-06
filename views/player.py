@@ -6,6 +6,7 @@ from ccstats import analysis as A
 from ccstats import extras as E
 from ccstats import players as PL
 from ccstats import playerdeep as PD
+from ccstats import teamdeep as TD
 from ccstats.stats import Scope, bars_for
 from ui import state
 from ui.charts import funnel_chart, impact_chart, rank_chart, signed, pct, CONFIG, bars, fmt, form_chart, paired_bars, say
@@ -461,6 +462,23 @@ if "Bowling" in tabs:
                                f"{say(wt.index[0]).lower()}.",
                                "How they get batters out: bowled and lbw mean they hit the stumps; catches mean they "
                                "need the fielders, so set the field for them.")
+        if kind == "multi":
+            with safe_section("match pattern"), st.container(border=True):
+                mp = state.memo(TD.bowler_match_pattern, career, ids, 1)
+                me_mp = mp[mp.player == player]
+                st.markdown("**Over a match** · first bowling innings against the second, as the pitch wears")
+                if me_mp.empty:
+                    st.caption("Hasn't bowled in both innings of a match yet.")
+                else:
+                    r_ = me_mp.iloc[0]
+                    html_table([["First innings", fmt(r_.first_avg, 1)], ["Second innings", fmt(r_.second_avg, 1)],
+                                ["Wickets in both innings", f"{r_.both_pct:.0f}% of {r_.matches} matches"],
+                                ["Best match figures", r_.best_match]], ["", ""])
+                    if np.isfinite(r_.change):
+                        chart_note(f"Their average is {r_.change:+.0f}% in the second innings "
+                                   f"({fmt(r_.second_avg, 1)} against {fmt(r_.first_avg, 1)}).",
+                                   "Shows whether they get better as the pitch wears (lower is better) and how often they "
+                                   "strike in both innings: the ones to bowl on a final day.")
         with safe_section("with and without wickets"), st.container(border=True):
             ww_ = state.memo(PD.with_without, career, ids, player)
             st.markdown("**With and without wickets** · their spells split by whether they took a wicket")

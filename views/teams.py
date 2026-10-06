@@ -4,13 +4,14 @@ import streamlit as st
 
 from ccstats import analysis as A
 from ccstats import extras as E
+from ccstats import teamdeep as TD
 from ccstats import teamplay as TP
 from ccstats import winprob as WP
 from ui.theme import colours
 from ccstats.stats import Scope, bars_for, kind_of
 from ui import state
-from ui.charts import pct, CONFIG, bars, fmt, race_chart, say
-from ui.theme import chart_note, html_table, kpis, match_link, page_header, safe_section
+from ui.charts import signed, pct, CONFIG, bars, fmt, race_chart, say
+from ui.theme import chart_note, html_table, kpis, match_link, page_header, player_link, safe_section
 
 career = state.current()
 if career is None:
@@ -53,9 +54,17 @@ kpis([("Played", f"{int(me.played)}"), ("Won–Lost", f"{int(me.won)}–{int(me.
      + [("Current run", f"{cur[1]} {dict(W='won', L='lost', D='drawn', T='tied', NR='no result').get(cur[0], '')}" if cur[0] else "–"),
         ("Last 5", f"<span class='small'>{' '.join(sk['last5'])}</span>" if sk["last5"] else "–")])  # fits the tile
 st.caption(f"Longest winning run: {sk['longest_win']} · longest losing run: {sk['longest_loss']}")
+# ---------------------------------------------------------------- 99 · batting and bowling ratings
+with safe_section("ratings"):
+    ur = state.memo(TD.unit_ratings, career, ids)
+    if team in set(ur.team):
+        u = ur.set_index("team").loc[team]
+        st.markdown(f"**Batting rating {u.batting:.0f}** ({u.batting_rank} of {len(ur)}) · **Bowling rating "
+                    f"{u.bowling:.0f}** ({u.bowling_rank} of {len(ur)}) · 1000 = average, recent games count most. "
+                    + ("The weaker half needs the work." if abs(u.batting - u.bowling) >= 50 else "Well balanced."))
 
-tab_over, tab_win, tab_opp, tab_season, tab_series, tab_res = st.tabs(
-    ["Overview", "How they win", "Opponents and stages", "Season", "Series and Tests", "Results"])
+tab_over, tab_win, tab_opp, tab_season, tab_series, tab_squad, tab_res = st.tabs(
+    ["Overview", "How they win", "Opponents and stages", "Season", "Series and Tests", "Squad", "Results"])
 with tab_over:
     keep = A.keepers(career, ids, team)
     if len(keep):
@@ -250,6 +259,33 @@ mine_g = games_all[games_all.team == team]
 multi = TP.is_multi(games_all)
 second = "Batting second" if multi else "Chasing"
 
+# ---------------------------------------------------------------- 135 · squad changes
+with tab_squad, safe_section("squad changes"):
+    sc = state.memo(TD.squad_changes, career, ids, team)
+    intl_ = sc.attrs.get("international", False)
+    st.markdown(f"**Who came in and who went out** · {'series to series' if intl_ else 'season to season'}")
+    if sc.empty:
+        st.caption("Only one " + ("series" if intl_ else "season") + " so far: nothing to compare yet.")
+    else:
+        for (a_, b_), g_ in sc.groupby(["from", "to"], sort=False):
+            with st.container(border=True):
+                st.markdown(f"**{a_} → {b_}**")
+                ins = g_[g_.change == "in"]
+                outs = g_[g_.change == "out"]
+                c1_, c2_ = st.columns(2)
+                with c1_:
+                    st.markdown(f"🟢 In ({len(ins)})")
+                    if len(ins):
+                        html_table([[player_link(r.player), r.games, r.runs, r.wickets] for r in ins.itertuples()],
+                                   ["Player", "Games", "Runs", "Wkts"], numeric={1, 2, 3}, raw={0})
+                with c2_:
+                    st.markdown(f"🔴 Out ({len(outs)})")
+                    if len(outs):
+                        html_table([[player_link(r.player), r.games, r.runs, r.wickets] for r in outs.itertuples()],
+                                   ["Player", "Games", "Runs", "Wkts"], numeric={1, 2, 3}, raw={0})
+        st.caption("In: their figures in the new " + ("series" if intl_ else "season") + ". Out: their figures in the "
+                   "last one they played.")
+
 with tab_res:
     with st.container(border=True):
         st.markdown("**Results**")
@@ -336,6 +372,22 @@ with tab_win:
                 st.caption("Chasing: batting last. Defending: setting the target. 'Every team' is the same for all sides "
                            f"in {section}.")
 
+    # ---------------------------------------------------------------- 96 · dominance
+    with safe_section("dominance"), st.container(border=True):
+        dm = state.memo(TD.dominance, career, ids)
+        st.markdown("**How they win and lose** · thrashings, comfortable results and scrapes")
+        if team in set(dm.team):
+            r_ = dm.set_index("team").loc[team]
+            b_ = bars_for(base_kind)
+            html_table([["Wins", int(r_.won_thrashing), int(r_.won_comfortable), int(r_.won_scrape)],
+                        ["Defeats", int(r_.lost_thrashing), int(r_.lost_comfortable), int(r_.lost_scrape)]],
+                       ["", "Thrashing", "Comfortable", "Scrape"], numeric={1, 2, 3})
+            rank_ = int(list(dm.team).index(team)) + 1
+            st.caption(f"Thrashing: {b_['thrash_runs']}+ runs or {b_['thrash_wkts']}+ wickets"
+                       + (" (or an innings)" if base_kind == "multi" else "") + f". Scrape: under {b_['close_runs']} runs "
+                       f"or 1-2 wickets. Dominance index {r_['index']:+.0f} (thrashings won minus heavy defeats, per 100 "
+                       f"games): {rank_} of {len(dm)} here."
+                       + (f" Draws: {int(r_.drawn)}." if r_.drawn else ""))
     # ---------------------------------------------------------------- 133 · comebacks
     with safe_section("comebacks"), st.container(border=True):
         with st.spinner("Working out the win chance through every match…"):
@@ -379,6 +431,17 @@ with tab_opp:
                      f"{pct(r.win_pct)}", f"{r.last:%d %b %Y}"] for r in op.itertuples()]
             html_table(rows, ["Opponent", "Played", "Record", "Win %", "Last met"], numeric={1, 3},
                        row_class=["hi" if r.favourite or r.bogey else "" for r in op.itertuples()])
+    with safe_section("fortress"), st.container(border=True):
+        fz = state.memo(TD.fortress, career, ids)
+        st.markdown("**Home fortress** · home record against the average home side here")
+        if fz.empty:
+            st.caption("No home games here (neutral venues).")
+        else:
+            html_table([[r.team, TP.wdl(r._asdict()), pct(r.win_pct), signed(r.vs) + (" pts" if np.isfinite(r.vs) else "")]
+                        for r in fz.itertuples()], ["Team", "Home record", "Home win %", "v average home side"],
+                       numeric={2, 3}, row_class=["hi" if r.team == team else "" for r in fz.itertuples()])
+            st.caption(f"The average home side here wins {pct(fz.attrs['average'])}. A fortress is well above that: "
+                       "winning there is worth more.")
     with safe_section("revenge"):
         rv = state.memo(TP.revenge, career, ids, team)
         with st.container(border=True):
@@ -454,6 +517,15 @@ with tab_series:
                     st.caption("No series games yet.")
                 st.caption("Decider: the last game with the series level. Dead rubber: the series was already won.")
     if multi:
+        with safe_section("second innings"), st.container(border=True):
+            si2 = state.memo(TD.second_innings, career, ids)
+            st.markdown("**Second innings and fourth-innings chases**")
+            html_table([[r.team, r.second_innings, fmt(r.second_avg, 0), r.cheap, r.chases,
+                         f"{r.chase_won}–{r.chase_drawn}–{r.chase_lost}"] for r in si2.itertuples()],
+                       ["Team", "2nd innings", "Average", "Bowled out under 200", "4th-innings chases", "Won–drawn–lost"],
+                       numeric={1, 2, 3, 4}, row_class=["hi" if r.team == team else "" for r in si2.itertuples()])
+            st.caption("Second innings: each team's second time batting in a match (after a follow-on too). "
+                       "Chases: batting in the 4th innings, with how those games ended.")
         with safe_section("follow-on and declarations"):
             fo = state.memo(TP.follow_on_and_declarations, career, ids, team)
             with st.container(border=True):
