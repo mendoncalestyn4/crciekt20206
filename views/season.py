@@ -7,6 +7,7 @@ from ccstats import tables as T
 from ccstats import winprob as WP
 from ccstats.competitions import shown_name
 from ui import state
+from ui.charts import _n
 from ui.theme import colours, esc, html_table, page_header, safe_section
 
 career = state.current()
@@ -148,7 +149,7 @@ with tab_progress, safe_section("season progress"):
             cc = colours()
             bar = (f"<div style='height:8px;border-radius:4px;background:{cc['mid']};overflow:hidden;min-width:80px'>"
                    f"<div style='height:8px;width:{pct:.0f}%;background:{cc['s1']}'></div></div>") if pct is not None else ""
-            played = f"{n} of about {full} matches" if full else f"{n} matches so far"
+            played = f"{n} of about {full} matches" if full else f"{_n(n, 'match', 'matches')} so far"
             bars_html.append([f"{esc(name)} {season}", played, bar, esc(stage), esc(leader)])
         html_table(bars_html, ["Competition", "Played", "Progress", "Stage", "Top of the table"], raw={2})
         st.caption("'About' uses the number of matches in the last full season of the same competition; a first season "

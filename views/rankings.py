@@ -82,11 +82,11 @@ with tab_p:
                         chart_note("From their first innings here to now: " + ", ".join(bits) + ".",
                                    "Shows who is rising and who is falling, innings by innings.")
         with st.expander("Every rated player"):
-            st.dataframe(table.sort_values(col, ascending=False), hide_index=True, width="stretch", column_config={
-                "player": "Player", "team": "Latest team", "batting": st.column_config.NumberColumn("Batting", format="%d"),
-                "bowling": st.column_config.NumberColumn("Bowling", format="%d"),
-                "all_round": st.column_config.NumberColumn("All-round", format="%d"),
-                "batting_innings": "Innings batted", "bowling_innings": "Innings bowled"})
+            every_ = table.sort_values(col, ascending=False)
+            every_ = every_.assign(**{k: [fmt(v, 0) for v in every_[k]] for k in ("batting", "bowling", "all_round")})
+            st.dataframe(every_, hide_index=True, width="stretch", column_config={
+                "player": "Player", "team": "Latest team", "batting": "Batting", "bowling": "Bowling",
+                "all_round": "All-round", "batting_innings": "Innings batted", "bowling_innings": "Innings bowled"})
 
 with tab_t:
     elo, hist = R.team_elo(career, section)
@@ -196,10 +196,9 @@ if intl_secs:
                            f"{int((ci.formats >= 2).sum())} players are rated in two or more formats.",
                            "One world ranking across all three formats, so an all-format star can be compared with a "
                            "specialist.")
-            st.dataframe(ci, hide_index=True, width="stretch", column_config={
-                "player": "Player", "team": "Team", "Test": st.column_config.NumberColumn("Test", format="%d"),
-                "ODI": st.column_config.NumberColumn("ODI", format="%d"), "T20I": st.column_config.NumberColumn("T20I", format="%d"),
-                "combined": st.column_config.NumberColumn("Combined", format="%d"), "formats": "Formats rated",
+            show_i = ci.assign(**{f: [fmt(v, 0) for v in ci[f]] for f in ("Test", "ODI", "T20I", "combined")})
+            st.dataframe(show_i, hide_index=True, width="stretch", column_config={
+                "player": "Player", "team": "Team", "combined": "Combined", "formats": "Formats rated",
                 "innings": "Innings"})
             st.caption("Each format's rating is the one on the Player ratings tab for that section. The combined "
                        "rating weights each format by how many innings the player has had in it, so the format they "

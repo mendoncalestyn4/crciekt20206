@@ -252,8 +252,8 @@ with st.container(border=True):
                                                                     help="From where they bat and how much they bowl in this section"),
                                 "Player": st.column_config.TextColumn("Player", width=112),
                                 "Team": st.column_config.TextColumn("Team", width=128)}
-                 | {v: st.column_config.Column(v, width=54) for k, v in cols.items()
-                    if k not in ("player", "teams")})
+                 | {v: st.column_config.Column(v, width=110 if k == "fair" else 54, help=stat.definition if k == "fair" else None)
+                    for k, v in cols.items() if k not in ("player", "teams")})
     notes_ = ["Rank %: where the figure sits among everyone who qualifies (top 5% = better than 95% of them)."]
     if len(picked_seasons) == 1:
         notes_.append("v last season: the same figure the season before (▲ better, ▼ worse).")

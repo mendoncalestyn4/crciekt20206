@@ -4,7 +4,7 @@ import streamlit as st
 from ccstats import extras as E
 from ccstats.stats import Scope
 from ui import state
-from ui.charts import pct, CONFIG, bars, fmt
+from ui.charts import _n, pct, CONFIG, bars, fmt
 from ui.theme import chart_note, page_header
 
 career = state.current()
@@ -41,7 +41,7 @@ with t_potm:
                     for t, a, n, r, k, f in zip(top.team, top.awards, top.matches, top.rate, top.knockouts, top.finals)]),
                     width="stretch", config=CONFIG, key="hf_potm")
                 t0 = top.iloc[0]
-                chart_note(f"{t0.player} has {t0.awards} awards in {t0.matches} matches: {pct(t0.rate)} of their "
+                chart_note(f"{t0.player} has {_n(t0.awards, 'award')} in {_n(t0.matches, 'match', 'matches')}: {pct(t0.rate)} of their "
                            f"games, {t0.knockouts} of them in knockouts.",
                            "Who wins matches on their own most often. Rate = awards as a share of the matches they "
                            "played here.")
@@ -73,7 +73,7 @@ with t_duo:
                                 width="stretch", config=CONFIG, key="hf_duo")
                 d0 = top.iloc[0]
                 tot = int(duo.wickets.sum())
-                chart_note(f"{d0.player} and {d0.bowler} have combined for {d0.wickets} wickets, {d0.wickets / max(tot, 1) * 100:.0f}% "
+                chart_note(f"{d0.player} and {d0.bowler} have combined for {_n(d0.wickets, 'wicket')}, {d0.wickets / max(tot, 1) * 100:.0f}% "
                            f"of the {tot} catches and stumpings here.",
                            "The fielder-and-bowler pairs that work: keep the fielder where the catches go when that "
                            "bowler is on.")

@@ -321,7 +321,8 @@ def team_achievements(career, team: str) -> pd.DataFrame:
     s = s[s.team == team]
     for sid, g in s.groupby("series_id"):
         if g.complete.all() and len(g) >= 3 and (g.outcome == "W").all():
-            rows.append(dict(badge=f"Clean sweep {len(g)}–0", detail=f"v {g.opponent.iloc[0]}", date=g.date.max()))
+            sec = m.set_index("match_id").section.get(g.match_id.iloc[0], "")
+            rows.append(dict(badge=f"Clean sweep {len(g)}–0", detail=f"v {g.opponent.iloc[0]}, {sec}", date=g.date.max()))
     for (ev, se), g in m[~m.knockout & ((m.home == team) | (m.away == team))].groupby(["event", "season"]):
         if len(g) >= 5 and g.level.iloc[0] != "International" and not (g.loser == team).any():
             rows.append(dict(badge="Unbeaten league season", detail=f"{ev} {se}", date=g.date.max()))

@@ -6,7 +6,7 @@ from ccstats import playerdeep as PD
 from ccstats import teamdeep as TD
 from ccstats.stats import Scope
 from ui import state
-from ui.charts import signed, pct, CONFIG, bars, fmt
+from ui.charts import _n, signed, pct, CONFIG, bars, fmt
 from ui.theme import chart_note, html_table, kpis, match_link, page_header, player_link, safe_section
 
 career = state.current()
@@ -32,6 +32,11 @@ mine = set(state.my_teams(career))
 
 def mark(teams) -> list[str]:
     return ["hi" if any(t in mine for t in str(x).split(" / ")) else "" for x in teams]
+
+
+def pct_s(v) -> str:
+    t = signed(v)
+    return t if t == "–" else t + "%"
 
 
 tabs = st.tabs(["Form guide", "Milestones and records", "Win when they fire", "Heroes in defeat", "Carried the team",
@@ -218,27 +223,27 @@ with tabs[7], safe_section("pairs"):
             st.caption("No pairs yet.")
 
     # ---------------------------------------------------------------- 128 · chemistry · 131 · strike-rate pressure
-    left, right = st.columns(2, gap="medium")
+    left, right = st.container(), st.container()  # stacked: each table needs the full width
     with left, safe_section("chemistry"), st.container(border=True):
         ch = state.memo(TD.chemistry, career, ids)
         st.markdown("**Partnership chemistry** · named pairs (3+ stands) against the average stand for the same wickets")
         if ch.empty:
             st.caption("No pair has 3 named stands yet.")
         else:
-            html_table([[r.pair, r.team, r.stands, f"{r.average:.1f}", f"{r.expected:.1f}", signed(r.chemistry) + "%"]
+            html_table([[r.pair, r.team, r.stands, f"{r.average:.1f}", f"{r.expected:.1f}", pct_s(r.chemistry)]
                         for r in ch.head(15).itertuples()], ["Pair", "Team", "Stands", "Avg", "Expected", "Chemistry"],
                        numeric={2, 3, 4, 5}, row_class=mark(ch.head(15).team))
             st.caption("Expected: what the average pair makes for the same wickets here, so an opening pair is compared "
                        "with opening stands. +50% = half as much again.")
     with right, safe_section("strike-rate pressure"), st.container(border=True):
         sp_ = state.memo(TD.sr_pressure, career, ids)
-        st.markdown("**Strike-rate pressure** · how fast their partners score when batting with them")
+        st.markdown("**Strike-rate pressure** · how fast their partners score when batting with them (top-7 batters)")
         if sp_.empty:
             st.caption("White-ball cricket only, and batters need 3+ named stands.")
         else:
             show_ = pd.concat([sp_.head(6), sp_.tail(6)]).drop_duplicates("player")
             html_table([[player_link(r.player), r.team, r.innings, fmt(r.partner_sr_with, 1), fmt(r.partner_sr_without, 1),
-                         signed(r.effect) + "%"] for r in show_.itertuples()],
+                         signed(r.effect) + ("%" if r.effect == r.effect else "")] for r in show_.itertuples()],
                        ["Batter", "Team", "Inns", "Partners' SR with them", "Partners' SR otherwise", "Effect"],
                        numeric={2, 3, 4, 5}, raw={0}, row_class=mark(show_.team))
             st.caption("The slowest-scoring partnerships first, then the fastest. The scorecards don't split a stand's "
@@ -300,7 +305,7 @@ with tabs[11], safe_section("match impact"):
         with left, st.container(border=True):
             st.markdown("**Biggest single-match impact**")
             top_ = mi.sort_values("impact", ascending=False).head(15)
-            html_table([[player_link(r.player), r.team, f"{r.impact:.0f}", f"{int(r.runs)} & {int(r.wickets)} wkts",
+            html_table([[player_link(r.player), r.team, f"{r.impact:.0f}", f"{int(r.runs)} & " + _n(r.wickets, "wkt"),
                          match_link(r.match_id, f"v {r.opponent}, {r.date:%d %b %Y}")] for r in top_.itertuples()],
                        ["Player", "Team", "Impact", "Did", "Match"], numeric={2}, raw={0, 4}, row_class=mark(top_.team))
         with right, st.container(border=True):
@@ -378,14 +383,14 @@ with tabs[14], safe_section("clutch"):
     multi_ = cb_.attrs.get("kind") == "multi"
     st.caption("Big games: knockouts, close games (by this format's margins) and series deciders"
                + (", plus the 4th innings of a multi-day game." if multi_ else ".") + " Players need 3+ innings each way.")
-    left, right = st.columns(2, gap="medium")
+    left, right = st.container(), st.container()  # stacked: each table needs the full width
     with left, st.container(border=True):
-        st.markdown("**Batters in big games** · average then against average otherwise")
+        st.markdown("**Batters in big games** · average then against average otherwise (top-7 batters)")
         if cb_.empty:
             st.caption("Not enough big games yet.")
         else:
             html_table([[player_link(r.player), r.team, r.clutch_innings, fmt(r.clutch_avg, 1), fmt(r.other_avg, 1),
-                         signed(r.lift) + "%"] for r in cb_.head(15).itertuples()],
+                         pct_s(r.lift)] for r in cb_.head(15).itertuples()],
                        ["Batter", "Team", "Big-game inns", "Avg then", "Avg otherwise", "Lift"], numeric={2, 3, 4, 5},
                        raw={0}, row_class=mark(cb_.head(15).team))
     with right, st.container(border=True):
@@ -394,7 +399,7 @@ with tabs[14], safe_section("clutch"):
             st.caption("Not enough big games yet.")
         else:
             html_table([[player_link(r.player), r.team, r.clutch_innings, f"{r.clutch_wpi:.2f}", f"{r.other_wpi:.2f}",
-                         fmt(r.clutch_avg, 1) if multi_ else fmt(r.clutch_econ, 2), signed(r.lift) + "%"]
+                         fmt(r.clutch_avg, 1) if multi_ else fmt(r.clutch_econ, 2), pct_s(r.lift)]
                         for r in cw_.head(15).itertuples()],
                        ["Bowler", "Team", "Big-game inns", "Wkts/inns then", "Otherwise", "Avg then" if multi_ else "Econ then",
                         "Lift"], numeric={2, 3, 4, 5, 6}, raw={0}, row_class=mark(cw_.head(15).team))

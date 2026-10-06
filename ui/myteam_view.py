@@ -13,7 +13,7 @@ from ccstats import teamplay as TP
 from ccstats.competitions import shown_name
 
 from . import state
-from .charts import pct, fmt
+from .charts import _n, pct, fmt
 from .theme import esc, form_strip, html_table, kpis, match_link, player_link, safe_section, scoreboard
 
 
@@ -110,7 +110,7 @@ def render(career, team: str, key: str) -> None:
         with safe_section("season so far"), st.container(border=True):
             sp = state.memo(MT.same_point, career, team, section)
             tg = state.memo(TP.games, career, ids_all)
-            last5 = list(tg[tg.team == team].outcome.tail(5))
+            last5 = list(MT.in_played_order(career, tg[tg.team == team]).outcome.tail(5))
             st.markdown(f"**{section} {season} so far** · last 5: {form_strip(last5)}", unsafe_allow_html=True)
             if sp:
                 line = f"After {sp['n']} game{'s' if sp['n'] != 1 else ''}: **{TP.wdl(sp['now'])}**"
@@ -136,7 +136,7 @@ def render(career, team: str, key: str) -> None:
                 bats = sq.sort_values("runs", ascending=False).head(3)
                 bowls = sq[sq.wickets > 0].sort_values("wickets", ascending=False).head(3)
                 rows = [[player_link(r.player), f"{r.runs} runs", f"avg {fmt(r.average, 1)}", r.form] for r in bats.itertuples()]
-                rows += [[player_link(r.player), f"{r.wickets} wkts", f"econ {fmt(r.economy, 2)}", ""] for r in bowls.itertuples()]
+                rows += [[player_link(r.player), _n(r.wickets, "wkt"), f"econ {fmt(r.economy, 2)}", ""] for r in bowls.itertuples()]
                 html_table(rows, ["Player", "", "", "Form"], raw={0})
         # ---------------------------------------------------------------- alerts
         with safe_section("alerts"):

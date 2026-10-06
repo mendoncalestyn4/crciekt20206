@@ -143,7 +143,7 @@ def pressure_games(career, ids) -> tuple[set, set]:
 
 def clutch(career, ids, min_innings: int = 3) -> tuple[pd.DataFrame, pd.DataFrame]:
     """(batters, bowlers): figures in big games (and, in multi-day cricket, the 4th
-    innings) against everything else."""
+    innings) against everything else.  Batters: those who usually bat in the top 7."""
     kind = kind_of_ids(career, ids)
     big, fourth = pressure_games(career, ids)
     inn = innings(career, ids)
@@ -151,6 +151,8 @@ def clutch(career, ids, min_innings: int = 3) -> tuple[pd.DataFrame, pd.DataFram
                                                        index=inn.index)
     rows = []
     for p, g in inn.groupby("player"):
+        if g.position.median() > 7:  # batters and all-rounders: a tail-ender's runs in a final aren't the story
+            continue
         a, b = g[g.clutch], g[~g.clutch]
         if len(a) < min_innings or len(b) < min_innings:
             continue
@@ -208,7 +210,7 @@ def sr_pressure(career, ids, min_innings: int = 3) -> pd.DataFrame:
     """White-ball only.  For each batter: their partners' strike rate in innings in
     which they shared a stand with this batter, against the same partners' strike
     rate in their other innings.  (The scorecards don't split a stand's runs, so this
-    is the partners' whole innings.)"""
+    is the partners' whole innings.)  Batters who usually bat in the top 7."""
     from . import partnerships as P
     if kind_of_ids(career, ids) == "multi":
         return pd.DataFrame(columns=["player", "team", "innings", "partner_sr_with", "partner_sr_without", "effect"])
@@ -220,7 +222,10 @@ def sr_pressure(career, ids, min_innings: int = 3) -> pd.DataFrame:
         for me, other in ((r.batter1, r.batter2), (r.batter2, r.batter1)):
             shared.setdefault(me, set()).add((r.match_id, r.innings_no, other))
     rows = []
+    pos = innings(career, ids).groupby("player").position.median()
     for me, keys in shared.items():
+        if pos.get(me, 99) > 7:  # batters and all-rounders only
+            continue
         partners = {k[2] for k in keys}
         with_r = with_b = wo_r = wo_b = 0
         n = 0
@@ -237,7 +242,7 @@ def sr_pressure(career, ids, min_innings: int = 3) -> pd.DataFrame:
                 else:
                     wo_r += row.runs
                     wo_b += row.balls
-        if n >= min_innings and with_b and wo_b:
+        if n >= min_innings and with_b and wo_b and wo_r:  # partners who never scored otherwise: nothing to compare with
             a, b = with_r / with_b * 100, wo_r / wo_b * 100
             rows.append(dict(player=me, innings=n, partner_sr_with=a, partner_sr_without=b, effect=(a / b - 1) * 100))
     d = pd.DataFrame(rows, columns=["player", "innings", "partner_sr_with", "partner_sr_without", "effect"])

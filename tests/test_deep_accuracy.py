@@ -370,6 +370,7 @@ def test_clutch_recount(season):
     b = batted(season, ids)
     for r in bat.itertuples():
         mine = b[b.player == r.player]
+        assert mine.position.median() <= 7
         a, o = mine[mine.match_id.isin(got_big)], mine[~mine.match_id.isin(got_big)]
         assert r.clutch_innings == len(a)
         assert r.clutch_avg == pytest.approx(a.runs.sum() / max(a.out.sum(), 1))
@@ -413,6 +414,7 @@ def test_sr_pressure_recount(season):
     s = s[s.known]
     b = batted(season, ids)
     for r in d.head(8).itertuples():
+        assert b[b.player == r.player].position.median() <= 7
         shared = {(x.match_id, x.innings_no, x.batter2 if x.batter1 == r.player else x.batter1)
                   for x in s.itertuples() if r.player in (x.batter1, x.batter2)}
         partners = {k[2] for k in shared}
@@ -499,3 +501,9 @@ def test_games_close_uses_the_format_bar(career):
     g = TP.games(career, ids_of(career, "Tests"))
     # a Test won by 4 wickets is not close; the Pakistan draw is not close either
     assert not g[g.margin_wickets == 4].close.any()
+
+
+def test_sr_pressure_never_divides_by_zero(season):
+    for sec in season.matches.section.unique():
+        d = TD.sr_pressure(season, ids_of(season, sec), min_innings=1)
+        assert np.isfinite(d.effect).all() and (d.partner_sr_without > 0).all()

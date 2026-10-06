@@ -59,40 +59,51 @@ player, team, competition or match.
 or both). It's saved with your career. Home then opens on your team, and the planner, previews and lists start from
 it.
 
+**Your choices follow you:** pick a section, season or team on one page (say IPL 2027) and every other page opens on
+it too, until you change it. That's saved with your career as well.
+
 The pages are grouped in the menu:
 
 | Page | What it's for |
 |---|---|
-| **Home** | One tab per team you play as: record and rating in each competition, latest result, this season against the same point last season, report cards (A to E), your stars with form arrows, squad, alerts, headlines, milestones and records in sight, how you win, rivals, a *Next opponent → Preview* button, trophies, team records and season by season. The **Everything** tab has the latest result, headlines and every section. |
-| **Stat by stat** | Pick a section and one stat. Left: the best (or worst) ranked. Right: every player as a dot against the section average. Pick several seasons, competitions, teams, venues, ways out and batting positions at once (groups like openers + no. 3, or single positions 1 to 11), or combine sections. Download as CSV. |
-| **Players** | Everything about one player: batting and bowling tables for every section, career journey, form, streaks, chasing, splits, nemesis and bunnies, batting position, role. **Story** tab: career firsts, team win % when they fire, nervous nineties, pairs, not-outs, after a hundred, compare two seasons. |
+| **Home** | One tab per team you play as: record and rating in each competition, latest result, **what changed after the latest game** (Elo, table position, series score, first-innings lead, records, milestones, who rose or dipped), this season against the same point last season, report cards (A to E), your stars with form arrows, squad, alerts, headlines, milestones and records in sight, how you win, rivals, a *Next opponent → Preview* button, trophies, team records, season by season and **your match notes**. The **Everything** tab has the latest result, headlines and every section. |
+| **Stat by stat** | Pick a section and one stat. Left: the best (or worst) ranked. Right: every player as a dot against the section average. Pick several seasons, competitions, teams, venues, ways out and batting positions at once (groups like openers + no. 3, or single positions 1 to 11), or combine sections. Each player's **rank %** (top 5% …), the **change since last season** (when one season is picked), and **Measure against** their own section's or season's average, so figures from different competitions are fair to add up. Download as CSV. |
+| **Players** | Everything about one player: a career card and **every format side by side** (best one highlighted), batting and bowling tables for every section, **danger zones** (the scores they tend to get out on), the **conversion funnel** (20 → 50 in T20; 30 → 50 → 80 → 100 in ODIs; 50 → 80 → 100 in Tests), bowling with and without wickets, Test bowlers' match pattern, career journey, form, streaks, chasing, splits, nemesis and bunnies, batting position, role. **Story** tab: match impact game by game, rank in the section season by season, fastest to milestones, badges, career firsts, team win % when they fire, nervous nineties, pairs, not-outs, after a hundred, compare two seasons. |
 | **Compare players** | Up to four players side by side, one chart per stat |
-| **Teams** | Tabs: **Overview** (against the average team, top players, partnerships, collapses, style, discipline), **How they win** (batting first or chasing, close games, chasing and defending by target size, the openers' start), **Opponents and stages** (league v knockouts, favourite and bogey teams, bouncing back after a defeat, revenge games), **Season** (the league race after each match day, early v late season), **Series and Tests** (first blood, deciders, dead rubbers, follow-on and declarations), **Results** |
+| **Teams** | Tabs: **Overview** (against the average team, top players, partnerships, collapses, style, discipline), **How they win** (batting first or chasing, close games, chasing and defending by target size, the openers' start), **Opponents and stages** (league v knockouts, favourite and bogey teams, home fortress, bouncing back after a defeat, revenge games), **Season** (the league race after each match day, early v late season), **Series and Tests** (first blood, deciders, dead rubbers, follow-on and declarations, second-innings collapses and 4th-innings chases), **Squad** (the all-time or season XI, who came in and who left), **Results**. Also: batting and bowling ratings, how dominant the wins are (thrashings, comfortable, scrapes by the format's margins) and comebacks from a low win chance |
 | **Team vs team** | Two teams head to head, overall / home / away / only against each other |
-| **Opponent preview** | Pick your team and theirs (Tests / ODIs / T20Is / all for internationals): a game plan, every past meeting with key players and a card per game, who gets whom out, their form, key wicket, weak spot, the bowler to attack, batting styles, batting first or chasing, home and away, big matches, trend, and the two sides side by side |
+| **Opponent preview** | Pick your team and theirs (Tests / ODIs / T20Is / all for internationals): a **predicted result** (built in steps you can see), **your best XI against them** (your squad's record v them, with picks and players to think again about), a game plan, every past meeting with key players and a card per game, who gets whom out, their form, key wicket, weak spot, the bowler to attack, batting styles, batting first or chasing, home and away, big matches, trend, and the two sides side by side |
 | **Team planner** | Qualification scenarios, a suggested batting order, a bowling plan, fringe players knocking on the door, batting and bowling partnerships |
-| **Player stories** | Form guide, milestone and record watch, team win % when a player fires, heroes in defeat, one-man shows, nervous nineties, pairs, after a hundred, partnerships, Player of the Series, biggest upsets |
-| **Matches** | Search any match: scoreboard, wicket timeline with the par line, full scorecard |
-| **Season** | A results calendar, a tracker for every bilateral series, and how far each competition has got |
-| **Competitions** | Pick a competition (a World Cup, the bilateral ODI series, a league): league tables (points, NRR, wins batting first and chasing), knockout brackets, every series with its Player of the Series |
+| **Player stories** | Form guide, milestone and record watch, team win % when a player fires, heroes in defeat, one-man shows, nervous nineties, pairs, after a hundred, partnerships (with chemistry and strike-rate pressure), Player of the Series, biggest upsets, fastest to milestones, match impact, badges, batter v bowler, clutch players |
+| **Matches** | Search any match: scoreboard, **your notes** (saved with the career), a written match report with an excitement rating, **win chance** after every wicket, wicket timeline with the par line, full scorecard. With no match picked: the best games you've played |
+| **Season** | A results calendar, a tracker for every bilateral series (with the chances of each series result while it's still going), and how far each competition has got |
+| **Competitions** | Pick a competition (a World Cup, the bilateral ODI series, a league): league tables (points, NRR, wins batting first and chasing, last 5, home and away, points per game, run rates, places moved since the last match day), knockout brackets, every series with its Player of the Series, and for Tests the **World Test Championship** table (12 a win, 6 a tie, 4 a draw, by % of points) |
+| **Season review** | Each competition's season in one place: champions and the final, Team of the Season, leading players, breakout players, best matches, biggest upset, records broken, your report card. International cricket gets a calendar-year review: Player of the Year and Team of the Year in Tests, ODIs and T20Is, and the Cricketer of the Year |
 | **Honours board** | Champions of every competition and season, top scorers, trophy cabinets |
 | **Rivalries** | Every pair of teams that have met, and who does best in those games |
-| **Records** | The record books (partnerships with both batters named where the scorecard allows), plus "On pace for" projections while a season is under way |
+| **Records** | The record books (partnerships with both batters named where the scorecard allows) with the **near miss** under each (the closest anyone has come), the **record timeline** (who held each record and when it fell), plus "On pace for" projections while a season is under way |
 | **Hall of fame** | Player of the Match leaderboard, deadly catcher-and-bowler duos, best all-round match performances |
-| **Rankings** | Player ratings (recent form counts most) and team Elo |
-| **Insights** | Is this total enough? (and what a score is worth batting first and chasing), home advantage, how scoring changes season to season, breakout players, Test innings by innings |
+| **Rankings** | Player ratings (recent form counts most), **rankings history** (each player's peak and when, matches at No. 1, every No. 1 reign), team Elo with batting and bowling ratings, and a **combined international rating** across Tests, ODIs and T20Is |
+| **Insights** | Is this total enough? (and what a score is worth batting first and chasing, and against a good side), a **chase calculator**, home advantage, how scoring changes season to season, breakout players, Test innings by innings |
 | **Analytics** | Runs above expected, fair averages (against the attacks faced, and settled for short careers), what wins games, luck (expected wins), match-winners and who each team leans on, style maps, boom or bust, is the form real?, bat or bowl first? |
 | **Data check** | Starts with a short list of what needs you. **Unclear catches**: who took "c Patel" when a side has two Patels (one click accepts the suggestions). **Name shared by 2 players**: e.g. *R Patel* at Leicestershire and at Surrey, kept apart in one click. **Player with 2 names**. **Games left out**: knockouts from an earlier playthrough of a season (see below). Nothing changes unless you click, and every change can be undone under *Your changes*. |
 
 Under every chart, **What it shows** reads the chart for you with its numbers, and **What it's for** says what to
 use it for.
 
+**Format rules:** every figure uses the bar that fits the format. A big score is 50 in T20 and ODIs and 100 in Tests;
+a haul is 3 wickets in T20, 4 in ODIs and 5 in Tests; close games, thrashings and good starts are measured the same
+way.
+
 **Latest** always means the match you played last (from when the game saved the scorecard), not the date printed on
 it: the game saves some scorecards dated months ahead.
 
 **What the scorecards can't tell us:** there's no ball-by-ball detail, toss, captains, ages or fixtures, so there's
 nothing on who scored off which bowler, the toss, or games still to come. Partnerships name both batters only where
-the scorecard leaves no doubt (about two thirds of them, nearly all the big ones).
+the scorecard leaves no doubt (about two thirds of them, nearly all the big ones). The scorecards don't name the
+ground either, so the team named first is taken as the home side. That holds for County, Blast and Hundred games and
+for touring sides, but IPL scorecards sometimes name your own team first away from home, so read IPL home and away
+figures for your own team with care.
 
 **Hover** over any bar or dot to see the player's full figures and rank. Hover a chart and click the
 **camera** in its top-right corner to save it as a picture.

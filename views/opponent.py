@@ -9,7 +9,7 @@ from ccstats import seasonal as SN
 from ccstats import teamplay as TP
 from ccstats import winprob as WP
 from ui import state
-from ui.charts import pct, CONFIG, bars, fmt, say, signed
+from ui.charts import _n, pct, CONFIG, bars, fmt, say, signed
 from ui.theme import (chart_note, esc, form_strip, html_table, kpis, match_link, page_header, player_link, safe_section)
 
 career = state.current()
@@ -136,7 +136,7 @@ with tab_h2h:
                                 rows.append([player_link(x.player), f"{x.runs} runs", f"{x.innings} inns, best {x.best}"])
                                 cls.append("" if x.player in k["current"] else "dim")
                             for x in k["wickets"].itertuples():
-                                rows.append([player_link(x.player), f"{int(x.wickets)} wkts", f"economy {fmt(x.economy, 2)}"])
+                                rows.append([player_link(x.player), _n(x.wickets, "wkt"), f"economy {fmt(x.economy, 2)}"])
                                 cls.append("" if x.player in k["current"] else "dim")
                             for p, n in k["potm"].items():
                                 rows.append([player_link(p), f"{n} × Player of the Match", ""])
@@ -185,7 +185,7 @@ with tab_h2h:
                                  f"{x.runs_when_out} ({x.balls_when_out})"] for x in d.itertuples()]
                         html_table(rows, ["Bowler", "Batter", "Out", "Innings met", "Runs (balls) in those innings"],
                                    numeric={2, 3}, raw={0, 1}, row_class=["hi"] + [""] * (len(rows) - 1))
-                        st.caption(f"{tag}: {d.bowler.iloc[0]}, {d.dismissals.iloc[0]} times v {d.player.iloc[0]}.")
+                        st.caption(f"{tag}: {d.bowler.iloc[0]}, {_n(d.dismissals.iloc[0], 'time')} v {d.player.iloc[0]}.")
                 st.caption("Innings met: innings where the batter batted and the bowler bowled at them. The scorecards don't "
                            "say which bowler each run came off, so the runs are the batter's whole score in the innings "
                            "that bowler got them out.")
@@ -435,13 +435,18 @@ with tab_xi:
                              + ["Avg overall"] + ([] if multi_x else ["Econ overall"]) + ["Change", "Verdict"])
                     html_table(rows, cols_, numeric=set(range(1, len(cols_) - 1)), raw={0},
                                row_class=[verdict_cls(r.verdict) for r in pw.itertuples()])
-                picks_ = list(pb[pb.verdict.str.startswith("Pick")].player) + list(pw[pw.verdict.str.startswith("Pick")].player)
-                doubts = list(pb[pb.verdict.str.startswith("Think")].player) + list(pw[pw.verdict.str.startswith("Think")].player)
-                if picks_ or doubts:
-                    st.markdown((f"**Suggested:** {', '.join(dict.fromkeys(picks_))}. " if picks_ else "")
-                                + (f"**Think again about:** {', '.join(dict.fromkeys(doubts))}." if doubts else ""))
+                lines_ = []
+                for what_, d_ in (("batting", pb), ("bowling", pw)):
+                    good_ = list(d_[d_.verdict.str.startswith("Pick")].player)
+                    bad_ = list(d_[d_.verdict.str.startswith("Think")].player)
+                    if good_ or bad_:
+                        lines_.append(f"**{what_.capitalize()}:** " + (f"pick {', '.join(good_)}" if good_ else "")
+                                      + ("; " if good_ and bad_ else "") + (f"think again about {', '.join(bad_)}" if bad_ else "")
+                                      + ".")
+                if lines_:
+                    st.markdown("  \n".join(lines_))
                 st.caption(("Measured on average, as in multi-day cricket." if multi_x else
                             "Batting measured on average × strike rate; bowling on average × economy (lower is better).")
                            + " Change: their figure v this opponent against their own figure here; Pick = 25% or more "
                            "better v them, Think again = 25% or more worse. Needs 2 innings v them. Squad = everyone who "
-                           "played for you in your latest season here.")
+                           "played for you in your latest season here; batting lists those who usually bat in the top 7.")

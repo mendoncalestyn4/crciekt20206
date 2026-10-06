@@ -45,8 +45,7 @@ if section == INTL:
         yr = state.memo(SN.year_review, career, season)
         st.subheader(f"International cricket {season}", anchor=False)
         n_ = {f: d["matches"] for f, d in yr["formats"].items()}
-        kpis([(f"{f}s" if f != "T20I" else "T20Is", f"{n}") for f, n in n_.items()]
-             + ([("Cricketer of the Year", esc(yr["cricketer"].player.iloc[0]))] if len(yr["cricketer"]) else []))
+        kpis([(f"{f}s", f"{n}") for f, n in n_.items()])
         if len(yr["cricketer"]):
             with st.container(border=True):
                 st.markdown("**🏅 Cricketer of the Year** · the most match impact across Tests, ODIs and T20Is")
@@ -56,7 +55,7 @@ if section == INTL:
                            numeric={0, 3, 4, 5, 6}, raw={1})
         for fmt_, d in yr["formats"].items():
             st.markdown(f"### {fmt_} cricket · {d['matches']} match{'es' if d['matches'] != 1 else ''}")
-            left, right = st.columns([1, 1.5], gap="medium")
+            left, right = st.container(), st.container()  # stacked: the tables need the full width
             with left:
                 with st.container(border=True):
                     p0 = d["player"]
@@ -90,9 +89,7 @@ with safe_section("season review"):
     ch = rv["champions"]
     champ = ", ".join(ch.champions) if len(ch) else "–"
     tb, tw = rv["top_bat"], rv["top_bowl"]
-    kpis([("Matches", f"{rv['matches']}"), ("Champions", esc(champ)),
-          ("Top scorer", esc(f"{tb.player.iloc[0]} {int(tb.runs.iloc[0])}") if len(tb) else "–"),
-          ("Top wicket-taker", esc(f"{tw.player.iloc[0]} {int(tw.wickets.iloc[0])}") if len(tw) else "–")])
+    kpis([("Matches", f"{rv['matches']}"), ("Champions", esc(champ))])  # the leading players are listed below
     left, right = st.columns([1, 1.5], gap="medium")
     with left:
         with st.container(border=True):

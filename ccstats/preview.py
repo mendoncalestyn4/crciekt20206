@@ -356,8 +356,8 @@ def game_plan(career, ids, mine: str, opp: str) -> list[str]:
     mu = matchups(career, ids, mine, opp, everywhere=True, current_only=True)
     if len(mu["their_bowlers"]) and mu["their_bowlers"].dismissals.iloc[0] >= 2:
         r = mu["their_bowlers"].iloc[0]
-        lines.append(f"**Watch out for {r.bowler}:** has got {r.player} out {r.dismissals} times.")
+        lines.append(f"**Watch out for {r.bowler}:** has got {r.player} out {r.dismissals} time{'' if r.dismissals == 1 else 's'}.")
     if len(mu["our_bowlers"]) and mu["our_bowlers"].dismissals.iloc[0] >= 2:
         r = mu["our_bowlers"].iloc[0]
-        lines.append(f"**Your weapon: {r.bowler}** has got {r.player} out {r.dismissals} times.")
+        lines.append(f"**Your weapon: {r.bowler}** has got {r.player} out {r.dismissals} time{'' if r.dismissals == 1 else 's'}.")
     return lines

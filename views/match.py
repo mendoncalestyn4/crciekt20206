@@ -29,6 +29,11 @@ def score_of(mid, team):
 page_header("Matches", "Find a match", "Narrow the list by section or team, then type to search: a team, a date, a stage like "
             "'Final', or a result.")
 c1, c2 = st.columns(2)
+wanted = st.query_params.get("match")
+if wanted in set(m.match_id) and "mt_match" not in st.session_state:
+    # a link to one match opens it, whatever section or team was picked before: show it within its own section
+    st.session_state["mt_section"] = m.loc[m.match_id == wanted, "section"].iloc[0]
+    st.session_state["mt_team"] = "All teams"
 state.recall("mt_section", "section", ["All sections"] + sorted(m.section.unique()))
 section = c1.selectbox("Section", ["All sections"] + sorted(m.section.unique()), key="mt_section", on_change=state.remember("mt_section", "section"))
 pool = m if section == "All sections" else m[m.section == section]
@@ -41,7 +46,6 @@ if team != "All teams":
 labels = {r.match_id: f"{r.date:%d %b %Y} · {r.home} v {r.away} · {shown_name(r.section, r.event)}"
                       f"{' · ' + r.stage if r.stage else ''} · {r.result}"
           for r in pool.itertuples()}
-wanted = st.query_params.get("match")
 if wanted in labels and "mt_match" not in st.session_state:
     st.session_state["mt_match"] = wanted
 mid = st.selectbox(f"Match ({len(labels)} to choose from, newest first)", list(labels), format_func=labels.get,

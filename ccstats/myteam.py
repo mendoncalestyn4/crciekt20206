@@ -185,7 +185,7 @@ def report_card(career, team: str, section: str, season: str) -> list[tuple[str,
     if team in cpm.index and cpm.mean():
         d = (cpm[team] - cpm.mean()) / cpm.mean() * 100
         out.append(("Fielding", _grade(d), f"{cpm[team]:.1f} catches a game, average team {cpm.mean():.1f}"))
-    last5 = tg[tg.team == team].tail(5)
+    last5 = in_played_order(career, tg[tg.team == team]).tail(5)
     w5 = int((last5.outcome == "W").sum())
     out.append(("Form", {5: "A", 4: "A", 3: "B", 2: "C", 1: "D"}.get(w5, "E"), f"won {w5} of the last {len(last5)}"))
     return out
@@ -246,3 +246,11 @@ def team_records(career, team: str, section: str) -> list[tuple[str, str]]:
                         .replace("Best bowling in an innings", "Best bowling").replace("Highest partnerships", "Best stand"),
                         f"{who}{r.value}" + (f" v {r.against}" if r.against else "") + f" ({r.date:%b %Y})"))
     return out
+
+
+def in_played_order(career, g: pd.DataFrame) -> pd.DataFrame:
+    """Rows with a match_id, in the order the matches were played (the game can save
+    scorecards dated out of order), so "last 5" ends on the latest result."""
+    from .records import played_order
+    pos = {mid: i for i, mid in enumerate(played_order(career).match_id)}
+    return g.assign(_p=g.match_id.map(pos)).sort_values("_p", kind="stable").drop(columns="_p")

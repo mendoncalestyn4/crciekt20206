@@ -9,7 +9,7 @@ from ccstats import playerdeep as PD
 from ccstats import teamdeep as TD
 from ccstats.stats import Scope, bars_for
 from ui import state
-from ui.charts import funnel_chart, impact_chart, rank_chart, signed, pct, CONFIG, bars, fmt, form_chart, paired_bars, say
+from ui.charts import _n, funnel_chart, impact_chart, rank_chart, signed, pct, CONFIG, bars, fmt, form_chart, paired_bars, say
 from ui.theme import esc, chart_note, explain_list, html_table, kpis, match_link, page_header, safe_section
 
 career = state.current()
@@ -59,7 +59,9 @@ with safe_section("career card"):
              ("Badges", f"{len(mine_ach)}")]
     kpis(tiles)
     if spark or len(mine_ach):
-        badges = " ".join(f"<span class='chip' title='{esc(r.detail)}'>🏅 {esc(r.badge)}</span>" for r in mine_ach.head(6).itertuples())
+        grouped = mine_ach.groupby("badge", sort=False).agg(n=("badge", "size"), detail=("detail", lambda x: " · ".join(map(str, x))))
+        badges = " ".join(f"<span class='chip' title='{esc(r.detail)}'>🏅 {esc(r.Index)}{f' ×{r.n}' if r.n > 1 else ''}</span>"
+                          for r in grouped.head(6).itertuples())
         st.markdown(f"<div class='roles'><span class='note'>Last {len(last10)} innings:</span>"
                     f"<span style='color:var(--text-color)'>{spark}</span>{badges}</div>", unsafe_allow_html=True)
 
@@ -379,7 +381,7 @@ if "Batting" in tabs:
                 else:
                     st.plotly_chart(bars(n.bowler, n.dismissals, "Times dismissed"), width="stretch", config=CONFIG, key="pl_nemesis")
                     outs_ = int(inns.out.sum())
-                    chart_note(f"{n.bowler.iloc[0]} has got them out {n.dismissals.iloc[0]} times, "
+                    chart_note(f"{n.bowler.iloc[0]} has got them out {_n(n.dismissals.iloc[0], 'time')}, "
                                f"{n.dismissals.iloc[0] / max(outs_, 1) * 100:.0f}% of their {outs_} dismissals.",
                                "The bowlers who have their number: keep them away from these bowlers, or bring these "
                                "bowlers on when this batter comes in.")
@@ -525,7 +527,7 @@ if "Bowling" in tabs:
                 else:
                     st.plotly_chart(bars(bn.player, bn.dismissals, "Times dismissed"), width="stretch", config=CONFIG, key="pl_bunnies")
                     tw_ = int(spells.wickets.sum())
-                    chart_note(f"They have got {bn.player.iloc[0]} out {bn.dismissals.iloc[0]} times, "
+                    chart_note(f"They have got {bn.player.iloc[0]} out {_n(bn.dismissals.iloc[0], 'time')}, "
                                f"{bn.dismissals.iloc[0] / max(tw_, 1) * 100:.0f}% of their {tw_} wickets.",
                                "The batters they have the wood on: bring them on when these batters come in.")
         with st.container(border=True):
@@ -571,10 +573,13 @@ with tabs["Story"]:
         else:
             st.plotly_chart(impact_chart(mine_i), width="stretch", config=CONFIG, key="pl_impact")
             best_i = mine_i.sort_values("impact", ascending=False).iloc[0]
-            per_m = mi.groupby("player").impact.mean()
-            rank_i = int((per_m > per_m.get(player, 0)).sum()) + 1
-            chart_note(f"Average {mine_i.impact.mean():.0f} a match ({rank_i} of {len(per_m)} here). Best: "
-                       f"{best_i.impact:.0f} v {best_i.opponent} ({int(best_i.runs)} runs, {int(best_i.wickets)} wkts). "
+            g_i = mi.groupby("player").impact
+            need_i = min(3, len(mine_i))  # rank among players with as many games (up to 3), so one-off games don't count
+            per_m = g_i.mean()[g_i.size() >= need_i]
+            rank_i = int((per_m > mine_i.impact.mean()).sum()) + 1
+            chart_note(f"Average {mine_i.impact.mean():.0f} a match, number {rank_i} of the {len(per_m)} players here "
+                       f"with {need_i}+ matches. Best: "
+                       f"{best_i.impact:.0f} v {best_i.opponent} ({int(best_i.runs)} runs, {_n(best_i.wickets, 'wkt')}). "
                        f"Blue bars are wins.",
                        "Puts batting, bowling and fielding on one scale: runs, plus each wicket worth the section's runs "
                        "per wicket" + (", with scoring speed and economy counted in white-ball cricket." if mi.attrs["kind"] != "multi" else "."))

@@ -85,6 +85,19 @@ def _groups(matches: pd.DataFrame) -> list[tuple[str, pd.DataFrame, set]]:
 
 
 BILATERAL = {"Test", "ODI", "T20I"}  # competition names of bilateral internationals
+LEAGUE_GAMES = {"County Championship": 14}  # games per team in a full season, for leagues that end without a final
+
+
+def league_finished(matches: pd.DataFrame) -> bool:
+    """A league without a final is over once every team has played a full season's games."""
+    if matches.empty:
+        return False
+    full = LEAGUE_GAMES.get(matches.competition.iloc[0])
+    if not full:
+        return False
+    lg = matches[~matches.knockout]
+    played = pd.concat([lg.home, lg.away]).value_counts()
+    return bool(len(played) and (played >= full).all())
 
 
 def league_tables(career, ids) -> list[tuple[str, pd.DataFrame, str]]:

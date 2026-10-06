@@ -11,7 +11,7 @@ from ui.theme import colours
 from ccstats.stats import Scope, bars_for, kind_of
 from ui import state
 from ui.xi import best_xi_cached, team_sheet
-from ui.charts import signed, pct, CONFIG, bars, fmt, race_chart, say
+from ui.charts import _n, ordinal, signed, pct, CONFIG, bars, fmt, race_chart, say
 from ui.theme import chart_note, html_table, kpis, match_link, page_header, player_link, safe_section
 
 career = state.current()
@@ -63,8 +63,8 @@ with safe_section("ratings"):
     ur = state.memo(TD.unit_ratings, career, ids)
     if team in set(ur.team):
         u = ur.set_index("team").loc[team]
-        st.markdown(f"**Batting rating {u.batting:.0f}** ({u.batting_rank} of {len(ur)}) · **Bowling rating "
-                    f"{u.bowling:.0f}** ({u.bowling_rank} of {len(ur)}) · 1000 = average, recent games count most. "
+        st.markdown(f"**Batting rating {u.batting:.0f}** ({ordinal(u.batting_rank)} of {len(ur)}) · **Bowling rating "
+                    f"{u.bowling:.0f}** ({ordinal(u.bowling_rank)} of {len(ur)}) · 1000 = average, recent games count most. "
                     + ("The weaker half needs the work." if abs(u.batting - u.bowling) >= 50 else "Well balanced."))
 
 tab_over, tab_win, tab_opp, tab_season, tab_series, tab_squad, tab_res = st.tabs(
@@ -343,8 +343,8 @@ with tab_win:
                        ["", "Record", "Win %"], numeric={2})
             if len(cg["rows"]):
                 rows = [[f"{r.date:%d %b %Y}", r.opponent, {"W": "Won", "L": "Lost", "T": "Tied"}.get(r.outcome, r.outcome),
-                         (f"{int(r.margin_runs)} runs" if pd.notna(r.margin_runs) else
-                          f"{int(r.margin_wickets)} wkts" if pd.notna(r.margin_wickets) else "tie")]
+                         (_n(int(r.margin_runs), "run") if pd.notna(r.margin_runs) else
+                          _n(int(r.margin_wickets), "wkt") if pd.notna(r.margin_wickets) else "tie")]
                         for r in cg["rows"].sort_values("date", ascending=False).head(8).itertuples()]
                 html_table(rows, ["Date", "Opponent", "", "Margin"])
     with right, safe_section("openers' start"):

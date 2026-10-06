@@ -146,6 +146,13 @@ def _num(v, d=1):
     return fmt(v, d) if v is not None and not (isinstance(v, float) and np.isnan(v)) else "–"
 
 
+def ordinal(n) -> str:
+    """1st, 2nd, 3rd, 4th ... 11th, 12th, 13th, 21st."""
+    n = int(n)
+    suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
+
 def _n(k, one: str, many: str | None = None) -> str:
     k = int(k)
     return f"{k} {one if k == 1 else (many or one + 's')}"
@@ -540,7 +547,10 @@ def record_steps_chart(steps: pd.DataFrame, y: list[float], unit: str) -> go.Fig
     fig.add_trace(go.Scatter(x=xs, y=ys, mode="lines", line=dict(color=c["s1"], width=2.5, shape="hv"), hoverinfo="skip",
                              showlegend=False))
     fig.add_trace(go.Scatter(x=steps.date, y=y, mode="markers+text", marker=dict(size=10, color=c["s1"]),
-                             text=[f"{v}" for v in steps.value], textposition="top left", textfont=dict(size=11),
+                             # label where the number moves (and the record now); hover shows every step
+                             text=[f"{v}" if i == len(y) - 1 or i == 0 or y[i] != y[i - 1] else ""
+                                   for i, v in enumerate(steps.value)],
+                             textposition="top left", textfont=dict(size=11),
                              customdata=np.stack([steps.holder, steps.value, steps.against.fillna("")], axis=1),
                              hovertemplate="<b>%{customdata[0]}</b> %{customdata[1]}<br>v %{customdata[2]}<br>%{x|%d %b %Y}"
                                            "<extra></extra>", showlegend=False))

@@ -390,7 +390,7 @@ def honours(career) -> pd.DataFrame:
     top wicket-taker, Player of the Match in the final.  Champions come from
     the final; a competition without knockouts (a league, or a bilateral series)
     has its table leader or series winner."""
-    from .tables import BILATERAL, league_tables
+    from .tables import BILATERAL, league_finished, league_tables
     m = career.matches
     # one row per competition as it's run (the ODI World Cup, not the whole ODIs section)
     has_knockouts = set(m[m.knockout].event)  # competitions decided by a final
@@ -418,7 +418,7 @@ def honours(career) -> pd.DataFrame:
             tables = league_tables(career, ids)
             if len(tables) == 1 and len(tables[0][1]) > 1:
                 t = tables[0][1]
-                done = season != latest[event]  # a later season exists, so this one is over
+                done = season != latest[event] or league_finished(g)  # a later season exists, or every game is played
                 champ, runner = t.team.iloc[0], t.team.iloc[1]
                 how = "top of the table" if done else "leading so far (season in progress)"
         if not champ:

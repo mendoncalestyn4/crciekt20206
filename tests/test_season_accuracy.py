@@ -178,6 +178,7 @@ def test_picks_against_recount(season):
     opp = m[(m.home == team)].away.value_counts().index[0]
     bat, bowl = SN.picks_against(season, ids, team, opp)
     b = season.batting[season.batting.match_id.isin(ids) & season.batting.did_bat & (season.batting.team == team)]
+    assert all(b[b.player == p].position.median() <= 7 for p in bat.player)  # batters and all-rounders only
     for r in bat.itertuples():
         v = b[(b.player == r.player) & (b.opposition == opp)]
         assert r.inns_vs == len(v) and r.runs_vs == v.runs.sum()
@@ -374,3 +375,32 @@ def test_match_note_saves(season):
     src = season.matches.set_index("match_id").source[mid]
     assert at.session_state[f"notes::{season.name}"][src] == "rested Bumrah, regretted it"
     assert not at.exception
+
+
+def test_a_match_link_opens_whatever_was_remembered(season):
+    """A remembered section must never hide the match a link points to."""
+    ipl = season.matches[season.matches.section == IPL].match_id.iloc[0]
+    at = AppTest.from_file(str(ROOT / "views" / "match.py"), default_timeout=120)
+    at.session_state["career_obj"] = season
+    at.session_state["remembered_cache"] = (season.name, {"section": "T20Is", "team": "Bangladesh"})
+    at.query_params["match"] = ipl
+    at.run()
+    assert not at.exception
+    assert at.selectbox(key="mt_match").value == ipl
+    assert at.selectbox(key="mt_section").value == IPL and at.selectbox(key="mt_team").value == "All teams"
+
+
+def test_season_status_agrees_with_the_honours_board(career, season):
+    from ccstats.extras import honours
+    for c in (career, season):
+        h = honours(c)
+        m = c.matches
+        for (sec, se), g in m[m.level != "International"].groupby(["section", "season"]):
+            row = h[(h.season == se) & h.section.isin(set(g.event))]
+            status = SN.season_status(c, sec, se)
+            if len(row):
+                assert (status == "in progress") == row.how.str.contains("so far").any(), (sec, se)
+    # a County season is over once every side has played 14
+    from ccstats.tables import league_finished
+    m = career.matches
+    assert not league_finished(m[m.competition == "County Championship"])

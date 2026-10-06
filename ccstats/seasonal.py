@@ -400,6 +400,7 @@ def combined_international(career, what: str = "batting") -> pd.DataFrame:
 def picks_against(career, ids, team: str, opponent: str, min_innings: int = 2) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Your squad (everyone who played for you in your latest season here) ranked
     by their record against this opponent, against their own record here.
+    Batting lists those who usually bat in the top 7.
     Batting: average (multi-day) or average x strike rate / 100 (white ball).
     Bowling: average (multi-day) or average x economy / 6 (white ball, lower is better)."""
     kind = kind_of_ids(career, ids)
@@ -438,7 +439,7 @@ def picks_against(career, ids, team: str, opponent: str, min_innings: int = 2) -
     rows = []
     for p, g in b.groupby("player"):
         v = g[g.opposition == opponent]
-        if v.empty:
+        if v.empty or g.position.median() > 7:  # batters and all-rounders only: a no. 10's runs don't pick the side
             continue
         a_v, s_v, m_v = bat_measure(v)
         a, s, m_ = bat_measure(g)
@@ -665,22 +666,24 @@ def wtc_table(career, cycle: int) -> pd.DataFrame:
 
 
 def season_status(career, section: str, season: str) -> str:
-    """'complete' or 'in progress' (the latest season, with knockouts still to come
-    or fewer games than the season before)."""
-    from .extras import season_in_progress
+    """'complete' or 'in progress', the same call the honours board makes: a
+    competition is complete once its final is played (or, for a league with no
+    final, a later season exists or every team has played a full season).
+    International cricket is by calendar year: the latest year is in progress
+    while it has fewer games than the year before."""
+    from .extras import honours, season_in_progress
     m = career.matches[career.matches.section == section]
-    if season != max(m.season):
-        return "complete"
     here = m[m.season == season]
-    if ((here.stage == "Final") & (here.level != "International")).any():
+    if here.empty:
         return "complete"
-    prog = season_in_progress(career, section)
-    if prog is not None and prog[0] == season:
-        return "in progress"
-    # a league that ends in knockouts (an earlier season had them) but has none yet this season
-    if m[m.season != season].knockout.any() and not here.knockout.any():
-        return "in progress"
-    return "complete"
+    if here.level.iloc[0] == "International":
+        prog = season_in_progress(career, section)
+        return "in progress" if prog is not None and prog[0] == season else "complete"
+    h = honours(career)
+    h = h[(h.season == season) & h.section.isin(set(here.event))]
+    if h.empty:  # no champion yet: the final isn't in the files (an old season with a later one is still over)
+        return "complete" if season != max(m.season) else "in progress"
+    return "in progress" if h.how.str.contains("so far").any() else "complete"
 
 
 def season_review(career, section: str, season: str, my_teams: list | None = None) -> dict:
