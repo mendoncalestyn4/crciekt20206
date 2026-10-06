@@ -438,3 +438,65 @@ def quadrant_chart(d: pd.DataFrame, x: str, y: str, x_label: str, y_label: str, 
     fig.update_layout(**_layout(c, height=470, shapes=shapes, annotations=ann,
                                 xaxis=_axis(c, x_label, range=list(xr)), yaxis=_axis(c, y_label, range=list(yr))))
     return fig
+
+
+def funnel_chart(d: pd.DataFrame) -> go.Figure:
+    """% of innings reaching each mark: the format's key marks in colour, the rest grey; dots for every batter here."""
+    c = colours()
+    x = [f"{m}+" for m in d.mark]
+    col = [c["s1"] if h else c["dim"] for h in d.highlight]
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=x, y=d.pct, marker=dict(color=col, line=dict(width=0)), name="This player",
+                         text=[f"{v:.0f}%" if np.isfinite(v) else "" for v in d.pct], textposition="outside",
+                         cliponaxis=False, textfont=dict(size=11, color=c["ink2"]),
+                         customdata=np.stack([d.innings, d.from_prev.fillna(-1)], axis=1),
+                         hovertemplate="<b>%{x}</b>: %{y:.0f}% of innings (%{customdata[0]})<extra></extra>"))
+    fig.add_trace(go.Scatter(x=x, y=d.all_pct, mode="markers+lines", name="Every batter here",
+                             line=dict(color=c["muted"], width=1, dash="dot"), marker=dict(size=7, color=c["muted"]),
+                             hovertemplate="%{x}: every batter %{y:.0f}%<extra></extra>"))
+    ann = []
+    for xi, r in zip(x, d.itertuples()):
+        if r.highlight and r.key_from and np.isfinite(r.from_key):
+            ann.append(dict(x=xi, y=(r.pct if np.isfinite(r.pct) else 0), yshift=26, showarrow=False,
+                            text=f"<b>{r.from_key:.0f}%</b> of {r.key_from}s", font=dict(size=10.5, color=c["s1"])))
+    top = float(np.nanmax([d.pct.max(), d.all_pct.max(), 10]))
+    fig.update_layout(**_layout(c, height=320, annotations=ann, showlegend=True, bargap=0.25,
+                                legend=dict(orientation="h", y=1.14, x=0, font=dict(color=c["ink"])),
+                                xaxis=_axis(c, "Score reached", type="category"),
+                                yaxis=_axis(c, "% of innings", range=[0, top * 1.3]),
+                                margin=dict(l=10, r=16, t=40, b=10)))
+    return fig
+
+
+def impact_chart(d: pd.DataFrame) -> go.Figure:
+    """One bar per match: blue in wins, red otherwise; the dashed line is their average."""
+    c = colours()
+    x = list(range(1, len(d) + 1))
+    fig = go.Figure(go.Bar(x=x, y=d.impact, marker=dict(color=[c["pos"] if w else c["neg"] for w in d.won], line=dict(width=0)),
+                           customdata=[f"{r.date:%d %b %Y} v {r.opponent}: {int(r.runs)} runs, {int(r.wickets)} wkts"
+                                       f"{', ' + str(int(r.dismissals)) + ' ct/st' if r.dismissals else ''}"
+                                       for r in d.itertuples()],
+                           hovertemplate="<b>%{y:.0f}</b> · %{customdata}<extra></extra>"))
+    avg = float(d.impact.mean()) if len(d) else 0
+    fig.add_hline(y=avg, line=dict(color=c["muted"], dash="dash", width=1))
+    fig.update_layout(**_layout(c, height=280, bargap=0.2, xaxis=_axis(c, "Match (oldest first)"),
+                                yaxis=_axis(c, "Match impact"), margin=dict(l=10, r=16, t=10, b=10)))
+    return fig
+
+
+def rank_chart(d: pd.DataFrame) -> go.Figure:
+    c = colours()
+    fig = go.Figure()
+    for col, name, colour in (("runs_rank", "Rank by runs", c["s1"]), ("wickets_rank", "Rank by wickets", c["s2"])):
+        if d[col].notna().any():
+            fig.add_trace(go.Scatter(x=[str(s) for s in d.season], y=d[col], mode="lines+markers+text", name=name,
+                                     text=[f"{int(v)}" if np.isfinite(v) else "" for v in d[col]], textposition="top center",
+                                     line=dict(color=colour, width=2.5), marker=dict(size=9, color=colour)))
+    arr = d[["runs_rank", "wickets_rank"]].to_numpy(dtype=float) if len(d) else np.array([1.0])
+    top = float(np.nanmax(arr)) if np.isfinite(arr).any() else 1.0
+    fig.update_layout(**_layout(c, height=260, showlegend=True, legend=dict(orientation="h", y=1.15, x=0),
+                                xaxis=_axis(c, "Season", type="category"),
+                                yaxis=_axis(c, "Rank in the section (1 = top)", autorange="reversed",
+                                            range=[top + 1, 0.5] if np.isfinite(top) else None),
+                                margin=dict(l=10, r=16, t=40, b=10)))
+    return fig

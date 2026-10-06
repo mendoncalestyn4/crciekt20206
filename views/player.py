@@ -5,10 +5,11 @@ import streamlit as st
 from ccstats import analysis as A
 from ccstats import extras as E
 from ccstats import players as PL
+from ccstats import playerdeep as PD
 from ccstats.stats import Scope, bars_for
 from ui import state
-from ui.charts import pct, CONFIG, bars, fmt, form_chart, paired_bars, say
-from ui.theme import chart_note, explain_list, html_table, kpis, match_link, page_header, safe_section
+from ui.charts import funnel_chart, impact_chart, rank_chart, signed, pct, CONFIG, bars, fmt, form_chart, paired_bars, say
+from ui.theme import esc, chart_note, explain_list, html_table, kpis, match_link, page_header, safe_section
 
 career = state.current()
 if career is None:
@@ -33,6 +34,33 @@ is_keeper = not A.keepers(career, my_matches.match_id)[lambda k: k.player == pla
 page_header(" · ".join(teams) + (" · Wicketkeeper" if is_keeper else ""), player,
             f"{len(my_matches)} matches in {my_matches.section.nunique()} section{'s' if my_matches.section.nunique() != 1 else ''}. "
             "Pick a section below; every figure on this page is for that section only.")
+
+# ---------------------------------------------------------------- 134 · career card
+with safe_section("career card"):
+    allb = career.batting[(career.batting.player == player) & career.batting.did_bat].merge(
+        m[["match_id", "date", "section"]], on="match_id").sort_values(["date", "innings_no"])
+    allw = career.bowling[(career.bowling.player == player) & (career.bowling.balls > 0)]
+    hs = allb.assign(k=allb.runs * 2 + ~allb.out).sort_values("k").tail(1)
+    bb = allw.assign(k=allw.wickets * 1000 - allw.runs).sort_values("k").tail(1)
+    ach = state.memo(PD.achievements, career)
+    mine_ach = ach[ach.player == player]
+    last10 = list(allb.runs.tail(10))
+    spark = ""
+    if len(last10) >= 2:
+        hi_ = max(max(last10), 1)
+        pts = " ".join(f"{i * 120 / (len(last10) - 1):.1f},{36 - v / hi_ * 32:.1f}" for i, v in enumerate(last10))
+        spark = (f"<svg width='124' height='40' viewBox='0 0 124 40'><polyline points='{pts}' fill='none' "
+                 f"stroke='currentColor' stroke-width='2'/></svg>")
+    tiles = [("Matches", f"{len(my_matches)}"), ("Runs", f"{int(allb.runs.sum()):,}"),
+             ("Best score", f"{int(hs.runs.iloc[0])}{'' if hs.out.iloc[0] else '*'}" if len(hs) else "–"),
+             ("Wickets", f"{int(allw.wickets.sum())}"),
+             ("Best bowling", f"{int(bb.wickets.iloc[0])}/{int(bb.runs.iloc[0])}" if len(bb) else "–"),
+             ("Badges", f"{len(mine_ach)}")]
+    kpis(tiles)
+    if spark or len(mine_ach):
+        badges = " ".join(f"<span class='chip' title='{esc(r.detail)}'>🏅 {esc(r.badge)}</span>" for r in mine_ach.head(6).itertuples())
+        st.markdown(f"<div class='roles'><span class='note'>Last {len(last10)} innings:</span>"
+                    f"<span style='color:var(--text-color)'>{spark}</span>{badges}</div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------- career by section
 BAT_HELP = {"Mat": "Matches played", "Inns": "Innings batted", "NO": "Not outs", "HS": "Highest score (* = not out)",
@@ -98,6 +126,26 @@ with st.container(border=True):
         st.caption("Hasn't bowled.")
     st.caption("Same columns in every section. Hover a column name for what it means. Maidens are only printed on "
                "longer-format scorecards and dot balls only on T20 and Hundred scorecards, so one of them is blank.")
+
+# ---------------------------------------------------------------- 140 · all formats side by side
+if len(bat_rec) > 1:
+    with safe_section("all formats"), st.container(border=True):
+        af = state.memo(PD.all_formats, career, player)
+        st.markdown("**Every format side by side** · each against the average player in that format, so they can be compared")
+        rows = []
+        for r in af.itertuples():
+            rows.append([("⭐ " if r.best else "") + r.section, r.matches, r.runs, fmt(r.average, 1),
+                         signed(r.bat_vs) + ("%" if np.isfinite(r.bat_vs) else ""),
+                         fmt(r.strike_rate, 1), signed(r.sr_vs) + ("%" if np.isfinite(r.sr_vs) else ""),
+                         r.wickets, fmt(r.bowl_average, 1), signed(r.bowl_vs) + ("%" if np.isfinite(r.bowl_vs) else "")])
+        html_table(rows, ["Format", "Mat", "Runs", "Avg", "Avg v average", "SR", "SR v average", "Wkts", "Bowl avg",
+                          "Bowl avg v average"], numeric={1, 2, 3, 4, 5, 6, 7, 8, 9},
+                   row_class=["hi" if r.best else "" for r in af.itertuples()])
+        best_ = af[af.best]
+        chart_note((f"Best format: {best_.section.iloc[0]}, where they are {best_.score.iloc[0]:+.0f}% better than the "
+                    "average player.") if len(best_) else "Not enough games in any format yet to compare.",
+                   "Compares formats fairly: a 35 average is great in T20 but ordinary in Tests, so each format is "
+                   "measured against its own average (bowling: lower average is better, so + means better).")
 
 with st.expander("Career journey · every team and competition, in order"):
     j = E.journey(career, player)
@@ -189,6 +237,39 @@ if "Batting" in tabs:
                                f"{say(ho.index[0]).lower()}.",
                                "How bowlers get them out: a weakness to work on with your own players, or to attack in an "
                                "opponent.")
+        left, right = st.columns(2, gap="medium")
+        with left, safe_section("danger zones"), st.container(border=True):
+            dz = state.memo(PD.danger_zones, career, ids, player)
+            st.markdown("**Danger zones** · when they get out (share of their dismissals in each score band)")
+            if dz.attrs.get("dismissals", 0) == 0:
+                st.caption("Never dismissed here.")
+            else:
+                st.plotly_chart(paired_bars(dz.zone, dz.pct, dz.all_pct, player, "Every batter here", "% of dismissals", 0,
+                                            notes=[f"{n} dismissals" for n in dz.outs]),
+                                width="stretch", config=CONFIG, key="pl_danger")
+                worst = dz.assign(gap=dz.pct - dz.all_pct).sort_values("gap", ascending=False).iloc[0]
+                chart_note(f"{dz.pct.iloc[0]:.0f}% of their {dz.attrs['dismissals']} dismissals come before 10 (every batter "
+                           f"here: {dz.all_pct.iloc[0]:.0f}%). Their most dangerous band compared with others is "
+                           f"{worst.zone}: {worst.pct:.0f}% against {worst.all_pct:.0f}%.",
+                           "Shows when to attack this batter (or when to protect your own): a big share early means "
+                           "they're vulnerable before they're set. The bands follow the format.")
+        with right, safe_section("conversion"), st.container(border=True):
+            fn = state.memo(PD.funnel, career, ids, player)
+            keys = fn.attrs.get("keys", [])
+            st.markdown("**Conversion** · % of innings reaching each score; the key marks for this format in colour")
+            if not fn.attrs.get("innings"):
+                st.caption("No innings yet.")
+            else:
+                st.plotly_chart(funnel_chart(fn), width="stretch", config=CONFIG, key="pl_funnel")
+                conv = fn[fn.highlight & fn.key_from.astype(bool)]
+                parts = [f"{r.from_key:.0f}% of their {r.key_from}s became {r.mark}s (everyone: {pct(r.all_from_key)})"
+                         for r in conv.itertuples() if np.isfinite(r.from_key)]
+                first_key = fn[fn.mark == keys[0]].iloc[0] if keys else None
+                lead = (f"They reach {keys[0]} in {first_key.pct:.0f}% of innings (everyone: {first_key.all_pct:.0f}%). "
+                        if first_key is not None else "")
+                chart_note(lead + ("; ".join(parts) + "." if parts else ""),
+                           "Shows whether they turn starts into big scores. Key marks: "
+                           + ", ".join(str(k) for k in keys) + " in this format; the grey dots are every batter here.")
         with st.container(border=True):
             st.markdown(f"**Every season in {section}** · the same columns as the table at the top")
             record_table(A.batting_record(career, ids, player, by="season").sort_values("season", ascending=False),
@@ -380,6 +461,23 @@ if "Bowling" in tabs:
                                f"{say(wt.index[0]).lower()}.",
                                "How they get batters out: bowled and lbw mean they hit the stumps; catches mean they "
                                "need the fielders, so set the field for them.")
+        with safe_section("with and without wickets"), st.container(border=True):
+            ww_ = state.memo(PD.with_without, career, ids, player)
+            st.markdown("**With and without wickets** · their spells split by whether they took a wicket")
+            a_, b_ = ww_["with"], ww_["without"]
+            test_ = ww_["kind"] == "multi"
+            html_table([["Took a wicket", a_["spells"], a_["wickets"], fmt(a_["economy"], 2),
+                         fmt(a_["maidens_per_10"], 1) if test_ else "–"],
+                        ["Wicketless", b_["spells"], 0, fmt(b_["economy"], 2), fmt(b_["maidens_per_10"], 1) if test_ else "–"]],
+                       ["", "Spells", "Wkts", "Econ", "Maidens per 10 overs"], numeric={1, 2, 3, 4})
+            if np.isfinite(a_["economy"]) and np.isfinite(b_["economy"]) and a_["economy"]:
+                d_ = (b_["economy"] - a_["economy"]) / a_["economy"] * 100
+                kind_word = ("a strike bowler: when the wickets don't come, the runs do" if d_ > 15 else
+                             "a container: tight whether or not the wickets come" if d_ < 5 else "in between")
+                chart_note(f"Economy {fmt(a_['economy'], 2)} in spells with a wicket, {fmt(b_['economy'], 2)} without "
+                           f"({d_:+.0f}%): {kind_word}.",
+                           "Tells a strike bowler from a containing one, so you know who to bowl when you must stop the "
+                           "runs." + (" In Tests, maidens show the control too." if test_ else ""))
         with st.container(border=True):
             st.markdown(f"**Every season in {section}** · the same columns as the table at the top")
             record_table(A.bowling_record(career, ids, player, by="season").sort_values("season", ascending=False),
@@ -443,6 +541,61 @@ with tabs["Fielding"], safe_section("fielding"):
 
 # ================================================================ story
 with tabs["Story"]:
+    left, right = st.columns(2, gap="medium")
+    with left, safe_section("match impact"), st.container(border=True):
+        mi = state.memo(PD.match_impact, career, ids)
+        mine_i = mi[mi.player == player]
+        st.markdown(f"**Match impact** · one number per match in {section} (batting, bowling and fielding together)")
+        if mine_i.empty:
+            st.caption("No matches yet.")
+        else:
+            st.plotly_chart(impact_chart(mine_i), width="stretch", config=CONFIG, key="pl_impact")
+            best_i = mine_i.sort_values("impact", ascending=False).iloc[0]
+            per_m = mi.groupby("player").impact.mean()
+            rank_i = int((per_m > per_m.get(player, 0)).sum()) + 1
+            chart_note(f"Average {mine_i.impact.mean():.0f} a match ({rank_i} of {len(per_m)} here). Best: "
+                       f"{best_i.impact:.0f} v {best_i.opponent} ({int(best_i.runs)} runs, {int(best_i.wickets)} wkts). "
+                       f"Blue bars are wins.",
+                       "Puts batting, bowling and fielding on one scale: runs, plus each wicket worth the section's runs "
+                       "per wicket" + (", with scoring speed and economy counted in white-ball cricket." if mi.attrs["kind"] != "multi" else "."))
+    with right, safe_section("rank over time"), st.container(border=True):
+        rk = state.memo(PD.rank_by_season, career, section, player)
+        st.markdown(f"**Rank over time** · where they finished in {section} each season")
+        if rk.empty:
+            st.caption("No seasons yet.")
+        else:
+            st.plotly_chart(rank_chart(rk), width="stretch", config=CONFIG, key="pl_rank")
+            r0 = rk.iloc[-1]
+            bits = []
+            if np.isfinite(r0.runs_rank):
+                bits.append(f"{int(r0.runs_rank)} of {r0.runs_of} for runs")
+            if np.isfinite(r0.wickets_rank):
+                bits.append(f"{int(r0.wickets_rank)} of {r0.wickets_of} for wickets")
+            peak = rk.runs_rank.min() if rk.runs_rank.notna().any() else rk.wickets_rank.min()
+            chart_note(f"In {r0.season}: " + (", ".join(bits) or "no runs or wickets") +
+                       (f". Peak: {int(peak)}." if np.isfinite(peak) else "."),
+                       "A career story at a glance: when they peaked and whether they're climbing or fading.")
+    left, right = st.columns(2, gap="medium")
+    with left, safe_section("milestones"), st.container(border=True):
+        fa = state.memo(PD.fastest, career, ids)
+        unit_ = fa.attrs.get("unit", "innings")
+        mine_f = fa[fa.player == player]
+        st.markdown(f"**Milestones** · how many {unit_} it took, and the rank among everyone here who got there")
+        if mine_f.empty:
+            st.caption("No milestone reached here yet.")
+        else:
+            html_table([[f"{r.milestone:,} {r.what}", f"{r.taken} {unit_}", f"{r.rank} of "
+                         f"{int(((fa.what == r.what) & (fa.milestone == r.milestone)).sum())}", f"{r.date:%d %b %Y}"]
+                        for r in mine_f.itertuples()], ["Milestone", "Took", "Fastest", "Reached"], numeric={1, 2})
+    with right, safe_section("badges"), st.container(border=True):
+        ach_ = state.memo(PD.achievements, career)
+        mine_a = ach_[ach_.player == player]
+        st.markdown("**Badges** · special feats, with the rules for each format")
+        if mine_a.empty:
+            st.caption("No badges yet: a T20 hundred, a five-for, a Test double hundred or ten in a match earns one.")
+        else:
+            html_table([[f"🏅 {r.badge}", r.detail, match_link(r.match_id, f"{r.date:%d %b %Y}")] for r in mine_a.itertuples()],
+                       ["Badge", "", "Match"], raw={2})
     left, right = st.columns([1.1, 1], gap="medium")
     with left, safe_section("career firsts"), st.container(border=True):
         fi = state.memo(PL.firsts, career, player)

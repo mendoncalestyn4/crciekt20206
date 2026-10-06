@@ -1,10 +1,11 @@
 import streamlit as st
 
 from ccstats import players as PL
+from ccstats import playerdeep as PD
 from ccstats.stats import Scope
 from ui import state
 from ui.charts import signed, pct, CONFIG, bars, fmt
-from ui.theme import chart_note, html_table, match_link, page_header, player_link, safe_section
+from ui.theme import chart_note, html_table, kpis, match_link, page_header, player_link, safe_section
 
 career = state.current()
 if career is None:
@@ -30,7 +31,8 @@ def mark(teams) -> list[str]:
 
 
 tabs = st.tabs(["Form guide", "Milestones and records", "Win when they fire", "Heroes in defeat", "Carried the team",
-                "Quirks", "After a hundred", "Pairs", "Player of the Series", "Upsets"])
+                "Quirks", "After a hundred", "Pairs", "Player of the Series", "Upsets", "Fastest to", "Match impact",
+                "Badges", "Batter v bowler"])
 
 # ---------------------------------------------------------------- 18
 with tabs[0], safe_section("form guide"):
@@ -239,3 +241,102 @@ with tabs[9], safe_section("upsets"):
                      f"{r.winner_elo:.0f} v {r.loser_elo:.0f}"] for r in up.itertuples()]
             html_table(rows, ["Match", "Winner", "Beat", "Their chance", "Elo going in"], numeric={3}, raw={0})
             st.caption("Chance from the two teams' Elo ratings before the game (see Rankings).")
+
+# ---------------------------------------------------------------- 91
+with tabs[10], safe_section("fastest"):
+    fa = state.memo(PD.fastest, career, all_ids)
+    unit_ = fa.attrs.get("unit", "innings")
+    st.caption(f"Counted in {unit_}" + (" (as Test records are)" if unit_ == "matches" else "") + f", across every season of {section}.")
+    if fa.empty:
+        st.info("Nobody has reached a milestone here yet.")
+    else:
+        groups = list(fa.groupby(["what", "milestone"], sort=False))
+        cols_ = st.columns(2, gap="medium")
+        for i, ((what, ms), g) in enumerate(groups):
+            with cols_[i % 2], st.container(border=True):
+                st.markdown(f"**Fastest to {ms:,} {what}** · {len(g)} player{'s' if len(g) != 1 else ''} got there")
+                html_table([[r.rank, player_link(r.player), r.team, f"{r.taken} {unit_}", f"{r.date:%d %b %Y}"]
+                            for r in g.head(8).itertuples()], ["#", "Player", "Team", "Took", "Reached"],
+                           numeric={0}, raw={1}, row_class=mark(g.head(8).team))
+
+# ---------------------------------------------------------------- 94
+with tabs[11], safe_section("match impact"):
+    mi = state.memo(PD.match_impact, career, ids)
+    if mi.empty:
+        st.info("No matches yet.")
+    else:
+        left, right = st.columns(2, gap="medium")
+        with left, st.container(border=True):
+            st.markdown("**Biggest single-match impact**")
+            top_ = mi.sort_values("impact", ascending=False).head(15)
+            html_table([[player_link(r.player), r.team, f"{r.impact:.0f}", f"{int(r.runs)} & {int(r.wickets)} wkts",
+                         match_link(r.match_id, f"v {r.opponent}, {r.date:%d %b %Y}")] for r in top_.itertuples()],
+                       ["Player", "Team", "Impact", "Did", "Match"], numeric={2}, raw={0, 4}, row_class=mark(top_.team))
+        with right, st.container(border=True):
+            g = mi.groupby(["player"]).agg(matches=("impact", "size"), avg=("impact", "mean"), team=("team", "last")) \
+                .reset_index()
+            g = g[g.matches >= max(3, int(g.matches.quantile(0.5)))].sort_values("avg", ascending=False).head(12)
+            st.markdown("**Most impact per match** · regulars only")
+            st.plotly_chart(bars(g.player, g.avg, "Impact per match", 0, notes=[f"{n} matches · {t}" for n, t in zip(g.matches, g.team)]),
+                            width="stretch", config=CONFIG, key="st_impact")
+            if len(g):
+                chart_note(f"{g.player.iloc[0]} averages {g.avg.iloc[0]:.0f} a match, "
+                           f"{(g.avg.iloc[0] / mi.impact.mean() - 1) * 100:+.0f}% on the average player's {mi.impact.mean():.0f}.",
+                           "One number for everything a player does in a match: runs, plus each wicket worth the "
+                           f"section's runs per wicket ({mi.attrs['rpw']:.0f})"
+                           + (", with scoring speed and economy counted in white-ball cricket" if mi.attrs['kind'] != 'multi' else "")
+                           + ", plus catches and stumpings.")
+
+# ---------------------------------------------------------------- 119
+with tabs[12], safe_section("badges"):
+    ach = state.memo(PD.achievements, career, ids)
+    left, right = st.columns([1.5, 1], gap="medium")
+    with left, st.container(border=True):
+        st.markdown(f"**Badges earned in {section}** · newest first")
+        if ach.empty:
+            st.caption("No badges yet.")
+        else:
+            html_table([[f"🏅 {r.badge}", player_link(r.player), r.team, r.detail, match_link(r.match_id, f"{r.date:%d %b %Y}")]
+                        for r in ach.head(40).itertuples()], ["Badge", "Player", "Team", "", "Match"], raw={1, 4},
+                       row_class=mark(ach.head(40).team))
+    with right, st.container(border=True):
+        st.markdown("**How common each badge is here**")
+        if len(ach):
+            vc = ach.badge.value_counts()
+            html_table([[b, n] for b, n in vc.items()], ["Badge", "Times"], numeric={1})
+        st.caption("T20: 5-for, hundred, 100 at a strike rate of 200+, fifty off 20 balls. One-day: 150, double hundred, "
+                   "five-for. Tests: double and triple hundreds, seven in an innings, ten in a match, a hundred or five-for "
+                   "in both innings, carried the bat, a pair. Any format: hundred on debut, hundred and five-for in a match, "
+                   "three big scores in a row, a hundred or Player of the Match in a final.")
+        for t in sorted(mine):
+            tb = state.memo(PD.team_achievements, career, t)
+            if len(tb):
+                st.markdown(f"**{t}**: " + ", ".join(f"🏆 {r.badge} ({r.detail})" for r in tb.itertuples()))
+
+# ---------------------------------------------------------------- 120
+with tabs[13], safe_section("batter v bowler"):
+    bat_names = sorted(career.batting[career.batting.match_id.isin(ids) & career.batting.did_bat].player.unique())
+    bowl_names = sorted(career.bowling[career.bowling.match_id.isin(ids) & (career.bowling.balls > 0)].player.unique())
+    c1_, c2_, c3_ = st.columns([1.3, 1.3, 1])
+    batter = c1_.selectbox("Batter", bat_names, key="st_bvb_bat", index=None, placeholder="Pick a batter")
+    bowler = c2_.selectbox("Bowler", bowl_names, key="st_bvb_bowl", index=None, placeholder="Pick a bowler")
+    everywhere = c3_.toggle("Every competition", key="st_bvb_all", help="Count every match in the career, not only this section.")
+    if batter and bowler:
+        bv = PD.batter_v_bowler(career, batter, bowler, None if everywhere else ids)
+        inns_ = bv["innings"]
+        if inns_.empty:
+            st.info(f"{bowler} has never bowled at {batter}'s side while {batter} batted" +
+                    ("" if everywhere else f" in {section}") + ".")
+        else:
+            kpis([("Innings met", f"{bv['meetings']}"), (f"{bowler.split()[-1]} got them out", f"{bv['dismissals']}"),
+                  ("Batter's runs in those innings", f"{bv['runs']}"),
+                  ("Average v this bowler", fmt(bv["runs_when_out"] / bv["dismissals"], 1) if bv["dismissals"] else "–")])
+            verdict = ("bowler on top" if bv["dismissals"] / bv["meetings"] >= 0.4 else
+                       "batter on top" if bv["dismissals"] == 0 and bv["meetings"] >= 3 else "even")
+            st.markdown(f"**Verdict: {verdict}** ({bv['dismissals']} dismissals in {bv['meetings']} innings).")
+            html_table([[match_link(r.match_id, f"{r.date:%d %b %Y}"), r.section, f"{r.runs}{'' if r.out else '*'} ({r.balls})",
+                         ("✔ " + r.dismissal) if r.bowler == bowler and r.out else r.dismissal or "not out",
+                         f"{r.bowl_wkts}/{r.bowl_runs}"] for r in inns_.itertuples()],
+                       ["Match", "", "Batter's score", "How out", "Bowler's figures"], raw={0})
+            st.caption("The scorecards don't say which bowler each run came off, so these are the batter's whole innings "
+                       "when the two met. ✔ = this bowler got them out.")
