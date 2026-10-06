@@ -3,6 +3,7 @@ import pandas as pd
 import streamlit as st
 
 from ccstats import analysis as A
+from ccstats import deep as D
 from ccstats.stats import POSITION_GROUPS, Scope, rank, stat_definitions
 from ui import state
 from ui.charts import CONFIG, dot_chart, fmt, ranked_bars
@@ -115,6 +116,32 @@ highlight = "" if highlight == "—" else highlight
 
 stat_label = st.pills("Stat", [s.label for s in defs], default=defs[0].label, key=f"sbs_stat_{disc}") or defs[0].label
 stat = next(s for s in defs if s.label == stat_label)
+raw_stat = stat
+
+# ---------------------------------------------------------------- 87 / 88 · fair: against each part's own average
+season_list = picked_seasons or sorted(in_sections.season.unique())
+measures = ["Everyone in this selection"]
+if len(chosen) > 1:
+    measures.append("Each section's own average")
+if len(season_list) > 1:
+    measures.append("Each season's own average")
+measure = measures[0]
+if len(measures) > 1:
+    measure = st.segmented_control(
+        "Measure against", measures, default=measures[0], key="sbs_measure",
+        help="Each section's own average: every player is first compared with the average player of each section they "
+             "played in, then that is combined, so a T20 strike rate and a Test strike rate can be added up fairly. "
+             "Each season's own average: the same, season by season, so a high-scoring year doesn't flatter anyone.") \
+        or measures[0]
+if measure != measures[0]:
+    split = "section" if measure.startswith("Each section") else "season"
+    cache = st.session_state.setdefault("stats_cache", {})
+    fkey = ("fair", career.name, id(career), repr(scope), disc, stat.id, split)
+    if fkey not in cache:
+        cache[fkey] = D.fair_index(career, scope, disc, stat.id, split)
+    fair, funit = cache[fkey]
+    table = table.assign(fair=table.player.map(fair))
+    stat = D.fair_stat(stat, funit, split)
 
 best = view == "Best"
 pool = table[table[stat.column].notna() & (table[min_col] >= minimum)]
@@ -194,13 +221,28 @@ if stat.column not in cols:  # the ranked stat is always in the table (e.g. 50+ 
     cols = {**dict(list(cols.items())[:3]), stat.column: stat.label, **dict(list(cols.items())[3:])}
 out = shown[list(cols)].rename(columns=cols).reset_index(drop=True)
 out.index = out.index + 1
+# 85 · how good each figure is among everyone who qualifies
+pctl = D.percentiles(pool, stat.column, stat.better)
+spot = cols[stat.column] if stat.column in cols else stat.label
+out.insert(list(out.columns).index(spot) + 1, "Rank %", [D.top_text(pctl.get(i)) for i in shown.index])
+# 86 · the same figure the season before (one season picked)
+if len(picked_seasons) == 1 and stat.column != "fair":
+    ch, prev = D.change_since(career, scope, disc, stat.column)
+    if prev:
+        def arrow(v):
+            if v is None or not np.isfinite(v):
+                return "–"
+            good = (v > 0) == (stat.better == "high")
+            return ("▲ " if good else "▼ ") + (f"{v:+.{stat.decimals}f}" if stat.decimals else f"{v:+.0f}") if v else "▬ 0"
+        out.insert(list(out.columns).index("Rank %") + 1, f"v {prev}", [arrow(ch.get(p, np.nan)) for p in shown.player])
 roles = A.role_labels(career, scope.match_ids(m), base.kind).set_index("player")
 out.insert(2, "Role", [" · ".join([roles.role[p]] + list(roles.tags[p])) if p in roles.index else "–" for p in shown.player])
 # decimals as text so a missing value reads "–" (never dismissed, no wicket) rather than "None"
 two_dp = {"economy"}
 for k, v in cols.items():
-    if k in ("average", "strike_rate", "boundary_pct", "runs_above_average", "runs_saved", "dot_pct", "economy"):
-        out[v] = [fmt(x, 2 if k in two_dp else 1) for x in out[v]]
+    if k in ("average", "strike_rate", "boundary_pct", "runs_above_average", "runs_saved", "dot_pct", "economy", "fair"):
+        out[v] = ([f"{x:+.0f}%" if np.isfinite(x) else "–" for x in out[v]] if k == "fair" and "%" in v else
+                  [fmt(x, 2 if k in two_dp else 1) for x in out[v]])
 with st.container(border=True):
     st.markdown(f"**Full figures for the players ranked above** · sorted by {stat.label.lower()}")
     st.dataframe(out.style.set_properties(subset=[cols[stat.column]], **{"font-weight": "700"}),
@@ -211,5 +253,11 @@ with st.container(border=True):
                                 "Team": st.column_config.TextColumn("Team", width=128)}
                  | {v: st.column_config.Column(v, width=54) for k, v in cols.items()
                     if k not in ("player", "teams")})
+    notes_ = ["Rank %: where the figure sits among everyone who qualifies (top 5% = better than 95% of them)."]
+    if len(picked_seasons) == 1:
+        notes_.append("v last season: the same figure the season before (▲ better, ▼ worse).")
+    else:
+        notes_.append("Pick one season to see each figure against the season before.")
+    st.caption(" ".join(notes_))
     st.download_button("Download this table (CSV)", out.to_csv(index_label="#").encode(),
                        file_name=f"{' + '.join(chosen)} {stat.label}.csv".replace("/", "-"), key="sbs_dl")
