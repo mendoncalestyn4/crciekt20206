@@ -18,9 +18,11 @@ page_header("Analytics", "Under the bonnet",
             "really wins games, luck, match-winners, styles, consistency and whether a run of form is real.")
 c1, c2 = st.columns([2, 1])
 sections = m.section.value_counts()
-section = c1.selectbox("Section", list(sections.index), key="an_section", format_func=lambda s: f"{s} · {sections[s]} matches")
+state.recall("an_section", "section", list(sections.index))
+section = c1.selectbox("Section", list(sections.index), key="an_section", on_change=state.remember("an_section", "section"), format_func=lambda s: f"{s} · {sections[s]} matches")
 seasons = sorted(m[m.section == section].season.unique(), reverse=True)
-season = c2.selectbox("Season", ["All seasons"] + seasons, key="an_season")
+state.recall("an_season", "season", ["All seasons"] + seasons)
+season = c2.selectbox("Season", ["All seasons"] + seasons, key="an_season", on_change=state.remember("an_season", "season"))
 scope = Scope(sections=[section], seasons=[] if season == "All seasons" else [season])
 ids = scope.match_ids(m)
 where = f"{section}{'' if season == 'All seasons' else ' ' + season}"

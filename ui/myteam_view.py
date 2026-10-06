@@ -8,6 +8,7 @@ import streamlit as st
 from ccstats import extras as E
 from ccstats import myteam as MT
 from ccstats import players as PL
+from ccstats import seasonal as SN
 from ccstats import teamplay as TP
 from ccstats.competitions import shown_name
 
@@ -51,6 +52,52 @@ def render(career, team: str, key: str) -> None:
         scoreboard(f"Latest result · {shown_name(last.section, last.event)}{stage} · {last.date:%d %b %Y}",
                    last.home, _score(career, last.match_id, last.home), last.away, _score(career, last.match_id, last.away),
                    f"{last.result}" + (f" · Player of the match: {last.player_of_match}" if last.player_of_match else ""))
+
+    # ---------------------------------------------------------------- 115 · what changed
+    with safe_section("after the match"):
+        am = state.memo(SN.after_match, career, team)
+        if am:
+            lines = []
+            if am.get("elo"):
+                a, b = am["elo"]
+                lines.append(f"**Rating:** Elo {a:.0f} → {b:.0f} ({b - a:+.0f})")
+            pos = am.get("position")
+            if pos and pos[1]:
+                after_ = pos[1]
+                where = f" in {after_[2]}" if after_[2] not in ("League", "Every team") else ""
+                if pos[0]:
+                    mv = pos[0][0] - after_[0]
+                    lines.append(f"**Table:** {after_[0]} of {after_[1]}{where} "
+                                 + (f"(up {mv})" if mv > 0 else f"(down {-mv})" if mv < 0 else "(no change)"))
+                else:
+                    lines.append(f"**Table:** {after_[0]} of {after_[1]}{where} after the first game")
+            if am.get("series"):
+                sr_ = am["series"]
+                lead = ("level" if sr_["won"] == sr_["lost"] else "lead" if sr_["won"] > sr_["lost"] else "trail")
+                left = sr_["length"] - sr_["played"]
+                score_ = f"{sr_['won']}–{sr_['lost']}" + (f" ({sr_['drawn']} drawn)" if sr_["drawn"] else "")
+                if left > 0:
+                    lines.append(f"**Series:** you {lead} {score_} v {sr_['opponent']}, {left} to play")
+                else:
+                    res_ = "won" if sr_["won"] > sr_["lost"] else "lost" if sr_["won"] < sr_["lost"] else "drew"
+                    lines.append(f"**Series:** you {res_} it {score_} v {sr_['opponent']}")
+            if "lead" in am:
+                ld = am["lead"]
+                lines.append(f"**First-innings lead:** {ld:+d}" if ld else "**First innings:** level")
+            for msg in am.get("records", [])[:3]:
+                lines.append(f"🏆 {msg}")
+            for msg in am.get("milestones", [])[:4]:
+                lines.append(f"🎯 {msg}")
+            for p, arrow, txt in am.get("form", [])[:5]:
+                lines.append(f"{arrow} **{p}** {txt}")
+            if lines:
+                with st.container(border=True):
+                    st.markdown(f"**What changed after the latest game** · v {am['opponent']}, {am['date']:%d %b %Y}  \n"
+                                + "  \n".join(lines))
+                    st.caption("Rating: Elo before and after this game. Table: league position before and after. ▲ a "
+                               "big game for the player (well above their season average before it, or a haul); ▼ a "
+                               "low score after a run of good ones. Next opponent: the scorecards don't hold the "
+                               "fixture list, so pick them under Rivals below.")
 
     section = st.selectbox("Section", secs, key=f"mt_sec_{key}",
                            help="Your team's sections, the one you played most recently first.")
@@ -191,6 +238,16 @@ def render(career, team: str, key: str) -> None:
             st.markdown("**Season by season**")
             html_table([[f"{r.season}", r.section, TP.wdl(r._asdict()), f"{pct(r.win_pct)}", r.finish or "–"]
                         for r in hi.itertuples()], ["Season", "Section", "Record", "Win %", "Finished"], numeric={3})
+        # ---------------------------------------------------------------- 116 · your notes
+        with safe_section("notes"), st.container(border=True):
+            nt = state.notes(career)
+            mine_m = m[((m.home == team) | (m.away == team)) & m.source.isin(list(nt))].sort_values("date", ascending=False)
+            st.markdown("**📝 Your match notes**")
+            if mine_m.empty:
+                st.caption("No notes yet. Open any match on the Matches page and write one under the score.")
+            else:
+                html_table([[f"{r.date:%d %b %Y}", match_link(r.match_id, f"{r.home} v {r.away}"), esc(nt[r.source])]
+                            for r in mine_m.head(10).itertuples()], ["Date", "Match", "Note"], raw={1, 2})
     lg = MT.last_game(career, team)
     if lg is not None:
         st.markdown(f"Latest scorecard: {match_link(lg.match_id, f'{lg.home} v {lg.away}, {lg.date:%d %b %Y}')}",

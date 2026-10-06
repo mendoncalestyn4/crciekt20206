@@ -119,3 +119,71 @@ def memo(fn, c: Career, *args, **kw):
             cache["__career"] = (c.name, id(c))
         cache[key] = fn(c, *args, **kw)
     return cache[key]
+
+
+# --------------------------------------------------------------------------- match journal
+def notes(c: Career | None) -> dict[str, str]:
+    """Your notes on matches, by scorecard file name (saved with the career on this PC)."""
+    if c is None:
+        return {}
+    s = settings_of(c.name) if c.name in career_names() else None
+    return dict(s.notes) if s is not None else dict(st.session_state.get(f"notes::{c.name}", {}))
+
+
+def set_note(c: Career, source: str, text: str) -> None:
+    text = text.strip()
+    if c.name in career_names():
+        s = settings_of(c.name)
+        if s is not None:
+            if text:
+                s.notes[source] = text
+            else:
+                s.notes.pop(source, None)
+            store().save_settings(s)
+            return
+    d = st.session_state.setdefault(f"notes::{c.name}", {})
+    if text:
+        d[source] = text
+    else:
+        d.pop(source, None)
+
+
+# --------------------------------------------------------------------------- remembered filters
+def _remembered(c: Career | None) -> dict:
+    if c is None:
+        return {}
+    if "remembered_cache" in st.session_state and st.session_state["remembered_cache"][0] == c.name:
+        return st.session_state["remembered_cache"][1]
+    s = settings_of(c.name) if c.name in career_names() else None
+    r = dict(s.remembered) if s is not None else {}
+    st.session_state["remembered_cache"] = (c.name, r)
+    return r
+
+
+def recall(key: str, kind: str, options: list) -> None:
+    """Before a section / season / team box: open it on what you last picked
+    anywhere on the site (if it's one of the choices here).  The box's own choice
+    wins while you stay on the page."""
+    if key in st.session_state:
+        return
+    v = _remembered(current()).get(kind)
+    if v is not None and v in list(options):
+        st.session_state[key] = v
+
+
+def remember(key: str, kind: str):
+    """on_change for a section / season / team box: keep the choice for every page."""
+    def _save() -> None:
+        c = current()
+        v = st.session_state.get(key)
+        if c is None or v is None:
+            return
+        r = _remembered(c)
+        r[kind] = v
+        st.session_state["remembered_cache"] = (c.name, r)
+        if c.name in career_names():
+            s = settings_of(c.name)
+            if s is not None:
+                s.remembered = dict(r)
+                store().save_settings(s)
+    return _save

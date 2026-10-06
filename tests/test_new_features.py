@@ -400,7 +400,8 @@ def test_my_team(season):
 from streamlit.testing.v1 import AppTest  # noqa: E402
 
 NEW_PAGES = ["analytics.py", "stories.py", "planner.py", "season.py", "opponent.py", "teams.py", "insights.py",
-             "competitions.py", "team_vs_team.py", "player.py", "home.py", "stat_by_stat.py"]
+             "competitions.py", "team_vs_team.py", "player.py", "home.py", "stat_by_stat.py", "review.py", "records.py",
+             "rankings.py", "match.py"]
 
 
 @pytest.mark.parametrize("page", NEW_PAGES)

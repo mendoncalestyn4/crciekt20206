@@ -18,9 +18,11 @@ page_header("Hall of fame", "The big performers",
             "all-round performances in a single match.")
 c1, c2 = st.columns([2, 1])
 sections = m.section.value_counts()
-section = c1.selectbox("Section", list(sections.index), key="hf_section", format_func=lambda s: f"{s} · {sections[s]} matches")
+state.recall("hf_section", "section", list(sections.index))
+section = c1.selectbox("Section", list(sections.index), key="hf_section", on_change=state.remember("hf_section", "section"), format_func=lambda s: f"{s} · {sections[s]} matches")
 seasons = sorted(m[m.section == section].season.unique(), reverse=True)
-season = c2.selectbox("Season", ["All seasons"] + seasons, key="hf_season")
+state.recall("hf_season", "season", ["All seasons"] + seasons)
+season = c2.selectbox("Season", ["All seasons"] + seasons, key="hf_season", on_change=state.remember("hf_season", "season"))
 ids = Scope(sections=[section], seasons=[] if season == "All seasons" else [season]).match_ids(m)
 t_potm, t_duo, t_ar = st.tabs(["Player of the Match", "Deadly duos", "All-round matches"])
 

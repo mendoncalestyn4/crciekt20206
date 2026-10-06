@@ -23,7 +23,8 @@ sections = m.section.value_counts()
 labels = {s: f"{s} · {n} match{'es' if n > 1 else ''}" for s, n in sections.items()}
 
 c1, c2, c3 = st.columns([2.2, 1.6, 1.3])
-section = c1.selectbox("Section", list(sections.index), format_func=labels.get, key="sbs_section")
+state.recall("sbs_section", "section", list(sections.index))
+section = c1.selectbox("Section", list(sections.index), format_func=labels.get, key="sbs_section", on_change=state.remember("sbs_section", "section"))
 combine = c1.toggle("Combine sections", key="sbs_combine",
                     help="Count several sections together. Every player is then measured against the average of the "
                          "chosen sections, so only combine sections of the same kind (e.g. two T20 leagues).")

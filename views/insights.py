@@ -28,10 +28,12 @@ c = colours()
 # ---------------------------------------------------------------- total enough
 with tab_total:
     c1, c2 = st.columns([2, 1])
-    section = c1.selectbox("Section", list(sections.index), key="in_t_section",
+    state.recall("in_t_section", "section", list(sections.index))
+    section = c1.selectbox("Section", list(sections.index), key="in_t_section", on_change=state.remember("in_t_section", "section"),
                            format_func=lambda s: f"{s} · {sections[s]} matches")
     seasons = sorted(m[m.section == section].season.unique(), reverse=True)
-    season = c2.selectbox("Season", ["All seasons"] + seasons, key="in_t_season")
+    state.recall("in_t_season", "season", ["All seasons"] + seasons)
+    season = c2.selectbox("Season", ["All seasons"] + seasons, key="in_t_season", on_change=state.remember("in_t_season", "season"))
     ids = Scope(sections=[section], seasons=[] if season == "All seasons" else [season]).match_ids(m)
     table, size = I.total_enough(career, ids)
     if table.empty:
@@ -135,7 +137,8 @@ with tab_total:
 # ---------------------------------------------------------------- 108 · chase calculator
 with tab_chase:
     c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
-    section_c = c1.selectbox("Section", list(sections.index), key="in_c_section",
+    state.recall("in_c_section", "section", list(sections.index))
+    section_c = c1.selectbox("Section", list(sections.index), key="in_c_section", on_change=state.remember("in_c_section", "section"),
                              format_func=lambda s: f"{s} · {sections[s]} matches")
     ids_c = Scope(sections=[section_c]).match_ids(m)
     kind_c = kind_of(m[m.match_id.isin(ids_c)])
@@ -213,7 +216,8 @@ with tab_home:
 
 # ---------------------------------------------------------------- season by season
 with tab_seasons:
-    section_s = st.selectbox("Section", list(sections.index), key="in_s_section",
+    state.recall("in_s_section", "section", list(sections.index))
+    section_s = st.selectbox("Section", list(sections.index), key="in_s_section", on_change=state.remember("in_s_section", "section"),
                              format_func=lambda s: f"{s} · {sections[s]} matches")
     bs = I.by_season(career, section_s)
     if len(bs) < 2:
@@ -260,10 +264,12 @@ with tab_seasons:
 # ---------------------------------------------------------------- breakouts
 with tab_break:
     c1, c2, c3 = st.columns([2, 1, 1])
-    section_b = c1.selectbox("Section", list(sections.index), key="in_b_section",
+    state.recall("in_b_section", "section", list(sections.index))
+    section_b = c1.selectbox("Section", list(sections.index), key="in_b_section", on_change=state.remember("in_b_section", "section"),
                              format_func=lambda s: f"{s} · {sections[s]} matches")
     seasons_b = sorted(m[m.section == section_b].season.unique(), reverse=True)
-    season_b = c2.selectbox("Season", seasons_b, key="in_b_season")
+    state.recall("in_b_season", "season", seasons_b)
+    season_b = c2.selectbox("Season", seasons_b, key="in_b_season", on_change=state.remember("in_b_season", "season"))
     min_inns = c3.selectbox("Minimum innings in both", [3, 5, 8, 10], index=1, key="in_b_min")
     bat, bowl = I.breakouts(career, section_b, season_b, min_inns)
     if bat.empty and bowl.empty and not any(s < season_b for s in seasons_b):

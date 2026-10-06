@@ -111,6 +111,7 @@ pages = {
         st.Page("views/match.py", title="Matches", icon=":material/scoreboard:"),
         st.Page("views/season.py", title="Season", icon=":material/calendar_month:"),
         st.Page("views/competitions.py", title="Competitions", icon=":material/emoji_events:"),
+        st.Page("views/review.py", title="Season review", icon=":material/summarize:"),
         st.Page("views/honours.py", title="Honours board", icon=":material/workspace_premium:"),
         st.Page("views/rivalries.py", title="Rivalries", icon=":material/sports_cricket:"),
     ],

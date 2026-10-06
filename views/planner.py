@@ -22,12 +22,14 @@ mine_all = state.my_teams(career)
 # open on a section where your team plays
 default_sec = next((s for s in sections.index if set(m[m.section == s].home) & set(mine_all)
                     or set(m[m.section == s].away) & set(mine_all)), sections.index[0])
+state.recall("pl_section_t", "section", [s_ for s_ in sections.index if s_ == default_sec or not mine_all])
 if "pl_section_t" not in st.session_state:
     st.session_state["pl_section_t"] = default_sec
 c1, c2, c3 = st.columns([2, 1, 1.6])
-section = c1.selectbox("Section", list(sections.index), key="pl_section_t", format_func=lambda s: f"{s} · {sections[s]} matches")
+section = c1.selectbox("Section", list(sections.index), key="pl_section_t", on_change=state.remember("pl_section_t", "section"), format_func=lambda s: f"{s} · {sections[s]} matches")
 seasons = sorted(m[m.section == section].season.unique(), reverse=True)
-season = c2.selectbox("Season", ["All seasons"] + seasons, key="pl_season_t")
+state.recall("pl_season_t", "season", ["All seasons"] + seasons)
+season = c2.selectbox("Season", ["All seasons"] + seasons, key="pl_season_t", on_change=state.remember("pl_season_t", "season"))
 ids = Scope(sections=[section], seasons=[] if season == "All seasons" else [season]).match_ids(m)
 here = m[m.match_id.isin(ids)]
 teams = sorted(set(here.home) | set(here.away))
@@ -37,7 +39,7 @@ if not teams:
 default_team = next((t for t in mine_all if t in teams), teams[0])
 if st.session_state.get("pl_team_t") not in teams:
     st.session_state["pl_team_t"] = default_team
-team = c3.selectbox("Team", teams, key="pl_team_t")
+team = c3.selectbox("Team", teams, key="pl_team_t")  # the planner is for the team you manage: no remembered team
 if not mine_all:
     st.caption("Tip: pick your team(s) under **My team** in the sidebar and every page opens on them.")
 

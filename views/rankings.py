@@ -2,6 +2,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from ccstats import rankings as R
+from ccstats import seasonal as SN
 from ccstats import teamdeep as TD
 from ui import state
 from ui.charts import CONFIG, _axis, _layout, bars, fmt
@@ -16,9 +17,13 @@ m = career.matches
 page_header("Rankings", "Who's on top right now",
             "Player ratings and team Elo for one section. Recent form counts most, so these move as you play.")
 sections = m.section.value_counts()
-section = st.selectbox("Section", list(sections.index), key="rk_section", format_func=lambda s: f"{s} · {sections[s]} matches")
+state.recall("rk_section", "section", list(sections.index))
+section = st.selectbox("Section", list(sections.index), key="rk_section", on_change=state.remember("rk_section", "section"), format_func=lambda s: f"{s} · {sections[s]} matches")
 c = colours()
-tab_p, tab_t = st.tabs(["Player ratings", "Team Elo"])
+intl_secs = SN.international_sections(career)
+tab_names = ["Player ratings", "Rankings history", "Team Elo"] + (["International rating"] if intl_secs else [])
+tabs_ = st.tabs(tab_names)
+tab_p, tab_h, tab_t = tabs_[:3]
 
 with tab_p:
     table = R.player_ratings(career, section)
@@ -135,3 +140,68 @@ with tab_t:
         st.caption("Batting: runs per wicket against what each opponent's bowlers usually allow"
                    " (and, in white-ball cricket, the run rate against their usual economy). Bowling: the same the other "
                    "way round. 1100 = 10% better than an average side against the same opponents. Recent games count most.")
+
+# ---------------------------------------------------------------- 107 · rankings history
+with tab_h, safe_section("rankings history"):
+    what_h = st.segmented_control("Rating", ["Batting", "Bowling"], default="Batting", key="rk_h_kind") or "Batting"
+    hist_t, reigns = state.memo(SN.ranking_history, career, section, what_h.lower())
+    if hist_t.empty:
+        st.info(f"Nobody has {R.MIN_INNINGS} innings in {section} yet, so there's no rankings history.")
+    else:
+        top_h = hist_t.head(15)
+        with st.container(border=True):
+            st.markdown(f"**Highest {what_h.lower()} ratings ever** · the peak each player reached, and when")
+            st.plotly_chart(bars([f"{p} ({d:%b %Y})" for p, d in zip(top_h.player, top_h.peak_date)], top_h.peak,
+                                 f"Peak {what_h.lower()} rating", 0, reference=500, reference_label="the average specialist",
+                                 notes=[f"{t} · now {fmt(c_, 0)} · {n} match{'es' if n != 1 else ''} at No. 1"
+                                        for t, c_, n in zip(top_h.team, top_h.current, top_h.at_no1)]),
+                            width="stretch", config=CONFIG, key="rk_h_bars")
+            h0 = top_h.iloc[0]
+            most1 = hist_t.sort_values(["at_no1", "peak"], ascending=False).iloc[0]
+            chart_note(f"The highest {what_h.lower()} rating in {section} was {h0.player}'s {h0.peak:.0f} on "
+                       f"{h0.peak_date:%d %b %Y} (now {fmt(h0.current, 0)}). {most1.player} has spent the most matches at "
+                       f"No. 1: {int(most1.at_no1)}.",
+                       "Who reached the greatest heights, not just who is on top today. Each rating is the one they had "
+                       "at the time, worked out exactly as the Player ratings tab works it out now.")
+        with st.container(border=True):
+            st.markdown("**No. 1 reigns** · who held the top spot, from when to when")
+            rv_ = reigns.iloc[::-1]
+            html_table([[p, f"{a:%d %b %Y}", f"{b:%d %b %Y}", n] for p, a, b, n in zip(rv_.player, rv_["from"], rv_.to, rv_.matches)],
+                       ["No. 1", "From", "To", "Matches at No. 1"], numeric={3})
+            st.caption(f"Ratings start once a player has {R.MIN_INNINGS} innings here. A reign is counted in matches "
+                       "played in this section while they were top (level at the top: both count).")
+
+# ---------------------------------------------------------------- 107 · combined international rating
+if intl_secs:
+    with tabs_[3], safe_section("international rating"):
+        what_i = st.segmented_control("Rating", ["Batting", "Bowling"], default="Batting", key="rk_i_kind") or "Batting"
+        ci = state.memo(SN.combined_international, career, what_i.lower())
+        if ci.empty:
+            st.info(f"Nobody has {R.MIN_INNINGS} innings in an international format yet.")
+        else:
+            top_i = ci.head(20)
+            with st.container(border=True):
+                st.markdown(f"**Combined international {what_i.lower()} rating** · "
+                            + ", ".join(f"{f} ({s_})" for f, s_ in intl_secs.items()))
+                st.plotly_chart(bars(top_i.player, top_i.combined, f"Combined {what_i.lower()} rating", 0,
+                                     reference=500, reference_label="the average specialist",
+                                     notes=[f"{t} · " + " · ".join(f"{f} {fmt(v, 0)}" for f, v in
+                                                                   (("Test", a), ("ODI", b), ("T20I", c3)) if v == v)
+                                            + f" · {n} innings" for t, a, b, c3, n in
+                                            zip(top_i.team, top_i.Test, top_i.ODI, top_i.T20I, top_i.innings)]),
+                                width="stretch", config=CONFIG, key="rk_i_bars")
+                i0 = top_i.iloc[0]
+                parts_i = [f"{f} {fmt(v, 0)}" for f, v in (("Test", i0.Test), ("ODI", i0.ODI), ("T20I", i0.T20I)) if v == v]
+                chart_note(f"{i0.player} is top on {i0.combined:.0f} ({', '.join(parts_i)}, over {i0.innings} innings). "
+                           f"{int((ci.formats >= 2).sum())} players are rated in two or more formats.",
+                           "One world ranking across all three formats, so an all-format star can be compared with a "
+                           "specialist.")
+            st.dataframe(ci, hide_index=True, width="stretch", column_config={
+                "player": "Player", "team": "Team", "Test": st.column_config.NumberColumn("Test", format="%d"),
+                "ODI": st.column_config.NumberColumn("ODI", format="%d"), "T20I": st.column_config.NumberColumn("T20I", format="%d"),
+                "combined": st.column_config.NumberColumn("Combined", format="%d"), "formats": "Formats rated",
+                "innings": "Innings"})
+            st.caption("Each format's rating is the one on the Player ratings tab for that section. The combined "
+                       "rating weights each format by how many innings the player has had in it, so the format they "
+                       "play most counts most. Formats they aren't rated in (fewer than "
+                       f"{R.MIN_INNINGS} innings) are left out.")

@@ -20,9 +20,11 @@ page_header("Team vs team", "Head to head",
             "Pick a section and two teams. Switch between overall, home and away (each team's own), or only the games they played against each other.")
 r1 = st.columns([2, 1, 1.5, 1.5])
 sections = m.section.value_counts()
-section = r1[0].selectbox("Section", list(sections.index), key="tv_section", format_func=lambda s: f"{s} · {sections[s]} matches")
+state.recall("tv_section", "section", list(sections.index))
+section = r1[0].selectbox("Section", list(sections.index), key="tv_section", on_change=state.remember("tv_section", "section"), format_func=lambda s: f"{s} · {sections[s]} matches")
 seasons = sorted(m[m.section == section].season.unique(), reverse=True)
-season = r1[1].selectbox("Season", ["All seasons"] + seasons, key="tv_season")
+state.recall("tv_season", "season", ["All seasons"] + seasons)
+season = r1[1].selectbox("Season", ["All seasons"] + seasons, key="tv_season", on_change=state.remember("tv_season", "season"))
 base_scope = Scope(sections=[section], seasons=[] if season == "All seasons" else [season])
 here = m[m.match_id.isin(base_scope.match_ids(m))]
 teams = sorted(set(here.home) | set(here.away))

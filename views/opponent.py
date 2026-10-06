@@ -5,10 +5,11 @@ import streamlit as st
 from ccstats import analysis as A
 from ccstats import extras as E
 from ccstats import preview as PV
+from ccstats import seasonal as SN
 from ccstats import teamplay as TP
 from ccstats import winprob as WP
 from ui import state
-from ui.charts import pct, CONFIG, bars, fmt, say
+from ui.charts import pct, CONFIG, bars, fmt, say, signed
 from ui.theme import (chart_note, esc, form_strip, html_table, kpis, match_link, page_header, player_link, safe_section)
 
 career = state.current()
@@ -30,7 +31,8 @@ if intl_sections:
 mine_default = state.my_teams(career)
 
 c1, c2, c3, c4 = st.columns([1.7, 1.3, 1.5, 1.5])
-pick = c1.selectbox("Competition", choices, key="op_section",
+state.recall("op_section", "section", choices)
+pick = c1.selectbox("Competition", choices, key="op_section", on_change=state.remember("op_section", "section"),
                     format_func=lambda s: f"{s} · {int(counts[intl_sections].sum())} matches" if s == INTL
                     else f"{s} · {counts[s]} matches")
 if pick == INTL:
@@ -93,7 +95,7 @@ if mine:
             else:
                 st.caption("Nothing stands out yet: not enough games for a clear pattern. Play a few more and it fills in.")
 
-tab_h2h, tab_them, tab_sbs = st.tabs(["Head to head", f"About {opp}", "Side by side"])
+tab_h2h, tab_them, tab_sbs, tab_xi = st.tabs(["Head to head", f"About {opp}", "Side by side", "Your best XI v them"])
 
 # ---------------------------------------------------------------- 54 · meetings
 with tab_h2h:
@@ -389,3 +391,57 @@ with tab_sbs:
                 html_table(rows, ["", mine, opp], raw={1, 2}, numeric={1, 2})
                 n1, n2 = int((sb.better == "mine").sum()), int((sb.better == "theirs").sum())
                 st.caption(f"{mine} ahead on {n1}, {opp} on {n2}. Lower is better for runs per wicket conceded and economy.")
+
+# ---------------------------------------------------------------- 112 · your best XI against them
+def signed_pct(v) -> str:
+    t = signed(v)
+    return t if t == "–" else t + "%"
+
+
+with tab_xi:
+    if not mine:
+        st.info("Pick your team above to see how your players do against them.")
+    else:
+        with safe_section("best XI against them"):
+            pb, pw = state.memo(SN.picks_against, career, ids, mine, opp)
+            multi_x = pb.attrs.get("kind") == "multi"
+            st.markdown(f"**Your {pb.attrs.get('season', '')} squad against {opp}** · each player's record v them "
+                        "against their own record here")
+            if pb.empty and pw.empty:
+                st.caption(f"None of your current squad has played {opp} here yet.")
+            else:
+                verdict_cls = lambda v: "hi" if v.startswith("Pick") else "dim" if v.startswith("Think") else ""  # noqa: E731
+                with st.container(border=True):
+                    st.markdown("**Batting**")
+                    if multi_x:
+                        rows = [[player_link(r.player), r.inns_vs, r.runs_vs, fmt(r.avg_vs, 1), fmt(r.avg, 1),
+                                 signed_pct(r.change), r.verdict] for r in pb.itertuples()]
+                        html_table(rows, ["Player", "Inns v them", "Runs", "Avg v them", "Avg overall", "Change",
+                                          "Verdict"], numeric={1, 2, 3, 4, 5}, raw={0},
+                                   row_class=[verdict_cls(r.verdict) for r in pb.itertuples()])
+                    else:
+                        rows = [[player_link(r.player), r.inns_vs, r.runs_vs, fmt(r.avg_vs, 1), fmt(r.sr_vs, 0),
+                                 fmt(r.avg, 1), fmt(r.sr, 0), signed_pct(r.change), r.verdict] for r in pb.itertuples()]
+                        html_table(rows, ["Player", "Inns v them", "Runs", "Avg v them", "SR v them", "Avg overall",
+                                          "SR overall", "Change", "Verdict"], numeric={1, 2, 3, 4, 5, 6, 7}, raw={0},
+                                   row_class=[verdict_cls(r.verdict) for r in pb.itertuples()])
+                with st.container(border=True):
+                    st.markdown("**Bowling**")
+                    rows = [[player_link(r.player), r.spells_vs, r.wkts_vs, fmt(r.avg_vs, 1)]
+                            + ([] if multi_x else [fmt(r.econ_vs, 2)]) + [fmt(r.avg, 1)]
+                            + ([] if multi_x else [fmt(r.econ, 2)]) + [signed_pct(r.change), r.verdict]
+                            for r in pw.itertuples()]
+                    cols_ = (["Player", "Innings v them", "Wkts", "Avg v them"] + ([] if multi_x else ["Econ v them"])
+                             + ["Avg overall"] + ([] if multi_x else ["Econ overall"]) + ["Change", "Verdict"])
+                    html_table(rows, cols_, numeric=set(range(1, len(cols_) - 1)), raw={0},
+                               row_class=[verdict_cls(r.verdict) for r in pw.itertuples()])
+                picks_ = list(pb[pb.verdict.str.startswith("Pick")].player) + list(pw[pw.verdict.str.startswith("Pick")].player)
+                doubts = list(pb[pb.verdict.str.startswith("Think")].player) + list(pw[pw.verdict.str.startswith("Think")].player)
+                if picks_ or doubts:
+                    st.markdown((f"**Suggested:** {', '.join(dict.fromkeys(picks_))}. " if picks_ else "")
+                                + (f"**Think again about:** {', '.join(dict.fromkeys(doubts))}." if doubts else ""))
+                st.caption(("Measured on average, as in multi-day cricket." if multi_x else
+                            "Batting measured on average × strike rate; bowling on average × economy (lower is better).")
+                           + " Change: their figure v this opponent against their own figure here; Pick = 25% or more "
+                           "better v them, Think again = 25% or more worse. Needs 2 innings v them. Squad = everyone who "
+                           "played for you in your latest season here.")

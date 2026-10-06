@@ -29,10 +29,12 @@ def score_of(mid, team):
 page_header("Matches", "Find a match", "Narrow the list by section or team, then type to search: a team, a date, a stage like "
             "'Final', or a result.")
 c1, c2 = st.columns(2)
-section = c1.selectbox("Section", ["All sections"] + sorted(m.section.unique()), key="mt_section")
+state.recall("mt_section", "section", ["All sections"] + sorted(m.section.unique()))
+section = c1.selectbox("Section", ["All sections"] + sorted(m.section.unique()), key="mt_section", on_change=state.remember("mt_section", "section"))
 pool = m if section == "All sections" else m[m.section == section]
 teams = sorted(set(pool.home) | set(pool.away))
-team = c2.selectbox("Team", ["All teams"] + teams, key="mt_team")
+state.recall("mt_team", "team", ["All teams"] + teams)
+team = c2.selectbox("Team", ["All teams"] + teams, key="mt_team", on_change=state.remember("mt_team", "team"))
 if team != "All teams":
     pool = pool[(pool.home == team) | (pool.away == team)]
 
@@ -73,6 +75,19 @@ scoreboard(f"{shown_name(row.section, row.event)}{stage}{series} · {row.date:%d
            score_of(mid, row.away), row.result + (f" (super over: {row.super_over})" if row.super_over else "")
            + (f" · Player of the match: {row.player_of_match}" if row.player_of_match else ""))
 st.write("")
+
+# ---------------------------------------------------------------- 116 · match journal
+with safe_section("match journal"):
+    note_now = state.notes(career).get(row.source, "")
+    with st.expander("📝 Your notes on this match" + (" · saved" if note_now else ""), expanded=bool(note_now)):
+        with st.form(f"note_form_{mid}", border=False):
+            text = st.text_area("Notes", value=note_now, key=f"note_{mid}", height=90, label_visibility="collapsed",
+                                placeholder="e.g. rested Bumrah, regretted it · went spin-heavy on a turner")
+            if st.form_submit_button("Save note"):
+                state.set_note(career, row.source, text)
+                st.toast("Note saved" if text.strip() else "Note removed", icon="📝")
+                st.rerun()
+        st.caption("Saved with this career on this PC. Your notes also show on the Home page under My team.")
 
 # ---------------------------------------------------------------- 100, 101, 102 · report, rating, win chance
 with safe_section("match report"):

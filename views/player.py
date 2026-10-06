@@ -155,9 +155,11 @@ with st.expander("Career journey · every team and competition, in order"):
                                "Runs": j.runs, "Wickets": j.wickets}), hide_index=True, width="stretch")
 
 c1, c2 = st.columns([2, 1])
-section = c1.selectbox("Section", list(order), key="pl_section")
+state.recall("pl_section", "section", list(order))
+section = c1.selectbox("Section", list(order), key="pl_section", on_change=state.remember("pl_section", "section"))
 seasons = sorted(my_matches[my_matches.section == section].season.unique(), reverse=True)
-season = c2.selectbox("Season", ["All seasons"] + seasons, key="pl_season")
+state.recall("pl_season", "season", ["All seasons"] + seasons)
+season = c2.selectbox("Season", ["All seasons"] + seasons, key="pl_season", on_change=state.remember("pl_season", "season"))
 scope = Scope(sections=[section], seasons=[] if season == "All seasons" else [season])
 ids = scope.match_ids(m)
 bat_t, bowl_t, fld_t, base = state.tables(career, scope)

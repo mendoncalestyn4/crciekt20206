@@ -529,3 +529,24 @@ def win_chance_chart(line: pd.DataFrame, team1: str, team2: str, multi: bool) ->
                                 yaxis=_axis(c, f"% chance ({team1} batted first)", range=[0, 100]),
                                 margin=dict(l=10, r=16, t=40, b=10)))
     return fig
+
+
+def record_steps_chart(steps: pd.DataFrame, y: list[float], unit: str) -> go.Figure:
+    """A record's history: a step up (or down, for lowest totals) each time it was beaten."""
+    c = colours()
+    fig = go.Figure()
+    xs = list(steps.date) + ([steps.until.iloc[-1] if pd.notna(steps.until.iloc[-1]) else steps.date.max()] if len(steps) else [])
+    ys = list(y) + ([y[-1]] if len(y) else [])
+    fig.add_trace(go.Scatter(x=xs, y=ys, mode="lines", line=dict(color=c["s1"], width=2.5, shape="hv"), hoverinfo="skip",
+                             showlegend=False))
+    fig.add_trace(go.Scatter(x=steps.date, y=y, mode="markers+text", marker=dict(size=10, color=c["s1"]),
+                             text=[f"{v}" for v in steps.value], textposition="top left", textfont=dict(size=11),
+                             customdata=np.stack([steps.holder, steps.value, steps.against.fillna("")], axis=1),
+                             hovertemplate="<b>%{customdata[0]}</b> %{customdata[1]}<br>v %{customdata[2]}<br>%{x|%d %b %Y}"
+                                           "<extra></extra>", showlegend=False))
+    lo, hi = (min(y), max(y)) if len(y) else (0, 1)
+    pad = max((hi - lo) * 0.25, 1)
+    fig.update_layout(**_layout(c, height=300, xaxis=_axis(c, "Date"), yaxis=_axis(c, unit.capitalize(),
+                                                                                    range=[lo - pad, hi + pad]),
+                                margin=dict(l=10, r=16, t=20, b=10)))
+    return fig

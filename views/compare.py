@@ -19,10 +19,12 @@ page_header("Compare players", "Side by side",
 m = career.matches
 c1, c2, c3 = st.columns([2, 1, 1])
 sections = m.section.value_counts()
-section = c1.selectbox("Section", list(sections.index), key="cp_section",
+state.recall("cp_section", "section", list(sections.index))
+section = c1.selectbox("Section", list(sections.index), key="cp_section", on_change=state.remember("cp_section", "section"),
                        format_func=lambda s: f"{s} · {sections[s]} matches")
 seasons = sorted(m[m.section == section].season.unique(), reverse=True)
-season = c2.selectbox("Season", ["All seasons"] + seasons, key="cp_season")
+state.recall("cp_season", "season", ["All seasons"] + seasons)
+season = c2.selectbox("Season", ["All seasons"] + seasons, key="cp_season", on_change=state.remember("cp_season", "season"))
 disc = c3.segmented_control("Discipline", ["Batting", "Bowling"], default="Batting", key="cp_disc") or "Batting"
 scope = Scope(sections=[section], seasons=[] if season == "All seasons" else [season])
 bat, bowl, _, base = state.tables(career, scope)

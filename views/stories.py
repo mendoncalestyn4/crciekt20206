@@ -20,9 +20,11 @@ page_header("Player stories", "The stories behind the numbers",
             "loses, and the odd ones: nervous nineties, pairs and not-outs.")
 c1, c2 = st.columns([2, 1])
 sections = m.section.value_counts()
-section = c1.selectbox("Section", list(sections.index), key="st_section", format_func=lambda s: f"{s} · {sections[s]} matches")
+state.recall("st_section", "section", list(sections.index))
+section = c1.selectbox("Section", list(sections.index), key="st_section", on_change=state.remember("st_section", "section"), format_func=lambda s: f"{s} · {sections[s]} matches")
 seasons = sorted(m[m.section == section].season.unique(), reverse=True)
-season = c2.selectbox("Season", ["All seasons"] + seasons, key="st_season")
+state.recall("st_season", "season", ["All seasons"] + seasons)
+season = c2.selectbox("Season", ["All seasons"] + seasons, key="st_season", on_change=state.remember("st_season", "season"))
 ids = Scope(sections=[section], seasons=[] if season == "All seasons" else [season]).match_ids(m)
 all_ids = Scope(sections=[section]).match_ids(m)  # milestones and records count the whole section
 mine = set(state.my_teams(career))

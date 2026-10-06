@@ -16,7 +16,8 @@ m = career.matches
 page_header("Rivalries", "Every head to head",
             "Every pair of teams that have met, the record between them, and who has done best in those games.")
 sections = m.section.value_counts()
-section = st.selectbox("Section", list(sections.index), key="rv_section", format_func=lambda s: f"{s} · {sections[s]} matches")
+state.recall("rv_section", "section", list(sections.index))
+section = st.selectbox("Section", list(sections.index), key="rv_section", on_change=state.remember("rv_section", "section"), format_func=lambda s: f"{s} · {sections[s]} matches")
 ids = Scope(sections=[section]).match_ids(m)
 rv = E.rivalries(career, ids)
 if rv.empty:

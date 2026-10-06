@@ -3,10 +3,11 @@ import streamlit as st
 
 from ccstats import extras as E
 from ccstats import records as RC
-from ui.charts import CONFIG, bars
+from ccstats import seasonal as SN
+from ui.charts import CONFIG, bars, record_steps_chart
 from ccstats.stats import Scope
 from ui import state
-from ui.theme import chart_note, page_header
+from ui.theme import chart_note, html_table, page_header, safe_section
 
 career = state.current()
 if career is None:
@@ -18,9 +19,11 @@ page_header("Records", "The record books",
             "The best (and worst) ever in each competition. Anything set in your 10 most recent matches is marked 🆕.")
 c1, c2, c3 = st.columns([2, 1, 1])
 sections = m.section.value_counts()
-section = c1.selectbox("Section", list(sections.index), key="rc_section", format_func=lambda s: f"{s} · {sections[s]} matches")
+state.recall("rc_section", "section", list(sections.index))
+section = c1.selectbox("Section", list(sections.index), key="rc_section", on_change=state.remember("rc_section", "section"), format_func=lambda s: f"{s} · {sections[s]} matches")
 seasons = sorted(m[m.section == section].season.unique(), reverse=True)
-season = c2.selectbox("Season", ["All seasons"] + seasons, key="rc_season")
+state.recall("rc_season", "season", ["All seasons"] + seasons)
+season = c2.selectbox("Season", ["All seasons"] + seasons, key="rc_season", on_change=state.remember("rc_season", "season"))
 top = c3.selectbox("Show", [5, 10, 20], index=1, key="rc_top", format_func=lambda n: f"Top {n}")
 ids = Scope(sections=[section], seasons=[] if season == "All seasons" else [season]).match_ids(m)
 recs = RC.records(career, ids, top=top)
@@ -70,6 +73,9 @@ def record_table(name: str) -> None:
         if "season" in name:
             show = show.drop(columns=["Against", "Date"])
         st.dataframe(show, hide_index=True, width="stretch", column_config={"#": st.column_config.TextColumn(width=40)})
+        near = SN.near_miss(name, t)
+        if near:
+            st.caption(("🤝 " if near.startswith("shared") else "😬 Near miss · ") + near)
 
 
 for group, names in GROUPS:
@@ -88,6 +94,32 @@ for group, names in GROUPS:
         for col, name in zip(cols, short[i:i + 2]):
             with col:
                 record_table(name)
-st.caption("Equal records share a place. Partnerships come from the fall of wickets; * means unbroken at the end of "
+# ---------------------------------------------------------------- 104 · record timeline
+with safe_section("record timeline"), st.container(border=True):
+    st.subheader("Record timeline", anchor=False)
+    tl = state.memo(SN.record_timeline, career, ids)
+    names_tl = [n for n in SN.TIMELINE if n in set(tl.record)]
+    if not names_tl:
+        st.caption("No records here yet.")
+    else:
+        pick_tl = st.selectbox("Record", names_tl, key="rc_tl")
+        steps = tl[tl.record == pick_tl].reset_index(drop=True)
+        ys = [SN.record_number(pick_tl, v) for v in steps["sort"]]
+        unit = SN.RECORD_UNIT.get(pick_tl, "runs")
+        st.plotly_chart(record_steps_chart(steps, ys, unit), width="stretch", config=CONFIG, key="rc_tl_chart")
+        first, now = steps.iloc[0], steps.iloc[-1]
+        beaten = len(steps) - 1
+        chart_note(f"{pick_tl} in {section}{'' if season == 'All seasons' else ' ' + season}: first set at {first.value} by "
+                   f"{first.holder} on {first.date:%d %b %Y}, beaten {beaten} time{'' if beaten == 1 else 's'} since. "
+                   f"It stands at {now.value} by {now.holder}, set on {now.date:%d %b %Y}.",
+                   "The history of the record: each dot is a new record, and the flat line is how long it stood. "
+                   "Equalling a record doesn't count as beating it.")
+        html_table([[r.step + 1, r.holder, r.value, r.team if r.team != r.holder else "", r.against or "",
+                     f"{r.date:%d %b %Y}", f"{r.until:%d %b %Y}" if pd.notna(r.until) else "still stands"]
+                    for r in steps.itertuples()],
+                   ["#", "Holder", "Record", "Team", "Against", "Set on", "Beaten on"], numeric={0})
+
+st.caption("Equal records share a place. 😬 Near miss: the closest anyone else has come (it can be the record holder's "
+           "own next best). Partnerships come from the fall of wickets; * means unbroken at the end of "
            "the innings. The fastest fifties and hundreds can't be worked out because scorecards don't record when "
            "each run was scored.")

@@ -10,6 +10,7 @@ from ccstats import winprob as WP
 from ui.theme import colours
 from ccstats.stats import Scope, bars_for, kind_of
 from ui import state
+from ui.xi import best_xi_cached, team_sheet
 from ui.charts import signed, pct, CONFIG, bars, fmt, race_chart, say
 from ui.theme import chart_note, html_table, kpis, match_link, page_header, player_link, safe_section
 
@@ -22,15 +23,18 @@ m = career.matches
 page_header("Teams", "Team record", "Pick a section and a team. Every comparison is against the average of all the teams in that section.")
 c1, c2, c3, c4 = st.columns([1.9, 1, 1.5, 1.7])
 sections = m.section.value_counts()
-section = c1.selectbox("Section", list(sections.index), key="tm_section", format_func=lambda s: f"{s} · {sections[s]} matches")
+state.recall("tm_section", "section", list(sections.index))
+section = c1.selectbox("Section", list(sections.index), key="tm_section", on_change=state.remember("tm_section", "section"), format_func=lambda s: f"{s} · {sections[s]} matches")
 seasons = sorted(m[m.section == section].season.unique(), reverse=True)
-season = c2.selectbox("Season", ["All seasons"] + seasons, key="tm_season")
+state.recall("tm_season", "season", ["All seasons"] + seasons)
+season = c2.selectbox("Season", ["All seasons"] + seasons, key="tm_season", on_change=state.remember("tm_season", "season"))
 scope = Scope(sections=[section], seasons=[] if season == "All seasons" else [season])
 ids = scope.match_ids(m)
 here = m[m.match_id.isin(ids)]
 base_kind = kind_of(here)  # t20 / one / multi: the bars for close games, good starts and so on
 teams = sorted(set(here.home) | set(here.away))
-team = c3.selectbox("Team", teams, key="tm_team")
+state.recall("tm_team", "team", teams)
+team = c3.selectbox("Team", teams, key="tm_team", on_change=state.remember("tm_team", "team"))
 venue_label = c4.segmented_control("Venue", ["Overall", "Home", "Away"], default="Overall", key="tm_venue") or "Overall"
 venue = venue_label.lower().replace("overall", "all")
 
@@ -260,6 +264,10 @@ multi = TP.is_multi(games_all)
 second = "Batting second" if multi else "Chasing"
 
 # ---------------------------------------------------------------- 135 · squad changes
+with tab_squad, safe_section("best XI"):
+    team_sheet(best_xi_cached(career, ids, team),
+               f"{'All-time' if season == 'All seasons' else season} XI · {team} in {section}", show_team=False)
+
 with tab_squad, safe_section("squad changes"):
     sc = state.memo(TD.squad_changes, career, ids, team)
     intl_ = sc.attrs.get("international", False)
