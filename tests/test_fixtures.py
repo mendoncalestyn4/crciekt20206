@@ -169,6 +169,105 @@ def test_no_matches_at_all_is_fine(career):
     assert F.track(career, []).empty
 
 
+# --------------------------------------------------------------------------- semis, finals and matches you forgot
+def upto(c, day):
+    """The career as it was on a day: only the scorecards saved by then."""
+    import copy
+    c2 = copy.copy(c)
+    c2.matches = c.matches[c.matches.date <= pd.Timestamp(day)].copy()
+    return c2
+
+
+@pytest.mark.parametrize("team,day,want", [
+    ("Kent", "2026-07-15", ("Semi-final", "")),  # won the quarter-final; the semi draw isn't known
+    ("Northamptonshire", "2026-07-17", ("Final", "Somerset")),  # the other semi's winner
+    ("Somerset", "2026-07-17", ("Final", "Northamptonshire")),
+    ("Durham", "2026-07-15", None),  # lost the quarter-final: out
+    ("Somerset", "2026-07-18", None),  # final played
+    ("Gujarat Titans", "2026-05-26", ("Final", "")),  # won Qualifier 1; Qualifier 2 not played yet
+    ("Punjab Kings", "2026-05-26", ("Qualifier 2", "")),  # lost Qualifier 1: a second go
+    ("Punjab Kings", "2026-05-27", ("Qualifier 2", "Mumbai Indians")),  # the Eliminator's winner
+    ("Mumbai Indians", "2026-05-27", ("Qualifier 2", "Punjab Kings")),  # the loser of Qualifier 1
+    ("Punjab Kings", "2026-05-29", ("Final", "Gujarat Titans")),
+    ("Gujarat Titans", "2026-05-29", ("Final", "Punjab Kings")),
+    ("Mumbai Indians", "2026-05-29", None),  # lost Qualifier 2
+])
+def test_the_next_knockout_game_is_added(career, team, day, want):
+    c = upto(career, day)
+    t = F.track(c, [], auto=[team])
+    nxt = t[t.status == "next"]
+    if want is None:
+        assert nxt.empty or not nxt.stage.iloc[0]
+        return
+    assert len(nxt) == 1 and (nxt.stage.iloc[0], nxt.opponent.iloc[0]) == want
+    assert nxt.kind.iloc[0] == "tournament" and nxt.anchor.iloc[0] > t[t.status == "played"].anchor.max()
+
+
+def test_a_scheduled_tournament_gets_its_knockouts_not_more_group_games(career):
+    c = upto(career, "2026-07-15")
+    t = F.track(c, F.make_tournament("Kent", "T20 Blast", "T20", "2026-07", games=5))
+    assert list(t.status) == ["played", "played", "next"]
+    assert list(t.stage) == ["", "Quarter-final", "Semi-final"]
+    assert t.auto.eq(False).all()  # it's the tournament you scheduled
+    t = F.track(c, F.make_tournament("Durham", "T20 Blast", "T20", "2026-07", games=5))
+    assert list(t.status) == ["played", "played"]  # knocked out: no more group games either
+    t = F.track(c, F.make_tournament("Yorkshire", "T20 Blast", "T20", "2026-07", games=5))
+    assert t.games_left.dropna().tolist() == [5 - (t.status == "played").sum()]
+
+
+def test_matches_you_forgot_are_added_with_the_rest_of_their_series(career):
+    t = F.track(career, [], auto=["India"])
+    assert t.auto.all()
+    m = career.matches
+    ind = m[((m.home == "India") | (m.away == "India")) & (m.date.dt.year == 2026)]
+    assert set(t[t.status == "played"].match_id) == set(ind.match_id)
+    wi = t[t.opponent == "West Indies"]
+    assert list(wi.no) == [1, 2, 3] and list(wi.status) == ["played", "played", "next"]
+    eng = t[(t.opponent == "England") & (t.format == "T20I")]
+    # the 3rd of 5 is in the files: the 1st and 2nd were played (no files), the 4th and 5th are long overdue
+    assert list(eng.no) == [1, 2, 3, 4, 5] and list(eng.status) == ["no scorecard"] * 2 + ["played"] + ["no scorecard"] * 2
+    assert eng.anchor.is_monotonic_increasing
+    groups = {s["series"]: s for s in F.series_groups(t, "India")}
+    assert [s["state"] for s in groups.values() if s["opponent"] == "England"] == ["done", "done"]
+    # without auto, nothing is added
+    assert F.track(career, []).empty
+
+
+def test_a_series_longer_than_scheduled_gets_its_extra_matches(career):
+    t = F.track(career, F.make_series("England", "Pakistan", "Test", 2, "away", "2026-08"))
+    assert len(t) == 3 and (t.status == "played").all()
+    assert list(t.auto) == [False, False, True] and t.match_id.is_unique
+    real = career.matches[career.matches.series_id == "Test-7"].sort_values("series_match_no")
+    assert list(t.match_id) == list(real.match_id)
+    c2 = F.with_venues(career, t)  # the extra Test is in the same series: away too
+    assert (c2.matches.set_index("match_id").loc[list(t.match_id)].away == "England").all()
+
+
+def test_your_schedule_and_the_auto_added_never_share_a_match(career):
+    fx = (F.make_series("India", "West Indies", "ODI", 1, "home", "", "2026-10-03")  # just the 2nd ODI, on its day
+          + F.make_tournament("India", "T20 World Cup", "T20I", "2026-03"))
+    t = F.track(career, fx, auto=["India"])
+    used = t[t.match_id != ""].match_id
+    assert used.is_unique
+    wi = t[t.opponent == "West Indies"]
+    # the 1st ODI is auto-added with the series; the 2nd stays your fixture, not a "missing" one
+    assert (wi[wi.status == "played"].auto.tolist().count(False), len(wi[wi.status == "no scorecard"])) == (1, 0)
+    assert not t[t.series.str.startswith("T20 World Cup")].auto.any()
+
+
+def test_every_match_of_every_team_is_in_its_schedule(career):
+    m = career.matches
+    for team in sorted(set(m.home) | set(m.away)):
+        t = F.track(career, [], auto=[team])
+        since = F._auto_since(career, pd.DataFrame(columns=F.COLUMNS), team, lambda r: pd.NaT)
+        mine = m[(m.home == team) | (m.away == team)]
+        key = mine.series_id.where(mine.series_id != "", mine.event + "|" + mine.season)
+        want = set(mine[key.isin(key[mine.date >= since])].match_id)
+        got = t[t.status == "played"].match_id
+        assert got.is_unique and set(got) == want, team
+        assert (t.status == "next").sum() <= 1 and t.anchor.is_monotonic_increasing, team
+
+
 # --------------------------------------------------------------------------- 154 · home and away from your schedule
 def test_venues_follow_the_schedule(career):
     fx = F.make_series("England", "Pakistan", "Test", 3, "away", "2026-08")  # say England were away
@@ -331,6 +430,18 @@ def test_page_empty_shows_how_to(career):
     at = page(career).run()
     ok(at)
     assert any("How to add your schedule" in x.value for x in at.markdown)
+
+
+def test_page_shows_auto_added_and_knockouts(career):
+    at = page(career).run()
+    ok(at)
+    assert any("Nothing scheduled for India yet" in x.value for x in at.info)
+    text = " ".join(x.value for x in at.markdown)
+    assert "auto-added" in text and "v West Indies · ODI · match 3" in text
+    at = page(upto(career, "2026-07-17"), mine=("Somerset",)).run()
+    ok(at)
+    text = " ".join(x.value for x in at.markdown)
+    assert "T20 Blast 2026 Final · v Northamptonshire" in text and "Final to come" in text
 
 
 def test_page_add_series_with_the_pickers(career):

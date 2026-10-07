@@ -248,20 +248,103 @@ def _score(career, mid: str, team: str) -> str:
                       for r in inn.itertuples()) or "–"
 
 
-def track(career, fixtures: list[dict]) -> pd.DataFrame:
+KO_NEXT = {"Quarter-final": "Semi-final", "Semi-final": "Final", "Qualifier 1": "Final", "Qualifier 2": "Final"}
+AUTO = " · auto-added"
+
+
+def _through(r) -> str:
+    """Who went through: the winner, or the side a drawn or tied knockout was settled for."""
+    return r.winner or r.tiebreak_winner or ""
+
+
+def knockout_next(career, mine: pd.DataFrame, team: str) -> tuple[str, str] | None:
+    """After the team's latest match in a tournament (`mine`: their matches in it):
+    (the knockout game they play next, who against if that's decided yet), or None
+    when there's none to come (knocked out, the final played, or still in the group).
+    The opponent comes from the other knockout games already in the files: the
+    other semi-final's winner, the Eliminator's winner for Qualifier 2, and so on."""
+    if mine.empty:
+        return None
+    last = mine.sort_values(["date", "match_id"]).iloc[-1]
+    if not last.knockout or last.stage == "Final":
+        return None
+    m = career.matches
+    ev = m[(m.event == last.event) & (m.season == last.season) & m.knockout]
+    won = _through(last) == team
+    if won:
+        nxt = KO_NEXT.get(last.stage)
+        if last.stage == "Eliminator":  # IPL: on to Qualifier 2; The Hundred: straight to the final
+            sec = m[(m.section == last.section) & m.stage.isin(["Qualifier 1", "Qualifier 2"])]
+            nxt = "Qualifier 2" if len(sec) else "Final"
+        if not nxt:
+            return None
+    elif last.stage == "Qualifier 1":
+        nxt = "Qualifier 2"  # the loser of Qualifier 1 gets a second go
+    else:
+        return None  # knocked out (or a knockout with no result we can't settle)
+
+    def winner_of(stage):  # the other side through from that stage (the team itself is never its own opponent)
+        w = {_through(r) for r in ev[ev.stage == stage].itertuples()} - {"", team}
+        return w.pop() if len(w) == 1 else ""
+
+    def loser_of(stage):
+        g = ev[ev.stage == stage]
+        lo = {(r.away if _through(r) == r.home else r.home) for r in g.itertuples() if _through(r)} - {team}
+        return lo.pop() if len(lo) == 1 else ""
+
+    opp = ""
+    if nxt == "Final" and last.stage == "Semi-final":
+        opp = winner_of("Semi-final")
+    elif nxt == "Final" and last.stage == "Qualifier 1":
+        opp = winner_of("Qualifier 2")
+    elif nxt == "Final" and last.stage == "Qualifier 2":
+        opp = winner_of("Qualifier 1")
+    elif nxt == "Qualifier 2" and last.stage == "Qualifier 1":
+        opp = winner_of("Eliminator")
+    elif nxt == "Qualifier 2" and last.stage == "Eliminator":
+        opp = loser_of("Qualifier 1")
+    return nxt, opp
+
+
+def _auto_since(career, fx: pd.DataFrame, team: str, anchor_of):
+    """From when a team's unscheduled matches are added to its schedule: the start of
+    the year of its latest match (or of the season that match is in, if that began
+    earlier), or the start of its schedule if that's earlier still."""
+    mine = fx[fx.team == team]
+    anchors = [a - pd.Timedelta(days=15) for a in (anchor_of(r) for _, r in mine.iterrows()) if pd.notna(a)]
+    m = career.matches
+    g = m[(m.home == team) | (m.away == team)]
+    if g.empty:
+        return min(anchors) if anchors else None
+    last = g.sort_values("date").iloc[-1]
+    season_start = g[(g.section == last.section) & (g.season == last.season)].date.min()
+    return min([pd.Timestamp(year=last.date.year, month=1, day=1), season_start] + anchors)
+
+
+def track(career, fixtures: list[dict], auto=()) -> pd.DataFrame:
     """One row per fixture (tournaments: one row per match played so far, plus one
     for the games still to come), with: status (played / next / to come), the
-    match it was matched to, the result from the team's side and the scores."""
-    cols = COLUMNS + ["kind", "status", "match_id", "played_date", "outcome", "result", "score", "anchor"]
-    if not fixtures:
+    match it was matched to, the result from the team's side and the scores.
+
+    Nothing the team plays is left out: a scheduled series that turns out longer in
+    the game gets its extra matches, a tournament gets its next knockout game
+    (semi-final, final …) once the team is through to it, and for the teams in
+    `auto` every match they've played this year (or since their schedule starts, if
+    earlier) that isn't in it is added (series by series, tournament by tournament),
+    marked auto-added."""
+    cols = COLUMNS + ["kind", "status", "match_id", "played_date", "outcome", "result", "score", "anchor", "stage",
+                      "auto"]
+    auto = [t for t in dict.fromkeys(auto or ()) if t]
+    if not fixtures and not auto:
         return pd.DataFrame(columns=cols)
     m = career.matches.copy()
-    fx = pd.DataFrame(fixtures, columns=COLUMNS)
+    fx = pd.DataFrame(fixtures or [], columns=COLUMNS)
     fx["no"] = pd.to_numeric(fx["no"], errors="coerce").fillna(0).astype(int)
     fx["games"] = pd.to_numeric(fx["games"], errors="coerce").fillna(0).astype(int)
     fx = fx.fillna("")
     claimed: set[str] = set()
     hit: dict[str, str] = {}
+    extra: dict[tuple, tuple[list, int]] = {}  # (team, series) -> (matches beyond the fixtures, the series' length)
     out_rows = []
 
     def anchor_of(r):
@@ -293,7 +376,13 @@ def track(career, fixtures: list[dict]) -> pd.DataFrame:
             else:
                 sid = starts.index[0]
             if sid is not None:
-                picked = list(series_c[series_c.series_id == sid].sort_values(["series_match_no", "date"]).match_id)
+                in_series = series_c[series_c.series_id == sid].sort_values(["series_match_no", "date"])
+                picked = list(in_series.match_id)
+                length = int(pd.to_numeric(in_series.series_length, errors="coerce").max() or 0) \
+                    if in_series.series_length.notna().any() else 0
+                if len(picked) > len(g) or length > len(g):  # the game's series is longer than the one scheduled
+                    extra[(team, _series)] = (picked[len(g):], length)
+                    claimed.update(picked[len(g):])
         if not picked:  # no series id (a league, or a one-off): each fixture takes the next match in its window
             lo = a - pd.Timedelta(days=window) if pd.notna(a) else pd.Timestamp.min
             hi = a + pd.Timedelta(days=window + (31 if not g.iloc[0]["date"] else 0) + 7 * len(g)) if pd.notna(a) \
@@ -303,18 +392,57 @@ def track(career, fixtures: list[dict]) -> pd.DataFrame:
             hit[r["id"]] = mid
             claimed.add(mid)
     info = m.set_index("match_id")
-    for _, r in fx[fx.opponent != ""].iterrows():
-        mid = hit.get(r["id"], "")
-        row = {k: r[k] for k in COLUMNS}
-        row.update(kind="match", match_id=mid)
-        if mid:
-            mr = info.loc[mid]
-            row.update(status="played", played_date=mr.date, outcome=_outcome(mr, r["team"]), result=mr.result,
-                       score=f"{r['team']} {_score(career, mid, r['team'])} · {r['opponent']} {_score(career, mid, r['opponent'])}")
-        else:
-            row.update(status="to come", played_date=pd.NaT, outcome="", result="", score="")
-        out_rows.append(row)
+
+    def played(row: dict, mid: str, team: str, opp: str) -> dict:
+        mr = info.loc[mid]
+        row.update(match_id=mid, status="played", played_date=mr.date, outcome=_outcome(mr, team), result=mr.result,
+                   score=f"{team} {_score(career, mid, team)} · {opp} {_score(career, mid, opp)}",
+                   stage=mr.stage if mr.knockout else "")
+        return row
+
+    def to_come(row: dict) -> dict:
+        row.update(match_id="", status="to come", played_date=pd.NaT, outcome="", result="", score="")
+        row.setdefault("stage", "")
+        return row
+
+    for (team, series), g in fx[fx.opponent != ""].groupby(["team", "series"], sort=False):
+        for _, r in g.iterrows():
+            mid = hit.get(r["id"], "")
+            row = {k: r[k] for k in COLUMNS}
+            row.update(kind="match", auto=False)
+            out_rows.append(played(row, mid, team, r["opponent"]) if mid else to_come(row))
+        if (team, series) in extra:
+            more, length = extra[(team, series)]
+            base = {k: g.sort_values("no").iloc[-1][k] for k in COLUMNS}
+            last_no = int(g.no.max() or len(g))
+            for k in range(1, max(len(more), length - len(g)) + 1):
+                row = dict(base, id=f"{base['id']}+{k}", no=last_no + k, date="", kind="match", auto=True)
+                out_rows.append(played(row, more[k - 1], team, base["opponent"]) if k <= len(more) else to_come(row))
     # tournaments: every match the team plays in it (not a bilateral series), in the month's window
+    def tournament_rows(r: dict, cand: pd.DataFrame, is_auto: bool) -> None:
+        team = r["team"]
+        cand = cand.sort_values(["date", "match_id"])
+        for i, mid in enumerate(cand.match_id, start=1):
+            claimed.add(mid)
+            mr = info.loc[mid]
+            opp = mr.away if mr.home == team else mr.home
+            row = dict(r, id=f"{r['id']}:{i}", opponent=opp, no=i, kind="tournament", auto=is_auto)
+            out_rows.append(played(row, mid, team, opp))
+        ko = knockout_next(career, cand, team)
+        row = dict(r, kind="tournament", no=len(cand) + 1, opponent="", auto=is_auto)
+        if ko:  # through to the next knockout game: it's on the schedule, against whoever is known
+            row.update(id=f"{r['id']}:{len(cand) + 1}", opponent=ko[1], stage=ko[0], date="",
+                       month=f"{cand.date.max():%Y-%m}")
+            out_rows.append(to_come(row))
+            return
+        if cand.knockout.any():  # out, or the final played: nothing more to come
+            return
+        n_group = len(cand)
+        left = max(int(r["games"]) - n_group, 0) if r["games"] else (0 if n_group else 1)
+        if left:
+            row["games_left"] = left
+            out_rows.append(to_come(row))
+
     for _, r in fx[fx.opponent == ""].iterrows():
         a = anchor_of(r)
         team = r["team"]
@@ -326,24 +454,62 @@ def track(career, fixtures: list[dict]) -> pd.DataFrame:
             cand = named
         if pd.notna(a):
             cand = cand[(cand.date >= a - pd.Timedelta(days=15)) & (cand.date <= a + pd.Timedelta(days=75))]
-        cand = cand.sort_values(["date", "match_id"])
-        for i, mid in enumerate(cand.match_id, start=1):
-            claimed.add(mid)
-            mr = info.loc[mid]
-            opp = mr.away if mr.home == team else mr.home
-            row = {k: r[k] for k in COLUMNS}
-            row.update(id=f"{r['id']}:{i}", opponent=opp, no=i, kind="tournament", match_id=mid, status="played",
-                       played_date=mr.date, outcome=_outcome(mr, team), result=mr.result,
-                       score=f"{team} {_score(career, mid, team)} · {opp} {_score(career, mid, opp)}")
-            out_rows.append(row)
-        left = max(int(r["games"]) - len(cand), 0) if r["games"] else (0 if len(cand) else 1)
-        stage_done = len(cand) and (cand.stage == "Final").any()
-        if left and not stage_done:
-            row = {k: r[k] for k in COLUMNS}
-            row.update(kind="tournament", no=len(cand) + 1, match_id="", status="to come", played_date=pd.NaT, outcome="",
-                       result="", score="", opponent="")
-            row["games_left"] = left
-            out_rows.append(row)
+        tournament_rows({k: r[k] for k in COLUMNS}, cand, False)
+    # whatever the team played from the start of its schedule that isn't in it: added, series by series
+    for team in auto:
+        since = _auto_since(career, fx, team, anchor_of)
+        if since is None:
+            continue
+        rest = m[((m.home == team) | (m.away == team)) & ~m.match_id.isin(claimed)]
+        bilateral = rest[rest.competition.isin(BILATERAL)]
+        for sid in bilateral.series_id.where(bilateral.series_id != "", bilateral.match_id).unique():
+            # the whole series, so a match already in the schedule elsewhere isn't taken for a missing one
+            g = (m[m.series_id == sid] if (m.series_id == sid).any() else m[m.match_id == sid]).sort_values(
+                ["date", "match_id"])
+            if g.date.max() < since:
+                continue
+            first = g.iloc[0]
+            opp = first.away if first.home == team else first.home
+            venue = "neutral" if first.neutral else ("home" if first.home == team else "away")
+            nos = pd.to_numeric(g.series_match_no, errors="coerce")
+            numbered = bool(nos.notna().all() and nos.is_unique)
+            length = int(max(pd.to_numeric(g.series_length, errors="coerce").max() if g.series_length.notna().any()
+                             else 0, nos.max() if numbered else 0, len(g)))
+            month = f"{first.date:%Y-%m}"
+            label = series_label(opp, first.format, length, venue, month) + AUTO
+            base = dict(id=f"auto:{team}:{sid}", team=team, series=label, opponent=opp, format=first.format, no=0,
+                        venue=venue, date="", month=month, games=0)
+            by_no = {int(n): mid for n, mid in zip(nos, g.match_id)} if numbered else \
+                {k: mid for k, mid in enumerate(g.match_id, start=1)}
+            top = max(by_no)
+            when = {k: info.loc[mid].date for k, mid in by_no.items()}
+            for k in range(1, length + 1):
+                row = dict(base, id=f"{base['id']}:{k}", no=k, kind="match", auto=True)
+                mid = by_no.get(k)
+                if mid in claimed:
+                    continue  # it's in the schedule already, as another fixture
+                if mid:
+                    out_rows.append(played(row, mid, team, opp))
+                    claimed.add(mid)
+                else:
+                    row = to_come(row)
+                    if k < top:  # a later match of the series is in: this one was played, its file isn't
+                        row["status"] = "no scorecard"
+                        prev = [j for j in when if j < k]
+                        row["_anchor"] = (when[max(prev)] + pd.Timedelta(days=k - max(prev)) if prev else
+                                          when[min(when)] - pd.Timedelta(days=min(when) - k))
+                    out_rows.append(row)
+        others = rest[~rest.competition.isin(BILATERAL)]
+        for (event, season), g in others.groupby(["event", "season"], sort=False):
+            if g.date.max() < since:
+                continue
+            first = g.sort_values("date").iloc[0]
+            r = dict(id=f"auto:{team}:{event}:{season}", team=team, series=f"{event} {season}{AUTO}", opponent="",
+                     format=first.format, no=0, venue="neutral" if first.neutral else "", date="",
+                     month=f"{first.date:%Y-%m}", games=0)
+            tournament_rows(r, g, True)
+    if not out_rows:
+        return pd.DataFrame(columns=cols)
     t = pd.DataFrame(out_rows)
     for c in cols:
         if c not in t:
@@ -352,20 +518,26 @@ def track(career, fixtures: list[dict]) -> pd.DataFrame:
     def key(r):
         if r["status"] == "played":
             return r["played_date"]
+        if "_anchor" in r and pd.notna(r["_anchor"]):
+            return r["_anchor"]
         if r["date"]:
             return pd.Timestamp(r["date"])
         if r["month"]:
             return _month_start(r["month"]) + pd.Timedelta(days=int(r["no"] or 0))
         return pd.Timestamp("2200-01-01") + pd.Timedelta(days=int(r["no"] or 0))
     t["anchor"] = [key(r) for _, r in t.iterrows()]
-    # a fixture still to come can't be before a match already played in the same series
+    t = t.drop(columns=["_anchor"], errors="ignore")
+    # a fixture still to come can't be before a match already played in the same series (a knockout game
+    # follows the last one within days; the next match of a series by its number)
     for (team, series), g in t.groupby(["team", "series"]):
         played = g[g.status == "played"]
         if len(played):
             last = played.anchor.max()
-            for i in g[(g.status != "played")].index:
+            for i in g[(g.status == "to come")].index:
                 if t.at[i, "anchor"] <= last:
-                    t.at[i, "anchor"] = last + pd.Timedelta(days=int(t.at[i, "no"] or 1))
+                    gap = 1 if t.at[i, "kind"] == "tournament" else int(t.at[i, "no"] or 1) - int(
+                        played.no.max() if played.no.notna().any() else 0)
+                    t.at[i, "anchor"] = last + pd.Timedelta(days=max(gap, 1))
     t = t.sort_values(["team", "anchor", "no"]).reset_index(drop=True)
     # a fixture whose time has long gone with no scorecard (wrong month or opponent, or a file the game didn't save)
     for team, g in t.groupby("team"):
@@ -400,9 +572,10 @@ def series_groups(tracked: pd.DataFrame, team: str) -> list[dict]:
         w, lo = int((x.outcome == "W").sum()), int((x.outcome == "L").sum())
         d = int((x.outcome == "D").sum())
         played = int((x.status == "played").sum())
-        state = "done" if played == len(x) else "under way" if played else "to come"
+        left = int(x.status.isin(["to come", "next"]).sum())  # overdue ones with no scorecard aren't still to play
+        state = ("under way" if played else "to come") if left else ("done" if played else "missed")
         out.append(dict(series=series, opponent=opp, format=fmt, rows=x, won=w, lost=lo, drawn=d, played=played,
-                        total=len(x), state=state, start=x.anchor.min(), venue=x.venue.iloc[0]))
+                        total=len(x), left=left, state=state, start=x.anchor.min(), venue=x.venue.iloc[0]))
     return sorted(out, key=lambda s: s["start"])
 
 
@@ -492,7 +665,7 @@ def series_outlook(career, team: str, s: dict) -> dict:
     ids = format_ids(career, team, s["format"])
     venue = s["venue"] if s["venue"] in ("home", "away") else "neutral"
     pr = WP.predict(career, ids, team, s["opponent"], venue)
-    left = s["total"] - s["played"]
+    left = s.get("left", s["total"] - s["played"])
     pw, pd_ = pr["win"] / 100, pr["draw"] / 100
     odds = WP.series_odds(pw, pd_, s["won"], s["lost"], left)
     lines = scorelines(pw, pd_, left, (s["won"], s["lost"]))
@@ -689,6 +862,9 @@ def goal_progress(career, tracked: pd.DataFrame, goal: dict) -> dict:
         if s["state"] == "to come":
             return dict(done=0.0, text=f"Starts {s['start']:%b %Y}" if s["start"].year < 2100 else "To come",
                         status="to come")
+        if s["state"] == "missed":
+            return dict(done=0.0, text="Its time has gone with no scorecards: check its month and opponent.",
+                        status="unknown")
         o = series_outlook(career, team, s)
         return dict(done=s["won"] / (s["total"] // 2 + 1), text=f"{s['won']}–{s['lost']}, {o['need']} "
                     f"(chance {o['odds']['A']:.0f}%)", status="under way")

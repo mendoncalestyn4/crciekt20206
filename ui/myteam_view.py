@@ -103,18 +103,23 @@ def render(career, team: str, key: str) -> None:
     # ---------------------------------------------------------------- 144 / 148 · next up (from your schedule)
     with safe_section("next up"):
         sched = state.fixtures(career)
-        if any(r.get("team") == team for r in sched):
-            from ccstats import fixtures as FX
+        from ccstats import fixtures as FX
+        # your schedule, plus what the team played since it starts that isn't in it (and the next knockout game)
+        tr = FX.track(career, sched, auto=[team])
+        mine_tr = tr[tr.team == team] if len(tr) else tr
+        if len(mine_tr) and (any(r.get("team") == team for r in sched) or mine_tr.status.isin(["next"]).any()):
             from ccstats import winprob as WP
-            tr = FX.track(career, sched)
             sm = FX.summary(tr, team)
             nx = sm["next"]
             with st.container(border=True):
                 lines = [f"**📅 Your schedule:** {sm['played']} of {sm['total']} played"]
                 if nx is not None:
                     when = (f"{pd.Timestamp(nx['date']):%d %b %Y}" if nx["date"] else FX.month_label(nx["month"]))
-                    what = (f"v {nx['opponent']} · {nx['format']}" if nx["opponent"] else nx["series"].split(" · ")[0])
-                    line = f"**⏭ Next:** {what} · {nx['venue'] or ''} · {when}"
+                    name = nx["series"].replace(FX.AUTO, "").split(" · ")[0]
+                    stage = nx.get("stage") if isinstance(nx.get("stage"), str) else ""
+                    what = (f"{name} {stage}" + (f" v {nx['opponent']}" if nx["opponent"] else "") if stage else
+                            f"v {nx['opponent']} · {nx['format']}" if nx["opponent"] else name)
+                    line = f"**⏭ Next:** {what} · " + (f"{nx['venue']} · " if nx["venue"] else "") + when
                     if nx["opponent"]:
                         p = WP.predict(career, FX.format_ids(career, team, nx["format"]), team, nx["opponent"],
                                        nx["venue"] if nx["venue"] in ("home", "away") else "neutral")

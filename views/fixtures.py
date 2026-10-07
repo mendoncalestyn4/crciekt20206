@@ -31,8 +31,10 @@ c1, c2 = st.columns([1.4, 3])
 team = c1.selectbox("Schedule for", team_opts, key="fx_team",
                     help="Your teams first (pick them under My team in the sidebar).")
 schedule = state.fixtures(career)
-tracked = FX.track(career, schedule)
+# what you scheduled, plus everything the team has played since your schedule starts that isn't in it
+tracked = FX.track(career, schedule, auto=[team])
 mine_rows = tracked[tracked.team == team] if len(tracked) else tracked
+scheduled_any = any(r.get("team") == team for r in schedule)
 national = team in FX.NATIONS
 formats_here = ["Test", "ODI", "T20I"] if national else ["T20", "The Hundred", "List A", "First-class"]
 latest = m.date.max()
@@ -45,7 +47,10 @@ HOW_TO = (
     "3. Press **Add series**. Do the same for each series in your year (a World Cup goes under **Tournament**).\n"
     "4. That's it: you don't need dates. Each match takes its date from its scorecard when you play it.\n\n"
     "Made a mistake, or the game moved a series? Fix it in the table under **Change, add or delete matches** "
-    "on the Schedule tab.")
+    "on the Schedule tab.\n\n"
+    "**Forgot something?** No problem: any match your team plays that isn't in your schedule is added by itself "
+    "(marked *auto-added*), with the rest of its series. In a tournament, the semi-final and final are added once "
+    "you're through to them.")
 
 tabs = st.tabs(["Schedule", "Add matches", "Series", "Calendar", "WTC race", "Milestones", "Goals"])
 
@@ -60,6 +65,19 @@ def when_text(r) -> str:
 
 def venue_word(v: str) -> str:
     return {"home": "at home", "away": "away", "neutral": "neutral venue"}.get(v, "")
+
+
+def stage_of(r) -> str:
+    s = r.get("stage")
+    return s if isinstance(s, str) else ""
+
+
+def next_title(r) -> str:
+    """'v England · Test · match 2', or 'T20 World Cup 2027 Final v India' for a knockout game."""
+    name = r["series"].replace(FX.AUTO, "").split(" · ")[0]
+    if stage_of(r):
+        return f"{name} {stage_of(r)} · " + (f"v {r['opponent']}" if r["opponent"] else "opponent to be decided")
+    return (f"v {r['opponent']} · {r['format']}" if r["opponent"] else name) + (f" · match {int(r['no'])}" if r["no"] else "")
 
 
 def go_preview(opp: str, fmt_: str, venue: str) -> None:
@@ -81,6 +99,9 @@ with tabs[0]:
         st.info(f"No schedule for {team} yet.")
         st.markdown(HOW_TO)
     else:
+        if not scheduled_any:
+            st.info(f"Nothing scheduled for {team} yet, so these are the matches they've played this year, added from "
+                    "the scorecards. Add what's coming on the **Add matches** tab to see it here too.")
         with safe_section("schedule"):
             sm = FX.summary(tracked, team)
             rec = sm["record"]
@@ -89,14 +110,14 @@ with tabs[0]:
                   ("Won–lost", f"{rec['W']}–{rec['L']}" + (f" ({rec['D']} D)" if rec["D"] else "")),
                   ("To come", f"{sm['to_come']}"),
                   ("Next", esc(f"v {nx['opponent']}" if nx is not None and nx["opponent"] else
-                               nx["series"].split(" · ")[0] if nx is not None else "–"))])
+                               (stage_of(nx) or nx["series"].replace(FX.AUTO, "").split(" · ")[0]) if nx is not None
+                               else "–"))])
             # ---------------------------------------------------------- 144 · next match
             if nx is not None:
                 with st.container(border=True):
                     nfmt, nopp, nven = nx["format"], nx["opponent"], nx["venue"]
-                    title = (f"v {nopp} · {nfmt}" if nopp else nx["series"].split(" · ")[0]) + \
-                        (f" · match {int(nx['no'])}" if nx["no"] else "")
-                    st.markdown(f"**⏭ Next match:** {esc(title)} · {venue_word(nven)} · {when_text(nx)}")
+                    st.markdown(f"**⏭ Next match:** {esc(next_title(nx))} · "
+                                + (f"{venue_word(nven)} · " if venue_word(nven) else "") + when_text(nx))
                     if nopp:
                         pr = state.memo(FX.format_ids, career, team, nfmt)
                         from ccstats import winprob as WP
@@ -113,29 +134,44 @@ with tabs[0]:
                 st.warning(f"⚠️ {sm['missing']} fixture{'s' if sm['missing'] != 1 else ''} should have been played by now but "
                            "no scorecard matches. Check the month and opponent in the table below, or whether the game "
                            "saved the scorecard.")
-            st.markdown("**Every fixture** · ✅ played · ⏭ next · ⏳ to come · ⚠️ no scorecard found")
+            st.markdown("**Every fixture** · ✅ played · ⏭ next · ⏳ to come · ⚠️ no scorecard found · 🆕 auto-added")
             icon = {"played": "✅", "next": "⏭", "to come": "⏳", "no scorecard": "⚠️"}
             rows = []
             for _, r in mine_rows.iterrows():
                 res = ""
+                stage = stage_of(r)
                 if r["status"] == "played":
                     res = match_link(r["match_id"], f"{r['outcome']} · {r['result']}")
+                elif stage:
+                    res = esc(f"{stage} to come")
                 elif r["kind"] == "tournament":
                     res = esc(f"{int(r['games_left'])} more games planned" if pd.notna(r.get("games_left"))
                               and r.get("games_left") else "games to come")
-                no = f"{int(r['no'])}" if r["no"] else ""
-                rows.append([icon.get(r["status"], ""), esc(r["series"]), no,
-                             esc(r["opponent"] if r["kind"] == "tournament" else ""), when_text(r), res])
-            html_table(rows, ["", "Series", "Match", "Opponent", "When", "Result"], raw={1, 3, 5})
+                no = (f"{int(r['no'])}" if r["no"] else "") + (f" · {stage}" if stage else "")
+                if stage == "Final" and r["status"] == "played" and r["outcome"] == "W":
+                    no += " 🏆"
+                is_auto = str(r.get("auto")) == "True"
+                series = (esc(r["series"].replace(FX.AUTO, "")) + " <span title='auto-added: not in your schedule, so "
+                          "added from the scorecards'>🆕</span>" if is_auto else esc(r["series"]))
+                opp = r["opponent"] if r["kind"] == "tournament" else ""
+                if r["kind"] == "tournament" and stage and not opp and r["status"] != "played":
+                    opp = "to be decided"
+                rows.append([icon.get(r["status"], ""), series, no, opp, when_text(r), res])
+            html_table(rows, ["", "Series", "Match", "Opponent", "When", "Result"], raw={1, 5})
             st.caption("A match is ticked off when the game saves its scorecard: it's matched by the two teams, the "
                        "format and its place in the series, so dates don't need to be exact. Click a result for its "
-                       "scorecard. Home and away for these matches come from your schedule.")
+                       "scorecard. Home and away for these matches come from your schedule. "
+                       "🆕 Auto-added: played but not in your schedule (or more matches than you put in), so added "
+                       "from the scorecards with the rest of its series; their home and away come from the scorecards. "
+                       "In a tournament, the next knockout game (semi-final, final …) appears once you're through to "
+                       "it, against the winner of the other tie when that's been played.")
     # ---------------------------------------------------------- 3 · edit the schedule like a table
     with safe_section("edit schedule"), st.expander("✏️ Change, add or delete matches", expanded=False):
         mine_fx = [r for r in schedule if r["team"] == team]
         st.caption("Change any cell, add a row at the bottom, or select rows and press delete (the bin icon). "
                    "Then press **Save changes**. Month: like 'Jan 2027'. Date: only if you know it. Matches already "
-                   "played keep their result whatever you change here.")
+                   "played keep their result whatever you change here. Auto-added matches aren't in this table (they "
+                   "come from the scorecards); add the series here yourself to set its home or away.")
         df = pd.DataFrame(mine_fx, columns=FX.COLUMNS)
         show = pd.DataFrame({
             "id": df.id.astype(str), "series": df.series.astype(str), "opponent": df.opponent.astype(str),
