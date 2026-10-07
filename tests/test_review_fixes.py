@@ -60,16 +60,20 @@ def test_a_tournament_in_the_schedule_never_changes_home_and_away(career):
 
 
 def test_an_undated_tournament_takes_the_current_edition_only(career):
+    import copy
     t = F.track(career, F.make_tournament("England", "Champions Trophy", "ODI"))
     assert not (t.status == "played").any()  # no Champions Trophy in these files: nothing claimed
-    # England's latest games are this World Cup: with no month, it's the one meant, ticked off as scheduled
+    # in the middle of the World Cup (before its final): an undated "ODI World Cup" is this one
+    during = copy.copy(career)
+    during.matches = career.matches[career.matches.date < pd.Timestamp("2027-06-20")].copy()
+    t = F.track(during, F.make_tournament("England", "ODI World Cup", "ODI"), auto=["England"])
+    assert (t[~t.auto].status == "played").sum() == 2 and not t.auto.any()
+    # once England have won it, an undated one means the next edition: it waits, the games show auto-added
     t = F.track(career, F.make_tournament("England", "ODI World Cup", "ODI"), auto=["England"])
-    assert (t[~t.auto].status == "played").sum() == 3 and not t.auto.any()
-    # India have played since their T20 World Cup: an undated one means the next, so it waits
-    t = F.track(career, F.make_tournament("India", "T20 World Cup", "T20I"))
-    assert list(t.status) == ["next"]
-    t = F.track(career, F.make_tournament("India", "T20 World Cup", "T20I", "2026-03"))
-    assert (t.status == "played").sum() == 1  # with its month it's ticked off
+    assert list(t[~t.auto].status) == ["next"] and (t[t.auto].status == "played").sum() == 3
+    # with its month it's ticked off whatever happened
+    t = F.track(career, F.make_tournament("England", "ODI World Cup", "ODI", "2027-06"))
+    assert (t.status == "played").sum() == 3
 
 
 def test_a_tournament_line_is_not_read_as_a_team(career):
@@ -314,3 +318,46 @@ def test_a_misspelt_opponent_with_a_number_of_matches_is_an_error():
     for line in ("Trans-Tasman Trophy v Austrlia 3 matches", "Trans-Tasman Trophy v Austrlia 3 Tests"):
         rows, err = F.parse_line(line, "India", sorted(F.NATIONS))
         assert not rows and "check the spelling" in err
+
+
+@pytest.mark.parametrize("line,team,series,fmt,opp", [
+    ("World Cup 2027", "India", "ODI World Cup", "ODI", ""),  # not "World Cup 20" (the T20 one)
+    ("T20I World Cup Jun 2027", "India", "T20 World Cup · Jun 2027", "T20I", ""),
+    ("WTC Final v ? 1 Test Jun 2027", "India", "World Test Championship Final · Jun 2027", "Test", ""),
+    ("Indian Premier League Mumbai Indians 1 match Apr 2027", "Chennai Super Kings", "v Mumbai Indians · 1 T20 · Apr 2027", "T20",
+     "Mumbai Indians"),
+    ("IPL Qualifier 1 May 2027", "Chennai Super Kings", "Indian Premier League · Qualifier 1 · May 2027", "T20", ""),
+    ("Champions Trophy final v TBC Feb 2027 ODI", "India", "Champions Trophy · Final · Feb 2027", "ODI", ""),
+    ("U19 World Cup Jan 2027", "India", "U19 ODI World Cup · Jan 2027", "ODI", ""),
+    ("Asia Cup Qualifier Aug 2027", "Italy", "Asia Cup Qualifier · Aug 2027", "ODI", ""),
+    ("PSL Feb 2027", "Lahore Qalandars", "Pakistan Super League · Feb 2027", "T20", ""),
+])
+def test_more_lines_read_right(line, team, series, fmt, opp):
+    known = sorted(F.NATIONS) + ["Chennai Super Kings", "Mumbai Indians", "Lahore Qalandars", "Kent"]
+    rows, err = F.parse_line(line, team, known)
+    assert not err, err
+    assert rows[0]["series"] == series and rows[0]["format"] == fmt and rows[0]["opponent"] == opp
+
+
+def test_a_final_line_is_its_own_row_and_takes_only_the_final(career):
+    known = sorted(set(career.matches.home) | set(career.matches.away))
+    rows = []
+    for line in ("IPL May 2026 T20", "IPL Qualifier 1 May 2026", "IPL final May 2026"):
+        r, e = F.parse_line(line, "Gujarat Titans", known)
+        assert not e
+        rows, added = F.merge(rows, r)
+        assert added == 1  # the final isn't taken for a copy of the tournament's own row
+    t = F.track(career, rows)
+    m = career.matches.set_index("match_id")
+    for series, stage in (("Indian Premier League · Qualifier 1 · May 2026", "Qualifier 1"),
+                          ("Indian Premier League · Final · May 2026", "Final")):
+        x = t[t.series == series]
+        assert len(x) == 1 and x.status.iloc[0] == "played" and m.stage[x.match_id.iloc[0]] == stage
+    group = t[t.series == "Indian Premier League · May 2026"]
+    assert not m.loc[group.match_id].knockout.any() and t.match_id.is_unique
+
+
+def test_an_undated_tournament_that_is_over_means_the_next_one(career):
+    # India won this T20 World Cup's final: an undated "T20 World Cup" now means the next edition
+    t = F.track(career, F.make_tournament("India", "T20 World Cup", "T20I"))
+    assert list(t.status) == ["next"]

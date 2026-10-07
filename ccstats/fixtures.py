@@ -118,7 +118,13 @@ _TRAILING_FMT = re.compile(r"tests?|odis?|t20is?|t20s?|fc|first-class")
 # a format word followed by one of these starts a name ("T20 World Cup", "T20 Blast", "ODI Super League")
 _NAME_AFTER_FMT = {"world", "blast", "cup", "league", "challenge", "championship", "bash", "trophy", "series", "super",
                    "final", "qualifier", "smash", "cricket", "competition"}
-_KNOWN_KEYS = sorted(KNOWN, key=lambda k: (-len(k), k))  # the longest name first ("t20 world cup" before "world cup")
+_KNOWN_KEYS = sorted(KNOWN, key=lambda k: (-len(k), k))
+STAGE_RE = re.compile(r"final|semi-final|quarter-final|qualifier [12]|eliminator|playoffs?|qualifier")
+_ALIASES = {"ipl": "indian premier league", "psl": "pakistan super league", "bbl": "big bash league",
+            "cpl": "caribbean premier league", "bpl": "bangladesh premier league", "lpl": "lanka premier league",
+            "mlc": "major league cricket"}
+_PLACEHOLDER = r"\b(?:tbc|tba|tbd|opponent|opposition|winner)\b|\?+"  # "v TBC", "v ?": the opponent isn't known yet
+_MODIFIERS = r"u19|u-19|under-19|under 19|legends|women's|womens|women|emerging|youth|masters|veterans"  # the longest name first ("t20 world cup" before "world cup")
 
 
 def _exact_team(text: str, known: list[str]) -> tuple[str, str]:
@@ -164,6 +170,8 @@ def parse_line(line: str, team: str, known: list[str]) -> tuple[list[dict], str]
     if not raw or raw.startswith("#"):
         return [], ""
     s = " " + re.sub(r"[·,;|–—]", " ", raw.lower()) + " "
+    # "Qualifier 1 May 2027": the 1 is the stage's ("Qualifier 1"), not a day or a number of matches
+    s = re.sub(r"\bqualifier\s+([12])\b", r"qualifier\1", s)
     date = month = ""
     try:
         if (m := RE_ISO.search(s)):
@@ -203,27 +211,32 @@ def parse_line(line: str, team: str, known: list[str]) -> tuple[list[dict], str]
     own = re.compile(rf"(?<![a-z]){re.escape(team.lower())}(?![a-z])")
     s = own.sub(" ", s)  # "India v England": your own team isn't the opponent
     s = re.sub(r"[()\[\]]", " ", s)  # "Asia Cup (T20I)"
+    s = re.sub(r"\bt20is?(?=\s+world\b)", "t20", s)  # "T20I World Cup" is the T20 World Cup
+    s = re.sub(rf"\b({'|'.join(_ALIASES)})\b", lambda mm: _ALIASES[mm.group(1)], s)  # "IPL", "PSL", "BBL"…
     others = sorted(set(known) - {team}, key=lambda t: (-len(t), t))  # longest first, then A-Z: the same every run
     # a competition the site knows, by name ("Pakistan Super League", "The Hundred", "Vitality Blast"): its words
-    # belong to the tournament, never to a team
-    comp_key = next((k for k in _KNOWN_KEYS if re.search(rf"(?<![a-z]){re.escape(k)}(?![a-z])", s)), None)
-    team_text = re.sub(rf"(?<![a-z]){re.escape(comp_key)}(?![a-z])", " ", s) if comp_key else s
+    # belong to the tournament, never to a team ("World Cup 2027" isn't "World Cup 20", the T20 one)
+    km = next((mm for k in _KNOWN_KEYS for mm in [re.search(rf"(?<![a-z0-9]){re.escape(k)}(?![a-z0-9])", s)] if mm), None)
+    comp_key = km.group(0) if km else None
+    team_text = (s[:km.start()] + " " + s[km.end():]) if km else s
     parts = re.split(r"\b(?:v|vs|versus|against)\b", team_text)
     has_v = len(parts) > 1
     later = " ".join(parts[1:])
-    placeholder = has_v and re.match(r"\s*(tbc|tba|tbd|\?+|opponent|opposition|winner)\b", later)  # "final v TBC"
+    placeholder = has_v and re.match(rf"\s*(?:{_PLACEHOLDER})", later)  # "final v TBC", "v ?"
     opp, rest = "", team_text
-    if not (comp_key and not has_v) and not placeholder:  # a known competition on its own is a tournament
-        opp, rest = _exact_team(team_text, others)
-        if not opp:
-            guess, word, unsure = _guess_team([x for x in parts if not TOURNEY_RE.search(x)], others)
-            if guess:
-                opp, rest = guess, re.sub(rf"(?<![a-z]){re.escape(word)}(?![a-z])", " ", team_text)
-            elif unsure:
-                return [], f"“{raw}” could mean {' or '.join(unsure[:3])}: write more of the name"
-            elif has_v and (n or games) and later.strip():
-                return [], f"couldn't find the team after “v” in “{raw}”: check the spelling of the opponent"
+    if not placeholder:
+        opp, rest = _exact_team(team_text, others)  # a team named in full counts even beside a competition's name
+    if not opp and not placeholder and not (comp_key and not has_v):  # a known competition on its own: a tournament
+        guess, word, unsure = _guess_team([x for x in parts if not TOURNEY_RE.search(x)], others)
+        if guess:
+            opp, rest = guess, re.sub(rf"(?<![a-z]){re.escape(word)}(?![a-z])", " ", team_text)
+        elif unsure:
+            return [], f"“{raw}” could mean {' or '.join(unsure[:3])}: write more of the name"
+        elif has_v and (n or games) and later.strip():
+            return [], f"couldn't find the team after “v” in “{raw}”: check the spelling of the opponent"
     if opp:
+        if not fmt and comp_key and KNOWN[comp_key][1]:  # "IPL Mumbai Indians 1 match": an IPL game is a T20
+            fmt = KNOWN[comp_key][1]
         if not fmt:
             mf = re.search(rf"\b{_FMT_WORDS}\b", rest)
             if not mf:
@@ -249,16 +262,27 @@ def parse_line(line: str, team: str, known: list[str]) -> tuple[list[dict], str]
                 typed = "T20I" if not fmt else typed
             continue
         name_tokens.append(w)
+    stage = ""
     if comp_key:
         name, comp = comp_key, KNOWN[comp_key]
-        if re.search(r"\bqualifiers?\b", s):  # "T20 World Cup Qualifier" is its own event, not the World Cup
-            name, comp = f"{comp[0].lower()} qualifier", None
+        # "U19 World Cup", "Legends World Cup": another event with the same name in it (a sponsor's name, like
+        # "Royal London" or "Vitality", is just dropped)
+        mod = re.search(rf"\b({_MODIFIERS})\s+(?:[a-z0-9-]+\s+)?{re.escape(comp_key)}", s)
+        if comp[2] == "International" and re.search(r"\bqualifiers?\b(?!\s*[12]\b)", team_text):
+            name, comp = f"{comp[0].lower()} qualifier", None  # "T20 World Cup Qualifier": its own event
+        elif mod:
+            name, comp = f"{mod.group(1)} {comp[0].lower()}", None
+        else:  # a stage keeps the row apart from the group games ("Champions Trophy · Final"), and still matches
+            st_ = re.search(r"\b(semi[- ]?finals?|quarter[- ]?finals?|finals?|qualifier\s*[12]?|eliminator|play-?offs?)\b",
+                            team_text)
+            stage = re.sub(r"(?<=Qualifier)(\d)", r" \1", st_.group(1).replace("-", " ").title()) if st_ else ""
+            stage = stage.replace("Semi Final", "Semi-final").replace("Quarter Final", "Quarter-final")
     else:
         # the name is the part of the line that reads like one (before "v", or after it: "v TBC … final")
         text = " ".join(name_tokens)
         bits = re.split(r"\b(?:v|vs|versus|against)\b", text)
         name_bit = next((b for b in bits if TOURNEY_RE.search(b)), bits[0] if bits[0].strip() else " ".join(bits))
-        name_bit = re.sub(r"\b(tbc|tba|tbd|opponent|opposition|winner)\b|\?+", " ", name_bit)
+        name_bit = re.sub(rf"(?:{_PLACEHOLDER})", " ", name_bit)
         name = " ".join(w for w in re.sub(r"\b(the|in|at|of|for)\b", " ", name_bit).split() if w)
         comp = KNOWN.get(name) or KNOWN.get(f"the {name}")
     if not comp and not re.search(r"cup|trophy|championship|final|league|tournament|wtc|series|games|qualifier", name):
@@ -273,13 +297,14 @@ def parse_line(line: str, team: str, known: list[str]) -> tuple[list[dict], str]
         else "ODI" if "Cup" in title or "Trophy" in title else "")
     if tf == "T20" and team in NATIONS:
         tf = "T20I"
-    icc = known_t in TOURNAMENT_FORMAT or "World Cup" in title or bool(comp and comp[2] == "International")
+    icc = (known_t in TOURNAMENT_FORMAT or "World Cup" in title or bool(comp and comp[2] == "International")
+           or bool(comp_key and KNOWN[comp_key][2] == "International"))  # its qualifier too
     if not typed and team not in NATIONS and not icc:
         # worked out from the name for a franchise or county: its own formats (a county's "One-Day Cup" is List A)
         tf = {"T20I": "T20", "ODI": "List A", "Test": "First-class"}.get(tf, tf)
     if not tf:
         return [], f"say the format for “{raw}” (e.g. add ODI or T20I)"
-    return make_tournament(team, known_t, tf, month, games or (n or 0)), ""
+    return make_tournament(team, known_t + (f" · {stage}" if stage else ""), tf, month, games or (n or 0)), ""
 
 
 def parse_lines(text: str, team: str, known: list[str]) -> tuple[list[dict], list[str]]:
@@ -520,31 +545,58 @@ def track(career, fixtures: list[dict], auto=()) -> pd.DataFrame:
             row["games_left"] = left
             out_rows.append(to_come(row))
 
-    for _, r in fx[fx.opponent == ""].iterrows():
+    def stage_of_row(r) -> str:
+        """'Final' for 'Champions Trophy · Final · Feb 2027': a row for one knockout game."""
+        bits = [b.strip() for b in r["series"].split("·")]
+        return bits[1] if len(bits) > 1 and STAGE_RE.fullmatch(bits[1].lower()) else ""
+
+    # one-game rows (a final, Qualifier 1) first, so the tournament's own row doesn't take their game
+    t_rows = sorted((r for _, r in fx[fx.opponent == ""].iterrows()), key=lambda r: stage_of_row(r) == "")
+    played_by_team: dict[str, pd.DataFrame] = {}
+    for r in t_rows:
         a = anchor_of(r)
         team = r["team"]
         cand = m[((m.home == team) | (m.away == team)) & (m.format == r["format"]) & ~m.competition.isin(BILATERAL)
                  & ~m.match_id.isin(claimed)]
+        one = stage_of_row(r)
+        if one:  # just that game: the final, Qualifier 1, … (Playoffs: any knockout game)
+            low_ = one.lower()
+            cand = (cand[cand.knockout] if low_.startswith("playoff") else
+                    cand[cand.stage.str.lower().str.startswith("qualifier")] if low_ == "qualifier" else
+                    cand[cand.stage.str.lower() == low_])
         words = [w for w in re.findall(r"[a-z0-9]+", r["series"].lower().split("·")[0]) if w not in ("the", "final", "odi")]
         named = cand[[all(w in ev.lower() for w in words) for ev in cand.event]] if words else cand
         if pd.notna(a):
             cand = named if len(named) else cand
             cand = cand[(cand.date >= a - pd.Timedelta(days=15)) & (cand.date <= a + pd.Timedelta(days=75))]
         elif words and len(named):
-            # no month: only the edition the team is in the middle of (or has just played)
-            from .records import by_played
-            played_ = by_played(career, m[(m.home == team) | (m.away == team)])
-            recent = set(played_.match_id.tail(8))
-            last_day = played_.date.iloc[-1] if len(played_) else pd.NaT  # the day of the game played last
+            # no month: only an edition the team is in the middle of: one of its games among the team's last 8
+            # played (a county's Blast runs alongside its Championship games), and not over for them (knocked
+            # out, or the final played). Otherwise it's the next edition that's meant, so it waits as to come.
+            if team not in played_by_team:
+                from .records import by_played
+                played_by_team[team] = by_played(career, m[(m.home == team) | (m.away == team)])
+            recent = set(played_by_team[team].match_id.tail(8))
             last_ed = named.sort_values(["date", "match_id"]).iloc[-1]
             ed = named[(named.event == last_ed.event) & (named.season == last_ed.season)]
-            # current: one of its games is among the team's last 8 played and within 60 days of the last one (a
-            # county's Blast runs alongside its Championship games); long behind them, it's the next edition
-            # that's meant, so it waits as to come
-            cand = ed if (set(ed.match_id) & recent and pd.notna(last_day)
-                          and ed.date.max() >= last_day - pd.Timedelta(days=60)) else named.iloc[0:0]
+            mine_ed = m[(m.event == last_ed.event) & (m.season == last_ed.season) & ((m.home == team) | (m.away == team))]
+            over = mine_ed.knockout.any() and knockout_next(career, mine_ed, team) is None
+            cand = ed if set(ed.match_id) & recent and not over else named.iloc[0:0]
         else:
             cand = cand.iloc[0:0]  # no month and no competition by that name: nothing can be told
+        if one:  # one knockout game: played or to come, nothing after it on this row
+            row = {k: r[k] for k in COLUMNS}
+            hit_ = cand.sort_values(["date", "match_id"]).head(1)
+            if len(hit_):
+                mid = hit_.match_id.iloc[0]
+                claimed.add(mid)
+                mr = info.loc[mid]
+                opp = mr.away if mr.home == team else mr.home
+                out_rows.append(played(dict(row, id=f"{r['id']}:1", opponent=opp, no=1, kind="tournament", auto=False),
+                                       mid, team, opp))
+            else:
+                out_rows.append(to_come(dict(row, kind="tournament", no=1, opponent="", auto=False, stage=one)))
+            continue
         tournament_rows({k: r[k] for k in COLUMNS}, cand, False)
     # whatever the team played from the start of its schedule that isn't in it: added, series by series
     for team in auto:
