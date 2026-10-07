@@ -417,3 +417,9 @@ def rank(table: pd.DataFrame, stat: Stat, best: bool = True, minimum: tuple[str,
     tiebreak = "balls" if "balls" in t else "matches"
     tb_ascending = (stat.better == "high") == best
     return t.sort_values([stat.column, tiebreak, "player"], ascending=[ascending, tb_ascending, True])
+
+
+def ordinal(n) -> str:
+    """1st, 2nd, 3rd, 4th ... 11th, 12th, 13th, 21st, 22nd, 101st."""
+    n = int(n)
+    return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"

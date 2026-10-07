@@ -45,10 +45,13 @@ def test_record_timeline_steps(season, career, section):
     for name in set(tl.record):
         s = tl[tl.record == name].reset_index(drop=True)
         low = name.startswith("Lowest")
+        # a record is the number itself for these (150* equals 150; the same wickets for fewer runs equals it)
+        plain = name in ("Highest individual scores", "Most wickets in a season")
+        num = (lambda v: SN.record_number(name, v)) if plain else (lambda v: v)
         # the last step is today's record
-        assert s["sort"].iloc[-1] == recs[name]["sort"].iloc[0]
+        assert num(s["sort"].iloc[-1]) == num(recs[name]["sort"].iloc[0])
         # each step strictly beats the one before, and dates never go backwards
-        diffs = s["sort"].diff().dropna()
+        diffs = s["sort"].map(num).diff().dropna()
         assert ((diffs < 0) if low else (diffs > 0)).all()
         assert s.date.is_monotonic_increasing
         assert list(s.step) == list(range(len(s)))
@@ -59,7 +62,8 @@ def test_record_timeline_steps(season, career, section):
         for r in s.itertuples():
             before = f[f.date < r.date]
             if len(before):
-                assert (r.sort < before["sort"].min()) if low else (r.sort > before["sort"].max())
+                b = before["sort"].map(num)
+                assert (num(r.sort) < b.min()) if low else (num(r.sort) > b.max())
         # the first mark is from the first date with an entry
         assert s.date.iloc[0] == f.date.min()
 

@@ -201,7 +201,7 @@ class Career:
             if m.date is None:
                 report.append(FileReport(source, "failed", "no match date found"))
                 return
-            if not m.result_type and not m.result:
+            if not m.result:
                 # no result line at all: the file was cut short (the game may still have been saving it). Counting it would
                 # add half a match to every stat; when the file is finished it changes, and it's read again then.
                 if is_new:

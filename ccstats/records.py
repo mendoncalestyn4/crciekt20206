@@ -23,14 +23,17 @@ def records(career, ids, top: int = 10) -> dict[str, pd.DataFrame]:
     bowl = career.bowling[career.bowling.match_id.isin(ids) & (career.bowling.balls > 0)].merge(lab, on="match_id")
     out: dict[str, pd.DataFrame] = {}
 
-    def finish(name, d, holder, value, sort, team, against, ascending=False):
+    def finish(name, d, holder, value, sort, team, against, ascending=False, rank_by=None):
         if d.empty:
             return
         f = pd.DataFrame({"holder": list(holder), "value": list(value), "sort": list(sort), "team": list(team),
                           "against": list(against), "date": list(d.date), "match_id": list(d.match_id),
-                          "source": list(d.source)})
+                          "source": list(d.source),
+                          "_r": list(rank_by) if rank_by is not None else list(sort)})
         f = f.sort_values(["sort", "date"], ascending=[ascending, True]).head(top)  # equal: the earlier one first
-        f.insert(0, "rank", f["sort"].rank(method="min", ascending=ascending).astype(int))
+        # the rank is on the number the record is (150* and 150 share it; 60 wickets whatever they cost)
+        f.insert(0, "rank", f["_r"].rank(method="min", ascending=ascending).astype(int))
+        f = f.drop(columns="_r")
         out[name] = f.reset_index(drop=True)
 
     # ---- team
@@ -48,7 +51,7 @@ def records(career, ids, top: int = 10) -> dict[str, pd.DataFrame]:
                inns_w.margin_runs.fillna(0), inns_w.winner, inns_w.loser)
     # ---- batting
     finish("Highest individual scores", bat, bat.player, [f"{r}{'' if o else '*'} ({b})" for r, o, b in zip(bat.runs, bat.out, bat.balls)],
-           bat.runs * 2 + (~bat.out), bat.team, bat.opposition)
+           bat.runs * 2 + (~bat.out), bat.team, bat.opposition, rank_by=bat.runs)
     six = bat[bat.sixes > 0]
     finish("Most sixes in an innings", six, six.player, [f"{s} ({r}{'' if o else '*'})" for s, r, o in zip(six.sixes, six.runs, six.out)],
            six.sixes, six.team, six.opposition)
@@ -74,7 +77,7 @@ def records(career, ids, top: int = 10) -> dict[str, pd.DataFrame]:
                                                       source=("source", "last")).reset_index()
     finish("Most wickets in a season", season_w, season_w.player,
            [f"{w} (avg {r / w:.1f}, {s})" if w else f"0 ({s})" for w, r, s in zip(season_w.wickets, season_w.runs, season_w.season)],
-           season_w.wickets * 100000 - season_w.runs, season_w.team, [""] * len(season_w))
+           season_w.wickets * 100000 - season_w.runs, season_w.team, [""] * len(season_w), rank_by=season_w.wickets)
     # ---- partnerships (from the fall of wickets; unbroken stands at the end of an innings count too),
     # with the two batters named where the scorecard lets us tell who they were
     st_ = P.stands(career, ids)
@@ -109,10 +112,11 @@ def played_order(career) -> pd.DataFrame:
 def by_played(career, rows: pd.DataFrame) -> pd.DataFrame:
     """Rows with a match_id in the order the matches were played (see played_order), so a "last 5" ends on
     the game you played last even when the game saved it with an earlier date."""
-    key = (len(career.matches), id(career.matches))
+    times = getattr(career, "times", {}) or {}
+    key = (len(career.matches), id(career.matches), len(times), id(times))  # the order rests on both
     cached = getattr(career, "_played_pos", None)
-    if cached is None or cached[0] != key:
-        cached = (key, {mid: i for i, mid in enumerate(played_order(career).match_id)})
+    if cached is None or cached[0] != key or cached[2] is not career.matches:
+        cached = (key, {mid: i for i, mid in enumerate(played_order(career).match_id)}, career.matches)
         try:
             career._played_pos = cached
         except AttributeError:
@@ -145,8 +149,6 @@ def new_record_lines(career, sources: list[str], min_matches: int = 5) -> list[t
             if t.empty or "season" in name:  # a season total grows every match; only one-match records get an alert
                 continue
             first = t.iloc[0]
-            if name == "Highest individual scores" and len(t) >= 2 and int(first["sort"]) // 2 == int(t.iloc[1]["sort"]) // 2:
-                continue  # 150* only equals 150: the record is shared, not broken
             if first.source in sources and (len(t) < 2 or t.iloc[1]["rank"] != 1):
                 who = f"{first.holder} {first.value}"
                 out.append((first.source, f"New record in {section}! {name}: {who}"

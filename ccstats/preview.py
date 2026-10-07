@@ -9,19 +9,13 @@ import pandas as pd
 
 from . import teamplay as TP
 from .players import kind_of_ids
-
+from .stats import ordinal
 
 
 def _score_text(career, mid: str, team: str) -> str:
     inn = career.innings[(career.innings.match_id == mid) & (career.innings.team == team)].sort_values("innings_no")
     parts = [f"{r.runs}" if r.all_out else f"{r.runs}/{r.wickets}{'d' if r.declared else ''}" for r in inn.itertuples()]
     return " & ".join(parts) or "–"
-
-
-def ordinal(n) -> str:
-    """1st, 2nd, 3rd, 4th … 11th, 12th, 13th, 21st."""
-    n = int(n)
-    return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
 
 
 def recent_xi(career, ids, team: str, games: int = 3) -> set[str]:

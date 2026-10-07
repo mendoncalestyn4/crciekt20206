@@ -30,7 +30,8 @@ def percentiles(pool: pd.DataFrame, column: str, better: str) -> pd.Series:
     # never "bottom 1%"); top_text reads p <= 50 as "top p%" and p > 50 as "bottom (101 - p)%"
     top = r / n * 100
     bottom = (n - r + 1) / n * 100
-    return top.where(top <= 50, (101 - bottom).clip(lower=51)).clip(lower=1)
+    # the middle of a small pool (3rd of 5) is in neither half: it reads "top 50%"
+    return top.where(top <= 50, (101 - bottom).where(bottom <= 50, 50)).clip(lower=1)
 
 
 def top_text(p: float) -> str:

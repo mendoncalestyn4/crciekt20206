@@ -105,10 +105,10 @@ def write_atomic(path: Path, data: str | bytes) -> None:
         tmp.unlink(missing_ok=True)  # a full disk or any failure: no half-written temp file left behind
 
 
-_JSON_CACHE: dict[str, tuple[tuple, object]] = {}
+_JSON_CACHE: dict[str, tuple[tuple, object, float]] = {}
 
 
-def read_json(path: Path):
+def read_json(path: Path, fresh: bool = False):
     """A saved JSON file; a read that races a save (on a disk without atomic swaps) is tried again.  Pages read
     the settings many times per click, so a file is only read again once it has changed (its size or time).
     Returns a fresh copy each time: callers may change it."""
@@ -118,12 +118,14 @@ def read_json(path: Path):
             st = path.stat()
             sig = (st.st_mtime_ns, st.st_size)
             hit = _JSON_CACHE.get(str(path))
-            if hit is not None and hit[0] == sig:
+            # a cached copy is trusted for 2 seconds at most (a disk with coarse file times, or another copy of the
+            # site, could change the file without its size or time showing it), and never when `fresh` is asked
+            if not fresh and hit is not None and hit[0] == sig and time.monotonic() - hit[2] < 2.0:
                 return copy.deepcopy(hit[1])
             data = json.loads(path.read_text(encoding="utf-8"))
             if len(_JSON_CACHE) > 200:
                 _JSON_CACHE.clear()
-            _JSON_CACHE[str(path)] = (sig, data)
+            _JSON_CACHE[str(path)] = (sig, data, time.monotonic())
             return copy.deepcopy(data)
         except ValueError:
             if attempt == 4:
@@ -162,23 +164,24 @@ class CareerStore:
     def save(self, career: Career, settings: CareerSettings) -> None:
         d = self._dir(career.name)
         d.mkdir(parents=True, exist_ok=True)
+        write_atomic(d / "career.stats-pack.zip", career.to_pack())
         if (d / "settings.json").is_file():
             # the folder watcher loads the settings, rebuilds the career for a few seconds, then saves: anything you
             # changed meanwhile (a schedule edit, a note) is on disk now, so it's taken from there, never overwritten
+            # (read here, right before writing, after the slow part)
             try:
-                _, fresh = self.load_settings(career.name)
+                _, fresh = self.load_settings(career.name, fresh=True)
                 for k in self.YOURS:
                     setattr(settings, k, getattr(fresh, k))
             except (OSError, ValueError, TypeError):
                 pass
         settings.updated = time.time()
-        write_atomic(d / "career.stats-pack.zip", career.to_pack())
         write_atomic(d / "settings.json", json.dumps(asdict(settings), indent=1))
         write_atomic(self.root / "last.json", json.dumps({"career": career.name}))
 
-    def load_settings(self, name: str) -> tuple[Path, CareerSettings]:
+    def load_settings(self, name: str, fresh: bool = False) -> tuple[Path, CareerSettings]:
         d = self._dir(name)
-        raw = read_json(d / "settings.json")
+        raw = read_json(d / "settings.json", fresh=fresh)
         return d, CareerSettings(**{k: v for k, v in raw.items() if k in ("name", "folder", "updated", "my_teams", "notes", "remembered",
                                                                   "fixtures", "goals")})
 

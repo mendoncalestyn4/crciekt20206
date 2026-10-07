@@ -17,6 +17,8 @@ from itertools import product
 import numpy as np
 import pandas as pd
 
+from .stats import ordinal
+
 FORMATS = ["Test", "ODI", "T20I", "T20", "The Hundred", "List A", "First-class"]
 INTL = {"Test", "ODI", "T20I"}
 NATIONS = {"Afghanistan", "Australia", "Bangladesh", "England", "India", "Ireland", "New Zealand", "Pakistan",
@@ -120,7 +122,7 @@ def _find_team(text: str, known: list[str], guess: bool = True) -> tuple[str, st
             return ABBR[w], re.sub(rf"(?<![a-z]){re.escape(w)}(?![a-z])", " ", low).strip()
     for w in low.split() if guess else []:
         if len(w) >= 4 and w not in {"test", "tests", "home", "away"}:
-            hits = [t for t in known if any(x.startswith(w) for x in t.lower().split())]
+            hits = sorted({t for t in known if any(x.startswith(w) for x in t.lower().split())})  # a team listed twice is one team
             if len(hits) == 1:
                 return hits[0], re.sub(rf"(?<![a-z]){re.escape(w)}(?![a-z])", " ", low).strip()
     return "", text
@@ -172,7 +174,8 @@ def parse_line(line: str, team: str, known: list[str]) -> tuple[list[dict], str]
     s = own.sub(" ", s)  # "India v England": your own team isn't the opponent
     # "Indian Premier League" is a tournament, not a series v Mumbai Indians: no guessing from one word then
     tourney = re.search(r"\b(cup|trophy|championship|league|tournament|wtc|final)\b", s)
-    opp, rest = _find_team(s, [t for t in known if t != team], guess=not tourney)
+    against = re.search(r"\b(v|vs|versus|against)\b", s)  # "Trans-Tasman Trophy v Austral": a series v Australia
+    opp, rest = _find_team(s, [t for t in known if t != team], guess=bool(against) or not tourney)
     if opp:
         if not fmt:
             mf = re.search(rf"\b{_FMT_WORDS}\b", rest)
@@ -187,6 +190,9 @@ def parse_line(line: str, team: str, known: list[str]) -> tuple[list[dict], str]
         if n > 10:
             return [], f"{n} matches in one series? Check “{raw}”"
         return make_series(team, opp, fmt, n, venue, month, date), ""
+    if against and re.search(r"\b(v|vs|versus|against)\s+\S", s):
+        # "… v Austral 3 Tests" names an opponent: a series, never a made-up tournament
+        return [], f"couldn't tell which team you mean in “{raw}”: write more of the name (e.g. South Australia)"
     # a tournament
     name = re.sub(r"\b(v|vs|versus|against|the|in|at|of|for)\b", " ", s)
     words_ = [w for w in name.split() if w]
@@ -203,6 +209,8 @@ def parse_line(line: str, team: str, known: list[str]) -> tuple[list[dict], str]
                                                     else "ODI" if "Cup" in title or "Trophy" in title else "")
     if tf == "T20" and team in NATIONS:
         tf = "T20I"
+    if team not in NATIONS:  # a franchise or county: no internationals ("Indian Premier League" is T20, not T20I)
+        tf = {"T20I": "T20", "ODI": "List A", "Test": "First-class"}.get(tf, tf)
     if not tf:
         return [], f"say the format for “{raw}” (e.g. add ODI or T20I)"
     return make_tournament(team, known_t, tf, month, games or (n or 0)), ""
@@ -455,13 +463,10 @@ def track(career, fixtures: list[dict], auto=()) -> pd.DataFrame:
         named = cand[[all(w in ev.lower() for w in words) for ev in cand.event]] if words else cand
         if len(named):
             cand = named
-        elif pd.isna(a):
-            cand = cand.iloc[0:0]  # no month and no competition by that name: it can't be told which games it means
         if pd.notna(a):
             cand = cand[(cand.date >= a - pd.Timedelta(days=15)) & (cand.date <= a + pd.Timedelta(days=75))]
-        elif len(cand):  # no month: the latest time it was played, not every edition ever
-            last = cand.sort_values("date").iloc[-1]
-            cand = cand[(cand.event == last.event) & (cand.season == last.season)]
+        else:  # no month: which edition is meant can't be told (the last one, or the next?): it waits as to come,
+            cand = cand.iloc[0:0]  # and games already played show up auto-added; adding the month ticks them off
         tournament_rows({k: r[k] for k in COLUMNS}, cand, False)
     # whatever the team played from the start of its schedule that isn't in it: added, series by series
     for team in auto:
@@ -600,7 +605,7 @@ def with_venues(career, tracked: pd.DataFrame):
         return career
     # series only: a tournament row's venue (older schedules saved "neutral") never overrides its scorecards
     played = tracked[(tracked.match_id != "") & tracked.match_id.notna() & tracked.venue.isin(["home", "away", "neutral"])
-                     & (tracked.kind == "match")]
+                     & ((tracked.kind == "match") | tracked.venue.isin(["home", "away"]))]
     if played.empty:
         return career
     m = career.matches.copy()
@@ -700,11 +705,6 @@ def series_outlook(career, team: str, s: dict) -> dict:
         if a + left > b and a <= b and k_draw is not None and k_draw < (k if k is not None else 99):
             need += f" ({_n_word(k_draw)} {'win' if k_draw == 1 else 'wins'} at least shares it)" if k_draw else ""
     return dict(predict=pr, left=left, odds=odds, scorelines=lines, need=need)
-
-
-def _ordinal(n: int) -> str:
-    """1st, 2nd, 3rd, 4th … 11th, 12th, 13th, 21st, 22nd."""
-    return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
 
 
 def _n_word(n: int) -> str:
@@ -893,7 +893,7 @@ def goal_progress(career, tracked: pd.DataFrame, goal: dict) -> dict:
         t = race["table"].reset_index(drop=True)
         pos = int(t.index[t.team == team][0]) + 1 if team in set(t.team) else None
         ch = race["chance"]
-        now = f"{_ordinal(pos)} now" if pos else "not in the table yet"
+        now = f"{ordinal(pos)} now" if pos else "not in the table yet"
         need = (f"; needs {race['need']} win{'s' if race['need'] != 1 else ''} from {race['remaining']} Tests left"
                 if race["remaining"] and race["need"] is not None else "")
         if not np.isfinite(ch):

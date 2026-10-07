@@ -55,27 +55,40 @@ def test_a_tournament_in_the_schedule_never_changes_home_and_away(career):
     assert F.with_venues(career, t) is career
     old = [dict(fx[0], venue="neutral")]  # schedules saved by the earlier version
     assert F.with_venues(career, F.track(career, old)) is career
+    home = [dict(fx[0], venue="home")]  # a home you set on purpose counts
+    c2 = F.with_venues(career, F.track(career, home))
+    mids = F.track(career, home).match_id
+    assert (c2.matches.set_index("match_id").loc[[x for x in mids if x]].home == "Gujarat Titans").all()
 
 
-def test_an_undated_tournament_takes_one_edition_and_an_unknown_name_takes_nothing(career):
+def test_an_undated_tournament_waits_and_its_games_are_auto_added(career):
     t = F.track(career, F.make_tournament("England", "Champions Trophy", "ODI"))
-    assert not (t.status == "played").any()  # no Champions Trophy in these files: nothing claimed
-    t = F.track(career, F.make_tournament("England", "ODI World Cup", "ODI"))
-    played = t[t.status == "played"]
-    m = career.matches.set_index("match_id")
-    assert len(played) and len({(m.event[x], m.season[x]) for x in played.match_id}) == 1
+    assert not (t.status == "played").any()  # nothing claimed: no month, so which edition can't be told
+    t = F.track(career, F.make_tournament("England", "ODI World Cup", "ODI"), auto=["England"])
+    mine = t[t.series.str.startswith("ODI World Cup") & ~t.auto]
+    assert list(mine.status) == ["next"]  # waits as to come…
+    assert (t[t.auto & t.series.str.startswith("ODI World Cup 2027")].status == "played").sum() == 3  # …games played are auto-added
+    t = F.track(career, F.make_tournament("England", "ODI World Cup", "ODI", "2027-06"))
+    assert (t.status == "played").sum() == 3  # with its month, they're ticked off as scheduled
 
 
 def test_a_tournament_line_is_not_read_as_a_team(career):
     known = sorted(set(career.matches.home) | set(career.matches.away))
     rows, err = F.parse_line("Indian Premier League T20 Apr 2027", "Chennai Super Kings", known)
     assert not err and rows[0]["opponent"] == "" and rows[0]["series"].startswith("Indian Premier League")
+    assert rows[0]["format"] == "T20"  # a franchise's tournament is T20, never T20I
+    rows, err = F.parse_line("Trans-Tasman Trophy v Austral 3 Tests", "India", sorted(F.NATIONS))
+    assert not err and rows[0]["opponent"] == "Australia" and len(rows) == 3  # "v" names the opponent
+    assert F.parse_line("Trans-Tasman Trophy v Austral 3 Tests", "India", known + ["Australia"])[0][0]["opponent"] == "Australia"
+    rows, err = F.parse_line("Trans-Tasman Trophy v Austral 3 Tests", "India", known + ["South Australia"])  # which one?
+    assert not rows and "which team" in err
     rows, err = F.parse_line("Kolkata 2 T20s home Apr 2027", "Chennai Super Kings", known)
     assert not err and rows[0]["opponent"] == "Kolkata Knight Riders"  # one word still finds a team when it's a series
 
 
 def test_wtc_goal_ordinals():
-    assert [F._ordinal(n) for n in (1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 101)] == \
+    from ccstats.stats import ordinal
+    assert [ordinal(n) for n in (1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 101)] == \
         ["1st", "2nd", "3rd", "4th", "11th", "12th", "13th", "21st", "22nd", "23rd", "101st"]
 
 
@@ -158,6 +171,8 @@ def test_percentiles_for_small_pools():
     assert D.top_text(D.percentiles(pd.DataFrame({"x": [5]}), "x", "high").iloc[0]) == "–"
     two = [D.top_text(v) for v in D.percentiles(pd.DataFrame({"x": [1, 2]}), "x", "high")]
     assert two == ["bottom 50%", "top 50%"]
+    five = [D.top_text(v) for v in D.percentiles(pd.DataFrame({"x": range(5)}), "x", "high")]
+    assert five == ["bottom 20%", "bottom 40%", "top 50%", "top 40%", "top 20%"]  # the middle one is in neither half
 
 
 def test_last_five_follow_the_order_played():

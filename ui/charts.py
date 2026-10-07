@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
-from ccstats.stats import Stat
+from ccstats.stats import Stat, ordinal  # noqa: F401  (ordinal: used by the pages)
 
 from .theme import colours
 
@@ -113,11 +113,12 @@ def unique_labels(labels) -> list[str]:
     """Row names for a bar chart, never two the same: plotly draws bars with the same name on
     one row (one hides the other), so a repeat gets (2), (3) …"""
     labels = [str(v) for v in labels]
+    given = set(labels)
     taken = set()
     out = []
     for x in labels:
         name, k = x, 1
-        while name in taken or (name != x and name in labels):  # never a name another bar already has
+        while name in taken or (name != x and name in given):  # never a name another bar already has
             k += 1
             name = f"{x} ({k})"
         taken.add(name)
@@ -162,11 +163,6 @@ def _num(v, d=1):
     return fmt(v, d) if v is not None and not (isinstance(v, float) and np.isnan(v)) else "–"
 
 
-def ordinal(n) -> str:
-    """1st, 2nd, 3rd, 4th ... 11th, 12th, 13th, 21st."""
-    n = int(n)
-    suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
-    return f"{n}{suffix}"
 
 
 def _n(k, one: str, many: str | None = None) -> str:
