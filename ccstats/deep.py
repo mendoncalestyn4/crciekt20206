@@ -22,17 +22,19 @@ DISC_KEY = {"Batting": "bat", "Bowling": "bowl", "Fielding": "field"}
 def percentiles(pool: pd.DataFrame, column: str, better: str) -> pd.Series:
     """'Top X%' for each player in the pool on one figure: 1 = the very best."""
     v = pool[column].astype(float)
-    r = v.rank(ascending=(better == "low"), method="min")
+    asc = better == "low"
+    best = v.rank(ascending=asc, method="min")  # a tie shares its best place…
+    worst = v.rank(ascending=asc, method="max")  # …and its worst
     n = v.notna().sum()
     if n < 2:  # top or bottom of a pool of one says nothing
         return pd.Series(np.nan, index=pool.index)
-    # top X% counts from the best (the best of 10 is top 10%), bottom X% from the worst (the last of 10 is bottom 10%,
-    # never "bottom 1%"); top_text reads p <= 50 as "top p%" and p > 50 as "bottom (101 - p)%"
-    top = r / n * 100  # ties at the top share the best place…
-    worst = v.rank(ascending=(better == "low"), method="max")
-    bottom = (n - worst + 1) / n * 100  # …and ties at the bottom the worst one
-    # the middle of a small pool (3rd of 5) is in neither half: it reads "top 50%"
-    p = top.where(top <= 50, (101 - bottom).where(bottom <= 50, 50)).clip(lower=1)
+    # which half: by the middle of the player's place (a tie sits in the middle of the places it shares), so the
+    # best of 10 is top 10%, the last of 10 bottom 10%, four tied last of 5 are bottom 80%, and the middle of a
+    # small pool (3rd of 5) reads top 50%; top_text reads p <= 50 as "top p%" and p > 50 as "bottom (101 - p)%"
+    mid = (best + worst) / 2
+    top = best / n * 100
+    bottom = (n - worst + 1) / n * 100
+    p = top.where(mid < (n + 1) / 2, (101 - bottom).where(mid > (n + 1) / 2, 50)).clip(lower=1)
     return p.where(v.notna())  # no figure: no place
 
 

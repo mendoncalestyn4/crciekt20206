@@ -111,33 +111,50 @@ def _fmt_of(word: str) -> str:
     return "First-class"
 
 
-def _find_team(text: str, known: list[str], guess: bool = True) -> tuple[str, str]:
-    """(team, text without it) — full names first, then short forms, then (if `guess`) a unique first word."""
+TOURNEY_RE = re.compile(r"\b(cup|trophy|championship|league|tournament|wtc|final|qualifier)\b")
+_NOT_TEAM = {"test", "tests", "odis", "t20s", "t20is", "home", "away", "neutral", "match", "matches", "games", "series"}
+_TRAILING_FMT = re.compile(r"tests?|odis?|t20is?|t20s?|fc|first-class")
+
+
+def _exact_team(text: str, known: list[str]) -> tuple[str, str]:
+    """(team, text without it): a full team name (longest first), else a short form (NZ, SA, WI)."""
     low = f" {text} "
-    for t in sorted(known, key=len, reverse=True):
-        if re.search(rf"(?<![a-z]){re.escape(t.lower())}(?![a-z])", low):
-            return t, re.sub(rf"(?<![a-z]){re.escape(t.lower())}(?![a-z])", " ", low).strip()
+    for t in sorted(set(known), key=len, reverse=True):
+        mm = re.search(rf"(?<![a-z]){re.escape(t.lower())}(?![a-z])", low)
+        if mm:
+            return t, low[:mm.start()] + " " + low[mm.end():]
     for w in low.split():
         if w in ABBR and ABBR[w] in known:
-            return ABBR[w], re.sub(rf"(?<![a-z]){re.escape(w)}(?![a-z])", " ", low).strip()
-    for w in low.split() if guess else []:
-        if len(w) >= 4 and w not in {"test", "tests", "home", "away"}:
-            hits = sorted({t for t in known if any(x.startswith(w) for x in t.lower().split())})  # a team listed twice is one team
+            return ABBR[w], re.sub(rf"(?<![a-z]){re.escape(w)}(?![a-z])", " ", low)
+    return "", low
+
+
+def _guess_team(parts: list[str], known: list[str]) -> tuple[str, str, list[str]]:
+    """A team from one word of these parts of the line ("Kolkata", "Austral"): the first word of 4+ letters
+    that starts a word of exactly one team's name.  (team, that word, the teams a word could mean when it
+    fits several and no word fits one)."""
+    unsure: list[str] = []
+    for part in parts:
+        for w in part.split():
+            if len(w) < 4 or w in _NOT_TEAM or not re.fullmatch(r"[a-z][a-z'.-]*", w):
+                continue
+            hits = sorted({t for t in known if any(x.startswith(w) for x in t.lower().split())})
             if len(hits) == 1:
-                return hits[0], re.sub(rf"(?<![a-z]){re.escape(w)}(?![a-z])", " ", low).strip()
-    return "", text
-
-
-def _candidates(text: str, known: list[str]) -> list[str]:
-    """The teams the first word of `text` could be (when it's too short to tell)."""
-    for w in f" {text} ".lower().split():
-        if len(w) >= 4:
-            return sorted({t for t in known if any(x.startswith(w) for x in t.lower().split())})
-    return []
+                return hits[0], w, []
+            if len(hits) > 1 and not unsure:
+                unsure = hits
+    return "", "", unsure
 
 
 def parse_line(line: str, team: str, known: list[str]) -> tuple[list[dict], str]:
-    """Rows for one typed line, or an explanation of what's missing."""
+    """Rows for one typed line, or an explanation of what's missing.
+
+    The opponent: a full team name or a short form (NZ, SA) anywhere in the line; otherwise one word of it
+    ("Kolkata", "Austral"), looked for only in the parts of the line that aren't a tournament's name ("Indian
+    Premier League" never means Mumbai Indians).  A line with "v" and a number of matches ("… v Austral 3
+    Tests") is a series.  Without an opponent it's a tournament; a format typed at the end of the line ("IPL
+    T20", "… Qualifier T20I") is used as typed, and format words inside a name ("T20 World Cup", "One-Day
+    Cup") only help work it out."""
     raw = line.strip()
     if not raw or raw.startswith("#"):
         return [], ""
@@ -180,23 +197,18 @@ def parse_line(line: str, team: str, known: list[str]) -> tuple[list[dict], str]
         s = s.replace(mg.group(0), " ")
     own = re.compile(rf"(?<![a-z]){re.escape(team.lower())}(?![a-z])")
     s = own.sub(" ", s)  # "India v England": your own team isn't the opponent
-    others = [t for t in known if t != team]
-    # "Indian Premier League" is a tournament, not a series v Mumbai Indians: a one-word guess (a team from the
-    # first word of its name) is only made after "v" ("Trans-Tasman Trophy v Austral"), or on a line that names
-    # no tournament at all; full names and short forms (NZ, SA) are found anywhere
-    tourney = re.search(r"\b(cup|trophy|championship|league|tournament|wtc|final)\b", s)
-    against = re.search(r"\b(?:v|vs|versus|against)\b(.*)$", s)
-    opp, rest = _find_team(s, others, guess=False)
-    if not opp and against:
-        opp, after = _find_team(against.group(1), others, guess=True)
-        if opp:
-            rest = s[:against.start()] + " " + after
-        else:
-            many = _candidates(against.group(1), others)
-            if len(many) > 1:
-                return [], f"“{raw}” could mean {' or '.join(many[:3])}: write more of the name"
-    elif not opp and not tourney:
-        opp, rest = _find_team(s, others, guess=True)
+    others = sorted(set(known) - {team})
+    parts = re.split(r"\b(?:v|vs|versus|against)\b", s)
+    has_v = len(parts) > 1
+    opp, rest = _exact_team(s, others)
+    if not opp:
+        guess, word, unsure = _guess_team([x for x in parts if not TOURNEY_RE.search(x)], others)
+        if guess:
+            opp, rest = guess, re.sub(rf"(?<![a-z]){re.escape(word)}(?![a-z])", " ", s)
+        elif unsure:
+            return [], f"“{raw}” could mean {' or '.join(unsure[:3])}: write more of the name"
+        elif has_v and n:
+            return [], f"couldn't find the team after “v” in “{raw}”: check the spelling of the opponent"
     if opp:
         if not fmt:
             mf = re.search(rf"\b{_FMT_WORDS}\b", rest)
@@ -211,28 +223,31 @@ def parse_line(line: str, team: str, known: list[str]) -> tuple[list[dict], str]
         if n > 10:
             return [], f"{n} matches in one series? Check “{raw}”"
         return make_series(team, opp, fmt, n, venue, month, date), ""
-    # a tournament
-    name = re.sub(r"\b(v|vs|versus|against|the|in|at|of|for)\b", " ", s)
-    words_ = [w for w in name.split() if w]
-    while words_ and re.fullmatch(r"tests?|odis?|t20is?|t20s?", words_[-1]):  # "WTC final Test": the format isn't the name
+    # a tournament: its name is the line before any "v" ("Champions Trophy final v TBC": the final, opponent unknown)
+    line_words = s.split()
+    typed = fmt or (_fmt_of(line_words[-1]) if line_words and _TRAILING_FMT.fullmatch(line_words[-1]) else "")
+    words_ = [w for w in re.sub(r"\b(the|in|at|of|for)\b", " ", parts[0]).split() if w]
+    while words_ and _TRAILING_FMT.fullmatch(words_[-1]):  # "WTC final Test", "IPL T20": the format, not the name
+        typed = typed or _fmt_of(words_[-1])
         words_.pop()
     name = " ".join(words_)
-    if not re.search(r"cup|trophy|championship|final|league|tournament|wtc|series|games", name):
+    from .competitions import KNOWN  # the competitions the site knows: "Indian Premier League" is T20
+    comp = KNOWN.get(name) or KNOWN.get(f"the {name}")
+    if not comp and not re.search(r"cup|trophy|championship|final|league|tournament|wtc|series|games|qualifier", name):
         return [], f"couldn't find a team or a tournament in “{raw}”: check the spelling of the opponent"
     if "wtc" in name.split() or "test championship" in name:
         name = "world test championship final"
-    title = " ".join(w.upper() if re.fullmatch(r"t20i?|odi|wtc|ipl", w) else w.capitalize() for w in name.split())
+    title = comp[0] if comp else " ".join(w.upper() if re.fullmatch(r"t20i?|odi|wtc|ipl", w) else w.capitalize()
+                                          for w in name.split())
     known_t = next((t for t in TOURNAMENTS if t.lower() == title.lower()), title)
-    # the format as typed ("Indian Premier League T20 Apr 2027": T20); "T20I" beats the "T20" of a name like
-    # "T20 World Cup Qualifier T20I"
-    words_f = [_fmt_of(x) for x in re.findall(rf"\b{_FMT_WORDS}\b", s)]
-    typed = fmt or ("T20I" if "T20I" in words_f else words_f[0] if words_f else "")
-    tf = typed or TOURNAMENT_FORMAT.get(known_t) or ("T20I" if "T20" in title else "Test" if "Test" in title or "WTC" in title
-                                                     else "ODI" if "Cup" in title or "Trophy" in title else "")
+    tf = typed or TOURNAMENT_FORMAT.get(known_t) or (comp[1] if comp and comp[1] else "") or (
+        "T20I" if "T20" in title else "Test" if "Test" in title or "WTC" in title
+        else "ODI" if "Cup" in title or "Trophy" in title else "")
     if tf == "T20" and team in NATIONS:
         tf = "T20I"
-    if not typed and team not in NATIONS and known_t not in TOURNAMENT_FORMAT and "World Cup" not in title:
-        # worked out from the name for a franchise or county: its own formats (a league "Cup" isn't an ODI)
+    icc = known_t in TOURNAMENT_FORMAT or "World Cup" in title or "Qualifier" in title or bool(comp and comp[2] == "International")
+    if not typed and team not in NATIONS and not icc:
+        # worked out from the name for a franchise or county: its own formats (a county's "One-Day Cup" is List A)
         tf = {"T20I": "T20", "ODI": "List A", "Test": "First-class"}.get(tf, tf)
     if not tf:
         return [], f"say the format for “{raw}” (e.g. add ODI or T20I)"
@@ -487,13 +502,13 @@ def track(career, fixtures: list[dict], auto=()) -> pd.DataFrame:
         if pd.notna(a):
             cand = named if len(named) else cand
             cand = cand[(cand.date >= a - pd.Timedelta(days=15)) & (cand.date <= a + pd.Timedelta(days=75))]
-        elif len(named):
-            # no month: the edition under way or just finished (its last game within 60 days of the team's latest
-            # match); an older edition isn't what's meant, so then it waits as to come
-            last = named.sort_values("date").iloc[-1]
-            latest = m[(m.home == team) | (m.away == team)].date.max()
-            ed = named[(named.event == last.event) & (named.season == last.season)]
-            cand = ed if pd.notna(latest) and ed.date.max() >= latest - pd.Timedelta(days=60) else named.iloc[0:0]
+        elif words and len(named):
+            # no month: only the edition the team is in the middle of (its latest game is in it); one already
+            # behind them isn't what's meant (you'd be scheduling the next), so then it waits as to come
+            mine = m[(m.home == team) | (m.away == team)].sort_values(["date", "match_id"])
+            latest = mine.iloc[-1] if len(mine) else None
+            ed = named[(named.event == latest.event) & (named.season == latest.season)] if latest is not None else named.iloc[0:0]
+            cand = ed if latest is not None and latest.match_id in set(ed.match_id) else named.iloc[0:0]
         else:
             cand = cand.iloc[0:0]  # no month and no competition by that name: nothing can be told
         tournament_rows({k: r[k] for k in COLUMNS}, cand, False)

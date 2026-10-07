@@ -65,7 +65,7 @@ def test_an_undated_tournament_takes_the_current_edition_only(career):
     # England's latest games are this World Cup: with no month, it's the one meant, ticked off as scheduled
     t = F.track(career, F.make_tournament("England", "ODI World Cup", "ODI"), auto=["England"])
     assert (t[~t.auto].status == "played").sum() == 3 and not t.auto.any()
-    # India's T20 World Cup was months before their latest game: an undated one means the next, so it waits
+    # India have played since their T20 World Cup: an undated one means the next, so it waits
     t = F.track(career, F.make_tournament("India", "T20 World Cup", "T20I"))
     assert list(t.status) == ["next"]
     t = F.track(career, F.make_tournament("India", "T20 World Cup", "T20I", "2026-03"))
@@ -87,7 +87,22 @@ def test_a_tournament_line_is_not_read_as_a_team(career):
                              known + ["Chennai Super Kings"])
     assert not err and rows[0]["opponent"] == "Chennai Super Kings"
     rows, err = F.parse_line("Champions Trophy final v TBC Feb 2027 ODI", "India", known)  # no team after v: a tournament
-    assert not err and rows[0]["opponent"] == "" and rows[0]["format"] == "ODI"
+    assert not err and rows[0]["opponent"] == "" and rows[0]["format"] == "ODI" and rows[0]["series"].startswith("Champions Trophy Final ·")
+    # the opponent before "v" (your own team after it)
+    assert F.parse_line("Austral v India 3 Tests Dec 2027", "India", sorted(F.NATIONS))[0][0]["opponent"] == "Australia"
+    assert F.parse_line("Kolkata v Chennai 2 T20s Apr 2027", "Chennai Super Kings",
+                        known + ["Chennai Super Kings"])[0][0]["opponent"] == "Kolkata Knight Riders"
+    # a misspelt opponent in a series line is an error, never a made-up tournament
+    rows, err = F.parse_line("Trans-Tasman Trophy v Austrlia 3 Tests", "India", sorted(F.NATIONS))
+    assert not rows and "check the spelling" in err
+    # known competitions by their names, in their own formats
+    for line, team_, name, fmt in (("Royal London One-Day Cup May 2027", "Kent", "Royal London One-day Cup", "List A"),
+                                   ("The Hundred Aug 2027", "Kent", "The Hundred", "The Hundred"),
+                                   ("Vitality Blast May 2027", "Kent", "T20 Blast", "T20"),
+                                   ("Indian Premier League Apr 2027", "Chennai Super Kings", "Indian Premier League", "T20"),
+                                   ("T20 World Cup Qualifier Jun 2027", "Italy", "T20 World Cup Qualifier", "T20I")):
+        rows, err = F.parse_line(line, team_, known)
+        assert not err and rows[0]["series"].startswith(name) and rows[0]["format"] == fmt, (line, rows, err)
     rows, err = F.parse_line("T20 World Cup Qualifier T20I Jun 2027", "Italy", known)  # a side not on the list keeps T20I
     assert not err and rows[0]["format"] == "T20I"
     rows, err = F.parse_line("Kolkata 2 T20s home Apr 2027", "Chennai Super Kings", known)
@@ -182,7 +197,11 @@ def test_percentiles_for_small_pools():
     p = D.percentiles(pd.DataFrame({"x": [1.0, 2.0, np.nan, 4.0]}), "x", "high")
     assert np.isnan(p.iloc[2]) and D.top_text(p.iloc[2]) == "–"  # no figure: no place
     tied = [D.top_text(v) for v in D.percentiles(pd.DataFrame({"x": [1, 1, 1, 2, 3]}), "x", "high")]
-    assert tied[:3] == ["bottom 60%"] * 3 or all(t.startswith("bottom") for t in tied[:3])  # tied last: bottom, never top
+    assert tied == ["bottom 20%", "bottom 20%", "bottom 20%", "top 40%", "top 20%"]  # tied last: bottom, never top
+    many = [D.top_text(v) for v in D.percentiles(pd.DataFrame({"x": [1, 1, 1, 1, 2]}), "x", "high")]
+    assert many == ["bottom 20%"] * 4 + ["top 20%"]  # however many share last place
+    mid = [D.top_text(v) for v in D.percentiles(pd.DataFrame({"x": [1, 2, 2, 2, 2, 2, 3]}), "x", "high")]
+    assert mid[1:6] == ["top 50%"] * 5  # a tie across the middle is the middle
     five = [D.top_text(v) for v in D.percentiles(pd.DataFrame({"x": range(5)}), "x", "high")]
     assert five == ["bottom 20%", "bottom 40%", "top 50%", "top 40%", "top 20%"]  # the middle one is in neither half
 
@@ -235,3 +254,39 @@ def test_win_chance_lookups_belong_to_their_own_table(career):
     assert not a.empty and not b.empty
     assert not a.attrs.get("_index") and "_by_match" not in st_.attrs  # nothing heavy rides along in attrs
     assert copy.copy(st_).attrs == {} or "_index" not in st_.attrs
+
+
+def test_the_schedule_reader_reads_every_team_every_way(career):
+    """Every opponent, written in full, before or after 'v', with every format and venue, comes out exactly."""
+    import random
+    teams = sorted(set(career.matches.home) | set(career.matches.away) | F.NATIONS)
+    rnd = random.Random(3)
+    for opp in teams:
+        me = rnd.choice([t for t in teams if t != opp])
+        for fmt_word, n in (("Tests", 3), ("ODIs", 2), ("T20s", 5), ("Test", 1)):
+            for shape in ("{o} {n} {f} away Jan 2027", "{n} {f} v {o} home Mar 2027", "{o} v {me} {n} {f} Feb 2027",
+                          "v {o} {n} {f} neutral 2027-05"):
+                line = shape.format(o=opp, n=n, f=fmt_word, me=me)
+                rows, err = F.parse_line(line, me, teams)
+                assert not err and len(rows) == n and {r["opponent"] for r in rows} == {opp}, (line, me, err)
+                want = {"Tests": "Test", "Test": "Test", "ODIs": "ODI"}.get(fmt_word) or ("T20I" if opp in F.NATIONS else "T20")
+                assert rows[0]["format"] == want, (line, rows[0]["format"])
+
+
+def test_the_schedule_reader_never_breaks_on_anything(career):
+    import random
+    teams = sorted(set(career.matches.home) | set(career.matches.away) | F.NATIONS)
+    words = (["v", "vs", "against", "home", "away", "@", "(h)", "Jan", "2027", "3", "Tests", "ODI", "T20", "T20I", "Cup",
+              "Trophy", "League", "final", "World", "Qualifier", "Royal", "London", "One-Day", "The", "Hundred", "Blast",
+              "TBC", "12", "Feb", "2026-03-04", "x", "∑", "Premier", "Indian", "Austral", "Mumbai", "WTC", "games", "7"]
+             + [t.split()[0] for t in teams[:20]] + teams[:10])
+    rnd = random.Random(17)
+    for _ in range(4000):
+        me = rnd.choice(teams)
+        line = " ".join(rnd.choice(words) for _ in range(rnd.randint(0, 10)))
+        rows, err = F.parse_line(line, me, teams)
+        assert isinstance(rows, list) and isinstance(err, str) and (not rows or not err)
+        for r in rows:
+            assert r["opponent"] != me and r["format"] in F.FORMATS, (line, r)
+            assert (r["opponent"] == "") == (r["no"] == 0)  # a tournament row, or a numbered match of a series
+        assert len(rows) <= 10
