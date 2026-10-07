@@ -80,6 +80,38 @@ class CareerSettings:
     goals: list = field(default_factory=list)  # season goals (the Fixtures page)
 
 
+def write_atomic(path: Path, data: str | bytes) -> None:
+    """Write a whole file so nobody can ever read it half-written: write a temporary
+    file next to it, then swap it in (another browser tab, or the folder watcher,
+    may read it at any moment)."""
+    path = Path(path)
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.{time.time_ns()}.tmp")
+    if isinstance(data, str):
+        tmp.write_text(data, encoding="utf-8")
+    else:
+        tmp.write_bytes(data)
+    for attempt in range(20):  # Windows refuses the swap while another reader has the file open: try again
+        try:
+            os.replace(tmp, path)
+            return
+        except PermissionError:
+            if attempt == 19:
+                tmp.unlink(missing_ok=True)
+                raise
+            time.sleep(0.05)
+
+
+def read_json(path: Path):
+    """A saved JSON file; a read that races a save (on a disk without atomic swaps) is tried again."""
+    for attempt in range(5):
+        try:
+            return json.loads(Path(path).read_text(encoding="utf-8"))
+        except ValueError:
+            if attempt == 4:
+                raise
+            time.sleep(0.05)
+
+
 def _slug(name: str) -> str:
     return re.sub(r"[^\w\- ]+", "_", name).strip() or "career"
 
@@ -100,8 +132,8 @@ class CareerStore:
             f = d / "settings.json"
             if f.is_file():
                 try:
-                    out.append(json.loads(f.read_text())["name"])
-                except (ValueError, KeyError):
+                    out.append(read_json(f)["name"])
+                except (OSError, ValueError, KeyError):
                     pass
         return out
 
@@ -109,13 +141,13 @@ class CareerStore:
         d = self._dir(career.name)
         d.mkdir(parents=True, exist_ok=True)
         settings.updated = time.time()
-        (d / "career.stats-pack.zip").write_bytes(career.to_pack())
-        (d / "settings.json").write_text(json.dumps(asdict(settings), indent=1))
-        (self.root / "last.json").write_text(json.dumps({"career": career.name}))
+        write_atomic(d / "career.stats-pack.zip", career.to_pack())
+        write_atomic(d / "settings.json", json.dumps(asdict(settings), indent=1))
+        write_atomic(self.root / "last.json", json.dumps({"career": career.name}))
 
     def load_settings(self, name: str) -> tuple[Path, CareerSettings]:
         d = self._dir(name)
-        raw = json.loads((d / "settings.json").read_text())
+        raw = read_json(d / "settings.json")
         return d, CareerSettings(**{k: v for k, v in raw.items() if k in ("name", "folder", "updated", "my_teams", "notes", "remembered",
                                                                   "fixtures", "goals")})
 
@@ -123,7 +155,7 @@ class CareerStore:
         """Only the settings (e.g. My team), without rewriting the career file."""
         d = self._dir(settings.name)
         if d.is_dir():
-            (d / "settings.json").write_text(json.dumps(asdict(settings), indent=1))
+            write_atomic(d / "settings.json", json.dumps(asdict(settings), indent=1))
 
     def load(self, name: str) -> tuple[Career, CareerSettings]:
         d, settings = self.load_settings(name)
@@ -165,7 +197,7 @@ class CareerStore:
         d.mkdir(parents=True, exist_ok=True)
         stamp = time.strftime("%Y-%m-%d_%H%M%S", time.localtime(now))
         dest = d / f"{stamp}{'_' + _slug(note) if note else ''}.stats-pack.zip"
-        dest.write_bytes(src.read_bytes())
+        write_atomic(dest, src.read_bytes())
         for old, _ in self.backups(name)[self.BACKUPS_KEPT:]:
             old.unlink()
         return dest
@@ -192,7 +224,7 @@ class CareerStore:
             raise ValueError(f"{backup} is not a career file")
         self.backup(name, note="before-restore")
         d, settings = self.load_settings(name)
-        (d / "career.stats-pack.zip").write_bytes(data)
+        write_atomic(d / "career.stats-pack.zip", data)
         career, _ = self.load(name)
         self.save(career, settings)
         return career
@@ -200,7 +232,7 @@ class CareerStore:
     def last_used(self) -> str | None:
         f = self.root / "last.json"
         try:
-            name = json.loads(f.read_text())["career"]
+            name = read_json(f)["career"]
         except (OSError, ValueError, KeyError):
             return None
         return name if name in self.names() else None
@@ -240,13 +272,13 @@ class Watcher:
 
     def _all(self) -> dict:
         try:
-            return json.loads(self.path.read_text())
+            return read_json(self.path)
         except (OSError, ValueError):
             return {}
 
     def _write(self, data: dict) -> None:
         self.store.root.mkdir(parents=True, exist_ok=True)
-        self.path.write_text(json.dumps(data, indent=1))
+        write_atomic(self.path, json.dumps(data, indent=1))
 
     def owner(self, folder: str) -> str | None:
         """The career that watches this folder, if any."""
