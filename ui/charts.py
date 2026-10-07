@@ -109,6 +109,17 @@ def label_annotations(named, dots, x_range, y_range, c: dict, width_px: float = 
     return out
 
 
+def unique_labels(labels) -> list[str]:
+    """Row names for a bar chart, never two the same: plotly draws bars with the same name on
+    one row (one hides the other), so a repeat gets (2), (3) …"""
+    seen: dict[str, int] = {}
+    out = []
+    for x in (str(v) for v in labels):
+        seen[x] = seen.get(x, 0) + 1
+        out.append(x if seen[x] == 1 else f"{x} ({seen[x]})")
+    return out
+
+
 def say(word: str) -> str:
     """A label as it's written in cricket: "Run out", "LBW", "No result"."""
     return "LBW" if word.lower() == "lbw" else word[:1].upper() + word[1:]
@@ -118,7 +129,7 @@ def ranked_bars(rows: pd.DataFrame, stat: Stat, best: bool, highlight: str = "")
     c = colours()
     colour = c["s1"] if best else c["neg"]
     r = rows.iloc[::-1]
-    labels = [p + ("  ◀" if p == highlight else "") for p in r.player]
+    labels = unique_labels(p + ("  ◀" if p == highlight else "") for p in r.player)
     fig = go.Figure(go.Bar(
         x=r[stat.column], y=labels, orientation="h",
         marker=dict(color=[c["s2"] if p == highlight else colour for p in r.player], line=dict(width=0)),
@@ -257,7 +268,7 @@ def bars(labels, values, x_label: str, decimals: int = 0, colour: str | None = N
     notes = list(notes)[::-1] if notes is not None else [""] * len(values)
     texts = list(texts)[::-1] if texts is not None else None
     col = colour or c["s1"]
-    labels = [str(x) for x in labels]  # seasons like 2026 are labels, not numbers
+    labels = unique_labels(labels[::-1])[::-1]  # seasons like 2026 are labels, not numbers; a repeat gets (2)
     shown = [0 if v is None or (isinstance(v, float) and not np.isfinite(v)) else v for v in values]
     colours_ = [(c["pos"] if v >= 0 else c["neg"]) if signed else col for v in shown]
     fig = go.Figure(go.Bar(x=shown, y=labels, orientation="h", marker=dict(color=colours_, line=dict(width=0)),
@@ -297,7 +308,7 @@ def paired_bars(labels, mine, other, mine_name: str, other_name: str, x_label: s
     """Two bars per row: a player's figure next to the comparison (e.g. the
     average batter at that position). Top of the list first."""
     c = colours()
-    labels = [str(x) for x in labels]
+    labels = unique_labels(labels)
     notes = list(notes) if notes is not None else [""] * len(labels)
     fig = go.Figure()
     for vals, name, col in ((other, other_name, c["dim"]), (mine, mine_name, c["s1"])):

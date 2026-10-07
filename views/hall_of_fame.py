@@ -96,7 +96,7 @@ with t_ar:
         with st.container(border=True):
             st.markdown("**Best all-round matches** · runs and wickets in the same match")
             top = ar.head(12)
-            st.plotly_chart(bars([f"{p} v {a} ({d:%b %Y})" for p, a, d in zip(top.player, top.against, top.date)],
+            st.plotly_chart(bars([f"{p} v {a} ({d:%d %b %Y})" for p, a, d in zip(top.player, top.against, top.date)],
                                  top.score, "Match score (runs + wickets × runs per wicket)", 0,
                                  texts=list(top.figures), x_range=[0, top.score.max() * 1.4],
                                  notes=[f"{t} · {'won' if w else 'did not win'} · match score {fmt(s, 0)}"
