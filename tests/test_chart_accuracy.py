@@ -11,20 +11,33 @@ from pathlib import Path
 import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
+from streamlit.testing.v1 import element_tree as et
 
 from ccstats.loader import Career
 
 import chartcheck as CC
 
 ROOT = Path(__file__).parent.parent
-# still being finished (the recount doesn't yet cover players who never batted): on hold until work resumes
-pytestmark = pytest.mark.skip(reason="chart accuracy checks: work in progress")
 FIXTURES = sorted((Path(__file__).parent / "fixtures").glob("*.txt"))
 
 
 @pytest.fixture(scope="module")
 def career():
     return Career.build("Chart accuracy", [(p.name, p.read_bytes()) for p in FIXTURES])
+
+
+def _index(self):
+    """AppTest looks a dropdown's choice up by its shown text; with a format_func that fails, so map it back."""
+    if self.value is None:
+        return None
+    if not self.options:
+        return 0
+    if isinstance(self.value, str) and self.value in self.options:
+        return self.options.index(self.value)
+    return self.options.index(et._format_value_for_widget(self.format_func, self.value))
+
+
+et.Selectbox.index = property(_index)
 
 
 def page(c, name, **state):
@@ -82,7 +95,12 @@ def recount(c, section, title):
         "Overs bowled": w.groupby("player").balls.sum() / 6,
         "Runs conceded": w.groupby("player").runs.sum(),
     }
-    return table.get(title)
+    v = table.get(title)
+    if v is None:
+        return None
+    # everyone who played here, 0 for those who never batted / bowled
+    everyone = set(c.batting[c.batting.match_id.isin(ids)].player) | set(c.bowling[c.bowling.match_id.isin(ids)].player)
+    return v.reindex(sorted(everyone | set(v.index)), fill_value=0)
 
 
 def axis_title(spec, ax):
@@ -322,9 +340,18 @@ def test_match_charts_are_the_scorecards(career):
                 assert ys[-1] == r.runs
         wc = figs.get("mt_winchance")
         if wc is not None:
+            r = career.matches.set_index("match_id").loc[mid]
+            t1 = r.batted_first
             for t in wc["data"]:
-                ys = [v for v in CC.arr(t["y"]) if v is not None]
-                assert all(0 <= v <= 100 for v in ys), mid
+                ys = CC.arr(t["y"])
+                assert all(v is not None and 0 <= v <= 100 for v in ys), (mid, "no blank or impossible point")
+            # the line ends at the result: 100% for the side that won
+            first = wc["data"][0]
+            end = CC.arr(first["y"])[-1]
+            if r.result_type in ("win", "draw") or (r.result_type == "tie" and r.tiebreak_winner):
+                won = r.winner or (r.tiebreak_winner if r.result_type == "tie" else "")  # a drawn knockout is a draw
+                assert end == (100 if won == t1 else 0), (mid, "the last point is the result")
+                assert CC.arr(first["customdata"])[-1][0].startswith("Result"), mid
 
 
 # --------------------------------------------------------------------------- every chart on every page
@@ -349,3 +376,21 @@ def test_every_chart_is_placed_right_in_every_section(career, name):
             at = at.selectbox(key=key).select_index(i).run()
             assert not at.exception, [e.message for e in at.exception]
             placed_right(charts(at))
+
+
+# --------------------------------------------------------------------------- Team v team: the tale of the tape
+def test_tale_of_the_tape_bars_are_to_scale(career):
+    at = page(career, "team_vs_team.py")
+    at.run()
+    assert not at.exception
+    tape = charts(at)["tv_tape"]
+    a, b = tape["data"]
+    for la, xa, ta, lb, xb, tb in zip(a["y"], CC.arr(a["x"]), a["text"], b["y"], CC.arr(b["x"]), b["text"]):
+        va = float(re.sub(r"[^0-9.\-]", "", ta))
+        vb = float(re.sub(r"[^0-9.\-]", "", tb))
+        assert la == lb and xa <= 0 <= xb, la  # one team left, the other right, same row
+        top = max(abs(va), abs(vb)) or 1
+        # each pair drawn to scale: the bigger number reaches the end, the other in proportion (to the printed rounding)
+        assert max(abs(xa), abs(xb)) == pytest.approx(1.0), la
+        assert abs(xa) * top == pytest.approx(abs(va), abs=0.051 * max(1, abs(va))) and \
+            abs(xb) * top == pytest.approx(abs(vb), abs=0.051 * max(1, abs(vb))), la

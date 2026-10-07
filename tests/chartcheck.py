@@ -133,12 +133,14 @@ def check_fig(spec: str | dict) -> list[str]:
                 dup = {c for c in seen if seen.count(c) > 1}
                 if dup:
                     out.append(f"{name}: two bars on the same row {sorted(dup)[:3]}")
+            val_axis = layout.get("xaxis" if horiz else "yaxis", {}) or {}
+            scaled = val_axis.get("showticklabels") is False  # bars drawn to scale against each other, real numbers printed
             for i, v in enumerate(vals or []):
                 fv = num(v)
                 if fv is None or not math.isfinite(fv):
                     out.append(f"{name}: bar {i} has no value ({v!r})")
                     continue
-                if text is not None and i < len(text):
+                if text is not None and i < len(text) and not scaled:
                     p = parse_text_number(text[i])
                     if p is not None:
                         pv, dec = p

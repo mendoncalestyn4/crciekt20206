@@ -105,13 +105,15 @@ with safe_section("match report"):
                     f"{score_:.1f}</span> / 10 for excitement" + (f" ({', '.join(why_)})" if why_ else ""),
                     unsafe_allow_html=True)
         st.markdown(W.match_report(career, mid, line))
-    if len(line) > 1:
+    if len(line) > 1 and not line.W.notna().any():
+        st.caption(f"Win chance through the match: not enough other {row.section} games yet to compare this one with.")
+    elif len(line) > 1:
         with st.container(border=True):
             t1, t2 = line.attrs["team1"], line.attrs["team2"]
             multi_ = kind_ == "multi"
             st.markdown(f"**Win chance through the match** · {'won / drawn / lost' if multi_ else 'chance'} for {t1}, "
                         "at the start of each innings and after every wicket")
-            st.plotly_chart(win_chance_chart(line, t1, t2, multi_), width="stretch", config=CONFIG, key="mt_winchance")
+            st.plotly_chart(win_chance_chart(line, t1, t2, multi_, row.result), width="stretch", config=CONFIG, key="mt_winchance")
             sw = W.biggest_swing(line)
             low = W.lowest_for_winner(line)
             shows = (f"The biggest swing came at {sw['at']}: {t1}'s chance went from {sw['before']:.0f}% to "
@@ -122,7 +124,7 @@ with safe_section("match report"):
                        f"Shows how the game swung. Each point is how often {row.section} games in the same spot (same "
                        "innings, same wickets down, a similar lead) ended in a win"
                        + (", draw or defeat" if multi_ else "") + ". The scorecards have no overs, so it uses runs and "
-                       "wickets only; hover a point for how many games it rests on.")
+                       "wickets only; hover a point for how many games it rests on. The last point is the result.")
 
 inns = inn_all[inn_all.match_id == mid].sort_values("innings_no")
 bat = career.batting[career.batting.match_id == mid]

@@ -509,23 +509,46 @@ def rank_chart(d: pd.DataFrame) -> go.Figure:
     return fig
 
 
-def win_chance_chart(line: pd.DataFrame, team1: str, team2: str, multi: bool) -> go.Figure:
-    """The side batting first's chance at the start of each innings and after every wicket.
-    Multi-day: stacked won / drawn / lost."""
+def win_line_points(line: pd.DataFrame, result: str = "") -> pd.DataFrame:
+    """The points the win-chance chart draws: the line as worked out, where a spot no
+    earlier game reached keeps the point before it (said so in its hover), and, once
+    the match is over, a last point at the result (100% for the winner)."""
+    d = line[["label", "W", "D", "L", "T", "n"]].copy().reset_index(drop=True)
+    blank = d.W.isna()
+    d["note"] = [f"from {int(n)} similar game{'s' if int(n) != 1 else ''}" for n in d.n.fillna(0)]
+    d.loc[blank, "note"] = "no earlier game reached this spot: kept from the point before"
+    d[["W", "D", "L", "T"]] = d[["W", "D", "L", "T"]].ffill()
+    d.loc[blank & d.W.isna(), "note"] = "no earlier game reached this spot"
+    d[["W", "D", "L", "T"]] = d[["W", "D", "L", "T"]].bfill()
+    out = line.attrs.get("outcome")
+    if out in ("W", "D", "L", "T") and len(d):
+        end = {k: 100.0 if k == out else 0.0 for k in "WDLT"}
+        d = pd.concat([d, pd.DataFrame([dict(label=f"Result: {result}" if result else "Result", n=np.nan,
+                                            note="the result", **end)])], ignore_index=True)
+    return d
+
+
+def win_chance_chart(line: pd.DataFrame, team1: str, team2: str, multi: bool, result: str = "") -> go.Figure:
+    """The side batting first's chance at the start of each innings and after every wicket,
+    ending at the result.  Multi-day: stacked won / drawn / lost (a tie counts with the draw)."""
     c = colours()
-    x = list(range(len(line)))
+    pts = win_line_points(line, result)
+    x = list(range(len(pts)))
     fig = go.Figure()
     if multi:
+        pts = pts.assign(D=pts.D + pts["T"].fillna(0))
         for col, name, colour in (("W", f"{team1} win", c["s1"]), ("D", "Draw", c["dim"]), ("L", f"{team2} win", c["s2"])):
-            fig.add_trace(go.Scatter(x=x, y=line[col], mode="lines", name=name, stackgroup="one",
+            fig.add_trace(go.Scatter(x=x, y=pts[col], mode="lines", name=name, stackgroup="one",
                                      line=dict(width=0.5, color=colour), fillcolor=colour,
-                                     customdata=line.label, hovertemplate="%{customdata}<br>" + name + ": %{y:.0f}%<extra></extra>"))
+                                     customdata=np.stack([pts.label, pts.note], axis=1),
+                                     hovertemplate="%{customdata[0]}<br>" + name + ": %{y:.0f}% (%{customdata[1]})"
+                                                   "<extra></extra>"))
     else:
-        fig.add_trace(go.Scatter(x=x, y=line.W, mode="lines+markers", name=f"{team1} win",
-                                 line=dict(color=c["s1"], width=2.5, shape="spline", smoothing=0.4), marker=dict(size=6),
-                                 customdata=np.stack([line.label, line.n], axis=1),
+        fig.add_trace(go.Scatter(x=x, y=pts.W, mode="lines+markers", name=f"{team1} win",
+                                 line=dict(color=c["s1"], width=2.5), marker=dict(size=6),
+                                 customdata=np.stack([pts.label, pts.note], axis=1),
                                  hovertemplate="%{customdata[0]}<br><b>%{y:.0f}%</b> for " + team1 +
-                                               " (from %{customdata[1]} similar games)<extra></extra>"))
+                                               " (%{customdata[1]})<extra></extra>"))
         fig.add_hline(y=50, line=dict(color=c["muted"], dash="dash", width=1))
     # mark where each innings starts
     for i, (lab, no) in enumerate(zip(line.label, line.innings_no)):
