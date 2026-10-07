@@ -8,6 +8,7 @@ installing a new version of the site never touches them.
 
 from __future__ import annotations
 
+import copy
 import json
 import os
 import re
@@ -86,26 +87,44 @@ def write_atomic(path: Path, data: str | bytes) -> None:
     may read it at any moment)."""
     path = Path(path)
     tmp = path.with_name(f".{path.name}.{os.getpid()}.{time.time_ns()}.tmp")
-    if isinstance(data, str):
-        tmp.write_text(data, encoding="utf-8")
-    else:
-        tmp.write_bytes(data)
-    for attempt in range(20):  # Windows refuses the swap while another reader has the file open: try again
-        try:
-            os.replace(tmp, path)
-            return
-        except PermissionError:
-            if attempt == 19:
-                tmp.unlink(missing_ok=True)
-                raise
-            time.sleep(0.05)
+    try:
+        if isinstance(data, str):
+            tmp.write_text(data, encoding="utf-8")
+        else:
+            tmp.write_bytes(data)
+        for attempt in range(20):  # Windows refuses the swap while another reader has the file open: try again
+            try:
+                os.replace(tmp, path)
+                _JSON_CACHE.pop(str(path), None)
+                return
+            except PermissionError:
+                if attempt == 19:
+                    raise
+                time.sleep(0.05)
+    finally:
+        tmp.unlink(missing_ok=True)  # a full disk or any failure: no half-written temp file left behind
+
+
+_JSON_CACHE: dict[str, tuple[tuple, object]] = {}
 
 
 def read_json(path: Path):
-    """A saved JSON file; a read that races a save (on a disk without atomic swaps) is tried again."""
+    """A saved JSON file; a read that races a save (on a disk without atomic swaps) is tried again.  Pages read
+    the settings many times per click, so a file is only read again once it has changed (its size or time).
+    Returns a fresh copy each time: callers may change it."""
+    path = Path(path)
     for attempt in range(5):
         try:
-            return json.loads(Path(path).read_text(encoding="utf-8"))
+            st = path.stat()
+            sig = (st.st_mtime_ns, st.st_size)
+            hit = _JSON_CACHE.get(str(path))
+            if hit is not None and hit[0] == sig:
+                return copy.deepcopy(hit[1])
+            data = json.loads(path.read_text(encoding="utf-8"))
+            if len(_JSON_CACHE) > 200:
+                _JSON_CACHE.clear()
+            _JSON_CACHE[str(path)] = (sig, data)
+            return copy.deepcopy(data)
         except ValueError:
             if attempt == 4:
                 raise
@@ -137,9 +156,21 @@ class CareerStore:
                     pass
         return out
 
+    # what you set on the pages (saved with save_settings); a career save never takes these from a stale copy
+    YOURS = ("my_teams", "notes", "remembered", "fixtures", "goals")
+
     def save(self, career: Career, settings: CareerSettings) -> None:
         d = self._dir(career.name)
         d.mkdir(parents=True, exist_ok=True)
+        if (d / "settings.json").is_file():
+            # the folder watcher loads the settings, rebuilds the career for a few seconds, then saves: anything you
+            # changed meanwhile (a schedule edit, a note) is on disk now, so it's taken from there, never overwritten
+            try:
+                _, fresh = self.load_settings(career.name)
+                for k in self.YOURS:
+                    setattr(settings, k, getattr(fresh, k))
+            except (OSError, ValueError, TypeError):
+                pass
         settings.updated = time.time()
         write_atomic(d / "career.stats-pack.zip", career.to_pack())
         write_atomic(d / "settings.json", json.dumps(asdict(settings), indent=1))

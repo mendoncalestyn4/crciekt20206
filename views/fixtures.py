@@ -32,7 +32,7 @@ team = c1.selectbox("Schedule for", team_opts, key="fx_team",
                     help="Your teams first (pick them under My team in the sidebar).")
 schedule = state.fixtures(career)
 # what you scheduled, plus everything the team has played since your schedule starts that isn't in it
-tracked = FX.track(career, schedule, auto=[team])
+tracked = state.memo(FX.track, career, schedule, auto=(team,))
 mine_rows = tracked[tracked.team == team] if len(tracked) else tracked
 scheduled_any = any(r.get("team") == team for r in schedule)
 national = team in FX.NATIONS
@@ -121,7 +121,7 @@ with tabs[0]:
                     if nopp:
                         pr = state.memo(FX.format_ids, career, team, nfmt)
                         from ccstats import winprob as WP
-                        p = WP.predict(career, pr, team, nopp, nven if nven in ("home", "away") else "neutral")
+                        p = state.memo(WP.predict, career, pr, team, nopp, nven if nven in ("home", "away") else "neutral")
                         st.markdown(f"🔮 **{team} {p['win']:.0f}%**" + (f" · draw {p['draw']:.0f}%" if p["multi"] else "")
                                     + f" · **{nopp} {p['lose']:.0f}%**")
                         kb = FX.key_battle(career, team, nopp, nfmt)

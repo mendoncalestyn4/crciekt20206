@@ -7,7 +7,7 @@ from ccstats import teamplay as TP
 from ccstats import winprob as WP
 from ccstats.stats import Scope, kind_of
 from ui import state
-from ui.charts import pct, CONFIG, _axis, _layout, bars, fmt
+from ui.charts import ordinal, pct, CONFIG, _axis, _layout, bars, fmt
 from ui.theme import kpis, chart_note, colours, html_table, page_header, safe_section
 
 career = state.current()
@@ -313,7 +313,7 @@ with tab_tests:
                 st.caption("No innings yet.")
             else:
                 first = ib.runs_per_wicket.iloc[0]
-                st.plotly_chart(bars([f"{int(n)}{'st' if n == 1 else 'nd' if n == 2 else 'rd' if n == 3 else 'th'} innings"
+                st.plotly_chart(bars([f"{ordinal(n)} innings"
                                       for n in ib.innings], ib.runs_per_wicket, "Runs per wicket", 1,
                                      texts=[f"{v:.1f} ({(v - first) / first * 100:+.0f}% v the 1st)" if i else f"{v:.1f}"
                                             for i, v in enumerate(ib.runs_per_wicket)],
@@ -322,7 +322,7 @@ with tab_tests:
                                                                   ib.all_out_pct)]),
                                 width="stretch", config=CONFIG, key="in_m_bars")
                 last_ = ib.iloc[-1]
-                chart_note(f"The {int(last_.innings)}{'st' if last_.innings == 1 else 'nd' if last_.innings == 2 else 'rd' if last_.innings == 3 else 'th'} "
+                chart_note(f"The {ordinal(last_.innings)} "
                            f"innings averages {last_.runs_per_wicket:.1f} runs per wicket against {first:.1f} in the 1st "
                            f"({(last_.runs_per_wicket - first) / first * 100:+.0f}%).",
                            "Shows how much harder batting gets as the pitch wears, which tells you how big a "

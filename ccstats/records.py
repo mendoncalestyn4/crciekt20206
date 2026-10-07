@@ -106,6 +106,21 @@ def played_order(career) -> pd.DataFrame:
     return m.sort_values(["saved_at", "_d"], kind="stable").drop(columns="_d").reset_index(drop=True)
 
 
+def by_played(career, rows: pd.DataFrame) -> pd.DataFrame:
+    """Rows with a match_id in the order the matches were played (see played_order), so a "last 5" ends on
+    the game you played last even when the game saved it with an earlier date."""
+    key = (len(career.matches), id(career.matches))
+    cached = getattr(career, "_played_pos", None)
+    if cached is None or cached[0] != key:
+        cached = (key, {mid: i for i, mid in enumerate(played_order(career).match_id)})
+        try:
+            career._played_pos = cached
+        except AttributeError:
+            pass
+    pos = cached[1]
+    return rows.assign(_p=rows.match_id.map(pos)).sort_values("_p", kind="stable").drop(columns="_p")
+
+
 def recent_sources(career, n: int = 10) -> list[str]:
     """The files of the n most recently played matches."""
     return list(played_order(career).source.tail(n))
@@ -130,6 +145,8 @@ def new_record_lines(career, sources: list[str], min_matches: int = 5) -> list[t
             if t.empty or "season" in name:  # a season total grows every match; only one-match records get an alert
                 continue
             first = t.iloc[0]
+            if name == "Highest individual scores" and len(t) >= 2 and int(first["sort"]) // 2 == int(t.iloc[1]["sort"]) // 2:
+                continue  # 150* only equals 150: the record is shared, not broken
             if first.source in sources and (len(t) < 2 or t.iloc[1]["rank"] != 1):
                 who = f"{first.holder} {first.value}"
                 out.append((first.source, f"New record in {section}! {name}: {who}"

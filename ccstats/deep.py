@@ -24,7 +24,13 @@ def percentiles(pool: pd.DataFrame, column: str, better: str) -> pd.Series:
     v = pool[column].astype(float)
     r = v.rank(ascending=(better == "low"), method="min")
     n = v.notna().sum()
-    return (r / n * 100).clip(lower=1) if n else r
+    if n < 2:  # top or bottom of a pool of one says nothing
+        return pd.Series(np.nan, index=pool.index)
+    # top X% counts from the best (the best of 10 is top 10%), bottom X% from the worst (the last of 10 is bottom 10%,
+    # never "bottom 1%"); top_text reads p <= 50 as "top p%" and p > 50 as "bottom (101 - p)%"
+    top = r / n * 100
+    bottom = (n - r + 1) / n * 100
+    return top.where(top <= 50, (101 - bottom).clip(lower=51)).clip(lower=1)
 
 
 def top_text(p: float) -> str:

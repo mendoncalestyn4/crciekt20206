@@ -42,9 +42,13 @@ def record_timeline(career, ids) -> pd.DataFrame:
         t = t.assign(_k=key).sort_values("_k", kind="stable")
         best = None
         steps = []
+        # what has to be beaten: the score itself (150* only equals 150) and the wickets (fewer runs conceded don't
+        # beat the same number of wickets in a season); best figures do count fewer runs (7/40 beats 7/50)
+        plain = name in ("Highest individual scores", "Most wickets in a season")
         for r in t.itertuples():
-            if best is None or (r.sort < best if low else r.sort > best):  # equalling a record isn't beating it
-                best = r.sort
+            v = record_number(name, r.sort) if plain else r.sort
+            if best is None or (v < best if low else v > best):  # equalling a record isn't beating it
+                best = v
                 steps.append(dict(record=name, holder=r.holder, value=r.value, team=r.team, against=r.against,
                                   date=r.date, match_id=r.match_id, source=r.source, sort=r.sort))
         for i, s in enumerate(steps):
@@ -708,8 +712,7 @@ def season_review(career, section: str, season: str, my_teams: list | None = Non
     bat, bowl, _, base = player_tables(career, Scope(sections=[section], seasons=[season]))
     out["top_bat"] = bat.sort_values(["runs", "average"], ascending=False).head(3)
     out["top_bowl"] = bowl[bowl.wickets > 0].sort_values(["wickets", "average"], ascending=[False, True]).head(3)
-    best = WP.best_matches(career, sec_ids, top=len(sec_ids))
-    out["best_match"] = best[best.match_id.isin(ids)].head(3)
+    out["best_match"] = WP.best_matches(career, sec_ids, top=3, only=ids)
     up = PL.upsets(career, section, top=10 ** 6)
     out["upset"] = up[up.match_id.isin(ids)].head(1)
     # records broken: the record as it stood before this season, beaten during it (the new mark, and the old one)

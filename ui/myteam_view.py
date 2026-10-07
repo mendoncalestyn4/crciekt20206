@@ -105,7 +105,7 @@ def render(career, team: str, key: str) -> None:
         sched = state.fixtures(career)
         from ccstats import fixtures as FX
         # your schedule, plus what the team played since it starts that isn't in it (and the next knockout game)
-        tr = FX.track(career, sched, auto=[team])
+        tr = state.memo(FX.track, career, sched, auto=(team,))
         mine_tr = tr[tr.team == team] if len(tr) else tr
         if len(mine_tr) and (any(r.get("team") == team for r in sched) or mine_tr.status.isin(["next"]).any()):
             from ccstats import winprob as WP

@@ -112,11 +112,16 @@ def label_annotations(named, dots, x_range, y_range, c: dict, width_px: float = 
 def unique_labels(labels) -> list[str]:
     """Row names for a bar chart, never two the same: plotly draws bars with the same name on
     one row (one hides the other), so a repeat gets (2), (3) …"""
-    seen: dict[str, int] = {}
+    labels = [str(v) for v in labels]
+    taken = set()
     out = []
-    for x in (str(v) for v in labels):
-        seen[x] = seen.get(x, 0) + 1
-        out.append(x if seen[x] == 1 else f"{x} ({seen[x]})")
+    for x in labels:
+        name, k = x, 1
+        while name in taken or (name != x and name in labels):  # never a name another bar already has
+            k += 1
+            name = f"{x} ({k})"
+        taken.add(name)
+        out.append(name)
     return out
 
 
@@ -520,7 +525,7 @@ def rank_chart(d: pd.DataFrame) -> go.Figure:
     return fig
 
 
-def win_line_points(line: pd.DataFrame, result: str = "") -> pd.DataFrame:
+def win_line_points(line: pd.DataFrame, result: str = "", multi: bool = True) -> pd.DataFrame:
     """The points the win-chance chart draws: the line as worked out, where a spot no
     earlier game reached keeps the point before it (said so in its hover), and, once
     the match is over, a last point at the result (100% for the winner)."""
@@ -534,6 +539,8 @@ def win_line_points(line: pd.DataFrame, result: str = "") -> pd.DataFrame:
     out = line.attrs.get("outcome")
     if out in ("W", "D", "L", "T") and len(d):
         end = {k: 100.0 if k == out else 0.0 for k in "WDLT"}
+        if out == "T" and not multi:  # one line for the side batting first: a tie is neither won nor lost, so 50%
+            end = dict(W=50.0, D=0.0, L=50.0, T=0.0)
         d = pd.concat([d, pd.DataFrame([dict(label=f"Result: {result}" if result else "Result", n=np.nan,
                                             note="the result", **end)])], ignore_index=True)
     return d
@@ -543,7 +550,7 @@ def win_chance_chart(line: pd.DataFrame, team1: str, team2: str, multi: bool, re
     """The side batting first's chance at the start of each innings and after every wicket,
     ending at the result.  Multi-day: stacked won / drawn / lost (a tie counts with the draw)."""
     c = colours()
-    pts = win_line_points(line, result)
+    pts = win_line_points(line, result, multi)
     x = list(range(len(pts)))
     fig = go.Figure()
     if multi:
@@ -572,11 +579,17 @@ def win_chance_chart(line: pd.DataFrame, team1: str, team2: str, multi: bool, re
     return fig
 
 
-def record_steps_chart(steps: pd.DataFrame, y: list[float], unit: str) -> go.Figure:
-    """A record's history: a step up (or down, for lowest totals) each time it was beaten."""
+def record_steps_chart(steps: pd.DataFrame, y: list[float], unit: str, now=None) -> go.Figure:
+    """A record's history: a step up (or down, for lowest totals) each time it was beaten.
+    `now`: the latest match in these games, so the record that still stands runs on to it."""
     c = colours()
     fig = go.Figure()
-    xs = list(steps.date) + ([steps.until.iloc[-1] if pd.notna(steps.until.iloc[-1]) else steps.date.max()] if len(steps) else [])
+    end = None
+    if len(steps):
+        end = steps.until.iloc[-1] if pd.notna(steps.until.iloc[-1]) else (now if now is not None and pd.notna(now) else
+                                                                           steps.date.max())
+        end = max(pd.Timestamp(end), pd.Timestamp(steps.date.max()))
+    xs = list(steps.date) + ([end] if len(steps) else [])
     ys = list(y) + ([y[-1]] if len(y) else [])
     fig.add_trace(go.Scatter(x=xs, y=ys, mode="lines", line=dict(color=c["s1"], width=2.5, shape="hv"), hoverinfo="skip",
                              showlegend=False))

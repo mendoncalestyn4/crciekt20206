@@ -81,7 +81,7 @@ with t_duo:
         with st.container(border=True):
             st.markdown("**Caught and bowled** · bowlers who took the catch themselves")
             if cab.empty:
-                st.caption("None yet.")
+                st.caption("Nothing yet.")
             else:
                 st.dataframe(pd.DataFrame({"Bowler": cab.bowler, "Team": cab.team, "Wickets": cab.wickets}).head(12),
                              hide_index=True, width="stretch")

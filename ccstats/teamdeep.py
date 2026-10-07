@@ -44,7 +44,7 @@ def dominance(career, ids) -> pd.DataFrame:
     rows = []
     for r in m.itertuples():
         kind = KIND.get(r.format, "t20")
-        winner = r.winner or r.tiebreak_winner
+        winner = r.winner or (r.tiebreak_winner if r.result_type == "tie" else "")  # a drawn knockout is a draw
         for team in (r.home, r.away):
             if winner:
                 cls = margin_class(r, kind)

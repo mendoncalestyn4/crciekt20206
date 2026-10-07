@@ -160,13 +160,13 @@ with tab_over:
         with st.container(border=True):
             st.markdown("**Average partnership for each wicket**")
             pw = A.partnership_by_wicket(career, tm.match_id, team)
-            st.plotly_chart(bars([f"{int(w)}{'st' if w == 1 else 'nd' if w == 2 else 'rd' if w == 3 else 'th'} wicket" for w in pw.wicket],
+            st.plotly_chart(bars([f"{ordinal(w)} wicket" for w in pw.wicket],
                                  pw.average, "Average stand (runs)", 1, notes=[f"{n} stands · best {b}" for n, b in zip(pw.stands, pw.best)]),
                             width="stretch", config=CONFIG, key="tm_pship")
             if len(pw):
                 b_ = pw.sort_values("average", ascending=False).iloc[0]
                 n_ = int(b_.wicket)
-                chart_note(f"Their best stand is for the {n_}{'st' if n_ == 1 else 'nd' if n_ == 2 else 'rd' if n_ == 3 else 'th'} "
+                chart_note(f"Their best stand is for the {ordinal(n_)} "
                            f"wicket: {b_.average:.1f} runs on average over {int(b_.stands)} stands (best {int(b_.best)}). "
                            f"The opening stand averages {pw.average.iloc[0]:.1f}.",
                            "Shows which partnerships hold the innings together and where it tends to fall apart.")

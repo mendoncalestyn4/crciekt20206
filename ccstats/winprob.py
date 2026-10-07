@@ -15,6 +15,8 @@ from __future__ import annotations
 
 from itertools import product
 
+import weakref
+
 import numpy as np
 import pandas as pd
 
@@ -75,10 +77,24 @@ def kind_of_ids(career, ids) -> str:
     return KIND.get(m.format.mode().iloc[0], "t20") if len(m) else "t20"
 
 
+_CACHES: dict[int, dict] = {}
+
+
+def _cache_of(st_: pd.DataFrame) -> dict:
+    """Lookups built from one states table, kept beside it (not in its attrs, which pandas copies into every
+    table made from it): tied to that very table, and dropped when it goes."""
+    k = id(st_)
+    c = _CACHES.get(k)
+    if c is None or c["ref"]() is not st_ or c["len"] != len(st_):
+        c = {"ref": weakref.ref(st_, lambda _r, k=k: _CACHES.pop(k, None)), "len": len(st_)}
+        _CACHES[k] = c
+    return c
+
+
 def _index(st_: pd.DataFrame) -> dict:
     """The states grouped by (innings, side batting) as numpy arrays, built once per table."""
-    cached = st_.attrs.get("_index")
-    idx = cached[1] if cached is not None and cached[0] == (len(st_), id(st_)) else None  # never a filtered copy's
+    cache = _cache_of(st_)
+    idx = cache.get("index")
     if idx is None:
         idx = {}
         codes = {"W": 0, "D": 1, "L": 2, "T": 3}
@@ -86,7 +102,7 @@ def _index(st_: pd.DataFrame) -> dict:
         for key, g in st_.assign(_m=mids).groupby(["innings_no", "t1_batting"]):
             idx[key] = (g.wickets.to_numpy(), g.lead.to_numpy(dtype=float), g.outcome.map(codes).to_numpy(),
                         g._m.to_numpy(), g.match_id.to_numpy())
-        st_.attrs["_index"] = ((len(st_), id(st_)), idx)
+        cache["index"] = idx
     return idx
 
 
@@ -136,11 +152,11 @@ def chance(st_: pd.DataFrame, innings_no: int, t1_batting: bool, wickets: int, l
 
 def _own_states(section_states: pd.DataFrame, match_id: str):
     """This match's rows of the section's states (grouped once and kept with them), or None if it isn't there."""
-    groups = section_states.attrs.get("_by_match")
-    if groups is None or groups[0] != len(section_states):
-        groups = (len(section_states), {k: g for k, g in section_states.groupby("match_id", sort=False)})
-        section_states.attrs["_by_match"] = groups
-    g = groups[1].get(match_id)
+    cache = _cache_of(section_states)
+    groups = cache.get("by_match")
+    if groups is None:
+        groups = cache["by_match"] = {k: g for k, g in section_states.groupby("match_id", sort=False)}
+    g = groups.get(match_id)
     return None if g is None else g.reset_index(drop=True)
 
 
@@ -268,7 +284,8 @@ def predict(career, ids, mine: str, opp: str, venue: str = "neutral") -> dict:
         ra, rb = float(e.get(mine, 1500.0)), float(e.get(opp, 1500.0))
     p = 1 / (1 + 10 ** ((rb - ra) / 400))
     steps.append(("Ratings", f"Elo {ra:.0f} v {rb:.0f}", p * 100))
-    g = TP.games(career, ids)
+    from .records import by_played
+    g = by_played(career, TP.games(career, ids))  # the last 5 played, not the last 5 dates
     last = {t: g[g.team == t].tail(5) for t in (mine, opp)}
     wa, wb = int((last[mine].outcome == "W").sum()), int((last[opp].outcome == "W").sum())
     adj = float(np.clip((wa - wb) * 0.015, -0.06, 0.06))
@@ -432,9 +449,12 @@ def match_report(career, match_id: str, line: pd.DataFrame | None = None) -> str
     return " ".join(sents)
 
 
-def best_matches(career, ids, top: int = 15) -> pd.DataFrame:
-    """Every match in these ids rated for excitement, best first."""
+def best_matches(career, ids, top: int = 15, only=None) -> pd.DataFrame:
+    """Every match in these ids rated for excitement, best first (`only`: rate just these of them, still judged
+    against all of `ids`, e.g. one season of a section)."""
     m = career.matches[career.matches.match_id.isin(ids)]
+    if only is not None:
+        m = m[m.match_id.isin(only)]
     if m.empty:
         return pd.DataFrame(columns=["match_id", "date", "home", "away", "result", "rating", "why"])
     kind = kind_of_ids(career, ids)

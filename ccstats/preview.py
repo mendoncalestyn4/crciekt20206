@@ -18,10 +18,17 @@ def _score_text(career, mid: str, team: str) -> str:
     return " & ".join(parts) or "–"
 
 
+def ordinal(n) -> str:
+    """1st, 2nd, 3rd, 4th … 11th, 12th, 13th, 21st."""
+    n = int(n)
+    return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
+
+
 def recent_xi(career, ids, team: str, games: int = 3) -> set[str]:
     """Everyone who played for `team` in their last `games` matches here."""
     tm = career.matches[career.matches.match_id.isin(ids) & ((career.matches.home == team) | (career.matches.away == team))]
-    last = tm.sort_values(["date", "match_id"]).match_id.tail(games)
+    from .records import by_played
+    last = by_played(career, tm.sort_values(["date", "match_id"])).match_id.tail(games)
     b = career.batting[career.batting.match_id.isin(last) & (career.batting.team == team)]
     return set(b.player)
 
@@ -76,7 +83,8 @@ def meetings(career, ids, mine: str, opp: str) -> dict:
         cards.append(dict(match_id=r.match_id, date=r.date, section=r.section, event=r.event, stage=r.stage,
                           home=r.home, away=r.away, result=r.result, potm=r.player_of_match, sides=side,
                           story=story(career, r)))
-    last5 = list(me.outcome.tail(5))
+    from .records import by_played
+    last5 = list(by_played(career, me).outcome.tail(5))
     return dict(games=games, record=rec, last5=last5, how=how, typical=typical, key=key, cards=cards)
 
 
@@ -276,7 +284,8 @@ def big_matches(career, ids, team: str) -> dict:
 def trend(career, ids, team: str, last: int = 5) -> dict:
     """Recent results and their Elo rating now and `last` games ago (each section rated separately)."""
     from .rankings import team_elo
-    g = TP.games(career, ids)
+    from .records import by_played
+    g = by_played(career, TP.games(career, ids))
     t = g[g.team == team]
     m = career.matches[career.matches.match_id.isin(ids)]
     out = dict(last=list(t.outcome.tail(last)), recent=TP.record(t.tail(last)), before=TP.record(t.iloc[:-last]),
@@ -342,7 +351,7 @@ def game_plan(career, ids, mine: str, opp: str) -> list[str]:
         r = ws.sort_values("vs").iloc[0]
         if r.vs <= -20:
             n = int(r.wicket)
-            lines.append(f"**Their weak spot: the {n}{'st' if n == 1 else 'nd' if n == 2 else 'rd' if n == 3 else 'th'} wicket.** "
+            lines.append(f"**Their weak spot: the {ordinal(n)} wicket.** "
                          f"That stand averages {r.average:.0f}, against {r['all']:.0f} for every team here: one more "
                          "wicket there and they wobble.")
     at = attack_to_target(career, ids, opp)

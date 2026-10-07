@@ -9,7 +9,7 @@ from ccstats import seasonal as SN
 from ccstats import teamplay as TP
 from ccstats import winprob as WP
 from ui import state
-from ui.charts import _n, pct, CONFIG, bars, fmt, say, signed
+from ui.charts import ordinal, _n, pct, CONFIG, bars, fmt, say, signed
 from ui.theme import (chart_note, esc, form_strip, html_table, kpis, match_link, page_header, player_link, safe_section)
 
 career = state.current()
@@ -246,16 +246,16 @@ with tab_them:
             if ws.empty:
                 st.caption("Not enough innings yet.")
             else:
-                st.plotly_chart(bars([f"{int(w)}{'st' if w == 1 else 'nd' if w == 2 else 'rd' if w == 3 else 'th'} wicket"
+                st.plotly_chart(bars([f"{ordinal(w)} wicket"
                                       for w in ws.wicket], ws.vs, "% above or below the average stand", 0, signed=True,
                                      texts=[f"{v:+.0f}% · {a:.0f} v {b:.0f}" for v, a, b in zip(ws.vs, ws.average, ws["all"])],
                                      notes=[f"{n} stands" for n in ws.stands]),
                                 width="stretch", config=CONFIG, key="op_weak")
                 best_ = ws.sort_values("vs").iloc[-1]
                 worst_ = ws.sort_values("vs").iloc[0]
-                chart_note(f"Their {int(best_.wicket)}{'st' if best_.wicket == 1 else 'nd' if best_.wicket == 2 else 'rd' if best_.wicket == 3 else 'th'} "
+                chart_note(f"Their {ordinal(best_.wicket)} "
                            f"wicket stand is {best_.vs:+.0f}% against every team's ({best_.average:.0f} v {best_['all']:.0f} "
-                           f"runs); the {int(worst_.wicket)}{'st' if worst_.wicket == 1 else 'nd' if worst_.wicket == 2 else 'rd' if worst_.wicket == 3 else 'th'} "
+                           f"runs); the {ordinal(worst_.wicket)} "
                            f"is {worst_.vs:+.0f}% ({worst_.average:.0f} v {worst_['all']:.0f}). Blue: better than "
                            "average; red: worse.",
                            "Finds where their batting order is soft, so you know which wicket to push hardest for.")

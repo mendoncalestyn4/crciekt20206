@@ -71,7 +71,8 @@ def make_series(team: str, opponent: str, fmt: str, n: int, venue: str = "", mon
 
 def make_tournament(team: str, name: str, fmt: str, month: str = "", games: int = 0) -> list[dict]:
     label = name + (f" · {month_label(month)}" if month else "")
-    return [dict(id=new_id(), team=team, series=label, opponent="", format=fmt, no=0, venue="neutral", date="",
+    # no venue: a tournament's home and away (a World Cup at home, an IPL home game) come from the scorecards
+    return [dict(id=new_id(), team=team, series=label, opponent="", format=fmt, no=0, venue="", date="",
                  month=month, games=int(games or 0))]
 
 
@@ -108,8 +109,8 @@ def _fmt_of(word: str) -> str:
     return "First-class"
 
 
-def _find_team(text: str, known: list[str]) -> tuple[str, str]:
-    """(team, text without it) — full names first, then short forms, then a unique first word."""
+def _find_team(text: str, known: list[str], guess: bool = True) -> tuple[str, str]:
+    """(team, text without it) — full names first, then short forms, then (if `guess`) a unique first word."""
     low = f" {text} "
     for t in sorted(known, key=len, reverse=True):
         if re.search(rf"(?<![a-z]){re.escape(t.lower())}(?![a-z])", low):
@@ -117,7 +118,7 @@ def _find_team(text: str, known: list[str]) -> tuple[str, str]:
     for w in low.split():
         if w in ABBR and ABBR[w] in known:
             return ABBR[w], re.sub(rf"(?<![a-z]){re.escape(w)}(?![a-z])", " ", low).strip()
-    for w in low.split():
+    for w in low.split() if guess else []:
         if len(w) >= 4 and w not in {"test", "tests", "home", "away"}:
             hits = [t for t in known if any(x.startswith(w) for x in t.lower().split())]
             if len(hits) == 1:
@@ -169,7 +170,9 @@ def parse_line(line: str, team: str, known: list[str]) -> tuple[list[dict], str]
         s = s.replace(mg.group(0), " ")
     own = re.compile(rf"(?<![a-z]){re.escape(team.lower())}(?![a-z])")
     s = own.sub(" ", s)  # "India v England": your own team isn't the opponent
-    opp, rest = _find_team(s, [t for t in known if t != team])
+    # "Indian Premier League" is a tournament, not a series v Mumbai Indians: no guessing from one word then
+    tourney = re.search(r"\b(cup|trophy|championship|league|tournament|wtc|final)\b", s)
+    opp, rest = _find_team(s, [t for t in known if t != team], guess=not tourney)
     if opp:
         if not fmt:
             mf = re.search(rf"\b{_FMT_WORDS}\b", rest)
@@ -452,8 +455,13 @@ def track(career, fixtures: list[dict], auto=()) -> pd.DataFrame:
         named = cand[[all(w in ev.lower() for w in words) for ev in cand.event]] if words else cand
         if len(named):
             cand = named
+        elif pd.isna(a):
+            cand = cand.iloc[0:0]  # no month and no competition by that name: it can't be told which games it means
         if pd.notna(a):
             cand = cand[(cand.date >= a - pd.Timedelta(days=15)) & (cand.date <= a + pd.Timedelta(days=75))]
+        elif len(cand):  # no month: the latest time it was played, not every edition ever
+            last = cand.sort_values("date").iloc[-1]
+            cand = cand[(cand.event == last.event) & (cand.season == last.season)]
         tournament_rows({k: r[k] for k in COLUMNS}, cand, False)
     # whatever the team played from the start of its schedule that isn't in it: added, series by series
     for team in auto:
@@ -530,13 +538,13 @@ def track(career, fixtures: list[dict], auto=()) -> pd.DataFrame:
     # a fixture still to come can't be before a match already played in the same series (a knockout game
     # follows the last one within days; the next match of a series by its number)
     for (team, series), g in t.groupby(["team", "series"]):
-        played = g[g.status == "played"]
-        if len(played):
-            last = played.anchor.max()
+        done = g[g.status == "played"]
+        if len(done):
+            last = done.anchor.max()
             for i in g[(g.status == "to come")].index:
                 if t.at[i, "anchor"] <= last:
                     gap = 1 if t.at[i, "kind"] == "tournament" else int(t.at[i, "no"] or 1) - int(
-                        played.no.max() if played.no.notna().any() else 0)
+                        done.no.max() if done.no.notna().any() else 0)
                     t.at[i, "anchor"] = last + pd.Timedelta(days=max(gap, 1))
     t = t.sort_values(["team", "anchor", "no"]).reset_index(drop=True)
     # a fixture whose time has long gone with no scorecard (wrong month or opponent, or a file the game didn't save)
@@ -590,7 +598,9 @@ def with_venues(career, tracked: pd.DataFrame):
     your schedule are untouched.  Returns the same career when nothing changes."""
     if tracked is None or tracked.empty:
         return career
-    played = tracked[(tracked.match_id != "") & tracked.match_id.notna() & tracked.venue.isin(["home", "away", "neutral"])]
+    # series only: a tournament row's venue (older schedules saved "neutral") never overrides its scorecards
+    played = tracked[(tracked.match_id != "") & tracked.match_id.notna() & tracked.venue.isin(["home", "away", "neutral"])
+                     & (tracked.kind == "match")]
     if played.empty:
         return career
     m = career.matches.copy()
@@ -692,6 +702,11 @@ def series_outlook(career, team: str, s: dict) -> dict:
     return dict(predict=pr, left=left, odds=odds, scorelines=lines, need=need)
 
 
+def _ordinal(n: int) -> str:
+    """1st, 2nd, 3rd, 4th … 11th, 12th, 13th, 21st, 22nd."""
+    return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
+
+
 def _n_word(n: int) -> str:
     return {0: "no", 1: "one", 2: "two", 3: "three", 4: "four", 5: "five"}.get(n, str(n))
 
@@ -718,7 +733,8 @@ def key_battle(career, team: str, opp: str, fmt: str) -> list[str]:
 def form_and_h2h(career, team: str, opp: str, fmt: str) -> dict:
     from . import teamplay as TP
     ids = format_ids(career, team, fmt)
-    g = TP.games(career, ids)
+    from .records import by_played
+    g = by_played(career, TP.games(career, ids))
     return dict(form={t: list(g[g.team == t].outcome.tail(5)) for t in (team, opp)},
                 h2h=TP.record(g[(g.team == team) & (g.opponent == opp)]))
 
@@ -726,7 +742,8 @@ def form_and_h2h(career, team: str, opp: str, fmt: str) -> dict:
 def players_to_watch(career, team: str, fmt: str, last: int = 10) -> dict:
     """The side's leading run-scorers and wicket-takers in their last `last` matches in this format."""
     m = career.matches
-    mine = m[(m.format == fmt) & ((m.home == team) | (m.away == team))].sort_values("date").tail(last).match_id
+    from .records import by_played
+    mine = by_played(career, m[(m.format == fmt) & ((m.home == team) | (m.away == team))].sort_values("date")).tail(last).match_id
     b = career.batting[career.batting.match_id.isin(mine) & (career.batting.team == team) & career.batting.did_bat]
     w = career.bowling[career.bowling.match_id.isin(mine) & (career.bowling.team == team)]
     return dict(bat=b.groupby("player").runs.sum().sort_values(ascending=False).head(2),
@@ -806,7 +823,8 @@ def milestone_countdown(career, tracked: pd.DataFrame, team: str) -> pd.DataFram
     m = career.matches
     for fmt, fx in todo.groupby("format"):
         fx = fx.sort_values("anchor")
-        mine = m[(m.format == fmt) & ((m.home == team) | (m.away == team))].sort_values("date")
+        from .records import by_played
+        mine = by_played(career, m[(m.format == fmt) & ((m.home == team) | (m.away == team))].sort_values("date"))
         if mine.empty:
             continue
         recent = set(mine.tail(5).match_id)  # the current squad: played in the last 5 matches
@@ -875,7 +893,7 @@ def goal_progress(career, tracked: pd.DataFrame, goal: dict) -> dict:
         t = race["table"].reset_index(drop=True)
         pos = int(t.index[t.team == team][0]) + 1 if team in set(t.team) else None
         ch = race["chance"]
-        now = f"{pos}{({1: 'st', 2: 'nd', 3: 'rd'}.get(pos, 'th'))} now" if pos else "not in the table yet"
+        now = f"{_ordinal(pos)} now" if pos else "not in the table yet"
         need = (f"; needs {race['need']} win{'s' if race['need'] != 1 else ''} from {race['remaining']} Tests left"
                 if race["remaining"] and race["need"] is not None else "")
         if not np.isfinite(ch):

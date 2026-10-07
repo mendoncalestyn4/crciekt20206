@@ -122,7 +122,7 @@ with tabs[3], safe_section("heroes in defeat"):
         if rows:
             html_table(rows, ["Player", "Score", "For", "Against", "Match"], raw={0, 4})
         else:
-            st.caption("None yet.")
+            st.caption("Nothing yet.")
     with right, st.container(border=True):
         st.markdown("**Best bowling in a losing side**")
         rows = [[player_link(r.player), f"{r.wickets}/{r.runs}", r.team, r.opposition,
@@ -130,7 +130,7 @@ with tabs[3], safe_section("heroes in defeat"):
         if rows:
             html_table(rows, ["Player", "Figures", "For", "Against", "Match"], raw={0, 4})
         else:
-            st.caption("None yet.")
+            st.caption("Nothing yet.")
 
 # ---------------------------------------------------------------- 13
 with tabs[4], safe_section("carried the team"):
@@ -143,7 +143,7 @@ with tabs[4], safe_section("carried the team"):
         if rows:
             html_table(rows, ["Player", "Runs", "Team total", "Share", "Match"], numeric={1, 2, 3}, raw={0, 4})
         else:
-            st.caption("None yet.")
+            st.caption("Nothing yet.")
     with right, st.container(border=True):
         st.markdown("**Who carries their team** · share of the team's runs over all their innings (5+)")
         top = cp.head(12)

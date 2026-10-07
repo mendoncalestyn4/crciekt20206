@@ -251,6 +251,5 @@ def team_records(career, team: str, section: str) -> list[tuple[str, str]]:
 def in_played_order(career, g: pd.DataFrame) -> pd.DataFrame:
     """Rows with a match_id, in the order the matches were played (the game can save
     scorecards dated out of order), so "last 5" ends on the latest result."""
-    from .records import played_order
-    pos = {mid: i for i, mid in enumerate(played_order(career).match_id)}
-    return g.assign(_p=g.match_id.map(pos)).sort_values("_p", kind="stable").drop(columns="_p")
+    from .records import by_played
+    return by_played(career, g)

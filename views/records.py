@@ -106,7 +106,7 @@ with safe_section("record timeline"), st.container(border=True):
         steps = tl[tl.record == pick_tl].reset_index(drop=True)
         ys = [SN.record_number(pick_tl, v) for v in steps["sort"]]
         unit = SN.RECORD_UNIT.get(pick_tl, "runs")
-        st.plotly_chart(record_steps_chart(steps, ys, unit), width="stretch", config=CONFIG, key="rc_tl_chart")
+        st.plotly_chart(record_steps_chart(steps, ys, unit, career.matches[career.matches.match_id.isin(ids)].date.max()), width="stretch", config=CONFIG, key="rc_tl_chart")
         first, now = steps.iloc[0], steps.iloc[-1]
         beaten = len(steps) - 1
         chart_note(f"{pick_tl} in {section}{'' if season == 'All seasons' else ' ' + season}: first set at {first.value} by "

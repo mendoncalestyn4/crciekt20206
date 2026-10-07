@@ -297,7 +297,15 @@ def achievements(career, ids=None) -> pd.DataFrame:
     allb = career.batting[career.batting.match_id.isin(ids)]
     team_games = allb.drop_duplicates(["match_id", "team"]).assign(date=lambda x: x.match_id.map(info.date),
                                                                    section=lambda x: x.match_id.map(sec))
-    first = b.sort_values("date").groupby(["player", "team", "section"]).head(1)
+    # the debut is the first game they played (batting or not), and a hundred in either innings of it counts
+    allw = career.bowling[career.bowling.match_id.isin(ids)]
+    appear = pd.concat([allb[["match_id", "player", "team"]], allw[["match_id", "player", "team"]]]).drop_duplicates()
+    appear = appear.assign(date=appear.match_id.map(info.date), section=appear.match_id.map(sec))
+    debut = appear.sort_values(["date", "match_id"], kind="stable").groupby(["player", "team", "section"]).head(1)
+    debut_games = set(zip(debut.match_id, debut.player, debut.team))
+    in_debut = b[[k in debut_games for k in zip(b.match_id, b.player, b.team)]]
+    first = in_debut.sort_values(["runs", "innings_no"], ascending=[False, True], kind="stable") \
+        .drop_duplicates(["match_id", "player", "team"])
     rows = []
     for r in first[first.runs >= 100].itertuples():
         before = team_games[(team_games.team == r.team) & (team_games.section == r.section) & (team_games.date < r.date)]
