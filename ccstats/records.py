@@ -112,11 +112,11 @@ def played_order(career) -> pd.DataFrame:
 def by_played(career, rows: pd.DataFrame) -> pd.DataFrame:
     """Rows with a match_id in the order the matches were played (see played_order), so a "last 5" ends on
     the game you played last even when the game saved it with an earlier date."""
-    times = getattr(career, "times", {}) or {}
-    key = (len(career.matches), id(career.matches), len(times), id(times))  # the order rests on both
+    times = getattr(career, "times", None)
+    key = (len(career.matches), len(times or {}))  # the order rests on the matches and the file times
     cached = getattr(career, "_played_pos", None)
-    if cached is None or cached[0] != key or cached[2] is not career.matches:
-        cached = (key, {mid: i for i, mid in enumerate(played_order(career).match_id)}, career.matches)
+    if cached is None or cached[0] != key or cached[2] is not career.matches or cached[3] is not times:
+        cached = (key, {mid: i for i, mid in enumerate(played_order(career).match_id)}, career.matches, times)
         try:
             career._played_pos = cached
         except AttributeError:

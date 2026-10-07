@@ -7,7 +7,8 @@ from ccstats import teamplay as TP
 from ccstats import winprob as WP
 from ccstats.stats import Scope, kind_of
 from ui import state
-from ui.charts import ordinal, pct, CONFIG, _axis, _layout, bars, fmt
+from ccstats.stats import ordinal
+from ui.charts import pct, CONFIG, _axis, _layout, bars, fmt
 from ui.theme import kpis, chart_note, colours, html_table, page_header, safe_section
 
 career = state.current()

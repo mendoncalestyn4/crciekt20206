@@ -9,7 +9,8 @@ from ccstats import seasonal as SN
 from ccstats import teamplay as TP
 from ccstats import winprob as WP
 from ui import state
-from ui.charts import ordinal, _n, pct, CONFIG, bars, fmt, say, signed
+from ccstats.stats import ordinal
+from ui.charts import _n, pct, CONFIG, bars, fmt, say, signed
 from ui.theme import (chart_note, esc, form_strip, html_table, kpis, match_link, page_header, player_link, safe_section)
 
 career = state.current()

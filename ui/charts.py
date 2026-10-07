@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
-from ccstats.stats import Stat, ordinal  # noqa: F401  (ordinal: used by the pages)
+from ccstats.stats import Stat
 
 from .theme import colours
 
@@ -161,8 +161,6 @@ def ranked_bars(rows: pd.DataFrame, stat: Stat, best: bool, highlight: str = "")
 
 def _num(v, d=1):
     return fmt(v, d) if v is not None and not (isinstance(v, float) and np.isnan(v)) else "–"
-
-
 
 
 def _n(k, one: str, many: str | None = None) -> str:

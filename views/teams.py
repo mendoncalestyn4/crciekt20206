@@ -11,7 +11,8 @@ from ui.theme import colours
 from ccstats.stats import Scope, bars_for, kind_of
 from ui import state
 from ui.xi import best_xi_cached, team_sheet
-from ui.charts import _n, ordinal, signed, pct, CONFIG, bars, fmt, race_chart, say
+from ccstats.stats import ordinal
+from ui.charts import _n, signed, pct, CONFIG, bars, fmt, race_chart, say
 from ui.theme import chart_note, html_table, kpis, match_link, page_header, player_link, safe_section
 
 career = state.current()

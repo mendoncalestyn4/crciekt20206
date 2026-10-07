@@ -28,10 +28,12 @@ def percentiles(pool: pd.DataFrame, column: str, better: str) -> pd.Series:
         return pd.Series(np.nan, index=pool.index)
     # top X% counts from the best (the best of 10 is top 10%), bottom X% from the worst (the last of 10 is bottom 10%,
     # never "bottom 1%"); top_text reads p <= 50 as "top p%" and p > 50 as "bottom (101 - p)%"
-    top = r / n * 100
-    bottom = (n - r + 1) / n * 100
+    top = r / n * 100  # ties at the top share the best place…
+    worst = v.rank(ascending=(better == "low"), method="max")
+    bottom = (n - worst + 1) / n * 100  # …and ties at the bottom the worst one
     # the middle of a small pool (3rd of 5) is in neither half: it reads "top 50%"
-    return top.where(top <= 50, (101 - bottom).where(bottom <= 50, 50)).clip(lower=1)
+    p = top.where(top <= 50, (101 - bottom).where(bottom <= 50, 50)).clip(lower=1)
+    return p.where(v.notna())  # no figure: no place
 
 
 def top_text(p: float) -> str:

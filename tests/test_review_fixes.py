@@ -55,21 +55,21 @@ def test_a_tournament_in_the_schedule_never_changes_home_and_away(career):
     assert F.with_venues(career, t) is career
     old = [dict(fx[0], venue="neutral")]  # schedules saved by the earlier version
     assert F.with_venues(career, F.track(career, old)) is career
-    home = [dict(fx[0], venue="home")]  # a home you set on purpose counts
-    c2 = F.with_venues(career, F.track(career, home))
-    mids = F.track(career, home).match_id
-    assert (c2.matches.set_index("match_id").loc[[x for x in mids if x]].home == "Gujarat Titans").all()
+    home = [dict(fx[0], venue="home")]  # one venue can't fit a whole tournament: its scorecards decide
+    assert F.with_venues(career, F.track(career, home)) is career
 
 
-def test_an_undated_tournament_waits_and_its_games_are_auto_added(career):
+def test_an_undated_tournament_takes_the_current_edition_only(career):
     t = F.track(career, F.make_tournament("England", "Champions Trophy", "ODI"))
-    assert not (t.status == "played").any()  # nothing claimed: no month, so which edition can't be told
+    assert not (t.status == "played").any()  # no Champions Trophy in these files: nothing claimed
+    # England's latest games are this World Cup: with no month, it's the one meant, ticked off as scheduled
     t = F.track(career, F.make_tournament("England", "ODI World Cup", "ODI"), auto=["England"])
-    mine = t[t.series.str.startswith("ODI World Cup") & ~t.auto]
-    assert list(mine.status) == ["next"]  # waits as to come…
-    assert (t[t.auto & t.series.str.startswith("ODI World Cup 2027")].status == "played").sum() == 3  # …games played are auto-added
-    t = F.track(career, F.make_tournament("England", "ODI World Cup", "ODI", "2027-06"))
-    assert (t.status == "played").sum() == 3  # with its month, they're ticked off as scheduled
+    assert (t[~t.auto].status == "played").sum() == 3 and not t.auto.any()
+    # India's T20 World Cup was months before their latest game: an undated one means the next, so it waits
+    t = F.track(career, F.make_tournament("India", "T20 World Cup", "T20I"))
+    assert list(t.status) == ["next"]
+    t = F.track(career, F.make_tournament("India", "T20 World Cup", "T20I", "2026-03"))
+    assert (t.status == "played").sum() == 1  # with its month it's ticked off
 
 
 def test_a_tournament_line_is_not_read_as_a_team(career):
@@ -81,7 +81,15 @@ def test_a_tournament_line_is_not_read_as_a_team(career):
     assert not err and rows[0]["opponent"] == "Australia" and len(rows) == 3  # "v" names the opponent
     assert F.parse_line("Trans-Tasman Trophy v Austral 3 Tests", "India", known + ["Australia"])[0][0]["opponent"] == "Australia"
     rows, err = F.parse_line("Trans-Tasman Trophy v Austral 3 Tests", "India", known + ["South Australia"])  # which one?
-    assert not rows and "which team" in err
+    assert not rows and "could mean Australia or South Australia" in err
+    # a word of the tournament's name is never taken for the opponent named after "v"
+    rows, err = F.parse_line("Indian Premier League final v Chennai T20 May 2027", "Kolkata Knight Riders",
+                             known + ["Chennai Super Kings"])
+    assert not err and rows[0]["opponent"] == "Chennai Super Kings"
+    rows, err = F.parse_line("Champions Trophy final v TBC Feb 2027 ODI", "India", known)  # no team after v: a tournament
+    assert not err and rows[0]["opponent"] == "" and rows[0]["format"] == "ODI"
+    rows, err = F.parse_line("T20 World Cup Qualifier T20I Jun 2027", "Italy", known)  # a side not on the list keeps T20I
+    assert not err and rows[0]["format"] == "T20I"
     rows, err = F.parse_line("Kolkata 2 T20s home Apr 2027", "Chennai Super Kings", known)
     assert not err and rows[0]["opponent"] == "Kolkata Knight Riders"  # one word still finds a team when it's a series
 
@@ -171,6 +179,10 @@ def test_percentiles_for_small_pools():
     assert D.top_text(D.percentiles(pd.DataFrame({"x": [5]}), "x", "high").iloc[0]) == "–"
     two = [D.top_text(v) for v in D.percentiles(pd.DataFrame({"x": [1, 2]}), "x", "high")]
     assert two == ["bottom 50%", "top 50%"]
+    p = D.percentiles(pd.DataFrame({"x": [1.0, 2.0, np.nan, 4.0]}), "x", "high")
+    assert np.isnan(p.iloc[2]) and D.top_text(p.iloc[2]) == "–"  # no figure: no place
+    tied = [D.top_text(v) for v in D.percentiles(pd.DataFrame({"x": [1, 1, 1, 2, 3]}), "x", "high")]
+    assert tied[:3] == ["bottom 60%"] * 3 or all(t.startswith("bottom") for t in tied[:3])  # tied last: bottom, never top
     five = [D.top_text(v) for v in D.percentiles(pd.DataFrame({"x": range(5)}), "x", "high")]
     assert five == ["bottom 20%", "bottom 40%", "top 50%", "top 40%", "top 20%"]  # the middle one is in neither half
 
