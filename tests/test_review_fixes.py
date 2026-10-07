@@ -409,3 +409,46 @@ def test_a_tournament_for_a_side_with_no_tournament_games_at_all(career):
     for fmt in ("T20I", "ODI", "Test"):
         t = F.track(career, F.make_tournament(side, "T20 World Cup", fmt, "2026-03"))  # never "no column match_id"
         assert not (t.status == "played").any()
+
+
+@pytest.mark.parametrize("line,team,want", [
+    ("IPL in India Apr 2027", "Chennai Super Kings", ("Indian Premier League · Apr 2027", "", 0)),  # a host, not an opponent
+    ("ILT20 UAE Jan 2027", "Mumbai Indians", ("ILT20 · Jan 2027", "", 0)),
+    ("Asia Cup Qualifier 2 matches Mar 2027", "Nepal", ("Asia Cup Qualifier · Mar 2027", "", 2)),  # 2 is a count here
+    ("T20 World Cup Qualifier 1 match Feb 2027", "Italy", ("T20 World Cup Qualifier · Feb 2027", "", 1)),
+    ("IPL Qualifier 1 T20 May 2027", "Chennai Super Kings", ("Indian Premier League · May 2027", "", 0)),  # the stage's 1
+    ("three tests v sa (h) 2027-11", "India", ("v South Africa · 3 Tests · home · Nov 2027", "South Africa", 0)),
+])
+def test_review_nine_lines(line, team, want):
+    known = sorted(F.NATIONS) + ["Chennai Super Kings", "Mumbai Indians"]
+    rows, err = F.parse_line(line, team, known)
+    assert not err and (rows[0]["series"], rows[0]["opponent"], rows[0]["games"]) == want
+
+
+def test_a_line_with_only_a_stage_asks_which_tournament():
+    for line in ("Final v TBC Jun 2027", "Semi-final v ? Mar 2027"):
+        rows, err = F.parse_line(line, "India", sorted(F.NATIONS))
+        assert not rows and "which tournament" in err
+    rows, err = F.parse_line("Super Eight Final May 2027", "India", sorted(F.NATIONS) + ["Chennai Super Kings"])
+    assert not rows or rows[0]["opponent"] != "Chennai Super Kings"  # "super" is never a guess at a team
+
+
+@pytest.mark.parametrize("typed,name", [
+    ("U19 World Cup", "U19 ODI World Cup"), ("T20I World Cup", "T20 World Cup"), ("ODI World Cup Qualifier", "ODI World Cup Qualifier"),
+    ("Legends World Cup", "Legends ODI World Cup"), ("Women's T20 World Cup", "Women's T20 World Cup"),
+    ("Big Bash semi-final", "Big Bash"), ("IPL", "Indian Premier League"), ("Vitality Blast", "T20 Blast"),
+])
+def test_the_picker_and_typed_lines_name_tournaments_the_same(typed, name):
+    assert F.canonical_tournament(typed) == name
+    rows, err = F.parse_line(f"{typed} Jun 2027", "Ireland", sorted(F.NATIONS))
+    if err:  # a name with no format in it ("Big Bash") is asked for one, never guessed
+        assert "say the format" in err
+        rows, err = F.parse_line(f"{typed} T20 Jun 2027", "Ireland", sorted(F.NATIONS))
+    assert not err and rows[0]["series"].split(" · ")[0] == name
+
+
+def test_a_known_competition_is_matched_exactly():
+    assert F._event_ok("ODI World Cup", ["world", "cup"], "ODI World Cup")
+    assert not F._event_ok("ODI World Cup", ["world", "cup"], "ODI World Cup Qualifier")
+    assert F._event_ok("County Championship", ["county", "championship"], "County Championship · Division 1")
+    assert not F._event_ok("Some Cup", ["some", "cup"], "U19 Some Cup")  # a word that makes another event
