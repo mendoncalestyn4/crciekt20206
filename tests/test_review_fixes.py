@@ -326,8 +326,12 @@ def test_a_misspelt_opponent_with_a_number_of_matches_is_an_error():
     ("WTC Final v ? 1 Test Jun 2027", "India", "World Test Championship Final · Jun 2027", "Test", ""),
     ("Indian Premier League Mumbai Indians 1 match Apr 2027", "Chennai Super Kings", "v Mumbai Indians · 1 T20 · Apr 2027", "T20",
      "Mumbai Indians"),
-    ("IPL Qualifier 1 May 2027", "Chennai Super Kings", "Indian Premier League · Qualifier 1 · May 2027", "T20", ""),
-    ("Champions Trophy final v TBC Feb 2027 ODI", "India", "Champions Trophy · Final · Feb 2027", "ODI", ""),
+    ("IPL Qualifier 1 May 2027", "Chennai Super Kings", "Indian Premier League · May 2027", "T20", ""),
+    ("Champions Trophy final v TBC Feb 2027 ODI", "India", "Champions Trophy · Feb 2027", "ODI", ""),
+    ("T20 World Cup in India Feb 2026", "England", "T20 World Cup · Feb 2026", "T20I", ""),  # the host, not an opponent
+    ("Champions Trophy Pakistan Feb 2027", "India", "Champions Trophy · Feb 2027", "ODI", ""),
+    ("World Cup v Pakistan T20I", "India", "v Pakistan · 1 T20I", "T20I", "Pakistan"),  # the typed format wins
+    ("U19 World Cup Qualifier Jan 2027", "India", "U19 ODI World Cup Qualifier · Jan 2027", "ODI", ""),
     ("U19 World Cup Jan 2027", "India", "U19 ODI World Cup · Jan 2027", "ODI", ""),
     ("Asia Cup Qualifier Aug 2027", "Italy", "Asia Cup Qualifier · Aug 2027", "ODI", ""),
     ("PSL Feb 2027", "Lahore Qalandars", "Pakistan Super League · Feb 2027", "T20", ""),
@@ -339,22 +343,15 @@ def test_more_lines_read_right(line, team, series, fmt, opp):
     assert rows[0]["series"] == series and rows[0]["format"] == fmt and rows[0]["opponent"] == opp
 
 
-def test_a_final_line_is_its_own_row_and_takes_only_the_final(career):
+def test_a_final_line_is_the_tournament_and_its_knockouts_come_by_themselves(career):
     known = sorted(set(career.matches.home) | set(career.matches.away))
-    rows = []
-    for line in ("IPL May 2026 T20", "IPL Qualifier 1 May 2026", "IPL final May 2026"):
-        r, e = F.parse_line(line, "Gujarat Titans", known)
-        assert not e
-        rows, added = F.merge(rows, r)
-        assert added == 1  # the final isn't taken for a copy of the tournament's own row
+    rows, added = F.merge(*[F.parse_line("IPL May 2026 T20", "Gujarat Titans", known)[0]] * 1, [])
+    final, err = F.parse_line("IPL final May 2026", "Gujarat Titans", known)
+    assert not err and F.merge(rows, final)[1] == 0  # the same tournament: already there
     t = F.track(career, rows)
     m = career.matches.set_index("match_id")
-    for series, stage in (("Indian Premier League · Qualifier 1 · May 2026", "Qualifier 1"),
-                          ("Indian Premier League · Final · May 2026", "Final")):
-        x = t[t.series == series]
-        assert len(x) == 1 and x.status.iloc[0] == "played" and m.stage[x.match_id.iloc[0]] == stage
-    group = t[t.series == "Indian Premier League · May 2026"]
-    assert not m.loc[group.match_id].knockout.any() and t.match_id.is_unique
+    stages = {m.stage[x] for x in t[t.status == "played"].match_id}
+    assert {"Qualifier 1", "Final"} <= stages  # its knockout games are ticked off on the tournament's own row
 
 
 def test_an_undated_tournament_that_is_over_means_the_next_one(career):
