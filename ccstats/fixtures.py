@@ -122,6 +122,8 @@ _KNOWN_KEYS = sorted(KNOWN, key=lambda k: (-len(k), k))  # the longest name firs
 _ALIASES = {"ipl": "indian premier league", "psl": "pakistan super league", "bbl": "big bash league",
             "cpl": "caribbean premier league", "bpl": "bangladesh premier league", "lpl": "lanka premier league",
             "mlc": "major league cricket"}
+_STAGE_WORDS = re.compile(r"(?<![a-z])(?:(?:semi|quarter)[- ]?)?finals?(?![a-z])|(?<![a-z])(?:qualifier|eliminator)\s*[12](?![0-9])"
+                          r"|(?<![a-z])eliminator(?![a-z])|(?<![a-z])play-?offs?(?![a-z])")
 _PLACEHOLDER = r"\b(?:tbc|tba|tbd|opponent|opposition|winner)\b|\?+"  # "v TBC", "v ?": the opponent isn't known yet
 _MODIFIERS = r"u19|u-19|under-19|under 19|legends|women's|womens|women|emerging|youth|masters|veterans"
 
@@ -156,6 +158,17 @@ def _guess_team(parts: list[str], known: list[str]) -> tuple[str, str, list[str]
     return "", "", unsure
 
 
+def canonical_tournament(name: str) -> str:
+    """The site's name for a typed tournament name ("IPL" -> Indian Premier League, "Vitality Blast" -> T20
+    Blast), so its games are found; a name the site doesn't know is kept as typed."""
+    low = re.sub(rf"\b({'|'.join(_ALIASES)})\b", lambda mm: _ALIASES[mm.group(1)], f" {name.lower()} ")
+    low = _STAGE_WORDS.sub(" ", low)
+    hit = next((k for k in _KNOWN_KEYS if re.search(rf"(?<![a-z0-9]){re.escape(k)}(?![a-z0-9])", low)), None)
+    if hit:
+        return next((t for t in TOURNAMENTS if t.lower() == KNOWN[hit][0].lower()), KNOWN[hit][0])
+    return " ".join(name.split())
+
+
 def parse_line(line: str, team: str, known: list[str]) -> tuple[list[dict], str]:
     """Rows for one typed line, or an explanation of what's missing.
 
@@ -169,6 +182,9 @@ def parse_line(line: str, team: str, known: list[str]) -> tuple[list[dict], str]
     if not raw or raw.startswith("#"):
         return [], ""
     s = " " + re.sub(r"[·,;|–—]", " ", raw.lower()) + " "
+    # a stage ("final", "Qualifier 1", "semi-final") names no event of its own: a tournament's knockout games come
+    # with it by themselves. Taken out first, so "Qualifier 1 May 2027" isn't read as 1 May, or 1 match
+    s = _STAGE_WORDS.sub(" ", s)
     date = month = ""
     try:
         if (m := RE_ISO.search(s)):
@@ -222,11 +238,13 @@ def parse_line(line: str, team: str, known: list[str]) -> tuple[list[dict], str]
     placeholder = has_v and re.match(rf"\s*(?:{_PLACEHOLDER})", later)  # "final v TBC", "v ?"
     # beside a known competition with no "v", a team is the opponent only when a number of matches is given
     # ("IPL Mumbai Indians 1 match"); otherwise it's the host ("T20 World Cup in India") and it's a tournament
-    alone = bool(comp_key) and not has_v and not (n or games)
+    # an international tournament with no "v": a country named is where it's played ("T20 World Cup in India 7
+    # matches"); in a league a team named is the opponent ("IPL Mumbai Indians Apr 2027")
+    alone = bool(comp_key) and not has_v and KNOWN[comp_key][2] == "International"
     opp, rest = "", team_text
     if not placeholder and not alone:
         opp, rest = _exact_team(team_text, others)
-    if not opp and not placeholder and not (comp_key and not has_v):
+    if not opp and not placeholder and not alone and not (comp_key and not has_v):
         guess, word, unsure = _guess_team([x for x in parts if not TOURNEY_RE.search(x)], others)
         if guess:
             opp, rest = guess, re.sub(rf"(?<![a-z]){re.escape(word)}(?![a-z])", " ", team_text)
@@ -542,16 +560,26 @@ def track(career, fixtures: list[dict], auto=()) -> pd.DataFrame:
             out_rows.append(to_come(row))
 
     played_by_team: dict[str, pd.DataFrame] = {}
+    taken_eds: set[tuple] = set()  # (team, event, season) a tournament row already has
     for _, r in fx[fx.opponent == ""].iterrows():
         a = anchor_of(r)
         team = r["team"]
-        cand = m[((m.home == team) | (m.away == team)) & (m.format == r["format"]) & ~m.competition.isin(BILATERAL)
-                 & ~m.match_id.isin(claimed)]
+        every = m[((m.home == team) | (m.away == team)) & (m.format == r["format"]) & ~m.competition.isin(BILATERAL)]
         words = [w for w in re.findall(r"[a-z0-9]+", r["series"].lower().split("·")[0]) if w not in ("the", "final", "odi")]
-        named = cand[[all(w in ev.lower() for w in words) for ev in cand.event]] if words else cand
+        # a tournament is found by its name (a name matching no competition here claims nothing: its row shows
+        # "no scorecard" once its month has passed, so a wrong name is noticed)
+        named_all = (every[np.array([all(w in ev.lower() for w in words) for ev in every.event], dtype=bool)] if words
+                     else every.iloc[0:0])  # a boolean array: an empty list would select columns, not rows
+        named = named_all[~named_all.match_id.isin(claimed)]
+        cand = named.iloc[0:0]
         if pd.notna(a):
-            cand = named if len(named) else cand
-            cand = cand[(cand.date >= a - pd.Timedelta(days=15)) & (cand.date <= a + pd.Timedelta(days=75))]
+            # the month says which edition: the one with games around it; then all of that edition's games
+            # (the IPL typed as "Mar 2026" keeps its May playoffs)
+            near = named_all[(named_all.date >= a - pd.Timedelta(days=15)) & (named_all.date <= a + pd.Timedelta(days=75))]
+            eds = set(zip(near.event, near.season))
+            if eds and all((team, e, s_) in taken_eds for e, s_ in eds):
+                continue  # the same tournament as a row above (e.g. typed twice with different months)
+            cand = named[np.array([(e, s_) in eds for e, s_ in zip(named.event, named.season)], dtype=bool)]
         elif words and len(named):
             # no month: only an edition the team is in the middle of: one of its games among the team's last 8
             # played and within 60 days of the last one (a county's Blast runs alongside its Championship games),
@@ -561,15 +589,16 @@ def track(career, fixtures: list[dict], auto=()) -> pd.DataFrame:
                 from .records import by_played
                 played_by_team[team] = by_played(career, m[(m.home == team) | (m.away == team)])
             recent = set(played_by_team[team].match_id.tail(8))
-            last_day = played_by_team[team].date.iloc[-1] if len(played_by_team[team]) else pd.NaT
+            last_day = played_by_team[team].date.tail(8).max() if len(played_by_team[team]) else pd.NaT
             last_ed = named.sort_values(["date", "match_id"]).iloc[-1]
             ed = named[(named.event == last_ed.event) & (named.season == last_ed.season)]
             mine_ed = m[(m.event == last_ed.event) & (m.season == last_ed.season) & ((m.home == team) | (m.away == team))]
             over = mine_ed.knockout.any() and knockout_next(career, mine_ed, team) is None
             recent_enough = pd.notna(last_day) and ed.date.max() >= last_day - pd.Timedelta(days=60)
             cand = ed if set(ed.match_id) & recent and recent_enough and not over else named.iloc[0:0]
-        else:
-            cand = cand.iloc[0:0]  # no month and no competition by that name: nothing can be told
+            if not cand.empty and (team, last_ed.event, last_ed.season) in taken_eds:
+                continue  # the same tournament as a row above
+        taken_eds.update((team, e, s_) for e, s_ in zip(cand.event, cand.season))
         tournament_rows({k: r[k] for k in COLUMNS}, cand, False)
     # whatever the team played from the start of its schedule that isn't in it: added, series by series
     for team in auto:

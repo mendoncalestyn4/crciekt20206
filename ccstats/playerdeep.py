@@ -303,7 +303,7 @@ def achievements(career, ids=None) -> pd.DataFrame:
     appear = appear.assign(date=appear.match_id.map(info.date), section=appear.match_id.map(sec))
     debut = appear.sort_values(["date", "match_id"], kind="stable").groupby(["player", "team", "section"]).head(1)
     debut_games = set(zip(debut.match_id, debut.player, debut.team))
-    in_debut = b[[k in debut_games for k in zip(b.match_id, b.player, b.team)]]
+    in_debut = b[np.array([k in debut_games for k in zip(b.match_id, b.player, b.team)], dtype=bool)]  # (an empty list would pick columns)
     first = in_debut.sort_values(["runs", "innings_no"], ascending=[False, True], kind="stable") \
         .drop_duplicates(["match_id", "player", "team"])
     rows = []

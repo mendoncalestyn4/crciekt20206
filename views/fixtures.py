@@ -275,7 +275,8 @@ with tabs[1], safe_section("add matches"):
             tyr = b2.selectbox("Year", years, index=years.index(year_now) if year_now in years else 0, key="fx_tyear")
             games = b3.number_input("Games you'll play (0 = don't know)", 0, 15, 0, key="fx_tgames")
             if st.button("Add tournament", type="primary", key="fx_add_tour", disabled=not name):
-                rows, added = FX.merge(schedule, FX.make_tournament(team, name, tfmt, f"{tyr:04d}-{tmo:02d}", int(games)))
+                rows, added = FX.merge(schedule, FX.make_tournament(team, FX.canonical_tournament(name), tfmt,
+                                                                     f"{tyr:04d}-{tmo:02d}", int(games)))
                 if added:
                     state.set_fixtures(career, rows)
                     st.toast(f"Added {name}", icon="🏆")

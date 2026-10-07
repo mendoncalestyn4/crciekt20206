@@ -358,3 +358,54 @@ def test_an_undated_tournament_that_is_over_means_the_next_one(career):
     # India won this T20 World Cup's final: an undated "T20 World Cup" now means the next edition
     t = F.track(career, F.make_tournament("India", "T20 World Cup", "T20I"))
     assert list(t.status) == ["next"]
+
+
+def test_a_tournament_typed_by_its_start_month_keeps_its_playoffs(career):
+    t = F.track(career, F.make_tournament("Gujarat Titans", "Indian Premier League", "T20", "2026-03"))
+    m = career.matches.set_index("match_id")
+    mine = career.matches[(career.matches.event == "Indian Premier League") & (career.matches.season == "2026")
+                          & ((career.matches.home == "Gujarat Titans") | (career.matches.away == "Gujarat Titans"))]
+    got = t[t.status == "played"].match_id
+    assert set(got) == set(mine.match_id) and {"Qualifier 1", "Final"} <= {m.stage[x] for x in got}
+
+
+def test_the_same_tournament_twice_is_one_row(career):
+    rows = F.make_tournament("Gujarat Titans", "Indian Premier League", "T20", "2026-03") + \
+        F.make_tournament("Gujarat Titans", "Indian Premier League", "T20", "2026-05")
+    t = F.track(career, rows)
+    assert t.match_id[t.match_id != ""].is_unique
+    assert t.series.nunique() == 1  # the second is the same tournament: no phantom 'to come' or 'no scorecard' row
+
+
+def test_a_name_matching_no_competition_claims_nothing(career):
+    t = F.track(career, F.make_tournament("Gujarat Titans", "Some Other Cup", "T20", "2026-04"))
+    assert not (t.status == "played").any()
+
+
+@pytest.mark.parametrize("line,team,series,games,opp", [
+    ("T20 World Cup in India 7 matches Feb 2026", "England", "T20 World Cup · Feb 2026", 7, ""),  # host, not opponent
+    ("Champions Trophy Pakistan 5 matches Feb 2027", "India", "Champions Trophy · Feb 2027", 5, ""),
+    ("IPL Mumbai Indians Apr 2027", "Chennai Super Kings", "v Mumbai Indians · 1 T20 · Apr 2027", 0, "Mumbai Indians"),
+    ("IPL Qualifier 1 T20 May 2027", "Chennai Super Kings", "Indian Premier League · May 2027", 0, ""),  # 1 isn't a count
+    ("Champions Trophy semi-finals Feb 2027", "India", "Champions Trophy · Feb 2027", 0, ""),
+    ("IPL play-off May 2027", "Chennai Super Kings", "Indian Premier League · May 2027", 0, ""),
+])
+def test_hosts_stages_and_leagues(line, team, series, games, opp):
+    known = sorted(F.NATIONS) + ["Chennai Super Kings", "Mumbai Indians"]
+    rows, err = F.parse_line(line, team, known)
+    assert not err and rows[0]["series"] == series and rows[0]["games"] == games and rows[0]["opponent"] == opp
+
+
+def test_names_typed_in_the_picker_are_the_sites_names():
+    assert [F.canonical_tournament(x) for x in ("IPL", "Vitality Blast", "Royal London One-Day Cup", "IPL final",
+                                                 "t20 world cup", "My Own Cup")] == \
+        ["Indian Premier League", "T20 Blast", "One-Day Cup", "Indian Premier League", "T20 World Cup", "My Own Cup"]
+
+
+def test_a_tournament_for_a_side_with_no_tournament_games_at_all(career):
+    m = career.matches
+    side = next(t for t in sorted(set(m.home) | set(m.away))
+                if m[((m.home == t) | (m.away == t)) & ~m.competition.isin(["Test", "ODI", "T20I"])].empty)
+    for fmt in ("T20I", "ODI", "Test"):
+        t = F.track(career, F.make_tournament(side, "T20 World Cup", fmt, "2026-03"))  # never "no column match_id"
+        assert not (t.status == "played").any()
