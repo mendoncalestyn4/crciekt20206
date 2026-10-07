@@ -100,10 +100,7 @@ it: the game saves some scorecards dated months ahead.
 
 **What the scorecards can't tell us:** there's no ball-by-ball detail, toss, captains, ages or fixtures, so there's
 nothing on who scored off which bowler, the toss, or games still to come. Partnerships name both batters only where
-the scorecard leaves no doubt (about two thirds of them, nearly all the big ones). The scorecards don't name the
-ground either, so the team named first is taken as the home side. That holds for County, Blast and Hundred games and
-for touring sides, but IPL scorecards sometimes name your own team first away from home, so read IPL home and away
-figures for your own team with care.
+the scorecard leaves no doubt (about two thirds of them, nearly all the big ones).
 
 **Hover** over any bar or dot to see the player's full figures and rank. Hover a chart and click the
 **camera** in its top-right corner to save it as a picture.
