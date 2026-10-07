@@ -87,7 +87,7 @@ def test_a_tournament_line_is_not_read_as_a_team(career):
                              known + ["Chennai Super Kings"])
     assert not err and rows[0]["opponent"] == "Chennai Super Kings"
     rows, err = F.parse_line("Champions Trophy final v TBC Feb 2027 ODI", "India", known)  # no team after v: a tournament
-    assert not err and rows[0]["opponent"] == "" and rows[0]["format"] == "ODI" and rows[0]["series"].startswith("Champions Trophy Final ·")
+    assert not err and rows[0]["opponent"] == "" and rows[0]["format"] == "ODI" and rows[0]["series"].startswith("Champions Trophy ·")
     # the opponent before "v" (your own team after it)
     assert F.parse_line("Austral v India 3 Tests Dec 2027", "India", sorted(F.NATIONS))[0][0]["opponent"] == "Australia"
     assert F.parse_line("Kolkata v Chennai 2 T20s Apr 2027", "Chennai Super Kings",
@@ -96,7 +96,7 @@ def test_a_tournament_line_is_not_read_as_a_team(career):
     rows, err = F.parse_line("Trans-Tasman Trophy v Austrlia 3 Tests", "India", sorted(F.NATIONS))
     assert not rows and "check the spelling" in err
     # known competitions by their names, in their own formats
-    for line, team_, name, fmt in (("Royal London One-Day Cup May 2027", "Kent", "Royal London One-day Cup", "List A"),
+    for line, team_, name, fmt in (("Royal London One-Day Cup May 2027", "Kent", "One-Day Cup", "List A"),
                                    ("The Hundred Aug 2027", "Kent", "The Hundred", "The Hundred"),
                                    ("Vitality Blast May 2027", "Kent", "T20 Blast", "T20"),
                                    ("Indian Premier League Apr 2027", "Chennai Super Kings", "Indian Premier League", "T20"),
@@ -290,3 +290,27 @@ def test_the_schedule_reader_never_breaks_on_anything(career):
             assert r["opponent"] != me and r["format"] in F.FORMATS, (line, r)
             assert (r["opponent"] == "") == (r["no"] == 0)  # a tournament row, or a numbered match of a series
         assert len(rows) <= 10
+
+
+@pytest.mark.parametrize("line,team,name,fmt", [
+    ("WTC Final v TBC 1 Test Jun 2027", "India", "World Test Championship Final", "Test"),
+    ("Asia Cup (T20I) Sep 2027", "India", "Asia Cup", "T20I"),
+    ("Asia Cup T20I edition Sep 2027", "India", "Asia Cup", "T20I"),
+    ("v TBC Champions Trophy final ODI Feb 2027", "India", "Champions Trophy", "ODI"),
+    ("Super Smash T20 Jan 2027", "Auckland", "Super Smash", "T20"),
+    ("Pakistan Super League T20 Feb 2027", "Lahore Qalandars", "Pakistan Super League", "T20"),
+    ("Bangladesh Premier League Jan 2027", "Lahore Qalandars", "Bangladesh Premier League", "T20"),
+    ("T20 World Cup Qualifier Jun 2027", "Italy", "T20 World Cup Qualifier", "T20I"),
+    ("T20 World Cup Jun 2027", "India", "T20 World Cup", "T20I"),
+    ("World Cup Oct 2027", "India", "ODI World Cup", "ODI"),
+])
+def test_tournament_lines_by_name(line, team, name, fmt):
+    known = sorted(F.NATIONS) + ["Chennai Super Kings", "Auckland", "Lahore Qalandars", "Kent"]
+    rows, err = F.parse_line(line, team, known)
+    assert not err and rows[0]["opponent"] == "" and rows[0]["series"].split(" · ")[0] == name and rows[0]["format"] == fmt
+
+
+def test_a_misspelt_opponent_with_a_number_of_matches_is_an_error():
+    for line in ("Trans-Tasman Trophy v Austrlia 3 matches", "Trans-Tasman Trophy v Austrlia 3 Tests"):
+        rows, err = F.parse_line(line, "India", sorted(F.NATIONS))
+        assert not rows and "check the spelling" in err
