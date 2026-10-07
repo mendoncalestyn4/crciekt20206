@@ -1,0 +1,818 @@
+"""Your schedule.  You add series and tournaments on the Fixtures page (with the
+pickers, or typed one per line); each fixture is ticked off when its scorecard
+turns up, matched by teams, format and order (dates are optional: a fixture takes
+its exact date from its scorecard).  On top of that: the next match, series
+previews and live series situations, the World Test Championship race with your
+remaining Tests, milestone countdowns, season goals, series reports, a year
+calendar, and home / away taken from your schedule."""
+
+from __future__ import annotations
+
+import copy
+import math
+import re
+import uuid
+from itertools import product
+
+import numpy as np
+import pandas as pd
+
+FORMATS = ["Test", "ODI", "T20I", "T20", "The Hundred", "List A", "First-class"]
+INTL = {"Test", "ODI", "T20I"}
+NATIONS = {"Afghanistan", "Australia", "Bangladesh", "England", "India", "Ireland", "New Zealand", "Pakistan",
+           "South Africa", "Sri Lanka", "West Indies", "Zimbabwe", "Scotland", "Netherlands", "Nepal", "Namibia",
+           "Oman", "United Arab Emirates", "USA", "Canada", "Papua New Guinea", "Uganda", "Hong Kong", "Kenya"}
+ABBR = {"eng": "England", "aus": "Australia", "ind": "India", "nz": "New Zealand", "sa": "South Africa",
+        "rsa": "South Africa", "wi": "West Indies", "sl": "Sri Lanka", "pak": "Pakistan", "ban": "Bangladesh",
+        "bang": "Bangladesh", "afg": "Afghanistan", "ire": "Ireland", "zim": "Zimbabwe", "sco": "Scotland",
+        "ned": "Netherlands", "uae": "United Arab Emirates", "nep": "Nepal"}
+TOURNAMENTS = ["T20 World Cup", "ODI World Cup", "Champions Trophy", "Asia Cup", "World Test Championship Final"]
+TOURNAMENT_FORMAT = {"T20 World Cup": "T20I", "ODI World Cup": "ODI", "Champions Trophy": "ODI",
+                     "World Test Championship Final": "Test"}
+MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10}
+COLUMNS = ["id", "team", "series", "opponent", "format", "no", "venue", "date", "month", "games"]
+
+
+def new_id() -> str:
+    return uuid.uuid4().hex[:10]
+
+
+def month_label(month: str) -> str:
+    """'2027-01' -> 'Jan 2027'."""
+    if not month:
+        return ""
+    y, mo = month.split("-")
+    return f"{MONTHS[int(mo) - 1]} {y}"
+
+
+def plural(fmt: str, n: int) -> str:
+    word = {"Test": "Test", "ODI": "ODI", "T20I": "T20I", "T20": "T20", "The Hundred": "Hundred game",
+            "List A": "one-day game", "First-class": "first-class game"}.get(fmt, fmt)
+    return f"{n} {word}{'' if n == 1 else 's'}"
+
+
+def series_label(opponent: str, fmt: str, n: int, venue: str, month: str, date: str = "") -> str:
+    when = month_label(month) if month else ""
+    if n == 1 and date:
+        when = pd.Timestamp(date).strftime("%d %b %Y")
+    bits = [f"v {opponent}", plural(fmt, n)] + ([venue] if venue else []) + ([when] if when else [])
+    return " · ".join(bits)
+
+
+def make_series(team: str, opponent: str, fmt: str, n: int, venue: str = "", month: str = "", date: str = "") -> list[dict]:
+    """Rows for a series of n matches (1 = a one-off)."""
+    if date and not month:
+        month = pd.Timestamp(date).strftime("%Y-%m")
+    label = series_label(opponent, fmt, n, venue, month, date)
+    return [dict(id=new_id(), team=team, series=label, opponent=opponent, format=fmt, no=k, venue=venue,
+                 date=date if k == 1 else "", month=month, games=0) for k in range(1, n + 1)]
+
+
+def make_tournament(team: str, name: str, fmt: str, month: str = "", games: int = 0) -> list[dict]:
+    label = name + (f" · {month_label(month)}" if month else "")
+    return [dict(id=new_id(), team=team, series=label, opponent="", format=fmt, no=0, venue="neutral", date="",
+                 month=month, games=int(games or 0))]
+
+
+# --------------------------------------------------------------------------- #
+# typing it instead: one series, match or tournament per line
+# --------------------------------------------------------------------------- #
+
+MON_NAMES = "jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec"
+_FMT_WORDS = r"(tests?|odis?|t20is?|t20s?|one-?day(?:ers?)?|hundred|list a|first-class|fc)"
+RE_ISO = re.compile(r"\b(\d{4})-(\d{1,2})-(\d{1,2})\b")
+RE_DMY = re.compile(rf"\b(\d{{1,2}})(?:st|nd|rd|th)?[\s/.-]+((?:{MON_NAMES})[a-z]*\.?|\d{{1,2}})[\s/.-]+(\d{{4}})\b")
+RE_MON_YEAR = re.compile(rf"\b((?:{MON_NAMES}))[a-z]*\.?\s+(\d{{4}})\b")
+RE_YEAR_MON = re.compile(r"\b(\d{4})-(\d{1,2})\b")
+
+
+def _mon_num(word: str) -> int:
+    return [x.lower() for x in MONTHS].index(word[:3].lower()) + 1
+
+
+def _fmt_of(word: str) -> str:
+    w = word.lower()
+    if w.startswith("test"):
+        return "Test"
+    if w.startswith("odi") or w.startswith("one"):
+        return "ODI"
+    if w.startswith("t20i"):
+        return "T20I"
+    if w.startswith("t20"):
+        return "T20"
+    if "hundred" in w:
+        return "The Hundred"
+    if w == "list a":
+        return "List A"
+    return "First-class"
+
+
+def _find_team(text: str, known: list[str]) -> tuple[str, str]:
+    """(team, text without it) — full names first, then short forms, then a unique first word."""
+    low = f" {text} "
+    for t in sorted(known, key=len, reverse=True):
+        if re.search(rf"(?<![a-z]){re.escape(t.lower())}(?![a-z])", low):
+            return t, re.sub(rf"(?<![a-z]){re.escape(t.lower())}(?![a-z])", " ", low).strip()
+    for w in low.split():
+        if w in ABBR and ABBR[w] in known:
+            return ABBR[w], re.sub(rf"(?<![a-z]){re.escape(w)}(?![a-z])", " ", low).strip()
+    for w in low.split():
+        if len(w) >= 4 and w not in {"test", "tests", "home", "away"}:
+            hits = [t for t in known if any(x.startswith(w) for x in t.lower().split())]
+            if len(hits) == 1:
+                return hits[0], re.sub(rf"(?<![a-z]){re.escape(w)}(?![a-z])", " ", low).strip()
+    return "", text
+
+
+def parse_line(line: str, team: str, known: list[str]) -> tuple[list[dict], str]:
+    """Rows for one typed line, or an explanation of what's missing."""
+    raw = line.strip()
+    if not raw or raw.startswith("#"):
+        return [], ""
+    s = " " + re.sub(r"[·,;|–—]", " ", raw.lower()) + " "
+    date = month = ""
+    try:
+        if (m := RE_ISO.search(s)):
+            date = pd.Timestamp(int(m.group(1)), int(m.group(2)), int(m.group(3))).strftime("%Y-%m-%d")
+            s = s.replace(m.group(0), " ")
+        elif (m := RE_DMY.search(s)):
+            mo = m.group(2)
+            date = pd.Timestamp(int(m.group(3)), int(mo) if mo.isdigit() else _mon_num(mo),
+                                int(m.group(1))).strftime("%Y-%m-%d")
+            s = s.replace(m.group(0), " ")
+    except (ValueError, IndexError):
+        return [], f"couldn't read the date in “{raw}”"
+    if date:
+        month = date[:7]
+    elif (m := RE_MON_YEAR.search(s)):
+        month = f"{int(m.group(2)):04d}-{_mon_num(m.group(1)):02d}"
+        s = s.replace(m.group(0), " ")
+    elif (m := RE_YEAR_MON.search(s)) and 1 <= int(m.group(2)) <= 12:
+        month = f"{int(m.group(1)):04d}-{int(m.group(2)):02d}"
+        s = s.replace(m.group(0), " ")
+    venue = ""
+    mv = re.search(r"\b(home|away|neutral)\b|\((h|a|n)\)|(?:^|\s)@(?=\s)", s)
+    if mv:
+        venue = {"h": "home", "a": "away", "n": "neutral"}.get((mv.group(2) or ""), mv.group(1) or "away")
+        s = s.replace(mv.group(0), " ")
+    fmt, n = "", None
+    mc = re.search(rf"\b(\d+|{'|'.join(WORDS)})\s*(?:x\s*)?{_FMT_WORDS}\b", s)
+    if mc:
+        n = int(mc.group(1)) if mc.group(1).isdigit() else WORDS[mc.group(1)]
+        fmt = _fmt_of(mc.group(2))
+        s = s.replace(mc.group(0), " ")
+    games = 0
+    mg = re.search(r"\b(\d+)\s*(?:matches|match|games|game)\b", s)
+    if mg:
+        games = int(mg.group(1))
+        s = s.replace(mg.group(0), " ")
+    own = re.compile(rf"(?<![a-z]){re.escape(team.lower())}(?![a-z])")
+    s = own.sub(" ", s)  # "India v England": your own team isn't the opponent
+    opp, rest = _find_team(s, [t for t in known if t != team])
+    if opp:
+        if not fmt:
+            mf = re.search(rf"\b{_FMT_WORDS}\b", rest)
+            if not mf:
+                return [], f"say the format (Tests, ODIs or T20Is) in “{raw}”"
+            fmt = _fmt_of(mf.group(1))
+        if fmt == "T20" and opp in NATIONS:  # a T20 between countries is a T20I; a franchise game stays T20
+            fmt = "T20I"
+        if fmt == "T20I" and opp not in NATIONS:
+            fmt = "T20"
+        n = n or games or 1
+        if n > 10:
+            return [], f"{n} matches in one series? Check “{raw}”"
+        return make_series(team, opp, fmt, n, venue, month, date), ""
+    # a tournament
+    name = re.sub(r"\b(v|vs|versus|against|the|in|at|of|for)\b", " ", s)
+    words_ = [w for w in name.split() if w]
+    while words_ and re.fullmatch(r"tests?|odis?|t20is?", words_[-1]):  # "WTC final Test": the format isn't the name
+        words_.pop()
+    name = " ".join(words_)
+    if not re.search(r"cup|trophy|championship|final|league|tournament|wtc|series|games", name):
+        return [], f"couldn't find a team or a tournament in “{raw}”: check the spelling of the opponent"
+    if "wtc" in name.split() or "test championship" in name:
+        name = "world test championship final"
+    title = " ".join(w.upper() if re.fullmatch(r"t20i?|odi|wtc|ipl", w) else w.capitalize() for w in name.split())
+    known_t = next((t for t in TOURNAMENTS if t.lower() == title.lower()), title)
+    tf = fmt or TOURNAMENT_FORMAT.get(known_t) or ("T20I" if "T20" in title else "Test" if "Test" in title or "WTC" in title
+                                                    else "ODI" if "Cup" in title or "Trophy" in title else "")
+    if tf == "T20" and team in NATIONS:
+        tf = "T20I"
+    if not tf:
+        return [], f"say the format for “{raw}” (e.g. add ODI or T20I)"
+    return make_tournament(team, known_t, tf, month, games or (n or 0)), ""
+
+
+def parse_lines(text: str, team: str, known: list[str]) -> tuple[list[dict], list[str]]:
+    rows, errors = [], []
+    for line in text.splitlines():
+        r, e = parse_line(line, team, known)
+        rows += r
+        if e:
+            errors.append(e)
+    return rows, errors
+
+
+def merge(existing: list[dict], new: list[dict]) -> tuple[list[dict], int]:
+    """Add new rows, skipping any series already in the schedule (same team, label and match number)."""
+    have = {(r["team"], r["series"], int(r["no"])) for r in existing}
+    added = [r for r in new if (r["team"], r["series"], int(r["no"])) not in have]
+    return existing + added, len(added)
+
+
+# --------------------------------------------------------------------------- #
+# 141 · ticking fixtures off as their scorecards arrive
+# --------------------------------------------------------------------------- #
+
+BILATERAL = {"Test", "ODI", "T20I"}
+
+
+def _month_start(month: str):
+    return pd.Timestamp(f"{month}-01") if month else pd.NaT
+
+
+def _outcome(r, team: str) -> str:
+    win = r.winner or (r.tiebreak_winner if r.result_type == "tie" else "")
+    if win == team:
+        return "W"
+    if win:
+        return "L"
+    return {"draw": "D", "tie": "T"}.get(r.result_type, "NR")
+
+
+def _score(career, mid: str, team: str) -> str:
+    inn = career.innings[(career.innings.match_id == mid) & (career.innings.team == team)].sort_values("innings_no")
+    return " & ".join(f"{r.runs}" if r.all_out else f"{r.runs}/{r.wickets}{'d' if r.declared else ''}"
+                      for r in inn.itertuples()) or "–"
+
+
+def track(career, fixtures: list[dict]) -> pd.DataFrame:
+    """One row per fixture (tournaments: one row per match played so far, plus one
+    for the games still to come), with: status (played / next / to come), the
+    match it was matched to, the result from the team's side and the scores."""
+    cols = COLUMNS + ["kind", "status", "match_id", "played_date", "outcome", "result", "score", "anchor"]
+    if not fixtures:
+        return pd.DataFrame(columns=cols)
+    m = career.matches.copy()
+    fx = pd.DataFrame(fixtures, columns=COLUMNS)
+    fx["no"] = pd.to_numeric(fx["no"], errors="coerce").fillna(0).astype(int)
+    fx["games"] = pd.to_numeric(fx["games"], errors="coerce").fillna(0).astype(int)
+    fx = fx.fillna("")
+    claimed: set[str] = set()
+    hit: dict[str, str] = {}
+    out_rows = []
+
+    def anchor_of(r):
+        if r["date"]:
+            return pd.Timestamp(r["date"])
+        return _month_start(r["month"])
+
+    # bilateral series and one-off matches, earliest first (undated last)
+    groups = []
+    for key, g in fx[fx.opponent != ""].groupby(["team", "series", "opponent", "format"], sort=False):
+        g = g.sort_values("no")
+        a = anchor_of(g.iloc[0])
+        groups.append((a if pd.notna(a) else pd.Timestamp.max, key, g))
+    for _, (team, _series, opp, fmt), g in sorted(groups, key=lambda x: x[0]):
+        a = anchor_of(g.iloc[0])
+        cand = m[(((m.home == team) & (m.away == opp)) | ((m.home == opp) & (m.away == team))) & (m.format == fmt)
+                 & ~m.match_id.isin(claimed)].sort_values(["date", "match_id"])
+        if cand.empty:
+            continue
+        window = 4 if g.iloc[0]["date"] else 45
+        picked = []
+        series_c = cand[cand.series_id != ""]
+        if fmt in BILATERAL and len(series_c):
+            starts = series_c.groupby("series_id").date.min().sort_values()
+            if pd.notna(a):
+                near = (starts - a).abs()
+                near = near[near <= pd.Timedelta(days=window + (31 if not g.iloc[0]["date"] else 0))]
+                sid = near.idxmin() if len(near) else None
+            else:
+                sid = starts.index[0]
+            if sid is not None:
+                picked = list(series_c[series_c.series_id == sid].sort_values(["series_match_no", "date"]).match_id)
+        if not picked:  # no series id (a league, or a one-off): each fixture takes the next match in its window
+            lo = a - pd.Timedelta(days=window) if pd.notna(a) else pd.Timestamp.min
+            hi = a + pd.Timedelta(days=window + (31 if not g.iloc[0]["date"] else 0) + 7 * len(g)) if pd.notna(a) \
+                else pd.Timestamp.max
+            picked = list(cand[(cand.date >= lo) & (cand.date <= hi)].match_id)
+        for (_, r), mid in zip(g.iterrows(), picked):
+            hit[r["id"]] = mid
+            claimed.add(mid)
+    info = m.set_index("match_id")
+    for _, r in fx[fx.opponent != ""].iterrows():
+        mid = hit.get(r["id"], "")
+        row = {k: r[k] for k in COLUMNS}
+        row.update(kind="match", match_id=mid)
+        if mid:
+            mr = info.loc[mid]
+            row.update(status="played", played_date=mr.date, outcome=_outcome(mr, r["team"]), result=mr.result,
+                       score=f"{r['team']} {_score(career, mid, r['team'])} · {r['opponent']} {_score(career, mid, r['opponent'])}")
+        else:
+            row.update(status="to come", played_date=pd.NaT, outcome="", result="", score="")
+        out_rows.append(row)
+    # tournaments: every match the team plays in it (not a bilateral series), in the month's window
+    for _, r in fx[fx.opponent == ""].iterrows():
+        a = anchor_of(r)
+        team = r["team"]
+        cand = m[((m.home == team) | (m.away == team)) & (m.format == r["format"]) & ~m.competition.isin(BILATERAL)
+                 & ~m.match_id.isin(claimed)]
+        words = [w for w in re.findall(r"[a-z0-9]+", r["series"].lower().split("·")[0]) if w not in ("the", "final", "odi")]
+        named = cand[[all(w in ev.lower() for w in words) for ev in cand.event]] if words else cand
+        if len(named):
+            cand = named
+        if pd.notna(a):
+            cand = cand[(cand.date >= a - pd.Timedelta(days=15)) & (cand.date <= a + pd.Timedelta(days=75))]
+        cand = cand.sort_values(["date", "match_id"])
+        for i, mid in enumerate(cand.match_id, start=1):
+            claimed.add(mid)
+            mr = info.loc[mid]
+            opp = mr.away if mr.home == team else mr.home
+            row = {k: r[k] for k in COLUMNS}
+            row.update(id=f"{r['id']}:{i}", opponent=opp, no=i, kind="tournament", match_id=mid, status="played",
+                       played_date=mr.date, outcome=_outcome(mr, team), result=mr.result,
+                       score=f"{team} {_score(career, mid, team)} · {opp} {_score(career, mid, opp)}")
+            out_rows.append(row)
+        left = max(int(r["games"]) - len(cand), 0) if r["games"] else (0 if len(cand) else 1)
+        stage_done = len(cand) and (cand.stage == "Final").any()
+        if left and not stage_done:
+            row = {k: r[k] for k in COLUMNS}
+            row.update(kind="tournament", no=len(cand) + 1, match_id="", status="to come", played_date=pd.NaT, outcome="",
+                       result="", score="", opponent="")
+            row["games_left"] = left
+            out_rows.append(row)
+    t = pd.DataFrame(out_rows)
+    for c in cols:
+        if c not in t:
+            t[c] = np.nan
+    # the order: played by date; to come by its date, else its month (+ its number), else after everything
+    def key(r):
+        if r["status"] == "played":
+            return r["played_date"]
+        if r["date"]:
+            return pd.Timestamp(r["date"])
+        if r["month"]:
+            return _month_start(r["month"]) + pd.Timedelta(days=int(r["no"] or 0))
+        return pd.Timestamp("2200-01-01") + pd.Timedelta(days=int(r["no"] or 0))
+    t["anchor"] = [key(r) for _, r in t.iterrows()]
+    # a fixture still to come can't be before a match already played in the same series
+    for (team, series), g in t.groupby(["team", "series"]):
+        played = g[g.status == "played"]
+        if len(played):
+            last = played.anchor.max()
+            for i in g[(g.status != "played")].index:
+                if t.at[i, "anchor"] <= last:
+                    t.at[i, "anchor"] = last + pd.Timedelta(days=int(t.at[i, "no"] or 1))
+    t = t.sort_values(["team", "anchor", "no"]).reset_index(drop=True)
+    # a fixture whose time has long gone with no scorecard (wrong month or opponent, or a file the game didn't save)
+    for team, g in t.groupby("team"):
+        last = m[(m.home == team) | (m.away == team)].date.max()
+        if pd.isna(last):
+            continue
+        stale = g[(g.status == "to come") & (g.anchor < last - pd.Timedelta(days=30))]
+        t.loc[stale.index, "status"] = "no scorecard"
+    for team, g in t.groupby("team"):
+        todo = g[g.status == "to come"]
+        if len(todo):
+            t.loc[todo.index[0], "status"] = "next"
+    return t[cols + [c for c in t.columns if c not in cols]]
+
+
+def summary(tracked: pd.DataFrame, team: str) -> dict:
+    g = tracked[tracked.team == team]
+    nx = g[g.status == "next"]
+    return dict(played=int((g.status == "played").sum()), total=len(g),
+                to_come=int(g.status.isin(["to come", "next"]).sum()), missing=int((g.status == "no scorecard").sum()),
+                next=nx.iloc[0] if len(nx) else None,
+                record={o: int((g.outcome == o).sum()) for o in ("W", "L", "D", "T", "NR")})
+
+
+def series_groups(tracked: pd.DataFrame, team: str) -> list[dict]:
+    """One entry per series in the schedule: its rows, score, and whether it's
+    to come, under way or done."""
+    out = []
+    g = tracked[(tracked.team == team) & (tracked.kind == "match")]
+    for (series, opp, fmt), x in g.groupby(["series", "opponent", "format"], sort=False):
+        x = x.sort_values("no")
+        w, lo = int((x.outcome == "W").sum()), int((x.outcome == "L").sum())
+        d = int((x.outcome == "D").sum())
+        played = int((x.status == "played").sum())
+        state = "done" if played == len(x) else "under way" if played else "to come"
+        out.append(dict(series=series, opponent=opp, format=fmt, rows=x, won=w, lost=lo, drawn=d, played=played,
+                        total=len(x), state=state, start=x.anchor.min(), venue=x.venue.iloc[0]))
+    return sorted(out, key=lambda s: s["start"])
+
+
+# --------------------------------------------------------------------------- #
+# 154 · home and away from your schedule
+# --------------------------------------------------------------------------- #
+
+
+def with_venues(career, tracked: pd.DataFrame):
+    """A copy of the career where every match in your schedule has the home side
+    your schedule gives (the scorecards don't name the ground).  Matches not in
+    your schedule are untouched.  Returns the same career when nothing changes."""
+    if tracked is None or tracked.empty:
+        return career
+    played = tracked[(tracked.match_id != "") & tracked.match_id.notna() & tracked.venue.isin(["home", "away", "neutral"])]
+    if played.empty:
+        return career
+    m = career.matches.copy()
+    pos = {mid: i for i, mid in zip(m.index, m.match_id)}
+    changed = False
+    for r in played.itertuples():
+        i = pos.get(r.match_id)
+        if i is None:
+            continue
+        home, away, team = m.at[i, "home"], m.at[i, "away"], r.team
+        if r.venue == "neutral":
+            if not m.at[i, "neutral"]:
+                m.at[i, "neutral"] = True
+                changed = True
+            continue
+        if m.at[i, "neutral"]:
+            m.at[i, "neutral"] = False
+            changed = True
+        if (r.venue == "home" and away == team) or (r.venue == "away" and home == team):
+            m.at[i, "home"], m.at[i, "away"] = away, home
+            changed = True
+    if not changed:
+        return career
+    c2 = copy.copy(career)
+    c2.matches = m
+    inn = career.innings.copy()
+    hm = m.set_index("match_id")
+    inn["home"] = [(t == hm.home.get(mid)) and not bool(hm.neutral.get(mid, False)) for mid, t in zip(inn.match_id, inn.team)]
+    c2.innings = inn
+    c2._venue_base = career
+    return c2
+
+
+# --------------------------------------------------------------------------- #
+# 144 / 145 / 146 / 148 · next match, series preview, live series situation
+# --------------------------------------------------------------------------- #
+
+
+def format_ids(career, team: str, fmt: str):
+    """The matches a prediction for this team and format should be based on: the
+    international section for Tests / ODIs / T20Is, otherwise the team's section
+    in that format (e.g. the IPL)."""
+    m = career.matches
+    x = m[(m.format == fmt) & ((m.home == team) | (m.away == team))]
+    if x.empty:
+        x = m[m.format == fmt]
+    if x.empty:
+        return m.iloc[0:0].match_id
+    sec = x.section.mode().iloc[0]
+    return m[m.section == sec].match_id
+
+
+def scorelines(p_win: float, p_draw: float, n: int, start: tuple[int, int] = (0, 0)) -> dict:
+    """Exact chance of every final series score (wins, defeats) after n more games."""
+    p_lose = max(0.0, 1 - p_win - p_draw)
+    out: dict[tuple[int, int], float] = {}
+    for combo in product("WDL", repeat=max(n, 0)):
+        pr = 1.0
+        a, b = start
+        for c in combo:
+            pr *= {"W": p_win, "D": p_draw, "L": p_lose}[c]
+            a += c == "W"
+            b += c == "L"
+        out[(a, b)] = out.get((a, b), 0.0) + pr
+    return {k: v * 100 for k, v in sorted(out.items(), key=lambda kv: -kv[1]) if v > 1e-9}
+
+
+def series_outlook(career, team: str, s: dict) -> dict:
+    """Chances for a series in the schedule, from now: win / level / lose, the
+    likeliest scores, and what's needed ("win 1 of the last 2")."""
+    from . import winprob as WP
+    ids = format_ids(career, team, s["format"])
+    venue = s["venue"] if s["venue"] in ("home", "away") else "neutral"
+    pr = WP.predict(career, ids, team, s["opponent"], venue)
+    left = s["total"] - s["played"]
+    pw, pd_ = pr["win"] / 100, pr["draw"] / 100
+    odds = WP.series_odds(pw, pd_, s["won"], s["lost"], left)
+    lines = scorelines(pw, pd_, left, (s["won"], s["lost"]))
+    a, b = s["won"], s["lost"]
+    if left == 0:
+        need = ""
+    elif a > b + left:
+        need = "the series is already won"
+    elif b > a + left:
+        need = "the series can't be won now"
+    else:
+        k = next((k for k in range(left + 1) if a + k > b + (left - k)), None)
+        k_draw = next((k for k in range(left + 1) if a + k >= b + (left - k)), None)
+        if k is not None:
+            need = ("win the last match to take the series" if left == 1 and k == 1 else
+                    f"win {k} of the last {left} to take the series" if k < left else
+                    f"win all {left} left to take the series" if left > 1 else "")
+            if k == 0:
+                need = "the series is already won"
+        else:
+            need = f"win {k_draw} of the last {left} to make sure of at least a share"
+        if a + left > b and a <= b and k_draw is not None and k_draw < (k if k is not None else 99):
+            need += f" ({_n_word(k_draw)} {'win' if k_draw == 1 else 'wins'} at least shares it)" if k_draw else ""
+    return dict(predict=pr, left=left, odds=odds, scorelines=lines, need=need)
+
+
+def _n_word(n: int) -> str:
+    return {0: "no", 1: "one", 2: "two", 3: "three", 4: "four", 5: "five"}.get(n, str(n))
+
+
+def key_battle(career, team: str, opp: str, fmt: str) -> list[str]:
+    """Who has got whom out most in this format (between the current squads)."""
+    from . import preview as PV
+    ids = format_ids(career, team, fmt)
+    try:
+        mu = PV.matchups(career, ids, team, opp, everywhere=False)
+        if all(mu[k].empty for k in mu):
+            mu = PV.matchups(career, ids, team, opp, everywhere=True)
+    except Exception:  # noqa: BLE001 - no meetings yet
+        return []
+    out = []
+    for label, side in (("their_bowlers", opp), ("our_bowlers", team)):
+        d = mu.get(label)
+        if d is not None and len(d) and d.dismissals.iloc[0] >= 2:
+            r = d.iloc[0]
+            out.append(f"{r.bowler} ({side}) has got {r.player} out {int(r.dismissals)} times")
+    return out
+
+
+def form_and_h2h(career, team: str, opp: str, fmt: str) -> dict:
+    from . import teamplay as TP
+    ids = format_ids(career, team, fmt)
+    g = TP.games(career, ids)
+    return dict(form={t: list(g[g.team == t].outcome.tail(5)) for t in (team, opp)},
+                h2h=TP.record(g[(g.team == team) & (g.opponent == opp)]))
+
+
+def players_to_watch(career, team: str, fmt: str, last: int = 10) -> dict:
+    """The side's leading run-scorers and wicket-takers in their last `last` matches in this format."""
+    m = career.matches
+    mine = m[(m.format == fmt) & ((m.home == team) | (m.away == team))].sort_values("date").tail(last).match_id
+    b = career.batting[career.batting.match_id.isin(mine) & (career.batting.team == team) & career.batting.did_bat]
+    w = career.bowling[career.bowling.match_id.isin(mine) & (career.bowling.team == team)]
+    return dict(bat=b.groupby("player").runs.sum().sort_values(ascending=False).head(2),
+                bowl=w.groupby("player").wickets.sum().sort_values(ascending=False).head(2), matches=len(mine))
+
+
+# --------------------------------------------------------------------------- #
+# 149 · the World Test Championship race with your remaining Tests
+# --------------------------------------------------------------------------- #
+
+
+def wtc_race(career, tracked: pd.DataFrame, team: str) -> dict | None:
+    """The table now, your Tests still to come in this cycle, the most you can
+    reach, what you need to finish in the top two (the others' remaining Tests
+    aren't in your schedule, so their percentages stay as they are now), and the
+    chance of doing it, Test by Test from the ratings."""
+    from . import seasonal as SN
+    from . import winprob as WP
+    if team not in SN.WTC_TEAMS:
+        return None
+    w = SN.wtc_matches(career)
+    if w.empty:
+        return None
+    cycle = int(w.cycle.max())
+    table = SN.wtc_table(career, cycle)
+    todo = tracked[(tracked.team == team) & (tracked.format == "Test") & tracked.status.isin(["to come", "next"])
+                   & tracked.opponent.isin(SN.WTC_TEAMS)]
+    end = pd.Timestamp(year=cycle + 2, month=6, day=1)
+    todo = todo[todo.anchor < end]
+    me = table[table.team == team]
+    pts, n = (int(me.points.iloc[0]), int(me.played.iloc[0])) if len(me) else (0, 0)
+    r_ = len(todo)
+    others = table[table.team != team].pct.sort_values(ascending=False)
+    bar = float(others.iloc[1]) if len(others) >= 2 else 0.0
+    ids = format_ids(career, team, "Test")
+    probs = []
+    for o, v in zip(todo.opponent, todo.venue):
+        p = WP.predict(career, ids, team, o, v if v in ("home", "away") else "neutral")
+        probs.append((p["win"] / 100, p["draw"] / 100, p["lose"] / 100))
+    total = 12 * (n + r_)
+    best = (pts + 12 * r_) / total * 100 if total else np.nan
+    need = next((k for k in range(r_ + 1) if total and (pts + 12 * k) / total * 100 > bar), None)
+    # chance of finishing above the bar: every result of the remaining Tests (capped at 12 for speed)
+    chance, expected = np.nan, np.nan
+    if r_ and total and r_ <= 12:
+        chance = 0.0
+        for combo in product(range(3), repeat=r_):
+            pr, p_ = 1.0, pts
+            for (pw, pdw, pl), c in zip(probs, combo):
+                pr *= (pw, pdw, pl)[c]
+                p_ += (12, 4, 0)[c]
+            if p_ / total * 100 > bar:
+                chance += pr
+        chance *= 100
+        expected = (pts + sum(12 * pw + 4 * pdw for pw, pdw, _ in probs)) / total * 100
+    elif not r_ and total:
+        chance = 100.0 if (pts / total * 100 > bar) else 0.0
+        expected = pts / total * 100
+    return dict(cycle=cycle, table=table, todo=todo, points=pts, played=n, remaining=r_, best=best, bar=bar,
+                bar_team=table[table.team != team].sort_values("pct", ascending=False).team.iloc[1]
+                if len(others) >= 2 else "", need=need, chance=chance, expected=expected)
+
+
+# --------------------------------------------------------------------------- #
+# 150 · milestone countdown by fixture
+# --------------------------------------------------------------------------- #
+
+
+def milestone_countdown(career, tracked: pd.DataFrame, team: str) -> pd.DataFrame:
+    """For your players: the next round number in each format they play, how far
+    away it is, their rate per match there, and the fixture in your schedule they'd
+    reach it in at that rate (if it's within the matches left)."""
+    from .players import STEPS
+    cols = ["player", "format", "what", "now", "next", "needed", "per_match", "games_left", "when", "within"]
+    todo = tracked[(tracked.team == team) & tracked.status.isin(["to come", "next"])]
+    rows = []
+    m = career.matches
+    for fmt, fx in todo.groupby("format"):
+        fx = fx.sort_values("anchor")
+        mine = m[(m.format == fmt) & ((m.home == team) | (m.away == team))].sort_values("date")
+        if mine.empty:
+            continue
+        recent = set(mine.tail(5).match_id)  # the current squad: played in the last 5 matches
+        b = career.batting[career.batting.match_id.isin(mine.match_id) & (career.batting.team == team)]
+        squad = set(b[b.match_id.isin(recent)].player)
+        w = career.bowling[career.bowling.match_id.isin(mine.match_id) & (career.bowling.team == team)]
+        games_p = b.groupby("player").match_id.nunique()
+        for what, d, col in (("runs", b[b.did_bat], "runs"), ("wickets", w, "wickets")):
+            tot = d.groupby("player")[col].sum()
+            for p in squad:
+                now = int(tot.get(p, 0))
+                nxt = next((s for s in STEPS[what] if s > now), None)
+                gp = int(games_p.get(p, 0))
+                if nxt is None or gp < 3 or now < min(STEPS[what]) * 0.4:
+                    continue
+                rate = now / gp
+                if rate <= 0:
+                    continue
+                need = nxt - now
+                k = math.ceil(need / rate)
+                within = k <= len(fx)
+                when = ""
+                if within:
+                    f = fx.iloc[k - 1]
+                    when = f"{f['series']}, match {int(f['no'])}" if f["kind"] == "match" else f"{f['series']}"
+                rows.append(dict(player=p, format=fmt, what=what, now=now, next=nxt, needed=need, per_match=rate,
+                                 games_left=len(fx), when=when, within=within, games_needed=k))
+    d = pd.DataFrame(rows, columns=cols + ["games_needed"])
+    return d.sort_values(["within", "games_needed", "needed"], ascending=[False, True, True]).reset_index(drop=True)
+
+
+# --------------------------------------------------------------------------- #
+# 151 · season goals
+# --------------------------------------------------------------------------- #
+
+GOAL_KINDS = {"series": "Win a series", "wtc": "Reach the World Test Championship final",
+              "player": "A player reaches a number", "wins": "Win a number of matches"}
+
+
+def goal_progress(career, tracked: pd.DataFrame, goal: dict) -> dict:
+    """(done 0-1, text, status) for one goal."""
+    kind = goal.get("kind")
+    team = goal.get("team", "")
+    if kind == "series":
+        gs = [s for s in series_groups(tracked, team) if s["series"] == goal.get("series")]
+        if not gs:
+            return dict(done=0.0, text="That series isn't in the schedule any more.", status="unknown")
+        s = gs[0]
+        if s["state"] == "done":
+            ok = s["won"] > s["lost"]
+            return dict(done=1.0 if ok else 0.0, text=f"{s['won']}–{s['lost']}" + (" — won it" if ok else " — not won"),
+                        status="achieved" if ok else "missed")
+        if s["state"] == "to come":
+            return dict(done=0.0, text=f"Starts {s['start']:%b %Y}" if s["start"].year < 2100 else "To come",
+                        status="to come")
+        o = series_outlook(career, team, s)
+        return dict(done=s["won"] / (s["total"] // 2 + 1), text=f"{s['won']}–{s['lost']}, {o['need']} "
+                    f"(chance {o['odds']['A']:.0f}%)", status="under way")
+    if kind == "wtc":
+        race = wtc_race(career, tracked, team)
+        if race is None:
+            return dict(done=0.0, text="Not a World Test Championship side.", status="unknown")
+        t = race["table"].reset_index(drop=True)
+        pos = int(t.index[t.team == team][0]) + 1 if team in set(t.team) else None
+        ch = race["chance"]
+        now = f"{pos}{({1: 'st', 2: 'nd', 3: 'rd'}.get(pos, 'th'))} now" if pos else "not in the table yet"
+        need = (f"; needs {race['need']} win{'s' if race['need'] != 1 else ''} from {race['remaining']} Tests left"
+                if race["remaining"] and race["need"] is not None else "")
+        if not np.isfinite(ch):
+            return dict(done=0.0, text=now + need, status="unknown")
+        return dict(done=ch / 100, text=f"{now}; chance of finishing in the top two: {ch:.0f}%{need}",
+                    status="achieved" if not race["remaining"] and ch >= 100 else "on course" if ch >= 50 else "at risk")
+    if kind == "player":
+        p, fmt, what, target = goal.get("player"), goal.get("format"), goal.get("what", "runs"), int(goal.get("target") or 0)
+        m = career.matches
+        ids = m[m.format == fmt].match_id
+        if goal.get("year"):
+            ids = m[(m.format == fmt) & (m.date.dt.year == int(goal["year"]))].match_id
+        if what == "runs":
+            now = int(career.batting[career.batting.match_id.isin(ids) & (career.batting.player == p)].runs.sum())
+        else:
+            now = int(career.bowling[career.bowling.match_id.isin(ids) & (career.bowling.player == p)].wickets.sum())
+        done = min(now / target, 1.0) if target else 0.0
+        return dict(done=done, text=f"{now:,} of {target:,} {what}" + (f" in {goal['year']}" if goal.get("year") else ""),
+                    status="achieved" if done >= 1 else "under way")
+    if kind == "wins":
+        fmt, target, year = goal.get("format"), int(goal.get("target") or 0), goal.get("year")
+        m = career.matches
+        g = m[(m.format == fmt) & ((m.home == team) | (m.away == team))]
+        if year:
+            g = g[g.date.dt.year == int(year)]
+        won = int(sum(_outcome(r, team) == "W" for r in g.itertuples()))
+        done = min(won / target, 1.0) if target else 0.0
+        return dict(done=done, text=f"{won} of {target} {fmt} wins" + (f" in {year}" if year else ""),
+                    status="achieved" if done >= 1 else "under way")
+    return dict(done=0.0, text="", status="unknown")
+
+
+def goal_label(goal: dict) -> str:
+    k = goal.get("kind")
+    if k == "series":
+        return f"{goal.get('team')}: win the series {goal.get('series')}"
+    if k == "wtc":
+        return f"{goal.get('team')}: reach the World Test Championship final"
+    if k == "player":
+        return (f"{goal.get('player')}: {int(goal.get('target') or 0):,} {goal.get('format')} {goal.get('what')}"
+                + (f" in {goal['year']}" if goal.get("year") else " in their career"))
+    if k == "wins":
+        return f"{goal.get('team')}: {goal.get('target')} {goal.get('format')} wins" + (f" in {goal['year']}" if goal.get("year") else "")
+    return "Goal"
+
+
+# --------------------------------------------------------------------------- #
+# 152 · series report
+# --------------------------------------------------------------------------- #
+
+
+def series_report(career, s: dict, team: str) -> dict:
+    """For a finished series: the result, Player of the Series, leading players,
+    the best innings and figures, how the ratings moved, and records and
+    milestones set during it."""
+    from . import players as PL
+    from . import records as RC
+    from .rankings import team_elo
+    mids = [x for x in s["rows"].match_id if x]
+    m = career.matches[career.matches.match_id.isin(mids)].sort_values("date")
+    if m.empty:
+        return {}
+    b = career.batting[career.batting.match_id.isin(mids) & career.batting.did_bat]
+    w = career.bowling[career.bowling.match_id.isin(mids) & (career.bowling.balls > 0)]
+    pos = PL.player_of_series(career, mids)
+    top_b = b.groupby(["player", "team"]).runs.sum().sort_values(ascending=False).head(3)
+    top_w = w.groupby(["player", "team"]).wickets.sum().sort_values(ascending=False).head(3)
+    hs = b.sort_values(["runs", "balls"], ascending=[False, True]).head(1)
+    bb = w.assign(k=w.wickets * 1000 - w.runs).sort_values("k", ascending=False).head(1)
+    sec = m.section.iloc[0]
+    _, hist = team_elo(career, sec)
+    elo = {}
+    for t in (team, s["opponent"]):
+        h = hist[hist.match_id.isin(mids) & (hist.team == t)].sort_values("date")
+        if len(h):
+            elo[t] = (float(h.before.iloc[0]), float(h.after.iloc[-1]))
+    recs = [msg for _, msg in RC.new_record_lines(career, list(m.source))]
+    sec_ids = career.matches[career.matches.section == sec].match_id
+    miles = [x for mid in m.match_id for x in PL.milestones_reached(career, sec_ids, mid)]
+    a, l_ = s["won"], s["lost"]
+    result = (f"{team} won the series {a}–{l_}" if a > l_ else f"{s['opponent']} won the series {l_}–{a}" if l_ > a
+              else f"Series drawn {a}–{l_}")
+    return dict(result=result + (f" ({s['drawn']} drawn)" if s["drawn"] else ""), pos=pos.iloc[0] if len(pos) else None,
+                top_bat=top_b, top_bowl=top_w, best_bat=hs.iloc[0] if len(hs) else None,
+                best_bowl=bb.iloc[0] if len(bb) else None, elo=elo, records=recs, milestones=miles,
+                matches=m, first=m.date.min(), last=m.date.max())
+
+
+# --------------------------------------------------------------------------- #
+# 143 · year calendar
+# --------------------------------------------------------------------------- #
+
+
+def calendar_entries(career, tracked: pd.DataFrame, team: str, year: int) -> tuple[dict, dict]:
+    """({date: [entries]} for a year: every match the team played, plus dated
+    fixtures to come; {month: [entries]} for fixtures known only by month)."""
+    m = career.matches
+    days: dict = {}
+    g = m[((m.home == team) | (m.away == team)) & (m.date.dt.year == year)]
+    for r in g.itertuples():
+        opp = r.away if r.home == team else r.home
+        venue = "neutral" if r.neutral else ("home" if r.home == team else "away")
+        days.setdefault(r.date.normalize(), []).append(dict(kind="played", outcome=_outcome(r, team), opponent=opp,
+                                                            format=r.format, venue=venue, match_id=r.match_id,
+                                                            result=r.result))
+    months: dict = {}
+    todo = tracked[(tracked.team == team) & tracked.status.isin(["to come", "next"])]
+    for _, r in todo.iterrows():
+        label = r["opponent"] or r["series"].split(" · ")[0]
+        e = dict(kind="to come", outcome="", opponent=label, format=r["format"], venue=r["venue"], match_id="",
+                 result="", series=r["series"], no=int(r["no"] or 0))
+        if r["date"] and pd.Timestamp(r["date"]).year == year:
+            days.setdefault(pd.Timestamp(r["date"]).normalize(), []).append(e)
+        elif r["month"] and int(r["month"][:4]) == year:
+            months.setdefault(int(r["month"][5:7]), []).append(e)
+    return days, months

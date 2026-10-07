@@ -39,7 +39,29 @@ def current() -> Career | None:
         if last:
             c, _ = store().load(last)
             st.session_state["career_obj"] = c
+    if c is not None:
+        c = _with_schedule_venues(c)
     return c
+
+
+def _with_schedule_venues(c: Career) -> Career:
+    """The career with home / away taken from your schedule for the matches in it
+    (cached until the career or the schedule changes)."""
+    fx = fixtures(c)
+    if not fx:
+        return c
+    import json
+    from ccstats import fixtures as FX
+    key = (c.name, id(c), json.dumps(fx, sort_keys=True, default=str))
+    cached = st.session_state.get("venue_cache")
+    if cached and cached[0] == key:
+        return cached[1]
+    try:
+        adj = FX.with_venues(c, FX.track(c, fx))
+    except Exception:  # noqa: BLE001 - a schedule that can't be read must never stop the site
+        adj = c
+    st.session_state["venue_cache"] = (key, adj)
+    return adj
 
 
 def settings_of(name: str) -> CareerSettings | None:
@@ -51,6 +73,7 @@ def settings_of(name: str) -> CareerSettings | None:
 
 def show(c: Career) -> None:
     """Put a career on screen (and remember it for next time)."""
+    c = getattr(c, "_venue_base", c)  # never save the schedule's home / away into the career itself
     st.session_state["career_obj"] = c
     st.session_state.pop("stats_cache", None)
     if c.name != DEMO_NAME:
@@ -187,3 +210,38 @@ def remember(key: str, kind: str):
                 s.remembered = dict(r)
                 store().save_settings(s)
     return _save
+
+
+# --------------------------------------------------------------------------- schedule and goals
+def _settings_list(c: Career | None, field_: str) -> list:
+    if c is None:
+        return []
+    s = settings_of(c.name) if c.name in career_names() else None
+    return list(getattr(s, field_)) if s is not None else list(st.session_state.get(f"{field_}::{c.name}", []))
+
+
+def _save_list(c: Career, field_: str, value: list) -> None:
+    if c.name in career_names():
+        s = settings_of(c.name)
+        if s is not None:
+            setattr(s, field_, list(value))
+            store().save_settings(s)
+            return
+    st.session_state[f"{field_}::{c.name}"] = list(value)
+
+
+def fixtures(c: Career | None) -> list:
+    """Your schedule (saved with the career on this PC)."""
+    return _settings_list(c, "fixtures")
+
+
+def set_fixtures(c: Career, rows: list) -> None:
+    _save_list(c, "fixtures", rows)
+
+
+def goals(c: Career | None) -> list:
+    return _settings_list(c, "goals")
+
+
+def set_goals(c: Career, rows: list) -> None:
+    _save_list(c, "goals", rows)

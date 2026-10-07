@@ -198,7 +198,8 @@ def player_pool(career, ids, team: str = "") -> tuple[pd.DataFrame, dict]:
 
 def _bat_why(r, kind) -> str:
     sr = f", SR {r.sr:.0f}" if kind != "multi" and np.isfinite(r.sr) else ""
-    return f"{r.runs} runs at {r.avg:.1f}{sr} in {r.inns} inns (usually #{int(r.pos)})"
+    where = f" (usually #{int(r.pos)})" if pd.notna(r.pos) else ""
+    return f"{r.runs} runs at {r.avg:.1f}{sr} in {r.inns} inns{where}"
 
 
 def _bowl_why(r, kind) -> str:

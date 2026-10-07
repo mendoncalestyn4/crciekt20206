@@ -198,6 +198,9 @@ table.cal td a { display: block; text-decoration: none; color: {ink} !important;
   margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 table.cal td a.W { background: rgba(57,135,229,.25); } table.cal td a.L { background: rgba(230,103,103,.25); }
 table.cal td a.D, table.cal td a.T, table.cal td a.NR { background: {mid}; }
+table.cal td a.UP { border: 1px dashed {muted}; color: {muted} !important; }
+table.cal.mini { border-spacing: 2px; } table.cal.mini td { height: 34px; font-size: 10px; padding: 1px 3px; }
+table.cal.mini td a { font-size: 10px; padding: 0 2px; margin-top: 1px; }
 .grade { display: inline-block; min-width: 34px; text-align: center; border-radius: 8px; padding: 2px 6px;
   font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 20px; }
 .grade.A { background: {pos}; color: #fff; } .grade.B { background: rgba(57,135,229,.45); color: {ink}; }

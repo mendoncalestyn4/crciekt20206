@@ -119,7 +119,8 @@ def unit_ratings(career, ids) -> pd.DataFrame:
             return float((v * w).sum() / w.sum() * 1000)
         rows.append(dict(team=team, batting=ew(perf_bat[team]), bowling=ew(perf_bowl.get(team, [])),
                          matches=len(perf_bat[team])))
-    d = pd.DataFrame(rows)
+    d = pd.DataFrame(rows, columns=["team", "batting", "bowling", "matches"])
+    d = d.dropna(subset=["batting", "bowling"])  # a side with nothing to rate yet (e.g. only abandoned games) isn't listed
     d["batting_rank"] = d.batting.rank(ascending=False, method="min").astype(int)
     d["bowling_rank"] = d.bowling.rank(ascending=False, method="min").astype(int)
     return d.sort_values("batting", ascending=False).reset_index(drop=True)

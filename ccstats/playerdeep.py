@@ -212,103 +212,134 @@ def with_without(career, ids, player: str) -> dict:
 
 
 def achievements(career, ids=None) -> pd.DataFrame:
-    """Badges earned in these matches (all of them by default): player, badge, date, match."""
+    """Badges earned in these matches (all of them by default): player, badge, date, match.
+    Worked out on whole columns at once (a big career has tens of thousands of innings)."""
+    from .stats import bars_for
     m = career.matches if ids is None else career.matches[career.matches.match_id.isin(ids)]
     ids = m.match_id
     info = m.set_index("match_id")
     kind_of = info.format.map(lambda f: KIND.get(f, "t20"))
-    b = career.batting[career.batting.match_id.isin(ids) & career.batting.did_bat].copy()
-    w = career.bowling[career.bowling.match_id.isin(ids) & (career.bowling.balls > 0)].copy()
-    b["kind"] = b.match_id.map(kind_of)
-    w["kind"] = w.match_id.map(kind_of)
-    b["date"] = b.match_id.map(info.date)
-    w["date"] = w.match_id.map(info.date)
-    rows = []
+    b = career.batting[career.batting.match_id.isin(ids) & career.batting.did_bat]
+    w = career.bowling[career.bowling.match_id.isin(ids) & (career.bowling.balls > 0)]
+    b = b.assign(kind=b.match_id.map(kind_of), date=b.match_id.map(info.date), section=b.match_id.map(info.section))
+    w = w.assign(kind=w.match_id.map(kind_of), date=w.match_id.map(info.date))
+    parts = []
 
-    def add(player, team, badge, mid, date, detail=""):
-        rows.append(dict(player=player, team=team, badge=badge, match_id=mid, date=date, detail=detail))
+    def add(df, badge, detail):
+        if len(df):
+            parts.append(pd.DataFrame({"player": df.player.to_numpy(), "team": df.team.to_numpy(), "badge": badge,
+                                       "match_id": df.match_id.to_numpy(), "date": df.date.to_numpy(),
+                                       "detail": list(detail)}))
 
-    for r in b.itertuples():
-        star = "" if r.out else "*"
-        if r.kind == "t20":
-            if r.runs >= 50 and r.balls <= 20:
-                add(r.player, r.team, "Fifty off 20 balls or fewer", r.match_id, r.date, f"{r.runs}{star} ({r.balls})")
-            if r.runs >= 100:
-                add(r.player, r.team, "T20 hundred", r.match_id, r.date, f"{r.runs}{star} ({r.balls})")
-            if r.runs >= 100 and r.balls <= 50:
-                add(r.player, r.team, "Hundred at a strike rate of 200+", r.match_id, r.date, f"{r.runs}{star} ({r.balls})")
-        elif r.kind == "one":
-            if r.runs >= 150:
-                add(r.player, r.team, "150 in a one-day game", r.match_id, r.date, f"{r.runs}{star}")
-            if r.runs >= 200:
-                add(r.player, r.team, "One-day double hundred", r.match_id, r.date, f"{r.runs}{star}")
-        else:
-            if r.runs >= 200:
-                add(r.player, r.team, "Double hundred", r.match_id, r.date, f"{r.runs}{star}")
-            if r.runs >= 300:
-                add(r.player, r.team, "Triple hundred", r.match_id, r.date, f"{r.runs}{star}")
-    for r in w.itertuples():
-        if r.kind == "t20" and r.wickets >= 5:
-            add(r.player, r.team, "5-for in a T20", r.match_id, r.date, f"{r.wickets}/{r.runs}")
-        elif r.kind == "one" and r.wickets >= 5:
-            add(r.player, r.team, "One-day five-for", r.match_id, r.date, f"{r.wickets}/{r.runs}")
-        elif r.kind == "multi" and r.wickets >= 7:
-            add(r.player, r.team, "Seven in an innings", r.match_id, r.date, f"{r.wickets}/{r.runs}")
-    # multi-day match feats
+    def score(df, balls=False):
+        st_ = np.where(df.out.to_numpy(bool), "", "*")
+        txt = [f"{r}{s}" for r, s in zip(df.runs, st_)]
+        return [f"{t} ({x})" for t, x in zip(txt, df.balls)] if balls else txt
+
+    # ---- batting feats by format
+    t20 = b[b.kind == "t20"]
+    x = t20[(t20.runs >= 50) & (t20.balls <= 20)]
+    add(x, "Fifty off 20 balls or fewer", score(x, True))
+    x = t20[t20.runs >= 100]
+    add(x, "T20 hundred", score(x, True))
+    x = t20[(t20.runs >= 100) & (t20.balls <= 50)]
+    add(x, "Hundred at a strike rate of 200+", score(x, True))
+    one = b[b.kind == "one"]
+    for bar_, badge in ((150, "150 in a one-day game"), (200, "One-day double hundred")):
+        x = one[one.runs >= bar_]
+        add(x, badge, score(x))
+    multi = b[b.kind == "multi"]
+    for bar_, badge in ((200, "Double hundred"), (300, "Triple hundred")):
+        x = multi[multi.runs >= bar_]
+        add(x, badge, score(x))
+    # ---- bowling feats by format
+    for k, bar_, badge in (("t20", 5, "5-for in a T20"), ("one", 5, "One-day five-for"), ("multi", 7, "Seven in an innings")):
+        x = w[(w.kind == k) & (w.wickets >= bar_)]
+        add(x, badge, [f"{a}/{c}" for a, c in zip(x.wickets, x.runs)])
+    # ---- multi-day match feats
     mb = b[b.kind == "multi"]
+    if len(mb):
+        g = mb.assign(h=mb.runs >= 100, z=(mb.runs == 0) & mb.out).groupby(["match_id", "player"], sort=False).agg(
+            n=("runs", "size"), hundreds=("h", "sum"), ducks=("z", "sum"), team=("team", "first"), date=("date", "first"),
+            detail=("runs", lambda r: " & ".join(map(str, r)))).reset_index()
+        x = g[(g.n >= 2) & (g.hundreds >= 2)]
+        add(x, "Hundred in both innings", x.detail)
+        x = g[(g.n >= 2) & (g.ducks >= 2)]
+        add(x, "Pair", ["0 & 0"] * len(x))
     mw = w[w.kind == "multi"]
-    for (mid, p), g in mb.groupby(["match_id", "player"]):
-        if len(g) >= 2 and (g.runs >= 100).sum() >= 2:
-            add(p, g.team.iloc[0], "Hundred in both innings", mid, g.date.iloc[0], " & ".join(map(str, g.runs)))
-        if len(g) >= 2 and ((g.runs == 0) & g.out).sum() >= 2:
-            add(p, g.team.iloc[0], "Pair", mid, g.date.iloc[0], "0 & 0")
-    for (mid, p), g in mw.groupby(["match_id", "player"]):
-        if g.wickets.sum() >= 10:
-            add(p, g.team.iloc[0], "Ten in a match", mid, g.date.iloc[0], f"{int(g.wickets.sum())}/{int(g.runs.sum())}")
-        if len(g) >= 2 and (g.wickets >= 5).sum() >= 2:
-            add(p, g.team.iloc[0], "Five-for in both innings", mid, g.date.iloc[0],
-                " & ".join(f"{a}/{c}" for a, c in zip(g.wickets, g.runs)))
-    # carried the bat: an opener not out when the innings was all out
-    inn = career.innings[career.innings.match_id.isin(ids)].set_index(["match_id", "innings_no"])
-    for r in b[(b.position <= 2) & ~b.out & (b.kind != "t20")].itertuples():
-        k = (r.match_id, r.innings_no)
-        if k in inn.index and bool(inn.loc[k, "all_out"]):
-            add(r.player, r.team, "Carried the bat", r.match_id, r.date, f"{r.runs}* of {int(inn.loc[k, 'runs'])}")
-    # hundred and five-for in the same match (any format)
+    if len(mw):
+        g = mw.assign(f=mw.wickets >= 5, fig=[f"{a}/{c}" for a, c in zip(mw.wickets, mw.runs)]).groupby(
+            ["match_id", "player"], sort=False).agg(n=("wickets", "size"), wk=("wickets", "sum"), rs=("runs", "sum"),
+                                                    fives=("f", "sum"), team=("team", "first"), date=("date", "first"),
+                                                    figs=("fig", lambda f: " & ".join(f))).reset_index()
+        x = g[g.wk >= 10]
+        add(x, "Ten in a match", [f"{int(a)}/{int(c)}" for a, c in zip(x.wk, x.rs)])
+        x = g[(g.n >= 2) & (g.fives >= 2)]
+        add(x, "Five-for in both innings", x.figs)
+    # ---- carried the bat: an opener not out when the innings was all out
+    inn = career.innings[career.innings.match_id.isin(ids)][["match_id", "innings_no", "all_out", "runs"]]
+    cand = b[(b.position <= 2) & ~b.out & (b.kind != "t20")].merge(inn.rename(columns={"runs": "total"}),
+                                                                    on=["match_id", "innings_no"])
+    x = cand[cand.all_out.astype(bool)]
+    add(x, "Carried the bat", [f"{r}* of {int(t)}" for r, t in zip(x.runs, x.total)])
+    # ---- hundred and five-for in the same match (any format)
     hb = set(zip(b[b.runs >= 100].match_id, b[b.runs >= 100].player))
     hw = set(zip(w[w.wickets >= 5].match_id, w[w.wickets >= 5].player))
-    for mid, p in hb & hw:
-        add(p, b[(b.match_id == mid) & (b.player == p)].team.iloc[0], "Hundred and five-for in the same match", mid,
-            info.date[mid])
-    # a hundred in a player's first game for a team in this section, when the team had already played 3+
+    both = hb & hw
+    if both:
+        first_row = b.drop_duplicates(["match_id", "player"]).set_index(["match_id", "player"]).team
+        x = pd.DataFrame([(mid, p, first_row[(mid, p)], info.date[mid]) for mid, p in both],
+                         columns=["match_id", "player", "team", "date"])
+        add(x, "Hundred and five-for in the same match", [""] * len(x))
+    # ---- a hundred in a player's first game for a team in this section, when the team had already played 3+
     # games here without them (so it's a real debut, not just the start of your career's records)
     sec = info.section
-    allb = career.batting[career.batting.match_id.isin(ids)].assign(date=lambda x: x.match_id.map(info.date),
-                                                                  section=lambda x: x.match_id.map(sec))
-    team_games = allb.drop_duplicates(["match_id", "team"]).sort_values("date")
-    first = b.assign(section=b.match_id.map(sec)).sort_values("date").groupby(["player", "team", "section"]).head(1)
+    allb = career.batting[career.batting.match_id.isin(ids)]
+    team_games = allb.drop_duplicates(["match_id", "team"]).assign(date=lambda x: x.match_id.map(info.date),
+                                                                   section=lambda x: x.match_id.map(sec))
+    first = b.sort_values("date").groupby(["player", "team", "section"]).head(1)
+    rows = []
     for r in first[first.runs >= 100].itertuples():
         before = team_games[(team_games.team == r.team) & (team_games.section == r.section) & (team_games.date < r.date)]
         if len(before) >= 3:
-            add(r.player, r.team, "Hundred on debut", r.match_id, r.date, f"{r.runs}{'' if r.out else '*'}")
-    # big games
+            rows.append((r.player, r.team, r.match_id, r.date, f"{r.runs}{'' if r.out else '*'}"))
+    if rows:
+        x = pd.DataFrame(rows, columns=["player", "team", "match_id", "date", "detail"])
+        add(x, "Hundred on debut", x.detail)
+    # ---- big games
     finals = set(m[m.stage == "Final"].match_id)
-    for r in b[b.match_id.isin(finals) & (b.runs >= 100)].itertuples():
-        add(r.player, r.team, "Hundred in a final", r.match_id, r.date, f"{r.runs}{'' if r.out else '*'}")
-    for r in m[m.match_id.isin(finals) & (m.player_of_match != "")].itertuples():
-        t = b[(b.match_id == r.match_id) & (b.player == r.player_of_match)].team
-        add(r.player_of_match, t.iloc[0] if len(t) else "", "Player of the Match in a final", r.match_id, r.date)
-    # streaks: big scores in a row (format bar)
-    from .stats import bars_for
-    for (p, sec_), g in b.assign(section=b.match_id.map(sec)).sort_values(["date", "innings_no"]).groupby(["player", "section"]):
-        bar = bars_for(g.kind.iloc[0])["big"]
-        run = 0
-        for r in g.itertuples():
-            run = run + 1 if r.runs >= bar else 0
-            if run == 3:
-                add(p, r.team, f"Three {bar}s in a row", r.match_id, r.date, sec_)
-    d = pd.DataFrame(rows, columns=["player", "team", "badge", "match_id", "date", "detail"])
-    return d.sort_values("date", ascending=False).reset_index(drop=True)
+    x = b[b.match_id.isin(finals) & (b.runs >= 100)]
+    add(x, "Hundred in a final", score(x))
+    potm = m[m.match_id.isin(finals) & (m.player_of_match != "")]
+    if len(potm):
+        team_of = b.drop_duplicates(["match_id", "player"]).set_index(["match_id", "player"]).team
+        x = pd.DataFrame({"player": potm.player_of_match.to_numpy(), "match_id": potm.match_id.to_numpy(),
+                          "date": potm.date.to_numpy(),
+                          "team": [team_of.get((a, p), "") for a, p in zip(potm.match_id, potm.player_of_match)]})
+        add(x, "Player of the Match in a final", [""] * len(x))
+    # ---- streaks: three big scores in a row (the format's bar), counted once per run
+    s_ = b.sort_values(["date", "innings_no"], kind="stable")
+    s_ = s_.assign(_o=np.arange(len(s_))).sort_values(["player", "section", "_o"], kind="stable")
+    bar_of = {k: bars_for(k)["big"] for k in ("t20", "one", "multi")}
+    first_kind = s_.groupby(["player", "section"], sort=False).kind.transform("first")
+    bars = first_kind.map(bar_of).to_numpy()
+    runs = s_.runs.to_numpy()
+    pl, se = s_.player.to_numpy(), s_.section.to_numpy()
+    hits = []
+    run = 0
+    for i in range(len(s_)):
+        if i == 0 or pl[i] != pl[i - 1] or se[i] != se[i - 1]:
+            run = 0
+        run = run + 1 if runs[i] >= bars[i] else 0
+        if run == 3:
+            hits.append(i)
+    if hits:
+        x = s_.iloc[hits]
+        add(x, "", x.section)
+        parts[-1]["badge"] = [f"Three {int(bv)}s in a row" for bv in bars[hits]]  # the bar of that section's format
+    cols = ["player", "team", "badge", "match_id", "date", "detail"]
+    d = pd.concat(parts, ignore_index=True)[cols] if parts else pd.DataFrame(columns=cols)
+    return d.sort_values(["date", "badge", "player"], ascending=[False, True, True], kind="stable").reset_index(drop=True)
 
 
 def team_achievements(career, team: str) -> pd.DataFrame:

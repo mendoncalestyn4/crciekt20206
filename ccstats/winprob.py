@@ -134,9 +134,21 @@ def chance(st_: pd.DataFrame, innings_no: int, t1_batting: bool, wickets: int, l
 # --------------------------------------------------------------------------- #
 
 
+def _own_states(section_states: pd.DataFrame, match_id: str):
+    """This match's rows of the section's states (grouped once and kept with them), or None if it isn't there."""
+    groups = section_states.attrs.get("_by_match")
+    if groups is None or groups[0] != len(section_states):
+        groups = (len(section_states), {k: g for k, g in section_states.groupby("match_id", sort=False)})
+        section_states.attrs["_by_match"] = groups
+    g = groups[1].get(match_id)
+    return None if g is None else g.reset_index(drop=True)
+
+
 def match_line(career, match_id: str, section_states: pd.DataFrame, kind: str) -> pd.DataFrame:
     """The chance for the side batting first at the start of each innings and after every wicket of this match."""
-    own = states(career, [match_id])
+    own = _own_states(section_states, match_id)
+    if own is None:  # not one of the section's matches: work it out on its own
+        own = states(career, [match_id])
     if own.empty:
         return pd.DataFrame(columns=["step", "label", "innings_no", "wickets", "score", "W", "D", "L", "T", "n"])
     rows = []

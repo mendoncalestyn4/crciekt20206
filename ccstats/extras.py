@@ -389,7 +389,20 @@ def honours(career) -> pd.DataFrame:
     """Every finished competition-season: champions, runners-up, top run-scorer,
     top wicket-taker, Player of the Match in the final.  Champions come from
     the final; a competition without knockouts (a league, or a bilateral series)
-    has its table leader or series winner."""
+    has its table leader or series winner.  Worked out once per career (several
+    pages ask for it); a copy is returned so nobody can change the stored one."""
+    cached = getattr(career, "_honours_cache", None)
+    if cached is not None and cached[0] is career.matches:
+        return cached[1].copy()
+    h = _honours(career)
+    try:
+        object.__setattr__(career, "_honours_cache", (career.matches, h))
+    except Exception:  # noqa: BLE001 - a career that can't hold a cache just works it out each time
+        pass
+    return h.copy()
+
+
+def _honours(career) -> pd.DataFrame:
     from .tables import BILATERAL, league_finished, league_tables
     m = career.matches
     # one row per competition as it's run (the ODI World Cup, not the whole ODIs section)

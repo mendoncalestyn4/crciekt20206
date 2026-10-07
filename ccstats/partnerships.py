@@ -110,36 +110,47 @@ def stands(career, ids) -> pd.DataFrame:
 
 
 def _all_stands(career) -> pd.DataFrame:
+    """Every stand in the career, worked out once (plain lists, one pass over each table)."""
     inn = career.innings
     bat = career.batting.sort_values(["match_id", "innings_no", "position"])
     fow = career.fow.sort_values(["match_id", "innings_no", "wicket"])
-    falls = {k: list(g.score.astype(int)) for k, g in fow.groupby(["match_id", "innings_no"])}
-    bats = {k: g for k, g in bat.groupby(["match_id", "innings_no"])}
+    falls: dict = {}
+    for mid, no, sc in zip(fow.match_id, fow.innings_no, fow.score):
+        falls.setdefault((mid, no), []).append(int(sc))
+    did = bat[bat.did_bat]
+    retired = set(zip(did.match_id[did.how_out.astype(str).str.contains("retired", case=False)],
+                      did.innings_no[did.how_out.astype(str).str.contains("retired", case=False)]))
+    orders: dict = {}
+    for mid, no, p, x, o in zip(did.match_id, did.innings_no, did.player, did.runs, did.out):
+        orders.setdefault((mid, no), []).append((p, int(x), bool(o)))
+    batted = set(zip(bat.match_id, bat.innings_no))
+    solved: dict = {}  # the same innings shape is only solved once
     rows = []
-    for r in inn.itertuples():
-        key = (r.match_id, r.innings_no)
+    for mid, no, team, opp, runs_, all_out in zip(inn.match_id, inn.innings_no, inn.team, inn.opposition, inn.runs,
+                                                   inn.all_out):
+        key = (mid, no)
         fall = falls.get(key, [])
-        g = bats.get(key)
-        total = int(r.runs)
+        total = int(runs_)
         pairs: list = [None] * (len(fall) + 1)
-        if g is not None:
-            did = g[g.did_bat]
-            retired = did.how_out.astype(str).str.contains("retired", case=False).any()
-            order = [(p, int(x), bool(o)) for p, x, o in zip(did.player, did.runs, did.out)]
-            if not retired and sum(o[2] for o in order) == len(fall) and fall == sorted(fall):
-                try:
-                    pairs = _solve(order, fall, total)
-                except RecursionError:
-                    pass
+        if key in batted:
+            order = orders.get(key, [])
+            if key not in retired and sum(o[2] for o in order) == len(fall) and fall == sorted(fall):
+                sk = (tuple(order), tuple(fall), total)
+                if sk not in solved:
+                    try:
+                        solved[sk] = _solve(order, fall, total)
+                    except RecursionError:
+                        solved[sk] = pairs
+                pairs = solved[sk]
         bounds = [0] + fall
         for k, score in enumerate(fall):
             p = pairs[k]
-            rows.append((r.match_id, r.innings_no, r.team, r.opposition, k + 1, score - bounds[k], bounds[k], score,
+            rows.append((mid, no, team, opp, k + 1, score - bounds[k], bounds[k], score,
                          False, p[0] if p else "", p[1] if p else "", p is not None))
-        if not r.all_out and len(fall) < 10:
+        if not all_out and len(fall) < 10:
             p = pairs[len(fall)] if len(pairs) > len(fall) else None
             start = bounds[-1]
-            rows.append((r.match_id, r.innings_no, r.team, r.opposition, len(fall) + 1, total - start, start, total,
+            rows.append((mid, no, team, opp, len(fall) + 1, total - start, start, total,
                          True, p[0] if p else "", p[1] if p else "", p is not None))
     return pd.DataFrame(rows, columns=STAND_COLUMNS)
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pandas as pd
 import streamlit as st
 
 from ccstats import extras as E
@@ -98,6 +99,36 @@ def render(career, team: str, key: str) -> None:
                                "big game for the player (well above their season average before it, or a haul); ▼ a "
                                "low score after a run of good ones. Next opponent: the scorecards don't hold the "
                                "fixture list, so pick them under Rivals below.")
+
+    # ---------------------------------------------------------------- 144 / 148 · next up (from your schedule)
+    with safe_section("next up"):
+        sched = state.fixtures(career)
+        if any(r.get("team") == team for r in sched):
+            from ccstats import fixtures as FX
+            from ccstats import winprob as WP
+            tr = FX.track(career, sched)
+            sm = FX.summary(tr, team)
+            nx = sm["next"]
+            with st.container(border=True):
+                lines = [f"**📅 Your schedule:** {sm['played']} of {sm['total']} played"]
+                if nx is not None:
+                    when = (f"{pd.Timestamp(nx['date']):%d %b %Y}" if nx["date"] else FX.month_label(nx["month"]))
+                    what = (f"v {nx['opponent']} · {nx['format']}" if nx["opponent"] else nx["series"].split(" · ")[0])
+                    line = f"**⏭ Next:** {what} · {nx['venue'] or ''} · {when}"
+                    if nx["opponent"]:
+                        p = WP.predict(career, FX.format_ids(career, team, nx["format"]), team, nx["opponent"],
+                                       nx["venue"] if nx["venue"] in ("home", "away") else "neutral")
+                        line += (f" · 🔮 {team} {p['win']:.0f}%" + (f", draw {p['draw']:.0f}%" if p["multi"] else "")
+                                 + f", {nx['opponent']} {p['lose']:.0f}%")
+                    lines.append(line)
+                for sg in FX.series_groups(tr, team):
+                    if sg["state"] == "under way":
+                        o = FX.series_outlook(career, team, sg)
+                        lead = "level" if sg["won"] == sg["lost"] else ("you lead" if sg["won"] > sg["lost"] else "you trail")
+                        lines.append(f"**🔴 {sg['series']}:** {lead} {sg['won']}–{sg['lost']}; {o['need']} "
+                                     f"(chance {o['odds']['A']:.0f}%)")
+                lines.append("<a href='fixtures' target='_self'>Open Fixtures: previews, WTC race, milestones and goals →</a>")
+                st.markdown("  \n".join(lines), unsafe_allow_html=True)
 
     section = st.selectbox("Section", secs, key=f"mt_sec_{key}",
                            help="Your team's sections, the one you played most recently first.")

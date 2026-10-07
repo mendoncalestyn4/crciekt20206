@@ -76,6 +76,8 @@ class CareerSettings:
     my_teams: list = field(default_factory=list)  # the teams you play as (the "My team" page)
     notes: dict = field(default_factory=dict)  # match journal: scorecard file name -> your note
     remembered: dict = field(default_factory=dict)  # last section / season / team picked, so every page opens on it
+    fixtures: list = field(default_factory=list)  # your schedule (the Fixtures page)
+    goals: list = field(default_factory=list)  # season goals (the Fixtures page)
 
 
 def _slug(name: str) -> str:
@@ -114,7 +116,8 @@ class CareerStore:
     def load_settings(self, name: str) -> tuple[Path, CareerSettings]:
         d = self._dir(name)
         raw = json.loads((d / "settings.json").read_text())
-        return d, CareerSettings(**{k: v for k, v in raw.items() if k in ("name", "folder", "updated", "my_teams", "notes", "remembered")})
+        return d, CareerSettings(**{k: v for k, v in raw.items() if k in ("name", "folder", "updated", "my_teams", "notes", "remembered",
+                                                                  "fixtures", "goals")})
 
     def save_settings(self, settings: CareerSettings) -> None:
         """Only the settings (e.g. My team), without rewriting the career file."""
