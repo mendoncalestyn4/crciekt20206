@@ -19,8 +19,8 @@ from typing import Iterable
 
 import pandas as pd
 
-from .competitions import (FIRST_CLASS, INTERNATIONAL, INTERNATIONAL_SECTION, TEST, assign_seasons, assign_series,
-                           classify, event_of, fix_playoff_stages, section_of)
+from .competitions import (EXHIBITION, FIRST_CLASS, INTERNATIONAL, INTERNATIONAL_SECTION, TEST, TOUR, assign_seasons,
+                           assign_series, classify, event_of, fix_playoff_stages, section_of)
 from .parser import Match, ScorecardError, parse_scorecard, validate_match
 
 MULTI_DAY = {TEST, FIRST_CLASS}
@@ -388,9 +388,10 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
         for g in games:
             stages[g["i"]] = g["stage"]
     # International cricket is played all year round, so its seasons are calendar
-    # years ("ODIs in 2026"), the same for a bilateral series and a World Cup.
-    seasons = [str(m.date.year) if c.level == INTERNATIONAL and c.format in INTERNATIONAL_SECTION else s
-               for s, c, m in zip(seasons, cls, parsed)]
+    # years ("ODIs in 2026"), the same for a bilateral series and a World Cup; so
+    # are tour games and World XI games, which come with the tours.
+    seasons = [str(m.date.year) if (c.level == INTERNATIONAL and c.format in INTERNATIONAL_SECTION)
+               or c.level in (EXHIBITION, TOUR) else s for s, c, m in zip(seasons, cls, parsed)]
 
     M, I, B, W, F, FOW, P = [], [], [], [], [], [], []
     for i, (m, c) in enumerate(zip(parsed, cls)):

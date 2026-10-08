@@ -21,6 +21,7 @@ import re
 from dataclasses import dataclass
 from datetime import date, timedelta
 
+from . import names as NM
 from .parser import Match
 
 # --------------------------------------------------------------------------- #
@@ -32,6 +33,9 @@ FIRST_CLASS, LIST_A, T20, HUNDRED = "First-class", "List A", "T20", "The Hundred
 FORMATS = [TEST, ODI, T20I, FIRST_CLASS, LIST_A, T20, HUNDRED]
 
 INTERNATIONAL, DOMESTIC, FRANCHISE = "International", "Domestic", "Franchise"
+# not part of anyone's international or domestic record: World XI games, and tour (warm-up) games
+EXHIBITION, TOUR = "Exhibition", "Tour"
+WORLD_XI_SECTION, TOUR_SECTION = "World XI", "Tour matches"
 
 COUNTRIES = {
     "England", "Australia", "India", "Pakistan", "South Africa", "New Zealand", "Sri Lanka",
@@ -108,13 +112,76 @@ KNOWN = {
     "ilt20": ("ILT20", T20, FRANCHISE, "UAE"),
 }
 
-# Cricket Captain 2025 generic titles -> real name by the teams' country
-GENERIC = {
-    "fc league": (FIRST_CLASS, {"India": "Ranji Trophy", "England": "County Championship",
-                                "Australia": "Sheffield Shield", "New Zealand": "Plunket Shield"}),
-    "one day cup": (LIST_A, {"India": "Vijay Hazare Trophy", "England": "One-Day Cup",
-                             "Australia": "Marsh One-Day Cup", "New Zealand": "Ford Trophy"}),
+# --------------------------------------------------------------------------- #
+# The game's own names, and the real names you can give them (see names.py)
+# --------------------------------------------------------------------------- #
+
+# The competitions in the game's name file the list above doesn't have: their format and level ("" = from the
+# scorecard itself: Pakistan's President's Trophy is played as the game sees fit)
+REAL_FORMATS = {
+    "CSA 4-Day Series": (FIRST_CLASS, DOMESTIC), "CSA One-Day Cup": (LIST_A, DOMESTIC),
+    "CSA T20 Challenge": (T20, DOMESTIC), "CSA T20 Knock-Out": (T20, DOMESTIC),
+    "West Indies Championship": (FIRST_CLASS, DOMESTIC), "Super50 Cup": (LIST_A, DOMESTIC),
+    "President's Trophy": ("", DOMESTIC), "Pakistan Cup": (LIST_A, DOMESTIC), "National T20 Cup": (T20, DOMESTIC),
+    "National Cricket League": (FIRST_CLASS, DOMESTIC), "Dhaka Premier Division Cricket League": (LIST_A, DOMESTIC),
+    "NCL T20": (T20, DOMESTIC), "Ahmad Shah Abdali First Class Tournament": (FIRST_CLASS, DOMESTIC),
+    "Ghazi Amanullah Khan Regional One Day To": (LIST_A, DOMESTIC),  # the game cuts names at 40 letters
+    "Shpageeza Cricket League": (T20, FRANCHISE), "Inter-Provincial Championship": (FIRST_CLASS, DOMESTIC),
+    "Inter-Provincial Cup": (LIST_A, DOMESTIC), "Inter-Provincial Trophy": (T20, DOMESTIC),
+    "Major League Tournament": (FIRST_CLASS, DOMESTIC), "Major Clubs Limited Over Tournament": (LIST_A, DOMESTIC),
+    "Major Clubs T20 Tournament": (T20, DOMESTIC), "Logan Cup": (FIRST_CLASS, DOMESTIC),
+    "Pro50 Championship": (LIST_A, DOMESTIC), "Domestic T20 Competition": (T20, DOMESTIC),
 }
+KNOWN["ghazi amanullah khan regional one day tournament"] = ("Ghazi Amanullah Khan Regional One Day To", LIST_A,
+                                                             DOMESTIC, "Afghanistan")
+
+# a real name used by more than one country ("National T20 Cup": Pakistan's and Afghanistan's): (name) -> {country:
+# entry}; each country's is a competition of its own, named with the country
+SHARED: dict[str, dict[str, tuple]] = {}
+# the game's own names (lower case) -> {country: the real competition's key in KNOWN or SHARED}.  Most are used by
+# several countries ("FC League", "One Day Cup", "20 Over Trophy", "Domestic 20 Over"), so the teams' country picks
+SHIPPED: dict[str, dict[str, str]] = {}
+# the format of a game's own name when the country can't be told (Cricket Captain 2025 used some of these)
+SHIPPED_FORMAT = {"fc league": FIRST_CLASS, "one day cup": LIST_A, "20 over trophy": T20, "domestic 20 over": T20}
+
+WORLD_XI: set[str] = set()
+
+
+def learn_names(competitions: list[tuple[str, str, str]], teams: list[tuple[str, str, str]]) -> None:
+    """Take in names from the game's name files: (country, the game's name, the name scorecards print)."""
+    by_country_real: dict[str, set[str]] = {}
+    for country, shipped, real in competitions:
+        by_country_real.setdefault(real.lower(), set()).add(country)
+    for country, shipped, real in competitions:
+        key = real.lower()
+        if (len(by_country_real[key]) > 1 or key in SHARED) and key not in KNOWN:  # once shared, always shared
+            fmt, level = REAL_FORMATS.get(real, ("", DOMESTIC))
+            SHARED.setdefault(key, {})[country] = (f"{real} ({country})", fmt, level, country)
+        elif key not in KNOWN:
+            # a name the site doesn't have: the competition the game's own name was in this country (renamed again:
+            # it carries on as the same competition), else a new one with its known format
+            base = SHIPPED.get(shipped.lower(), {}).get(country)
+            was = KNOWN.get(base) or SHARED.get(base, {}).get(country)
+            if was:
+                KNOWN[key] = was
+            else:
+                fmt, level = REAL_FORMATS.get(real, ("", DOMESTIC))
+                KNOWN[key] = (real, fmt, level, country)
+        if shipped.lower() not in KNOWN:  # "English FC League" is the County Championship whatever it's called
+            SHIPPED.setdefault(shipped.lower(), {})[country] = key
+    for country, shipped, real in teams:
+        world = shipped.startswith("World XI") or real.startswith("World XI")  # "World XI A", whatever it's called
+        for name in {shipped, real}:
+            if country == "International":
+                (WORLD_XI if world else COUNTRIES).add(name)
+            elif country:
+                DOMESTIC_TEAMS.setdefault(country, set()).add(name)
+
+
+# Cricket Captain 2025's generic titles for England and Australia ("FC League", "One Day Cup")
+SHIPPED["fc league"] = {"England": "county championship", "Australia": "sheffield shield"}
+SHIPPED["one day cup"] = {"England": "one-day cup"}
+learn_names(NM.COMPETITIONS, NM.TEAMS)
 
 INTERNATIONAL_RE = re.compile(
     r"^(?:(?P<no>\d+)(?:st|nd|rd|th)|only)\s+(?P<kind>test match|test|one day international|odi|"
@@ -166,11 +233,40 @@ class Classification:
 def _team_country(team: str) -> str:
     if team in COUNTRIES:
         return team
-    base = re.sub(r"\s+CC$", "", team.strip())  # CC2025: "Kerala CC", "Mumbai CC"
-    for country, teams in DOMESTIC_TEAMS.items():
-        if base in teams:
-            return country
+    for name in (team.strip(), re.sub(r"\s+CC$", "", team.strip())):  # the game's own "Kerala CC", "Mumbai CC"
+        for country, teams in list(DOMESTIC_TEAMS.items()):  # (a copy: names can be learned meanwhile)
+            if name in teams:
+                return country
     return ""
+
+
+def _named(key: str, match: Match) -> tuple | None:
+    """(competition, format, level, country) for a title the site knows, by its real name or the game's own."""
+    if key in KNOWN:
+        return KNOWN[key]
+    if key not in SHIPPED and key not in SHARED:
+        return None
+    country = _team_country(match.team1) or _team_country(match.team2)
+    if key in SHIPPED:
+        to = SHIPPED[key]
+        target = to.get(country) or (next(iter(to.values())) if len(to) == 1 else None)
+        if target is None:  # the game's own name, from a country the site can't tell: keep it, with its format
+            return (f"{match.title.split(' - ')[0].strip()} ({country})" if country else
+                    match.title.split(" - ")[0].strip(), SHIPPED_FORMAT.get(key, ""), DOMESTIC, country)
+        key = target
+        if key in KNOWN:
+            return KNOWN[key]
+    by_country = SHARED.get(key, {})
+    if country in by_country:
+        return by_country[country]
+    any_ = next(iter(by_country.values()), None)  # a shared name from a country the site can't tell
+    return (match.title.split(" - ")[0].strip(), any_[1], any_[2], "") if any_ else None
+
+
+def _domestic_format(fmt: str) -> str:
+    """A World XI or tour game titled like an international ("1st Test Match"): kept out of international
+    records, so a Test is first-class, an ODI a one-day game, a T20I a T20."""
+    return {TEST: FIRST_CLASS, ODI: LIST_A, T20I: T20}.get(fmt, fmt)
 
 
 def _shape_format(match: Match) -> str:
@@ -193,31 +289,44 @@ def classify(match: Match) -> Classification:
     stage_raw = parts[1] if len(parts) > 1 else ""
     stage, knockout = STAGES.get(stage_raw.lower(), (stage_raw, False))
     both_countries = match.team1 in COUNTRIES and match.team2 in COUNTRIES
+    im = INTERNATIONAL_RE.match(name)
+    key = name.lower()
+    named = _named(key, match)
+
+    # 0. a World XI game, or a country against a side that isn't one (Prime Minister's XI, SA Under-19s, a county):
+    #    in a section of their own, one per format, outside every international and domestic record.  A side the
+    #    site doesn't know in an international ("1st Test Match", "T20 World Cup") is a country it hasn't been told
+    #    about, so that stays an international
+    world = any(t.strip().startswith("World XI") or t.strip() in WORLD_XI for t in (match.team1, match.team2))
+    other = match.team2 if match.team1 in COUNTRIES else match.team1
+    international_title = bool(im) or bool(named and named[2] == INTERNATIONAL)
+    tour = (not world and (match.team1 in COUNTRIES) != (match.team2 in COUNTRIES)
+            and (not international_title or bool(_team_country(other))))
+    if world or tour:
+        fmt = _domestic_format(INTERNATIONAL_KIND[im.group("kind").lower()]) if im else _shape_format(match)
+        if named and named[1] and named[2] != INTERNATIONAL:
+            fmt = named[1]
+        return Classification(f"{WORLD_XI_SECTION if world else TOUR_SECTION} · {fmt}", fmt,
+                              EXHIBITION if world else TOUR, "", stage, knockout)
 
     # 1. bilateral internationals: "2nd One Day International (of 5)"
-    if m := INTERNATIONAL_RE.match(name):
+    if m := im:
         fmt = INTERNATIONAL_KIND[m.group("kind").lower()]
         return Classification(fmt, fmt, INTERNATIONAL, stage=stage, knockout=knockout)
 
-    key = name.lower()
-    # 2. real competition names (CC2026 and the named CC2025 ones)
-    if key in KNOWN:
-        comp, fmt, level, country = KNOWN[key]
-        if not fmt:  # e.g. Asia Cup is played as ODI or T20I
-            fmt = T20I if _shape_format(match) == T20 else ODI
+    # 2. competition names the site knows: real ones, and the game's own (by the teams' country where several
+    #    countries share one)
+    if named:
+        comp, fmt, level, country = named
+        if not fmt:  # e.g. Asia Cup is played as ODI or T20I; Pakistan's President's Trophy as the game sees fit
+            shape = _shape_format(match)
+            fmt = (T20I if shape == T20 else ODI) if level == INTERNATIONAL else shape
         if comp.endswith(" Final") and not stage:  # "World Test Championship Final - 16 Jun 2027" is itself a final
             stage, knockout = "Final", True
         return Classification(comp, fmt, level, country, stage, knockout,
                               neutral=level == INTERNATIONAL)
 
-    # 3. CC2025 generic names: pick the real competition by the teams' country
-    if key in GENERIC:
-        fmt, by_country = GENERIC[key]
-        country = _team_country(match.team1) or _team_country(match.team2)
-        comp = by_country.get(country, f"{name} ({country})" if country else name)
-        return Classification(comp, fmt, DOMESTIC, country, stage, knockout)
-
-    # 4. unknown title: keep the name, infer the format from the scorecard
+    # 3. unknown title: keep the name, infer the format from the scorecard
     shape = _shape_format(match)
     if both_countries:
         fmt = {FIRST_CLASS: TEST, LIST_A: ODI, T20: T20I}.get(shape, shape)

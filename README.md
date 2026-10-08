@@ -111,6 +111,23 @@ the scorecard leaves no doubt (about two thirds of them, nearly all the big ones
 
 ---
 
+## Competition and team names
+
+The Stats Pack knows every competition and team in Cricket Captain 2026 by the game's own names ("20 Over Trophy",
+"FC League") and by the real names from the name files ("T20 Blast", "Ranji Trophy"). A competition is one section
+whichever name its scorecards print. Where two countries' competitions have the same name (Pakistan and
+Afghanistan both have a "National T20 Cup"), each country's is kept separate.
+
+**Internationals** include every national side in the game, associates too (Denmark, Bermuda, Italy, UAE …).
+**World XI** games and **tour games** (a country against a side that isn't one, like the Prime Minister's XI or a
+county) have sections of their own, one per format ("World XI · T20", "Tour matches · First-class"). They never
+count in anyone's Test, ODI, T20I or domestic record, and they have no league table or champion.
+
+**Renamed something yourself?** Keep your copies of the game's name files (`editcompnames.txt` and
+`editteamnames.txt`) in the *Cricket Captain 2026* folder that holds your Scorecards folder (or in the Scorecards
+folder itself). The Stats Pack reads them when it opens your career, and again whenever they change. A competition
+you rename stays the same competition, under the name the site already uses for it, so its records carry on.
+
 ## Replayed a season?
 
 If you reload a save and play part of a season again, the game saves each replayed match over its old file, but a

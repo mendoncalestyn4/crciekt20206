@@ -1,0 +1,278 @@
+# ==========================================================================
+#  TEAM NAMES
+# ==========================================================================
+#
+#  Every team whose name you can change is listed below, grouped by country.
+#  A team on its own line (just its name) keeps the name the game ships with.
+#  To rename a team, add a comma then the new full name, another comma, then
+#  the new short name. For example:
+#
+#      Lancashire, Lancashire Lights, Lights
+#
+#  To go back to the shipped name, delete everything after the team name and
+#  leave it on its own line. Lines starting with '#' are comments.
+# ==========================================================================
+
+[ORIGINAL TEAM NAME], [NEW TEAM NAME], [NEW SHORT NAME]
+# === International ===
+Afghanistan
+Australia
+Bangladesh
+Canada
+Denmark
+England
+Hong Kong
+India
+Ireland
+Italy
+Kenya
+Nepal
+Netherlands
+New Zealand
+Oman
+Pakistan
+Scotland
+South Africa
+Sri Lanka
+UAE
+USA
+Uganda
+West Indies
+Zimbabwe
+Bermuda
+Malaysia
+Namibia
+Nigeria
+Papua New Guinea
+Saudi Arabia
+Singapore
+World XI A
+World XI B
+
+# === Australia ===
+Adelaide,Adelaide Strikers,Strikers
+Brisbane,Brisbane Heat,Heat
+Hobart,Hobart Hurricanes,Hurricanes
+Melbourne Green,Melbourne Stars,Stars
+Melbourne Red,Melbourne Renegades,Renegades
+Perth,Perth Scorchers,Scorchers
+Sydney Green,Sydney Thunder,Thunder
+Sydney Pink,Sydney Sixers,Sixers
+Cricket Australia XI
+Australian Chairman's XI
+Prime Minister's XI
+New South Wales
+Queensland
+South Australia
+Tasmania
+Victoria
+Western Australia
+
+# === South Africa ===
+Boland
+Border
+Eastern Province,Eastern Cape Iinyathi,Iinyathi
+Easterns,Eastern Storm,Storm
+Free State,Knights,Knights
+Gauteng,Lions,Lions
+KZulu-Natal Coastal,Dolphins,Dolphins
+KZulu-Natal Inland,Tuskers,Tuskers
+Limpopo,Limpopo Impalas,Impalas
+Mpumalanga,Mpumalanga Rhinos,Rhinos
+North West,North West Dragons,Dragons
+Northern Cape,Northern Cape Heat,Heat
+Northerns,Titans,Titans
+SW Districts,Garden Route Badgers,Badgers
+Western Province
+SA Under-19s
+Cape Town,MI Cape Town,MI Cape Town
+Durban,Durban's Super Giants,DSG
+Eastern Cape,Sunrisers Eastern Cape,Sunrisers
+Johannesburg,Joburg Super Kings,JSK
+Paarl,Paarl Royals,Royals
+Pretoria,Pretoria Capitals,Capitals
+
+# === India ===
+Bangalore,Royal Challengers Bengaluru,RCB
+Chennai,Chennai Super Kings,CSK
+Delhi,Delhi Capitals,Capitals
+Gujarat,Gujarat Titans,Titans
+Hyderabad,Sunrisers Hyderabad,Sunrisers
+Kolkata,Kolkata Knight Riders,KKR
+Lucknow,Lucknow Super Giants,LSG
+Mumbai,Mumbai Indians,MI
+Punjab,Punjab Kings,Kings
+Rajasthan,Rajasthan Royals,Royals
+Andhra
+Arunachal Pradesh
+Assam
+Baroda
+Bengal
+Bihar
+Chandigarh
+Chhattisgarh
+Delhi CC,Delhi,Delhi
+Goa
+Gujarat CC,Gujarat,Gujarat
+Haryana
+Himachal Pradesh
+Hyderabad CC,Hyderabad,Hyderabad
+Jammu and Kashmir
+Jharkhand
+Karnataka
+Kerala CC,Kerala,Kerala
+Madhya Pradesh
+Maharashtra
+Manipur
+Meghalaya
+Mizoram
+Mumbai CC,Mumbai,Mumbai
+Nagaland
+Odisha
+Puducherry
+Punjab CC,Punjab,Punjab
+Railways
+Rajasthan CC,Rajasthan,Rajasthan
+Saurashtra
+Services
+Sikkim
+Tamil Nadu
+Tripura
+Uttar Pradesh
+Uttarakhand
+Vidarbha
+
+# === Zimbabwe ===
+Manicaland,Mountaineers,Mountaineers
+Mashonaland,Mashonaland Eagles,Eagles
+Masvingo,Southern Rocks,Rocks
+Matabeleland,Matabeleland Tuskers,Tuskers
+Midlands,Mid West Rhinos,Rhinos
+
+# === New Zealand ===
+Auckland,Auckland Aces,Aces
+Canterbury,Canterbury Kings,Kings
+Central Districts,Central Stags,Stags
+Northern Districts,Northern Brave,Brave
+Otago,Otago Volts,Volts
+Wellington,Wellington Firebirds,Firebirds
+
+# === Pakistan ===
+Hyderabad PL,Hyderabad Kingsmen,Kingsmen
+Islamabad,Islamabad United,United
+Karachi,Karachi Kings,Kings
+Lahore,Lahore Qalandars,Qalandars
+Multan,Multan Sultans,Sultans
+Peshawar,Peshawar Zalmi,Zalmi
+Quetta,Quetta Gladiators,Gladiators
+Rawalpindi,Rawalpindiz,Rawalpindiz
+Abbottabad,Abbottabad Region,Abbottabad
+Bahawalpur,Bahawalpur Region,Bahawalpur
+Faisalabad,Faisalabad Region,Faisalabad
+Islamabad CC,Islamabad Region,Islamabad
+Karachi Blues,Karachi Region Blues,Karachi Blues
+Lahore Whites,Lahore Region Whites,Lahore Whites
+Multan CC,Multan Region,Multan
+Peshawar CC,Peshawar Region,Peshawar
+Sialkot CC,Sialkot Region,Sialkot
+Tribal Areas,FATA Region,FATA
+
+# === Sri Lanka ===
+Colombo,Colombo Strikers,Strikers
+Dambulla,Dambulla Sixers,Sixers
+Galle,Galle Marvels,Marvels
+Jaffna,Jaffna Kings,Kings
+Kandy,Kandy Falcons,Falcons
+Ace Capital CC,Ace Capital ,Ace Capital
+Badureliya,Badureliya Sports Club,Badureliya
+Bloomfield,Bloomfield Cricket and Athletic Club,Bloomfield
+Burgher,Burgher Recreation Club,Burgher
+Chilaw Marians,Chilaw Marians ,Chilaw Marians
+Colombo CC,Colombo ,Colombo CC
+Colts,Colts ,Colts
+Kurunegala Youth,Kurunegala Youth ,Kurunegala Youth
+Moors,Moors Sports Club,Moors
+Nondescripts,Nondescripts ,NCC
+Nugegoda SWC,Nugegoda Sports Welfare Club,Nugegoda
+Panadura,Panadura Sports Club,Panadura
+Police,Police Sports Club,Police
+Tamil Union,Tamil Union Cricket and Athletic Club,Tamil Union
+Sinhalese,Sinhalese Sports Club,SSC
+
+# === West Indies ===
+Antigua and Barbuda,Antigua and Barbuda Falcons,Falcons
+Barbados,Barbados Royals,Royals
+Guyana,Guyana Amazon Warriors,Warriors
+Jamaica,Jamaica Kingsmen,Kingsmen
+Leeward Islands,St Kitts and Nevis Patriots,Patriots
+Trinidad and Tobago,Trinbago Knight Riders,TKR
+Windward Islands,Saint Lucia Kings,Kings
+Barbados CC,Barbados Pride,Pride
+Campuses & Colleges,Combined Campuses and Colleges,CCC
+Guyana CC,Guyana Harpy Eagles,Harpy Eagles
+Jamaica CC,Jamaica Scorpions,Scorpions
+Leeward Islands CC,Leeward Islands Hurricanes,Hurricanes
+Trinidad & Tobago CC,Trinidad and Tobago Red Force,Red Force
+Windward Islands CC,Windward Islands Volcanoes,Volcanoes
+West Indies Academy
+
+# === England ===
+Derbyshire
+Durham
+Essex
+Glamorgan
+Gloucestershire
+Hampshire
+Kent
+Lancashire
+Leicestershire
+Middlesex
+Northamptonshire
+Nottinghamshire
+Somerset
+Surrey
+Sussex
+Warwickshire
+Worcestershire
+Yorkshire
+Birmingham,Birmingham Phoenix,Phoenix
+Cardiff,Welsh Fire,Fire
+Leeds,SunRisers Leeds,SunRisers
+London Blue,London Spirit,Spirit
+London Green,MI London,MI London
+Manchester,Manchester Super Giants,Super Giants
+Nottingham,Trent Rockets,Rockets
+Southampton,Southern Brave,Brave
+
+# === Bangladesh ===
+Chittagong,Chattogram Royals,Royals
+Dhaka,Dhaka Capitals,Capitals
+Noakhali,Noakhali Express,Express
+Rajshahi,Rajshahi Warriors,Warriors
+Rangpur,Rangpur Riders,Riders
+Sylhet,Sylhet Titans,Titans
+Barisal CC,Barishal Division,Barishal
+Chattogram CC,Chittagong Division,Chattogram
+Dhaka CC,Dhaka Division,Dhaka
+Khulna CC,Khulna Division,Khulna
+Mymensingh CC,Mymensingh Division,Mymensingh
+Rajshahi CC,Rajshahi Division,Rajshahi
+Rangpur CC,Rangpur Division,Rangpur
+Sylhet CC,Sylhet Division,Sylhet
+
+# === Ireland ===
+Leinster,Leinster Lightning,Lightning
+Munster,Munster Reds,Reds
+North West (IRE),North West Warriors,Warriors
+Northern CU,Northern Knights,Knights
+
+# === Afghanistan ===
+Herat
+Jalalabad,Nangarhar Leopards,Leopards
+Kabul,Kabul Zwanan,Zwanan
+Kandahar,Kandahar Knights,Knights
+Mazar-i-Sharif,Balkh Legends,Legends
+Hindukush,Hindukush Strikers,Strikers
+Mah-e-Par,Mahipar Stars,Stars
+Maiwand,Maiwand Champions,Champions
+Pamir,Pamir Legends,Legends

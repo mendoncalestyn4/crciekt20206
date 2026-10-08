@@ -5,6 +5,8 @@ import pandas as pd
 import streamlit as st
 
 from ccstats import checks
+from ccstats import local as L
+from ccstats import names as NM
 from ccstats.loader import Fixes
 from ui import state
 from ui.theme import page_header
@@ -72,6 +74,21 @@ if not len(merges):
 if len(left):
     fine.append(f"ℹ️ {len(left)} game{'s' if len(left) > 1 else ''} left out on purpose (from an earlier playthrough"
                 f"{' or by you' if (~left.auto).any() else ''}) → *Games left out*")
+# competitions the site doesn't know by name (a rename it hasn't been told about): each is a section of its own
+unknown = career.matches[~career.matches.recognised.astype(bool)] if "recognised" in career.matches else career.matches[:0]
+if len(unknown):
+    names_ = sorted(unknown.competition.unique())
+    fine.append(f"ℹ️ {len(unknown)} game{'s' if len(unknown) > 1 else ''} in competitions the site doesn't know by name "
+                f"({', '.join(names_[:4])}{' …' if len(names_) > 4 else ''}): each is a section of its own, with its format "
+                "read from the scorecards. Renamed one in the game? Keep your name files beside the Scorecards folder "
+                "(see the guide)")
+try:
+    _folder = (state.settings_of(career.name) or L.CareerSettings(name="")).folder
+    _files = NM.find_edit_files(_folder, also=tuple(L.game_install_folders()))
+except (OSError, ValueError, TypeError):  # settings that can't be read: say nothing about name files
+    _files = {}
+if _files:
+    fine.append("ℹ️ Names from your name files in " + ", ".join(sorted({f"`{p.parent}`" for p in _files.values()})))
 with st.container(border=True):
     st.markdown("**What needs you**" if todo else "**Nothing needs you** 🎉")
     if todo:

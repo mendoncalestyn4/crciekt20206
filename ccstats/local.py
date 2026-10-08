@@ -16,7 +16,10 @@ import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from .loader import Career
+from . import competitions as C
+from . import fixtures as FX
+from . import names as NM
+from .loader import Career, decode
 
 
 def home_dir() -> Path:
@@ -193,6 +196,7 @@ class CareerStore:
 
     def load(self, name: str) -> tuple[Career, CareerSettings]:
         d, settings = self.load_settings(name)
+        use_game_names(settings.folder)  # before the matches are read, so a renamed competition is understood
         career = Career.from_pack((d / "career.stats-pack.zip").read_bytes())
         career.name = name
         return career, settings
@@ -273,6 +277,47 @@ class CareerStore:
 
 
 # --------------------------------------------------------------------------- #
+# The game's name files (a competition or team you renamed in the game)
+# --------------------------------------------------------------------------- #
+
+def game_install_folders() -> list[Path]:
+    """Where Steam installs Cricket Captain 2026 on Windows (the name files may be kept there)."""
+    out = []
+    for env, default in (("ProgramFiles(x86)", r"C:\Program Files (x86)"), ("ProgramFiles", r"C:\Program Files")):
+        out.append(Path(os.environ.get(env) or default) / "Steam" / "steamapps" / "common" / "Cricket Captain 2026")
+    return out
+
+
+_names_read: dict[str, int] = {}  # name file -> its modified time when it was read
+
+
+def use_game_names(scorecards: str | Path | None) -> bool:
+    """Learn the names in the game's own name files (editcompnames.txt and editteamnames.txt) beside the
+    Scorecards folder, so a competition or team renamed in the game is understood.  The names the game ships
+    with, and the real names, are known already; each file is read again only when it changes.  True when
+    something new was read."""
+    comps: list[tuple[str, str, str]] = []
+    teams: list[tuple[str, str, str]] = []
+    for key, path in NM.find_edit_files(scorecards, also=tuple(game_install_folders())).items():
+        try:
+            stamp = path.stat().st_mtime_ns
+            if _names_read.get(str(path)) == stamp:
+                continue
+            text = decode(path.read_bytes())
+            read = NM.parse_comp_file(text) if key == "comp" else NM.parse_team_file(text)
+        except (OSError, ValueError):  # a file that can't be read is left out; the names already known stay
+            continue
+        _names_read[str(path)] = stamp
+        (comps if key == "comp" else teams).extend(read)
+    if not (comps or teams):
+        return False
+    C.learn_names(comps, teams)
+    FX.NATIONS.update(real for country, shipped, real in teams if country == "International"
+                      and not (shipped.startswith("World XI") or real.startswith("World XI")))
+    return True
+
+
+# --------------------------------------------------------------------------- #
 # Watching (one record per folder, shared by every career that uses it)
 # --------------------------------------------------------------------------- #
 
@@ -335,6 +380,7 @@ class Watcher:
             raise ValueError(f"{folder} is already watched by {self.owner(folder_key)}")
         data = self._all()
         snap = snapshot(folder)
+        use_game_names(folder)
         career = Career.build(name, read_files(folder, list(snap)), times=_times(snap))
         settings = CareerSettings(name=name, folder=folder_key)
         self.store.save(career, settings)

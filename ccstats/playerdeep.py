@@ -363,7 +363,7 @@ def team_achievements(career, team: str) -> pd.DataFrame:
             sec = m.set_index("match_id").section.get(g.match_id.iloc[0], "")
             rows.append(dict(badge=f"Clean sweep {len(g)}–0", detail=f"v {g.opponent.iloc[0]}, {sec}", date=g.date.max()))
     for (ev, se), g in m[~m.knockout & ((m.home == team) | (m.away == team))].groupby(["event", "season"]):
-        if len(g) >= 5 and g.level.iloc[0] != "International" and not (g.loser == team).any():
+        if len(g) >= 5 and g.level.iloc[0] not in ("International", "Exhibition", "Tour") and not (g.loser == team).any():
             rows.append(dict(badge="Unbeaten league season", detail=f"{ev} {se}", date=g.date.max()))
     h = honours(career)
     for r in h[h.champion_teams.map(lambda t: team in t) & ~h.how.str.contains("so far")].itertuples():

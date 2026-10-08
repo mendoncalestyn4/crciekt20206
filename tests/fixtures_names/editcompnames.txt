@@ -1,0 +1,83 @@
+# ==========================================================================
+#  COMPETITION NAMES
+# ==========================================================================
+#
+#  Every competition whose name you can change is listed below, grouped by
+#  country. A competition on its own line (just its name) keeps the name the
+#  game ships with. To rename a competition, add a comma then the new full
+#  name, another comma, then the new short name. For example:
+#
+#      England : English FC League,County Championship,Champ
+#
+#  To go back to the shipped name, delete everything after the competition
+#  name and leave it on its own line. Lines starting with '#' are comments.
+# ==========================================================================
+
+# === England ===
+England : English FC League,County Championship,County
+England : Challenge Trophy,Metro Bank One Day Cup,One Day
+England : 20 Over Trophy,T20 Blast,Blast
+England : 100 Ball Trophy,The Hundred,Hundred
+
+# === Australia ===
+Australia : Australian League,Sheffield Shield,Shield
+Australia : One Day Cup,Marsh One-Day Cup,One-Day
+Australia : 20 Over Trophy,Big Bash League,BBL
+
+# === India ===
+India : FC League,Ranji Trophy,Ranji
+India : One Day Cup,Vijay Hazare Trophy,Vijay Hazare
+India : Domestic 20 Over,Syed Mushtaq Ali Trophy,SMAT
+India : 20 Over League,Indian Premier League,IPL
+
+# === New Zealand ===
+New Zealand : FC League,Plunket Shield,Plunket
+New Zealand : One Day Cup,Ford Trophy,Ford
+New Zealand : 20 Over Trophy,Super Smash,Smash
+
+# === South Africa ===
+South Africa : FC League,CSA 4-Day Series,4-Day
+South Africa : One Day Cup,CSA One-Day Cup,One-Day
+South Africa : Domestic 20 Over,CSA T20 Challenge,T20 Challenge
+South Africa : Provincial 20 Over,CSA T20 Knock-Out,T20 Knock-Out
+South Africa : 20 Over Trophy,SA20,SA20
+
+# === West Indies ===
+West Indies : 4 Day Competition,West Indies Championship,WIC
+West Indies : 50 Over,Super50 Cup,Super50
+West Indies : 20 Over Trophy,Caribbean Premier League,CPL
+
+# === Pakistan ===
+Pakistan : FC League,Quaid-e-Azam Trophy,Quaid Trophy
+Pakistan : Dept Cup,President's Trophy,President's
+Pakistan : One Day Cup,Pakistan Cup,Pakistan Cup
+Pakistan : 20 Over Trophy,National T20 Cup,National T20
+Pakistan : Super Cup,Pakistan Super League,PSL
+
+# === Bangladesh ===
+Bangladesh : FC League,National Cricket League,NCL
+Bangladesh : One Day Cup,Dhaka Premier Division Cricket League,DPL
+Bangladesh : Domestic 20 Over,NCL T20,NCL T20
+Bangladesh : 20 Over Trophy,Bangladesh Premier League,BPL
+
+# === Afghanistan ===
+Afghanistan : FC League,Ahmad Shah Abdali First Class Tournament,Abdali FC
+Afghanistan : One Day Cup,Ghazi Amanullah Khan Regional One Day To,GAK One Day
+Afghanistan : Domestic 20 Over,National T20 Cup,National T20
+Afghanistan : 20 Over Trophy,Shpageeza Cricket League,Shpageeza
+
+# === Ireland ===
+Ireland : FC League,Inter-Provincial Championship,IP Championship
+Ireland : One Day Cup,Inter-Provincial Cup,IP Cup
+Ireland : Domestic 20 Over,Inter-Provincial Trophy,IP Trophy
+
+# === Sri Lanka ===
+Sri Lanka : FC League,Major League Tournament,Major League
+Sri Lanka : One Day Cup,Major Clubs Limited Over Tournament,Major L/O
+Sri Lanka : Domestic 20 Over,Major Clubs T20 Tournament,Major T20
+Sri Lanka : 20 Over Trophy,Lanka Premier League,LPL
+
+# === Zimbabwe ===
+Zimbabwe : FC League,Logan Cup,Logan
+Zimbabwe : One Day Cup,Pro50 Championship,Pro50
+Zimbabwe : Domestic 20 Over,Domestic T20 Competition,T20

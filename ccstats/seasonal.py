@@ -507,7 +507,7 @@ def after_match(career, team: str, match_id: str | None = None) -> dict:
     h = hist[(hist.match_id == mid) & (hist.team == team)]
     out["elo"] = (float(h.before.iloc[0]), float(h.after.iloc[0])) if len(h) else None
     # league position, before and after (league games of this event and season)
-    if not r.knockout and r.level != "International":
+    if not r.knockout and r.level not in ("International", "Exhibition", "Tour"):
         lg = m[(m.event == r.event) & (m.season == r.season) & ~m.knockout].sort_values(["date", "match_id"])
         upto = list(lg.match_id)
         if mid in upto:
@@ -681,7 +681,7 @@ def season_status(career, section: str, season: str) -> str:
     here = m[m.season == season]
     if here.empty:
         return "complete"
-    if here.level.iloc[0] == "International":
+    if here.level.iloc[0] in ("International", "Exhibition", "Tour"):  # calendar years
         prog = season_in_progress(career, section)
         return "in progress" if prog is not None and prog[0] == season else "complete"
     h = honours(career)

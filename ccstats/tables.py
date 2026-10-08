@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from . import analysis as A
+from . import competitions as C
 
 LIMITED = {"T20", "T20I", "ODI", "List A", "The Hundred"}
 KNOCKOUT_ORDER = ["Quarter-final", "Qualifier 1", "Eliminator", "Qualifier 2", "Semi-final", "Final"]
@@ -84,7 +85,9 @@ def _groups(matches: pd.DataFrame) -> list[tuple[str, pd.DataFrame, set]]:
     return out
 
 
-BILATERAL = {"Test", "ODI", "T20I"}  # competition names of bilateral internationals
+# competitions with no league table and no champion, only each team's record: bilateral internationals, and
+# tour games and World XI games
+BILATERAL = {"Test", "ODI", "T20I"} | {f"{s} · {f}" for s in (C.WORLD_XI_SECTION, C.TOUR_SECTION) for f in C.FORMATS}
 LEAGUE_GAMES = {"County Championship": 14}  # games per team in a full season, for leagues that end without a final
 
 
@@ -111,7 +114,8 @@ def league_tables(career, ids) -> list[tuple[str, pd.DataFrame, str]]:
     bilateral = comp in BILATERAL
     rule_text, pts = points_rule(comp, fmt)
     if bilateral:
-        rule_text, pts = ("Bilateral series have no league table, so this is each team's record in them, ordered by "
+        kind = "Bilateral series" if comp in ("Test", "ODI", "T20I") else "Tour games and World XI games"
+        rule_text, pts = (f"{kind} have no league table, so this is each team's record in them, ordered by "
                           "wins, then fewest defeats."), {}
     inn = career.innings[career.innings.match_id.isin(m.match_id)]
     first = inn[inn.team_innings == 1].groupby(["match_id", "team"]).runs.sum()

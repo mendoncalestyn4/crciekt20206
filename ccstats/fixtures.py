@@ -17,18 +17,25 @@ from itertools import product
 import numpy as np
 import pandas as pd
 
+from . import names as NM
 from .competitions import KNOWN
 from .stats import ordinal
 
 FORMATS = ["Test", "ODI", "T20I", "T20", "The Hundred", "List A", "First-class"]
 INTL = {"Test", "ODI", "T20I"}
-NATIONS = {"Afghanistan", "Australia", "Bangladesh", "England", "India", "Ireland", "New Zealand", "Pakistan",
-           "South Africa", "Sri Lanka", "West Indies", "Zimbabwe", "Scotland", "Netherlands", "Nepal", "Namibia",
-           "Oman", "United Arab Emirates", "USA", "Canada", "Papua New Guinea", "Uganda", "Hong Kong", "Kenya"}
+# every national side in the game, spelt as the game prints it ("UAE", "USA"); World XI A / B aren't countries
+NATIONS = {real for country, _, real in NM.TEAMS if country == "International" and not real.startswith("World XI")}
 ABBR = {"eng": "England", "aus": "Australia", "ind": "India", "nz": "New Zealand", "sa": "South Africa",
         "rsa": "South Africa", "wi": "West Indies", "sl": "Sri Lanka", "pak": "Pakistan", "ban": "Bangladesh",
         "bang": "Bangladesh", "afg": "Afghanistan", "ire": "Ireland", "zim": "Zimbabwe", "sco": "Scotland",
-        "ned": "Netherlands", "uae": "United Arab Emirates", "nep": "Nepal"}
+        "ned": "Netherlands", "uae": "UAE", "nep": "Nepal", "png": "Papua New Guinea", "hk": "Hong Kong",
+        # teams' own short forms (from the game's team names; only the ones no other team shares)
+        "csk": "Chennai Super Kings", "kkr": "Kolkata Knight Riders", "rcb": "Royal Challengers Bengaluru",
+        "mi": "Mumbai Indians", "lsg": "Lucknow Super Giants", "srh": "Sunrisers Hyderabad", "pbks": "Punjab Kings",
+        "dsg": "Durban's Super Giants", "jsk": "Joburg Super Kings", "tkr": "Trinbago Knight Riders",
+        "ssc": "Sinhalese Sports Club", "ncc": "Nondescripts", "ccc": "Combined Campuses and Colleges"}
+# other spellings of a country, as the game prints it
+COUNTRY_SPELLINGS = {"united arab emirates": "uae", "united states of america": "usa", "united states": "usa"}
 TOURNAMENTS = ["T20 World Cup", "ODI World Cup", "Champions Trophy", "Asia Cup", "World Test Championship Final"]
 TOURNAMENT_FORMAT = {"T20 World Cup": "T20I", "ODI World Cup": "ODI", "Champions Trophy": "ODI",
                      "World Test Championship Final": "Test"}
@@ -168,6 +175,7 @@ def _tidy(text: str) -> str:
     s = f" {text.lower()} "
     s = re.sub(r"[\[\]·,;|–—]", " ", s)  # round brackets stay until "(h)" / "(a)" are read
     s = re.sub(rf"\b({'|'.join(_ALIASES)})\b", lambda mm: _ALIASES[mm.group(1)], s)
+    s = re.sub(rf"\b({'|'.join(COUNTRY_SPELLINGS)})\b", lambda mm: COUNTRY_SPELLINGS[mm.group(1)], s)
     s = re.sub(r"\bt20is?(?=\s+world\b)", "t20", s)
     return _STAGE_NO.sub(r"\1\2", s)
 
