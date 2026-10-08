@@ -1,9 +1,10 @@
 import streamlit as st
 
+from ccstats import mvp as MV
 from ccstats import seasonal as SN
 from ui import state
-from ui.charts import fmt
-from ui.theme import esc, html_table, kpis, match_link, page_header, player_link, safe_section
+from ui.charts import bars, fmt
+from ui.theme import chart_note, esc, html_table, kpis, match_link, page_header, player_link, safe_section
 from ui.xi import team_sheet
 
 career = state.current()
@@ -158,3 +159,43 @@ with safe_section("season review"):
             st.caption("Grades against the average team this season: A well above, C about average, E well below.")
     st.caption("Team of the Season, best matches and upsets use the same rules as the Teams, Matches and Player stories "
                "pages.")
+
+# ---------------------------------------------------------------- most valuable players (idea 4)
+with safe_section("most valuable players"), st.container(border=True):
+    st.markdown("**🏅 Most valuable players**" + (" · so far" if rv["status"] != "complete" else ""))
+    dots_ = state.memo(MV.counts_dots, career, section)
+    how = "Impact points"
+    if dots_:
+        how = st.segmented_control("Points", ["Impact points", "IPL MVP points"], default="Impact points",
+                                   key=f"rv_mvp_how_{section}") or "Impact points"
+    mvp = state.memo(MV.season_mvp, career, section, season, "ipl" if how == "IPL MVP points" else "impact")
+    if mvp.empty:
+        st.caption("No players yet.")
+    else:
+        top = mvp.head(15)
+        html_table([[i, player_link(r.player), esc(r.team), r.matches, fmt(r.batting, 0), fmt(r.bowling, 0),
+                     fmt(r.fielding, 0), f"<b>{fmt(r.points, 0)}</b>", fmt(r.per_match, 1)]
+                    for i, r in enumerate(top.itertuples(), start=1)],
+                   ["#", "Player", "Team", "Matches", "Batting", "Bowling", "Fielding", "Points", "Per match"],
+                   numeric={0, 3, 4, 5, 6, 7, 8}, raw={1, 2, 7})
+        ten = mvp.head(10)
+        st.plotly_chart(bars([f"{r.player} ({r.team})" for r in ten.itertuples()], ten.points, how, decimals=0,
+                             notes=[f"{r.matches} matches · batting {r.batting:.0f}, bowling {r.bowling:.0f}, "
+                                    f"fielding {r.fielding:.0f}" for r in ten.itertuples()]),
+                        width="stretch", key=f"rv_mvp_chart_{section}_{season}_{how}")
+        a, b = mvp.iloc[0], mvp.iloc[1] if len(mvp) > 1 else None
+        best_pm = mvp[mvp.matches >= max(3, int(mvp.matches.max() * 0.5))].sort_values("per_match", ascending=False)
+        chart_note(f"{a.player} ({a.team}) lead on {a.points:.0f} points from {a.matches} matches"
+                   + (f", {a.points - b.points:.0f} ahead of {b.player}" if b is not None else "")
+                   + (f". Best per match among regulars: {best_pm.iloc[0].player} on {best_pm.iloc[0].per_match:.1f}"
+                      if len(best_pm) else "") + ".",
+                   "One number for who mattered most this season, with bat, ball and in the field together.")
+        if how == "IPL MVP points":
+            st.caption("IPL MVP points, as the IPL counts them: 3.5 a wicket, 1 a dot ball, 2.5 a four, 3.5 a six, "
+                       "2.5 a catch and 2.5 a stumping.")
+        else:
+            st.caption("Impact points (the match impact on the Player stories page): runs, plus in white-ball cricket "
+                       "half the runs above or below what this competition's usual strike rate would have made off the "
+                       "same balls; each wicket worth this competition's runs per wicket, plus in white-ball cricket "
+                       "the runs kept below its usual economy; a catch or stumping a quarter of a wicket. A name that "
+                       "plays for two teams in one season is two players, so each team's is listed on its own.")

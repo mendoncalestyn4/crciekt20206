@@ -449,6 +449,56 @@ def role_labels(career, ids, kind: str, min_matches: int = 3) -> pd.DataFrame:
 
 
 BALL_QUOTA = {"T20": 120, "T20I": 120, "The Hundred": 100, "ODI": 300, "List A": 300}
+NRR_COLUMNS = ["match_id", "innings_no", "team", "opposition", "runs", "balls"]
+
+
+def nrr_innings(career, ids) -> pd.DataFrame:
+    """Each limited-overs innings as it counts for net run rate, by the ICC's rules as far as a scorecard shows them:
+    a game with no result doesn't count; a side bowled out is charged its full overs (in a game shortened by rain,
+    the overs it was allowed); and in a game decided by the rain rule, the side batting first is credited with the
+    rain-rule par score (the other side's runs and the margin) off the overs the other side faced or was allowed.
+    Where a chase was won against a revised target the scorecard doesn't give that target, so both sides keep
+    their own runs and overs."""
+    m = career.matches[career.matches.match_id.isin(ids) & career.matches.format.isin(list(BALL_QUOTA))
+                       & (career.matches.result_type != "no result")]
+    if m.empty:
+        return pd.DataFrame(columns=NRR_COLUMNS)
+    inn = career.innings[career.innings.match_id.isin(m.match_id)].sort_values(["match_id", "innings_no"])
+    bw = career.bowling[career.bowling.match_id.isin(m.match_id)]
+    most = bw.groupby(["match_id", "innings_no"]).balls.max()  # the most balls any one bowler sent down
+    rain = m.set_index("match_id")["rain"] if "rain" in m else pd.Series(False, index=m.match_id)
+    info = m.set_index("match_id")
+    rows = []
+    for mid, g in inn.groupby("match_id", sort=False):
+        r = info.loc[mid]
+        quota = BALL_QUOTA[r.format]
+        g = list(g.itertuples())
+        shortened = bool(rain.get(mid, False))
+
+        def cut_short(i):  # stopped short of its overs, not bowled out, and not a chase that got there
+            return (not i.all_out and i.balls < quota
+                    and not (i is g[-1] and r.result_type == "win" and r.winner == i.team))
+
+        def allowed(i):
+            if not i.all_out:
+                return int(i.balls)
+            if not shortened:
+                return quota
+            others = [o for o in g if o is not i and cut_short(o)]
+            if others:  # a game shortened for both sides
+                return int(others[0].balls)
+            mx = most.get((mid, i.innings_no), np.nan)
+            return int(max(i.balls, min(quota, 5 * mx))) if mx == mx and mx > 0 else quota
+
+        figs = {i.innings_no: [int(i.runs), allowed(i)] for i in g}
+        if (len(g) == 2 and str(r.margin_note).startswith("Rain-affected") and r.result_type == "win"
+                and r.margin_runs == r.margin_runs):
+            t1, t2 = g
+            par = int(t2.runs) + int(r.margin_runs) if r.winner == t1.team else int(t2.runs) - int(r.margin_runs)
+            figs[t1.innings_no] = [par, allowed(t2)]
+        for i in g:
+            rows.append((mid, i.innings_no, i.team, i.opposition, *figs[i.innings_no]))
+    return pd.DataFrame(rows, columns=NRR_COLUMNS)
 
 
 def team_table(career, ids, venue: str = "all") -> pd.DataFrame:
@@ -457,8 +507,7 @@ def team_table(career, ids, venue: str = "all") -> pd.DataFrame:
     from each team's own point of view."""
     m = career.matches[career.matches.match_id.isin(ids)]
     inn = career.innings[career.innings.match_id.isin(ids)].merge(m[["match_id", "format", "home", "away", "neutral"]], on="match_id")
-    quota = inn.format.map(BALL_QUOTA)
-    inn = inn.assign(nrr_balls=np.where(inn.all_out & quota.notna(), quota, inn.balls))
+    nrr_inn = nrr_innings(career, ids)
     rows = []
     for team in sorted(set(m.home) | set(m.away)):
         mine = m[(m.home == team) | (m.away == team)]
@@ -470,7 +519,11 @@ def team_table(career, ids, venue: str = "all") -> pd.DataFrame:
             continue
         i = inn[inn.match_id.isin(mine.match_id)]
         bat, bowl = i[i.team == team], i[i.opposition == team]
-        first = bat[bat.innings_no == 1]
+        # a first innings is only comparable when the game ran its course (not shortened by rain, not abandoned)
+        whole = mine[(mine.result_type != "no result") & ~mine.get("rain", pd.Series(False, index=mine.index))]
+        first = bat[(bat.innings_no == 1) & bat.match_id.isin(whole.match_id)]
+        q = nrr_inn[nrr_inn.match_id.isin(mine.match_id)]
+        nrr_for, nrr_against = q[q.team == team], q[q.opposition == team]
         limited = mine.format.isin(list(BALL_QUOTA)).all()
         n = len(mine)
         rows.append(dict(
@@ -480,7 +533,8 @@ def team_table(career, ids, venue: str = "all") -> pd.DataFrame:
             win_pct=float((mine.winner == team).mean() * 100),
             rpw_for=bat.runs.sum() / max(bat.wickets.sum(), 1), rpw_against=bowl.runs.sum() / max(bowl.wickets.sum(), 1),
             rr_for=bat.runs.sum() / max(bat.balls.sum(), 1) * 6, rr_against=bowl.runs.sum() / max(bowl.balls.sum(), 1) * 6,
-            nrr=(bat.runs.sum() / max(bat.nrr_balls.sum(), 1) - bowl.runs.sum() / max(bowl.nrr_balls.sum(), 1)) * 6 if limited else np.nan,
+            nrr=(nrr_for.runs.sum() / max(nrr_for.balls.sum(), 1) - nrr_against.runs.sum() / max(nrr_against.balls.sum(), 1)) * 6
+            if limited else np.nan,
             first_innings_avg=first.runs.mean() if len(first) else np.nan,
             wkts_per_match=bowl.wickets.sum() / n))
     return pd.DataFrame(rows, columns=["team", "played", "won", "lost", "drawn", "tied", "win_pct", "rpw_for", "rpw_against",

@@ -415,17 +415,18 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
             loser=(m.team2 if winner == m.team1 else m.team1) if winner else "",
             result_type=result_type, result=_corrected_result(m), tiebreak_winner=tiebreak,
             margin_runs=m.margin_runs, margin_wickets=m.margin_wickets, innings_win=m.innings_win,
-            margin_note=m.margin_note, super_over=_super_over_text(m),
+            margin_note=m.margin_note, super_over=_super_over_text(m), rain=_rain(m, c.format, result_type),
             player_of_match=fixes.rename(m.player_of_match, ""), batted_first=batted_first, source=m.source))
         for p in validate_match(m):
             P.append(dict(match_id=m.match_id, source=m.source, problem=p))
         last_no = len(m.innings)
         for inn in m.innings:
-            declared = multi and not inn.all_out and inn.wickets < 10 and inn.number < last_no
+            all_out = _all_out(inn)
+            declared = multi and not all_out and inn.number < last_no
             I.append(dict(
                 match_id=m.match_id, innings_no=inn.number, team_innings=inn.team_innings, team=inn.team,
                 opposition=inn.bowling_team, runs=inn.total, wickets=inn.wickets, balls=inn.balls,
-                all_out=inn.all_out or inn.wickets >= 10, declared=declared or inn.declared,
+                all_out=all_out, declared=declared or inn.declared,
                 counted_in_balls=inn.counted_in_balls, extras=inn.extras, byes=inn.byes, leg_byes=inn.leg_byes,
                 wides=inn.wides, no_balls=inn.no_balls,
                 home=inn.team == m.team1 and not c.neutral, batting_first=inn.team == batted_first))
@@ -534,6 +535,45 @@ def _super_over_text(m: Match) -> str:
     return " · ".join(f"{i.team} {i.total}/{i.wickets}" for i in m.super_overs)
 
 
+def _all_out(inn) -> bool:
+    """Bowled out: ten wickets down, or nobody left to come in.  The game prints "(9 wkts, …)" when a batter retired
+    hurt and couldn't come back, but with one batter not out and nobody else to bat the innings is over: that's all
+    out, not a declaration (a side declaring at 9 down has two batters not out)."""
+    if inn.all_out or inn.wickets >= 10:
+        return True
+    left = sum(1 for b in inn.batting if b.how_out in ("not out", "dnb"))  # still able to bat
+    return bool(inn.batting) and left < 2
+
+
+# balls each side is allowed in a full limited-overs game
+QUOTA = {"T20": 120, "T20I": 120, "The Hundred": 100, "ODI": 300, "List A": 300}
+
+
+def _rain(m: Match, fmt: str, result_type: str) -> bool:
+    """A limited-overs game the weather shortened: abandoned, decided by the rain rule (a margin the scores don't
+    give), an innings stopped short of its overs without being bowled out (other than a chase that got there), or
+    a chase won below the other side's total (a revised target).  The scorecards never say "rain", but these
+    can't happen otherwise."""
+    quota = QUOTA.get(fmt)
+    if not quota:
+        return False
+    if result_type == "no result" or m.margin_note.startswith("Rain-affected"):
+        return True
+    if not m.innings:
+        return False
+    last = m.innings[-1]
+    for inn in m.innings:
+        chased = inn is last and result_type == "win" and m.winner == inn.team
+        overs_known = inn.balls > 0 or inn.total == 0
+        if overs_known and not _all_out(inn) and inn.balls < quota and not chased:
+            return True
+    if result_type == "win" and m.margin_wickets is not None and len(m.innings) == 2:
+        first, second = m.innings
+        if second.team == m.winner and second.total <= first.total:
+            return True
+    return False
+
+
 def _corrected_result(m: Match) -> str:
     """The result line as the game printed it, marked "(DLS)" when the margin is by the rain rule (see
     parser._check_margin).  A super-over finish ("New Zealand won  (super over)") reads as the tie it was."""
@@ -548,7 +588,7 @@ MATCH_COLUMNS = [
     "match_id", "date", "season", "competition", "section", "event", "format", "level", "country", "stage", "knockout", "neutral",
     "recognised", "title", "series_id", "series_match_no", "series_length", "home", "away", "winner", "loser",
     "result_type", "result", "tiebreak_winner", "margin_runs", "margin_wickets", "innings_win", "margin_note",
-    "super_over",
+    "super_over", "rain",
     "player_of_match",
     "batted_first", "source"]
 INNINGS_COLUMNS = [

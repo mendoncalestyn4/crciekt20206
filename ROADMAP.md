@@ -67,25 +67,16 @@ What the site does, the decisions behind it, and what is built so far.
 - ✅ **Matches**: search, scorecards and the **wicket timeline** (new 7)
 - ✅ **Data check** (22): scorecard report, unclear catches to credit, same-name players to merge or split (manual, undoable)
 
-## Next (agreed, not built yet)
+## Done in the latest round
 
-Saved, waiting for their full test run (lint and the parser / loader / audit tests pass; charts and the dark look checked in the browser):
-
-- ⏳ Rain-affected results keep the game's official margin (the rain rule, DLS) and show "(DLS)"; the scores no
-  longer overwrite it (6 games in the real career, e.g. "Chennai won by 20 runs" was shown as 116)
-- ⏳ Chart names always joined to their own dot by a thin line, never placed where another dot is closer
-- ⏳ The site is always dark (the night-match look), whatever Windows is set to
-
-To do:
-
-- ☐ Name only the top **4** dots on dot charts; the rest show their figures on hover
-- ☐ Rain games everywhere: mark rain-shortened games, leave them out of "Is this total enough?" and the lowest-total
-  records, and use the shortened overs in net run rate
-- ☐ Check that a draw is never marked as a declaration
-- ☐ **Title and playoff odds** (idea 3): play the rest of a league season out thousands of times from the team
-  ratings; each side's chance of the playoffs and the title, updated after every match
-- ☐ **Season MVP table** (idea 4): one points score per player per season (runs, wickets, catches, match impact),
-  like the IPL's Most Valuable Player list
+- ✅ Rain-affected results keep the game's official margin (the rain rule, DLS) and show "(DLS)"
+- ✅ Chart names always joined to their own dot by a thin line; only the top 4 named, the rest on hover
+- ✅ The site is always dark (the night-match look)
+- ✅ Rain games everywhere: marked on the Matches page, left out of par scores, "Is this total enough?", lowest total
+  defended and other games' win chances; net run rate by the ICC's rules
+- ✅ Declarations: an innings ended by a retired-hurt batter with nobody left is all out, not declared
+- ✅ **Title race** (idea 3) on Competitions, and playoff / title chances on Home
+- ✅ **Most valuable players** (idea 4) on Season review: impact points, or the IPL's MVP points in T20
 
 Ideas to decide on later:
 

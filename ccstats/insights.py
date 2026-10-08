@@ -12,8 +12,11 @@ BUCKET = {"t20": 10, "one": 20, "multi": 50}
 
 
 def first_innings(career, ids) -> pd.DataFrame:
-    """The first innings of every finished match with how the side batting first got on."""
+    """The first innings of every finished match with how the side batting first got on (a game shortened by rain
+    is left out: its first innings wasn't made over the full overs, or the result came from the rain rule)."""
     m = career.matches[career.matches.match_id.isin(ids) & (career.matches.result_type != "no result")]
+    if "rain" in m:
+        m = m[~m.rain.astype(bool)]
     inn = career.innings[career.innings.match_id.isin(m.match_id) & (career.innings.innings_no == 1)]
     d = inn[["match_id", "team", "runs", "wickets", "all_out"]].merge(
         m[["match_id", "winner", "result_type", "tiebreak_winner", "format"]], on="match_id")

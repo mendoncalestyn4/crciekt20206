@@ -200,7 +200,7 @@ with right:
             ("shade", f"<b>Shaded area ({better_side} the line)</b>: {d.below if d.better_below else d.above} This is the better side."),
             ("", f"<b>{'Above' if d.better_below else 'Below'} the line</b>: {d.above if d.better_below else d.below}"),
             ("", f"<b>Further right</b>: {d.right} The further right a dot is, the more you can trust its position."),
-            ("dot" + ("" if best else " neg"), "<b>Coloured dots</b>: the players ranked on the left (top 5 named). Grey dots: everyone else who qualifies."),
+            ("dot" + ("" if best else " neg"), "<b>Coloured dots</b>: the players ranked on the left (the top 4 named; hover any dot for its figures). Grey dots: everyone else who qualifies."),
         ])
 
 # full figures

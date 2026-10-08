@@ -58,8 +58,16 @@ def banner(career, team: str) -> list[dict]:
                 if team in set(t.team):
                     pos = int(t.index[t.team == team][0])
                     position = (event, label, pos, len(t))
+        chances = None
+        if position is not None:  # a league still being played: the chance of the playoffs and the title
+            from .odds import season_odds
+            od = season_odds(career, position[0], season, sims=2000)
+            if od["state"] == "open":
+                r = od["table"].set_index("team").loc[team] if team in set(od["table"].team) else None
+                if r is not None:
+                    chances = dict(playoffs=r.playoffs, title=r.title, top=r.top, knockouts=od["knockouts"])
         out.append(dict(section=section, season=season, record=rec, elo=elo, moved=moved, rank=rank, teams=len(table),
-                        position=position))
+                        position=position, chances=chances))
     return out
 
 

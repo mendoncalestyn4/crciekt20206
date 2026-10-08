@@ -56,6 +56,8 @@ with tabs[0], safe_section("qualification"):
         q1, q2, q3 = st.columns([2, 1, 1])
         ev = q1.selectbox("Competition", options, format_func=lambda o: f"{o[0]} {o[1]}", key="pl_q_event")
         d = TP.qualification_defaults(career, *ev)
+        # where the best next-placed sides also go through (the Blast's best thirds), that place can still be enough
+        d = dict(d, places=d["places"] + (1 if d.get("extra") else 0))
         games = q2.number_input("League games per team", 1, 60, d["games"], key=f"pl_q_games_{ev}")
         places = q3.number_input("Places that go through (per group)", 1, 16, d["places"], key=f"pl_q_places_{ev}")
         q = state.memo(TP.qualification, career, ev[0], ev[1], int(games), int(places))

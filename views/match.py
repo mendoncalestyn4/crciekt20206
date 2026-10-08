@@ -78,6 +78,16 @@ series = (f" · Match {int(row.series_match_no)}" + (f" of {int(row.series_lengt
 scoreboard(f"{shown_name(row.section, row.event)}{stage}{series} · {row.date:%d %b %Y}", row.home, score_of(mid, row.home), row.away,
            score_of(mid, row.away), row.result + (f" (super over: {row.super_over})" if row.super_over else "")
            + (f" · Player of the match: {row.player_of_match}" if row.player_of_match else ""))
+if bool(row.get("rain", False)):
+    if row.result_type == "no result":
+        why = "Abandoned because of rain: it counts as no result, and it's left out of net run rate."
+    elif str(row.margin_note).startswith("Rain-affected"):
+        why = (f"Shortened by rain and decided by the rain rule (DLS), so the margin isn't the difference in the "
+               f"totals: {row.margin_note.split(';', 1)[-1].strip().rstrip('.')}.")
+    else:
+        why = "Shortened by rain: the sides didn't get their full overs."
+    st.caption(f"🌧️ {why} Games like this aren't used for par scores, \"Is this total enough?\", lowest total defended "
+               "or the win chances of other games; the players' runs and wickets count as normal.")
 st.write("")
 
 # ---------------------------------------------------------------- 116 · match journal

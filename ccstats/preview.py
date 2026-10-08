@@ -241,8 +241,9 @@ def chase_extremes(career, ids, team: str) -> dict:
     t = g[g.team == team]
     multi = TP.is_multi(g)
     inn = career.innings[career.innings.match_id.isin(t.match_id)]
-    chase = t[~t.batted_first & (t.outcome == "W")]
-    defend = t[t.batted_first & (t.outcome == "W")]
+    whole = t.first_score.notna()  # games shortened by rain don't set chasing or defending marks
+    chase = t[~t.batted_first & (t.outcome == "W") & whole]
+    defend = t[t.batted_first & (t.outcome == "W") & whole]
     best_chase = low_defend = None
     if not multi:
         if len(chase):

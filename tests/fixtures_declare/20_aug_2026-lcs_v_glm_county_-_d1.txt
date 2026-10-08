@@ -1,0 +1,142 @@
+************************************************************
+Leicestershire v Glamorgan
+County Championship - D1 - 20 Aug 2026
+************************************************************
+
+Glamorgan - 1st Innings                   R    B    4s  6s
+------------------------------------------------------------
+A Tribe         c Hill b Mike             1    3    -   -
+S Dickson       c Patel b Green           19   39   2   -
+K Carlson       c Cox b Holland           1    5    -   -
+M Savage        c Hill b Mike             17   14   3   -
+C Ingram        lbw b Holland             27   40   3   -
+B Root          c Budinger b Scriven      51   84   6   -
+B Kellaway      b Mike                    7    11   1   -
+W Smale         c Hill b Green            11   14   1   -
+M Crane         c Kelly b Mike            17   26   2   -
+N McAndrew      lbw b Scriven             12   32   1   -
+T v' Gugten     not out                   0    3    -   -
+------------------------------------------------------------
+Extras:                                   0
+TOTAL: (all out, 45.1 overs)              163
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+B Mike          14     1     61     4     4.36
+I Holland       13     0     51     2     3.92
+B Green         10     1     22     2     2.20
+T Scriven       8.1    1     29     2     3.55
+------------------------------------------------------------
+Fall of Wickets:
+1-6  2-13  3-36  4-50  5-79  
+6-90  7-103  8-132  9-162  10-163
+
+************************************************************
+************************************************************
+
+Leicestershire - 1st Innings              R    B    4s  6s
+------------------------------------------------------------
+R Patel         lbw b Kellaway            87   121  11  1
+S Eskinazi      c Savage b McAndrew       10   24   1   -
+L Hill          c Savage b Kellaway       17   24   2   -
+R Ahmed         c v' Gugten b McAndrew    13   26   2   -
+N Kelly         run out                   39   45   3   1
+S Budinger      c Dickson b Kellaway      80   93   14  -
+B Cox           c Savage b Kellaway       41   59   4   -
+T Scriven       lbw b Crane               115  125  16  -
+B Mike          c v' Gugten b Kellaway    83   97   8   1
+I Holland       not out                   5    9    -   -
+B Green         not out                   8    8    1   -
+------------------------------------------------------------
+Extras: (nb14)                            14
+TOTAL: (9 wkts, 104 overs)                512
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+N McAndrew      32     2     154    2     4.81
+T v' Gugten     26     1     118    0     4.54
+S Dickson       1      0     6      0     6.00
+B Kellaway      32     2     154    5     4.81
+M Crane         11     0     73     1     6.64
+M Savage        2      0     7      0     3.50
+------------------------------------------------------------
+Fall of Wickets:
+1-35  2-74  3-114  4-148  5-197  
+6-281  7-322  8-494  9-502  
+
+************************************************************
+************************************************************
+
+Glamorgan - 2nd Innings                   R    B    4s  6s
+------------------------------------------------------------
+A Tribe         lbw b Mike                91   131  11  -
+S Dickson       b Holland                 38   55   5   -
+K Carlson       c Hill b Holland          30   44   4   -
+M Savage        not out                   161  278  18  -
+C Ingram        c Holland b Green         21   31   1   1
+B Root          lbw b Holland             4    9    -   -
+B Kellaway      lbw b Mike                44   43   7   -
+W Smale         b Mike                    24   24   4   -
+M Crane         c Kelly b Green           1    2    -   -
+N McAndrew      c Kelly b Scriven         22   44   2   -
+T v' Gugten     c Kelly b Scriven         19   40   2   -
+------------------------------------------------------------
+Extras: (nb14,w2)                         16
+TOTAL: (all out, 115.4 overs)             471
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+B Mike          32     0     187    3     5.84
+I Holland       34     4     76     3     2.23
+B Green         25     1     106    2     4.24
+T Scriven       15.4   1     66     2     4.21
+R Ahmed         9      0     36     0     4.00
+------------------------------------------------------------
+Fall of Wickets:
+1-75  2-146  3-195  4-232  5-241  
+6-320  7-362  8-368  9-428  10-471
+
+************************************************************
+************************************************************
+
+Leicestershire - 2nd Innings              R    B    4s  6s
+------------------------------------------------------------
+R Patel         c Kellaway b v' Gugten    10   26   1   -
+S Eskinazi      c Smale b McAndrew        0    3    -   -
+L Hill          c Tribe b McAndrew        6    27   -   -
+R Ahmed         c Crane b Kellaway        35   49   4   -
+N Kelly         lbw b McAndrew            1    7    -   -
+S Budinger      c Ingram b Kellaway       20   20   3   -
+B Cox           not out                   28   43   4   -
+T Scriven       not out                   21   27   3   -
+B Mike          
+I Holland       
+B Green         
+------------------------------------------------------------
+Extras: (nb2)                             2
+TOTAL: (6 wkts, 33.3 overs)               123
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+N McAndrew      14     1     38     3     2.71
+T v' Gugten     8      0     29     1     3.62
+B Kellaway      10     0     47     2     4.70
+S Dickson       1      0     7      0     7.00
+M Crane         0.3    0     2      0     4.00
+------------------------------------------------------------
+Fall of Wickets:
+1-1  2-13  3-19  4-27  5-59  
+6-84  
+
+************************************************************
+Leicestershire won by 4 wickets
+Man of the match: B Mike
+************************************************************

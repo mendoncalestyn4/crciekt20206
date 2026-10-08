@@ -35,7 +35,9 @@ def games(career, ids) -> pd.DataFrame:
     """One row per team per match: who they played, where, the result from their
     side, whether they batted first, the first-innings score (and the target in a
     one-innings game), and whether it was a close game (won by under 10 runs or by
-    1-2 wickets, or tied)."""
+    1-2 wickets, or tied).  In a game shortened by rain the first-innings score and
+    target are left blank: they weren't made over the full overs, so they don't
+    compare with other totals (lowest total defended, chasing by target size)."""
     m = career.matches[career.matches.match_id.isin(ids)]
     if m.empty:
         return _typed(pd.DataFrame(columns=GAME_COLUMNS))
@@ -46,7 +48,7 @@ def games(career, ids) -> pd.DataFrame:
     for r in m.itertuples():
         kind = KIND.get(r.format, "t20")
         bat1 = first.team.get(r.match_id, r.batted_first or "")
-        score1 = first.runs.get(r.match_id, np.nan)
+        score1 = np.nan if getattr(r, "rain", False) else first.runs.get(r.match_id, np.nan)
         close_runs = bars_for(kind)["close_runs"]  # under 10 runs in a T20, 20 in one-day, 50 in a Test
         close = bool(r.result_type == "tie" or (pd.notna(r.margin_runs) and r.margin_runs < close_runs and not r.innings_win)
                      or (pd.notna(r.margin_wickets) and r.margin_wickets <= 2))
@@ -231,7 +233,7 @@ def position_race(career, ids) -> pd.DataFrame:
     The groups are the season's final ones; the order is the league table's:
     points (or wins), then net run rate where there is one, then fewest defeats."""
     from .tables import BILATERAL, LIMITED, _groups, points_rule
-    from .analysis import BALL_QUOTA
+    from .analysis import nrr_innings
     cols = ["date", "round", "group", "team", "position", "points", "played"]
     m = career.matches[career.matches.match_id.isin(ids) & ~career.matches.knockout].sort_values(["date", "match_id"])
     if m.empty or m.competition.iloc[0] in BILATERAL:
@@ -241,8 +243,7 @@ def position_race(career, ids) -> pd.DataFrame:
     limited = fmt in LIMITED
     inn = career.innings[career.innings.match_id.isin(m.match_id)]
     first = inn[inn.team_innings == 1].groupby(["match_id", "team"]).runs.sum()
-    quota = BALL_QUOTA.get(fmt)
-    by_match = {k: x for k, x in inn.groupby("match_id")}
+    by_match = {k: x for k, x in nrr_innings(career, m.match_id).groupby("match_id")}  # as net run rate counts them
     rows = []
     for label, gm, members in _groups(m):
         tally = {t: dict(points=0.0, won=0, lost=0, played=0, rf=0, bf=0, ra=0, ba=0) for t in members}
@@ -275,7 +276,7 @@ def position_race(career, ids) -> pd.DataFrame:
                             t["points"] += pts.get("draw_lead", pts["draw"]) if lead else pts["draw"]
                     if x is not None and limited:
                         for inn_r in x.itertuples():
-                            balls = quota if (inn_r.all_out and quota) else inn_r.balls
+                            balls = inn_r.balls
                             if inn_r.team == team:
                                 t["rf"] += inn_r.runs
                                 t["bf"] += balls
@@ -530,7 +531,10 @@ def score_chances(career, ids, score: int, team: str = "") -> dict:
 # --------------------------------------------------------------------------- #
 
 
-KNOWN_SHAPES = {"Indian Premier League": (14, 4), "The Hundred": (8, 3)}  # league games each, places that go through
+# the game's own shapes, for a first season with nothing earlier to learn from: league games each, places that go
+# through from each group, and how many of the best next-placed sides also go through (the Blast's two best thirds)
+KNOWN_SHAPES = {"Indian Premier League": (14, 4, 0), "The Hundred": (8, 3, 0), "T20 Blast": (12, 2, 2),
+                "County Championship": (14, 1, 0)}
 
 
 def has_knockouts(career, event: str) -> bool:
@@ -543,9 +547,11 @@ def has_knockouts(career, event: str) -> bool:
 
 
 def qualification_defaults(career, event: str, season: str) -> dict:
-    """Best guesses for a league's shape: league games per team and places that go
-    through, from an earlier season of the same competition where there is one,
-    otherwise from this season's groups (top 4 of one league, top 2 of each group)."""
+    """Best guesses for a league's shape: league games per team, places that go through
+    from each group, and how many of the best next-placed sides also go through
+    (`extra`: the Blast's two best thirds), from an earlier season of the same
+    competition where there is one, otherwise the game's usual shape, otherwise this
+    season's groups (top 4 of one league, top 2 of each group)."""
     from .tables import _groups
     m = career.matches[(career.matches.event == event)]
     now = m[m.season == season]
@@ -553,7 +559,7 @@ def qualification_defaults(career, event: str, season: str) -> dict:
     n_groups = max(len(groups), 1)
     sizes = [len(g[2]) for g in groups] or [len(set(now.home) | set(now.away))]
     earlier = sorted(s for s in m.season.unique() if s < season)
-    games = places = None
+    games = places = extra = None
     for s in reversed(earlier):
         old = m[m.season == s]
         lg = old[~old.knockout]
@@ -565,16 +571,19 @@ def qualification_defaults(career, event: str, season: str) -> dict:
         if len(ko):
             first_round = ko.sort_values("date")
             teams_ko = set(first_round.home) | set(first_round.away)
-            places = max(1, round(len(teams_ko) / n_groups))
+            places = max(1, len(teams_ko) // n_groups)
+            extra = len(teams_ko) - places * n_groups if n_groups > 1 else 0
         break
-    known = KNOWN_SHAPES.get(event)
+    known = KNOWN_SHAPES.get(event) or (KNOWN_SHAPES.get(m.competition.iloc[0]) if len(m) else None)
     if games is None:
         per = pd.concat([now[~now.knockout].home, now[~now.knockout].away]).value_counts()
         rr = max(sizes) - 1
         games = int(max(per.max() if len(per) else 0, known[0] if known else rr))
     if places is None:
         places = known[1] if known else 4 if n_groups == 1 else 2
-    return dict(games=games, places=min(places, max(sizes) - 1 if max(sizes) > 1 else 1), groups=n_groups)
+        extra = known[2] if known and n_groups > 1 else 0
+    places = min(places, max(sizes) - 1 if max(sizes) > 1 else 1)
+    return dict(games=games, places=places, extra=extra or 0, groups=n_groups)
 
 
 def qualification(career, event: str, season: str, games: int, places: int) -> pd.DataFrame:

@@ -179,8 +179,8 @@ def two_team_scatter(key, da, db, x, y, x_label, y_label, slope, line_label, hov
     for d, colour, team in ((da, col_a, a), (db, col_b, b)):
         fig.add_trace(go.Scatter(x=d[x], y=d[y], mode="markers", name=team, marker=dict(size=11, color=colour, line=dict(color=c["surface"], width=2)),
                                  customdata=[hover(r) for r in d.itertuples()], hovertemplate="%{customdata}<extra></extra>"))
-    # each side's top three are named, each right next to its own dot
-    top = pd.concat([d.sort_values(y, ascending=False).head(3) for d in (da, db)]).sort_values(y, ascending=False)
+    # each side's top two are named, each joined to its own dot; every other dot shows its figures on hover
+    top = pd.concat([d.sort_values(y, ascending=False).head(2) for d in (da, db)]).sort_values(y, ascending=False)
     ann = label_annotations([(getattr(r, x), getattr(r, y), r.player) for r in top.itertuples()],
                             list(zip(alld[x], alld[y])), (0, xmax), (0, ymax), c, height_px=330)
     ann.append(dict(x=xmax * 0.3, y=slope * xmax * 0.3, xanchor="left", yanchor="top", xshift=6, showarrow=False,

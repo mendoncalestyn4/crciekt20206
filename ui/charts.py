@@ -194,7 +194,7 @@ def player_profile(r) -> str:
 
 
 def dot_chart(pool: pd.DataFrame, ranked: pd.DataFrame, stat: Stat, best: bool, highlight: str = "",
-              label_top: int = 5) -> go.Figure:
+              label_top: int = 4) -> go.Figure:
     """Every qualifying player as a dot; the ranked ones coloured; the average
     as a dashed line with the better side shaded."""
     c = colours()
@@ -430,8 +430,32 @@ def race_chart(race: pd.DataFrame, team: str) -> go.Figure:
     return fig
 
 
+def odds_chart(hist: pd.DataFrame, col: str, what: str, team: str) -> go.Figure:
+    """Each side's chance (%) after every match day: the chosen side in colour, the others in grey; sides that never
+    got to a 5% chance are left out so the race stays readable."""
+    c = colours()
+    fig = go.Figure()
+    peak = hist.groupby("team")[col].max()
+    keep = [t for t in peak.index if peak[t] >= 5 or t == team]
+    for t, g in sorted(((t, g) for t, g in hist.groupby("team") if t in keep), key=lambda x: x[0] == team):
+        mine = t == team
+        g = g.sort_values("date")
+        fig.add_trace(go.Scatter(
+            x=g.date, y=g[col], mode="lines+markers" if mine else "lines", name=t,
+            line=dict(color=c["s1"] if mine else c["dim"], width=3.5 if mine else 1.4),
+            marker=dict(size=5, color=c["s1"]),
+            hovertemplate=f"<b>{t}</b><br>after %{{x|%d %b}}: %{{y:.0f}}% {what}<extra></extra>"))
+        last = g.iloc[-1]
+        fig.add_annotation(x=last.date, y=last[col], text=t, showarrow=False, xanchor="left", xshift=6,
+                           font=dict(size=11 if mine else 9, color=c["ink"] if mine else c["muted"]))
+    fig.update_layout(**_layout(c, height=380, xaxis=_axis(c, "After the games of"),
+                                yaxis=_axis(c, f"Chance of {what} (%)", range=[0, 103]),
+                                margin=dict(l=10, r=150, t=10, b=10)))
+    return fig
+
+
 def quadrant_chart(d: pd.DataFrame, x: str, y: str, x_label: str, y_label: str, x_ref: float, y_ref: float,
-                   corners: tuple[str, str, str, str], label_top: int = 10, highlight: list[str] | None = None,
+                   corners: tuple[str, str, str, str], label_top: int = 4, highlight: list[str] | None = None,
                    x_better_low: bool = False, y_better_low: bool = False) -> go.Figure:
     """Every player as a dot, split into four by the average lines. `corners`: names for
     top-right, top-left, bottom-right, bottom-left (in that order)."""

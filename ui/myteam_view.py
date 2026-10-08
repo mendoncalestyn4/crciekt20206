@@ -42,9 +42,18 @@ def render(career, team: str, key: str) -> None:
                           f"{TP.wdl(b['record'])}<span class='small'>{pos}</span>"))
             b["elo_text"] = elo
         kpis(tiles)
+        def odds_text(ch):
+            if not ch:
+                return ""
+            pc = lambda v: "<1%" if 0 < v < 0.5 else ">99%" if 99.5 <= v < 100 else f"{v:.0f}%"  # noqa: E731
+            return (f"; playoff chance {pc(ch['playoffs'])}, title {pc(ch['title'])}" if ch["knockouts"] else
+                    f"; chance of topping the table {pc(ch['top'])}")
         st.caption(" · ".join(f"{b['section']}: {b['elo_text']}, {b['rank']} of {b['teams']} in the ratings"
                               + (f", {b['position'][2]} in {b['position'][0]}" if b["position"] else "")
-                              for b in bn[:4] if b.get("elo_text")) + ". ▲▼ = rating change over the last 5 games.")
+                              + odds_text(b.get("chances"))
+                              for b in bn[:4] if b.get("elo_text")) + ". ▲▼ = rating change over the last 5 games."
+                   + (" Chances: the rest of the season played out 2,000 times (Competitions → Title race)."
+                      if any(b.get("chances") for b in bn[:4]) else ""))
 
     # ---------------------------------------------------------------- latest result + last 5
     last = MT.last_game(career, team)

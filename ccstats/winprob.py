@@ -25,7 +25,8 @@ from .stats import KIND
 BAND = {"t20": 10, "one": 20, "multi": 30}  # runs either side of the lead counted as 'similar'
 MIN_GAMES = 8
 PRIOR_WEIGHT = 5  # small samples are pulled towards the usual result for that innings, so 9 games can't say "100%"
-STATE_COLUMNS = ["match_id", "innings_no", "t1_batting", "wickets", "lead", "score", "outcome", "team1", "team2"]
+STATE_COLUMNS = ["match_id", "innings_no", "t1_batting", "wickets", "lead", "score", "outcome", "team1", "team2",
+                 "rain"]
 
 
 def _outcome(r, team1: str) -> str:
@@ -60,14 +61,16 @@ def states(career, ids) -> pd.DataFrame:
         out = _outcome(r, team1)
         if not out:
             continue
+        rain = bool(getattr(r, "rain", False))  # kept for its own line; never used to judge other games
         done = {team1: 0, team2: 0}
         for i in g.itertuples():
             t1_bat = i.team == team1
             base = done[team1] - done[team2]
             sign = 1 if t1_bat else -1
-            rows.append((r.match_id, i.innings_no, t1_bat, 0, base, 0, out, team1, team2))
+            rows.append((r.match_id, i.innings_no, t1_bat, 0, base, 0, out, team1, team2, rain))
             for wk, sc in falls.get((r.match_id, i.innings_no), []):
-                rows.append((r.match_id, i.innings_no, t1_bat, int(wk), base + sign * int(sc), int(sc), out, team1, team2))
+                rows.append((r.match_id, i.innings_no, t1_bat, int(wk), base + sign * int(sc), int(sc), out, team1, team2,
+                             rain))
             done[i.team] = done.get(i.team, 0) + int(i.runs)
     return pd.DataFrame(rows, columns=STATE_COLUMNS)
 
@@ -100,8 +103,9 @@ def _index(st_: pd.DataFrame) -> dict:
         codes = {"W": 0, "D": 1, "L": 2, "T": 3}
         mids = pd.factorize(st_.match_id)[0] if len(st_) else np.array([], dtype=int)
         for key, g in st_.assign(_m=mids).groupby(["innings_no", "t1_batting"]):
+            rain = g.rain.to_numpy(dtype=bool) if "rain" in g else np.zeros(len(g), dtype=bool)
             idx[key] = (g.wickets.to_numpy(), g.lead.to_numpy(dtype=float), g.outcome.map(codes).to_numpy(),
-                        g._m.to_numpy(), g.match_id.to_numpy())
+                        g._m.to_numpy(), g.match_id.to_numpy(), rain)
         cache["index"] = idx
     return idx
 
@@ -113,8 +117,9 @@ def chance(st_: pd.DataFrame, innings_no: int, t1_batting: bool, wickets: int, l
     grp = _index(st_).get((innings_no, bool(t1_batting)))
     if grp is None:
         return empty
-    wk, ld, oc, mi, mid = grp
-    keep = np.ones(len(wk), dtype=bool) if exclude is None else (mid != exclude)
+    wk, ld, oc, mi, mid, rain = grp
+    # a game shortened by rain was decided by its own overs and the rain rule: it says nothing about full games
+    keep = ~rain if exclude is None else (mid != exclude) & ~rain
     # the usual result for this innings (each match once), for pulling small samples towards
     _, first = np.unique(mi[keep], return_index=True)
     prior = np.bincount(oc[keep][first], minlength=4) / max(len(first), 1)

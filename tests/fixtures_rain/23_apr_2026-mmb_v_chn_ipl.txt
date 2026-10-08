@@ -1,0 +1,74 @@
+************************************************************
+Mumbai Indians v Chennai Super Kings
+Indian Premier League - 23 Apr 2026
+************************************************************
+
+Mumbai Indians - 1st Innings              R    B    4s  6s
+------------------------------------------------------------
+Q DKock         c Patel b Overton         20   8    4   -
+W Jacks         c Gopal b Overton         18   15   2   -
+T Varma         c Forrester b Kamboj      8    6    -   1
+S Yadav         lbw b Hosein              9    13   -   -
+R Sharma        lbw b Forrester           38   26   2   2
+H Pandya        not out                   37   24   3   -
+R Ahir          run out                   22   12   3   -
+C Bosch         not out                   21   10   3   1
+M Markande      
+J Bumrah        
+A Ghazanfar     
+------------------------------------------------------------
+Extras: (w2)                              2
+TOTAL: (6 wkts, 19 overs)                 175
+
+************************************************************
+
+                O      D     R      W     Econ
+------------------------------------------------------------
+A Kamboj        4      8     48     1     12.00
+J Overton       4      9     26     2     6.50
+A Hosein        4      5     34     1     8.50
+D Forrester     4      3     39     1     9.75
+S Gopal         3      3     28     0     9.33
+------------------------------------------------------------
+Fall of Wickets:
+1-25  2-34  3-50  4-62  5-109  
+6-142  
+
+************************************************************
+************************************************************
+
+Chennai Super Kings - 1st Innings         R    B    4s  6s
+------------------------------------------------------------
+A Mhatre        c Ghazanfar b Bumrah      16   7    1   2
+S Samson        c Jacks b Bosch           7    3    -   1
+K Sharma        b Bosch                   13   13   1   -
+S Dubey         lbw b Pandya              23   9    3   1
+U Patel         c Jacks b Bosch           4    2    1   -
+S Khan          lbw b Pandya              18   11   2   1
+D Forrester     c DKock b Markande        21   22   2   -
+S Gopal         not out                   13   13   2   -
+J Overton       not out                   3    5    -   -
+A Hosein        
+A Kamboj        
+------------------------------------------------------------
+Extras: (nb1)                             1
+TOTAL: (7 wkts, 14 overs)                 119
+
+************************************************************
+
+                O      D     R      W     Econ
+------------------------------------------------------------
+J Bumrah        2      6     26     1     13.00
+C Bosch         4      4     43     3     10.75
+H Pandya        4      11    30     2     7.50
+A Ghazanfar     3      7     18     0     6.00
+M Markande      1      4     2      1     2.00
+------------------------------------------------------------
+Fall of Wickets:
+1-17  2-25  3-60  4-60  5-71  
+6-95  7-114  
+
+************************************************************
+Chennai Super Kings won by 3 wickets
+Man of the match: J Overton
+************************************************************

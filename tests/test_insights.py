@@ -29,7 +29,9 @@ def test_total_bands_add_up(career):
     for section in career.matches.section.unique():
         ids = Scope(sections=[section]).match_ids(career.matches)
         t, size = I.total_enough(career, ids)
-        finished = career.matches[career.matches.match_id.isin(ids) & (career.matches.result_type != "no result")]
+        # every finished game that ran its course (one shortened by rain isn't comparable)
+        finished = career.matches[career.matches.match_id.isin(ids) & (career.matches.result_type != "no result")
+                                  & ~career.matches.rain]
         assert t.matches.sum() == len(finished), section
         assert (t.won + t.lost + t.drawn + t.tied == t.matches).all()
         fi = I.first_innings(career, ids)

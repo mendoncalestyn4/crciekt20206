@@ -1,0 +1,140 @@
+************************************************************
+Essex v Warwickshire
+County Championship - D1 - 15 Sep 2026
+************************************************************
+
+Essex - 1st Innings                       R    B    4s  6s
+------------------------------------------------------------
+D Elgar         c Davies b Woakes         6    25   -   -
+P Walter        c Barnard b Woakes        53   88   5   -
+C Allison       c Suthar b H'n-Dalby      15   30   1   -
+M Pepper        c Hain b Woakes           39   84   5   -
+T Westley       c Webster b Bamber        47   89   7   -
+M Critchley     c Davies b Suthar         53   79   6   -
+W Mulder        not out                   41   65   4   -
+S Harmer        lbw b Woakes              6    16   -   -
+S Snater        lbw b Bamber              16   21   3   -
+S Cook          c Yates b Bamber          1    7    -   -
+J Porter        lbw b Bamber              0    5    -   -
+------------------------------------------------------------
+Extras: (nb12,w4)                         16
+TOTAL: (all out, 83.5 overs)              293
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+C Woakes        26     5     67     4     2.58
+E Bamber        21.5   1     74     4     3.39
+O H'n-Dalby     8      0     36     1     4.50
+M Suthar        25     2     108    1     4.32
+B Webster       3      0     8      0     2.67
+------------------------------------------------------------
+Fall of Wickets:
+1-18  2-55  3-99  4-141  5-208  
+6-235  7-256  8-289  9-291  10-293
+
+************************************************************
+************************************************************
+
+Warwickshire - 1st Innings                R    B    4s  6s
+------------------------------------------------------------
+R Yates         rtrd ht                   6    23   -   -
+A Davies        c Porter b Cook           10   48   -   -
+S Hain          b Snater                  5    15   1   -
+B Webster       c Walter b Harmer         16   37   -   -
+E Barnard       c Pepper b Snater         30   42   5   -
+D Mousley       c Pepper b Porter         9    20   -   -
+Z Malik         c Critchley b Porter      16   24   2   -
+M Suthar        not out                   12   36   1   -
+C Woakes        lbw b Snater              18   25   1   1
+E Bamber        c Allison b Harmer        5    26   -   -
+O H'n-Dalby     b Harmer                  1    7    -   -
+------------------------------------------------------------
+Extras: (nb6)                             6
+TOTAL: (9 wkts, 50 overs)                 134
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+S Cook          17     2     47     1     2.76
+J Porter        13     1     30     2     2.31
+S Snater        9      2     24     3     2.67
+S Harmer        11     2     33     3     3.00
+------------------------------------------------------------
+Fall of Wickets:
+1-21  2-27  3-69  4-69  5-94  
+6-95  7-122  8-132  9-134  
+
+************************************************************
+************************************************************
+
+Essex - 2nd Innings                       R    B    4s  6s
+------------------------------------------------------------
+D Elgar         not out                   47   73   6   -
+P Walter        not out                   40   56   3   -
+C Allison       
+M Pepper        
+T Westley       
+M Critchley     
+W Mulder        
+S Harmer        
+S Snater        
+S Cook          
+J Porter        
+------------------------------------------------------------
+Extras: (nb4)                             4
+TOTAL: (0 wkts, 21.1 overs)               91
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+C Woakes        7      1     24     0     3.43
+O H'n-Dalby     6      0     35     0     5.83
+E Bamber        4.1    0     19     0     4.56
+M Suthar        4      0     13     0     3.25
+------------------------------------------------------------
+Fall of Wickets:
+
+
+
+************************************************************
+************************************************************
+
+Warwickshire - 2nd Innings                R    B    4s  6s
+------------------------------------------------------------
+R Yates         b Harmer                  24   62   3   -
+A Davies        lbw b Cook                53   97   7   -
+S Hain          lbw b Porter              33   92   4   -
+B Webster       c Cook b Mulder           43   62   5   -
+E Barnard       b Cook                    5    13   -   -
+D Mousley       b Cook                    22   56   2   -
+Z Malik         b Harmer                  26   46   3   -
+M Suthar        not out                   20   64   1   -
+C Woakes        c Allison b Harmer        2    3    -   -
+E Bamber        lbw b Snater              8    46   -   -
+O H'n-Dalby     c Harmer b Porter         0    9    -   -
+------------------------------------------------------------
+Extras: (nb8,w3)                          11
+TOTAL: (all out, 91 overs)                247
+
+************************************************************
+
+                O      M     R      W     Econ
+------------------------------------------------------------
+S Cook          28     3     75     3     2.68
+J Porter        21     3     50     2     2.38
+S Snater        8      2     13     1     1.62
+W Mulder        5      0     21     1     4.20
+S Harmer        29     1     88     3     3.03
+------------------------------------------------------------
+Fall of Wickets:
+1-53  2-107  3-149  4-164  5-166  
+6-212  7-214  8-220  9-245  10-247
+
+************************************************************
+Essex won by 10 wickets
+Man of the match: P Walter
+************************************************************

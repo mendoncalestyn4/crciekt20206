@@ -78,8 +78,8 @@ The pages are grouped in the menu:
 | **Matches** | Search any match: scoreboard, **your notes** (saved with the career), a written match report with an excitement rating, **win chance** after every wicket (ending at the result), wicket timeline with the par line, full scorecard. With no match picked: the best games you've played |
 | **Fixtures** | Your schedule: add a series with pickers (opponent, format, how many, home or away, month) or type your whole year one line per series. Each match ticks itself off when the game saves its scorecard. **Forgot something?** Any match your team plays that isn't in the schedule is added by itself (🆕), with the rest of its series, and in a tournament the next knockout game (quarter-final, semi-final, Qualifier 2, final) appears once you're through, against the other tie's winner when that's known. Also: the next match with a prediction, series previews and live series chances, series reports, a year calendar, the World Test Championship race, milestone countdowns and season goals. Home and away for your matches come from your schedule |
 | **Season** | A results calendar, a tracker for every bilateral series (with the chances of each series result while it's still going), and how far each competition has got |
-| **Competitions** | Pick a competition (a World Cup, the bilateral ODI series, a league): league tables (points, NRR, wins batting first and chasing, last 5, home and away, points per game, run rates, places moved since the last match day), knockout brackets, every series with its Player of the Series, and for Tests the **World Test Championship** table (12 a win, 6 a tie, 4 a draw, by % of points) |
-| **Season review** | Each competition's season in one place: champions and the final, Team of the Season, leading players, breakout players, best matches, biggest upset, records broken, your report card. International cricket gets a calendar-year review: Player of the Year and Team of the Year in Tests, ODIs and T20Is, and the Cricketer of the Year |
+| **Competitions** | Pick a competition (a World Cup, the bilateral ODI series, a league): league tables (points, NRR, wins batting first and chasing, last 5, home and away, points per game, run rates, places moved since the last match day), knockout brackets, the **title race** (each side's chance of the playoffs and the title, from the rest of the season played out 4,000 times, with how it changed after every match day), every series with its Player of the Series, and for Tests the **World Test Championship** table (12 a win, 6 a tie, 4 a draw, by % of points) |
+| **Season review** | Each competition's season in one place: champions and the final, Team of the Season, leading players, breakout players, best matches, biggest upset, records broken, your report card, and the **most valuable players** (impact points in every format, or the IPL's own MVP points in T20 and The Hundred). International cricket gets a calendar-year review: Player of the Year and Team of the Year in Tests, ODIs and T20Is, and the Cricketer of the Year |
 | **Honours board** | Champions of every competition and season, top scorers, trophy cabinets |
 | **Rivalries** | Every pair of teams that have met, and who does best in those games |
 | **Records** | The record books (partnerships with both batters named where the scorecard allows) with the **near miss** under each (the closest anyone has come), the **record timeline** (who held each record and when it fell), plus "On pace for" projections while a season is under way |
@@ -126,6 +126,18 @@ count in anyone's Test, ODI, T20I or domestic record, and they have no league ta
 `editteamnames.txt`) in the *Cricket Captain 2026* folder that holds your Scorecards folder (or in the Scorecards
 folder itself). The Stats Pack reads them when it opens your career, and again whenever they change. A competition
 you rename stays the same competition, under the name the site already uses for it, so its records carry on.
+
+## Rain and declarations
+
+The scorecards never say "rain", but a shortened game gives itself away: an innings stopped short of its overs
+without being bowled out, a margin the scores don't give (the rain rule, shown as "(DLS)"), a chase won below the
+other side's total, or an abandoned game. Such games are marked on the Matches page. They count as normal for the
+players' runs and wickets, but they're left out of par scores, "Is this total enough?", lowest total defended and the
+win chances of other games. Net run rate follows the ICC's rules: abandoned games don't count, a side bowled out is
+charged its overs, and in a rain-rule result the side batting first is credited with the par score.
+
+The scorecards don't say "declared" either. An innings that ended with two batters not out, before the last innings,
+was declared; one that ended because a batter retired hurt and nobody was left to bat counts as all out.
 
 ## Replayed a season?
 

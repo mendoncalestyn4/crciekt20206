@@ -173,8 +173,9 @@ def test_targets_close_games_stages_and_opponents_add_up(season):
     ids = Scope(sections=[IPL]).match_ids(season.matches)
     g = TP.games(season, ids)
     tb = TP.target_buckets(season, ids)
-    assert tb.chase_played.sum() == (~g.batted_first).sum()
-    assert tb.defend_played.sum() == g.batted_first.sum()
+    whole = g[g.first_score.notna()]  # a game shortened by rain has no comparable target
+    assert tb.chase_played.sum() == (~whole.batted_first).sum()
+    assert tb.defend_played.sum() == whole.batted_first.sum()
     for team in sorted(set(g.team)):
         mine = g[g.team == team]
         cg = TP.close_games(season, ids, team)
@@ -251,7 +252,7 @@ def test_innings_by_number_and_follow_on(career):
 
 def test_qualification(season):
     d = TP.qualification_defaults(season, IPL, "2026")
-    assert d == dict(games=14, places=4, groups=1)  # the IPL's own shape: no earlier season to learn it from
+    assert d == dict(games=14, places=4, extra=0, groups=1)  # the IPL's own shape: no earlier season to learn it from
     q = TP.qualification(season, IPL, "2026", 14, 4)
     assert len(q) == 10 and set(q.status) <= {"Through", "Out", "Alive"}
     for r in q.itertuples():
