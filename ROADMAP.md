@@ -66,3 +66,35 @@ What the site does, the decisions behind it, and what is built so far.
 - ✅ **Records** and **"New record!" alerts** when a new match breaks one (new 13)
 - ✅ **Matches**: search, scorecards and the **wicket timeline** (new 7)
 - ✅ **Data check** (22): scorecard report, unclear catches to credit, same-name players to merge or split (manual, undoable)
+
+## Next (agreed, not built yet)
+
+Waiting to be tested and pushed (written, in the working copy):
+
+- ⏳ Rain-affected results keep the game's official margin (the rain rule, DLS) and show "(DLS)"; the scores no
+  longer overwrite it (6 games in the real career, e.g. "Chennai won by 20 runs" was shown as 116)
+- ⏳ Chart names always joined to their own dot by a thin line, never placed where another dot is closer
+- ⏳ The site is always dark (the night-match look), whatever Windows is set to
+
+To do:
+
+- ☐ Name only the top **4** dots on dot charts; the rest show their figures on hover
+- ☐ Rain games everywhere: mark rain-shortened games, leave them out of "Is this total enough?" and the lowest-total
+  records, and use the shortened overs in net run rate
+- ☐ Check that a draw is never marked as a declaration
+- ☐ **Title and playoff odds** (idea 3): play the rest of a league season out thousands of times from the team
+  ratings; each side's chance of the playoffs and the title, updated after every match
+- ☐ **Season MVP table** (idea 4): one points score per player per season (runs, wickets, catches, match impact),
+  like the IPL's Most Valuable Player list
+
+Ideas to decide on later:
+
+- "Since you last looked" panel on Home: new matches, records, milestones, table moves, form changes
+- Download the whole career to Excel (matches, batting, bowling, fielding, records)
+- Faster opening for very big careers (save the built tables between runs)
+- Bowler workload: overs each bowler has bowled in the last 7 and 14 days, flagging tired bowlers before the next
+  match
+- One-page season report as a picture or PDF, ready to share
+- Quick question box: type "most sixes IPL 2027" and get the answer and the list
+
+Decided against: team logos.
