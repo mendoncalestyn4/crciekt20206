@@ -29,9 +29,10 @@ if state.current() is None and "boot_done" not in st.session_state:
         state.show(state.demo_career())
 
 
-@st.fragment(run_every="20s")
-def watch_status() -> None:
-    """Check every watched Scorecards folder and add new matches to its career."""
+def sync_folders() -> tuple[bool, int]:
+    """Check every watched Scorecards folder and add new matches to its career.  (Whether the career on screen
+    changed, how many folders are watched.)"""
+    st.session_state["synced_at"] = time.monotonic()
     w = state.watcher()
     try:
         state.store().backup_all_due()  # weekly copy of every career, see the Backups panel on Home
@@ -57,8 +58,31 @@ def watch_status() -> None:
                 refresh = True
         if res and res.failed:
             st.toast(f"{len(res.failed)} file(s) could not be read. See the Home page.", icon="⚠️")
-    if folders:
-        st.caption(f"Watching {len(folders)} folder{'s' if len(folders) > 1 else ''} · checked {time.strftime('%H:%M:%S')}")
+    return refresh, len(folders)
+
+
+# New matches are taken in before anything is drawn, so the page you opened (a bookmark, a new tab) shows them
+# straight away; restarting the run here would lose which page you asked for.
+try:
+    sync_folders()
+except Exception:  # noqa: BLE001 - a folder or settings file that can't be read must never stop the site
+    pass  # (the 20-second check tries again)
+
+
+@st.fragment(run_every="20s")
+def watch_status() -> None:
+    """Every 20 seconds while a page is open: new matches in a watched folder are added, and the page redrawn
+    with them.  (When the whole page is drawn, the check above has just run.)"""
+    if time.monotonic() - st.session_state.get("synced_at", 0.0) < 5:
+        n = len({s.folder for name in state.career_names() if (s := state.settings_of(name)) and s.folder})
+        refresh = False
+    else:
+        try:
+            refresh, n = sync_folders()
+        except Exception:  # noqa: BLE001 - the next check tries again
+            refresh, n = False, 0
+    if n:
+        st.caption(f"Watching {n} folder{'s' if n > 1 else ''} · checked {time.strftime('%H:%M:%S')}")
     if refresh:
         st.rerun()
 
