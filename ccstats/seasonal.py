@@ -508,12 +508,13 @@ def after_match(career, team: str, match_id: str | None = None) -> dict:
     out["elo"] = (float(h.before.iloc[0]), float(h.after.iloc[0])) if len(h) else None
     # league position, before and after (league games of this event and season)
     if not r.knockout and r.level not in ("International", "Exhibition", "Tour"):
-        lg = m[(m.event == r.event) & (m.season == r.season) & ~m.knockout].sort_values(["date", "match_id"])
-        upto = list(lg.match_id)
-        if mid in upto:
-            i = upto.index(mid)
-            after = table_position(career, upto[:i + 1], team)
-            before = table_position(career, upto[:i], team) if i else None
+        lg = m[(m.event == r.event) & (m.season == r.season) & ~m.knockout]
+        if mid in set(lg.match_id):
+            # the table after this match day (every game that day, not just the ones listed before this one) and
+            # after the match day before, as the league table page counts places moved
+            after = table_position(career, lg[lg.date <= r.date].match_id, team)
+            earlier = lg[lg.date < r.date]
+            before = table_position(career, earlier.match_id, team) if len(earlier) else None
             out["position"] = (before, after)
     # series score after this match
     if r.series_id:

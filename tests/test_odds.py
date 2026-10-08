@@ -136,3 +136,20 @@ def test_the_competitions_page_shows_the_race(demo):
     text = " ".join(m.value for m in at.markdown)
     assert "Through" in text and "Title" in text
     assert any("What it shows" in m.value for m in at.markdown)
+
+
+def test_table_place_after_a_game_counts_the_whole_match_day(demo):
+    """'What changed after the latest game' and the league table agree: the place after a game counts every game of
+    that match day, not only those listed before it."""
+    from ccstats import seasonal as SN
+    cut = halfway(demo, "2027")
+    sub = Career.build("cut", [], existing={s: t for s, t in demo.texts.items()
+                                            if s in set(demo.matches[demo.matches.date <= cut].source)})
+    lg = sub.matches[(sub.matches.season == "2027") & ~sub.matches.knockout]
+    for team in sorted(set(lg.home))[:6]:
+        a = SN.after_match(sub, team)
+        if "position" not in a:
+            continue
+        day = sub.matches.set_index("match_id").date[a["match_id"]]
+        want = SN.table_position(sub, lg[lg.date <= day].match_id, team)
+        assert a["position"][1] == want, team

@@ -432,11 +432,13 @@ def race_chart(race: pd.DataFrame, team: str) -> go.Figure:
 
 def odds_chart(hist: pd.DataFrame, col: str, what: str, team: str) -> go.Figure:
     """Each side's chance (%) after every match day: the chosen side in colour, the others in grey; sides that never
-    got to a 5% chance are left out so the race stays readable."""
+    got to a 5% chance are left out so the race stays readable.  Only the chosen side and the three highest at the end
+    are named there (pulled apart so they never overlap); every line shows its side on hover."""
     c = colours()
     fig = go.Figure()
     peak = hist.groupby("team")[col].max()
     keep = [t for t in peak.index if peak[t] >= 5 or t == team]
+    ends = []
     for t, g in sorted(((t, g) for t, g in hist.groupby("team") if t in keep), key=lambda x: x[0] == team):
         mine = t == team
         g = g.sort_values("date")
@@ -445,11 +447,19 @@ def odds_chart(hist: pd.DataFrame, col: str, what: str, team: str) -> go.Figure:
             line=dict(color=c["s1"] if mine else c["dim"], width=3.5 if mine else 1.4),
             marker=dict(size=5, color=c["s1"]),
             hovertemplate=f"<b>{t}</b><br>after %{{x|%d %b}}: %{{y:.0f}}% {what}<extra></extra>"))
-        last = g.iloc[-1]
-        fig.add_annotation(x=last.date, y=last[col], text=t, showarrow=False, xanchor="left", xshift=6,
-                           font=dict(size=11 if mine else 9, color=c["ink"] if mine else c["muted"]))
+        ends.append((g.date.iloc[-1], float(g[col].iloc[-1]), t, mine))
+    top = float(hist[hist.team.isin(keep)][col].max()) if len(keep) else 100.0
+    y_max = 103.0 if top > 80 else max(10.0, top * 1.2)
+    named = sorted(ends, key=lambda e: (not e[3], -e[1]))[:4]  # the chosen side, then the three highest at the end
+    named = sorted(named, key=lambda e: e[1])
+    gap, last_y = y_max * 0.045, None
+    for x, y, t, mine in named:  # bottom to top, each at least a line's height above the one below
+        y_lab = y if last_y is None else max(y, last_y + gap)
+        last_y = y_lab
+        fig.add_annotation(x=x, y=y_lab, text=t, showarrow=False, xanchor="left", xshift=6,
+                           font=dict(size=11 if mine else 10, color=c["ink"] if mine else c["muted"]))
     fig.update_layout(**_layout(c, height=380, xaxis=_axis(c, "After the games of"),
-                                yaxis=_axis(c, f"Chance of {what} (%)", range=[0, 103]),
+                                yaxis=_axis(c, f"Chance of {what} (%)", range=[0, y_max]),
                                 margin=dict(l=10, r=150, t=10, b=10)))
     return fig
 

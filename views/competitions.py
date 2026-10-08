@@ -139,6 +139,10 @@ if leagues and not bilateral and not any(x in event for x in ("World XI", "Tour 
         hist = state.memo(OD.odds_history, career, event, season, games_, places_, extra=extra_)
         col = "title" if ko_ else "top"
         what = "the title" if ko_ else "topping the table"
+        if now["state"] == "open" and len(hist):  # the latest point is the table's own (played out more times)
+            latest = hist.date == hist.date.max()
+            hist = hist.copy()
+            hist.loc[latest, col] = hist.loc[latest, "team"].map(now["table"].set_index("team")[col]).values
         teams_ = sorted(set(hist.team)) if len(hist) else []
         mine_ = [t for t in state.my_teams(career) if t in teams_]
         fav = hist[hist.date == hist.date.max()].sort_values(col, ascending=False).team.iloc[0] if len(hist) else ""
@@ -172,8 +176,10 @@ if leagues and not bilateral and not any(x in event for x in ("World XI", "Tour 
             mine_h = hist[hist.team == pick].sort_values("date")
             best = mine_h.loc[mine_h[col].idxmax()]
             fav_days = hist.loc[hist.groupby("date")[col].idxmax()].team.value_counts()
+            decided = now["state"] != "open" and mine_h[col].iloc[-1] in (0, 100)
             chart_note(f"{pick}: {chance(mine_h[col].iloc[0])} after the first match day, at best {chance(best[col])} "
-                       f"(after {best.date:%d %b}), {chance(mine_h[col].iloc[-1])} now. {fav_days.index[0]} were the "
+                       f"(after {best.date:%d %b}), {chance(mine_h[col].iloc[-1])} "
+                       f"{'at the end' if decided else 'now'}. {fav_days.index[0]} were the "
                        f"favourites most often ({fav_days.iloc[0]} of {hist.date.nunique()} match days).",
                        f"See when the race for {what} turned, and how much each result moved a side's chances.")
         st.caption("How it's worked out: each game still to play is decided by the two sides' team ratings (the Elo on "
