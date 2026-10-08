@@ -535,16 +535,13 @@ def _super_over_text(m: Match) -> str:
 
 
 def _corrected_result(m: Match) -> str:
-    """The result line with the margin worked out from the scores (the game
-    occasionally prints a wrong one; see parser._check_margin).  A super-over
-    finish ("New Zealand won  (super over)") reads as the tie it was."""
+    """The result line as the game printed it, marked "(DLS)" when the margin is by the rain rule (see
+    parser._check_margin).  A super-over finish ("New Zealand won  (super over)") reads as the tie it was."""
     if m.super_overs and m.result_type == "tie":
         return (f"Match tied · {m.winner} won the super over" if m.winner else "Match tied (super over)")
-    if not m.margin_note:
-        return m.result
-    if m.margin_wickets is not None:
-        return re.sub(r"by \d+ wicket(s?)", f"by {m.margin_wickets} wicket{'s' * (m.margin_wickets != 1)}", m.result)
-    return re.sub(r"by \d+ run(s?)", f"by {m.margin_runs} run{'s' * (m.margin_runs != 1)}", m.result)
+    if m.margin_note.startswith("Rain-affected"):
+        return f"{m.result} (DLS)"
+    return m.result
 
 
 MATCH_COLUMNS = [

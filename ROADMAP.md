@@ -69,7 +69,7 @@ What the site does, the decisions behind it, and what is built so far.
 
 ## Next (agreed, not built yet)
 
-Waiting to be tested and pushed (written, in the working copy):
+Saved, waiting for their full test run (lint and the parser / loader / audit tests pass; charts and the dark look checked in the browser):
 
 - ⏳ Rain-affected results keep the game's official margin (the rain rule, DLS) and show "(DLS)"; the scores no
   longer overwrite it (6 games in the real career, e.g. "Chennai won by 20 runs" was shown as 116)

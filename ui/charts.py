@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -61,17 +63,21 @@ def label_backing(c: dict) -> str:
 
 def label_annotations(named, dots, x_range, y_range, c: dict, width_px: float = 400,
                       height_px: float = 350) -> list[dict]:
-    """Annotations naming some dots, each placed right next to its own dot.
+    """Annotations naming some dots, each placed right next to its own dot and joined to it by a thin line.
 
     named: [(x, y, text)] to label, most important first; dots: [(x, y)] for every
     dot on the chart.  Each name tries spots close around its dot (above, below,
-    beside, diagonals) and takes the first that touches no other name and no dot;
-    if every close spot is taken it moves further out, and then a thin line joins
-    the name to its dot, so a name is never left floating away from its player."""
+    beside, diagonals) and takes the first that touches no other name and no dot,
+    and where no other dot is as close to the name as its own (so a name between two
+    dots never reads as the other one's); if every close spot is taken it moves
+    further out.  The line always shows which dot a name belongs to."""
     (x0, x1), (y0, y1) = x_range, y_range
 
     def px(x, y):
         return (x - x0) / ((x1 - x0) or 1) * width_px, (y - y0) / ((y1 - y0) or 1) * height_px
+
+    def gap_to(qx, qy, bx, by, hw, hh):  # pixels from a dot to the nearest edge of a name's box
+        return math.hypot(max(abs(qx - bx) - hw, 0.0), max(abs(qy - by) - hh, 0.0))
 
     dot_px = [px(x, y) for x, y in dots]
     boxes: list[tuple[float, float, float, float]] = []  # placed names: centre x, centre y, half width, half height
@@ -79,9 +85,10 @@ def label_annotations(named, dots, x_range, y_range, c: dict, width_px: float = 
     for x, y, text in named:
         cx, cy = px(x, y)
         hw, hh = (6.3 * len(str(text)) + 8) / 2, 8
+        others = [(qx, qy) for qx, qy in dot_px if abs(qx - cx) > 0.5 or abs(qy - cy) > 0.5]
         best = None
         for ring in (1, 2, 3, 4):
-            gap = 10 + (ring - 1) * 16
+            gap = 14 + (ring - 1) * 16
             for dx, dy in ((0, gap + hh), (0, -(gap + hh)), (gap + hw, 0), (-(gap + hw), 0),
                            (gap + hw, gap + hh), (-(gap + hw), gap + hh), (gap + hw, -(gap + hh)),
                            (-(gap + hw), -(gap + hh))):
@@ -91,20 +98,21 @@ def label_annotations(named, dots, x_range, y_range, c: dict, width_px: float = 
                 if any(abs(bx - ox) < hw + ow + 3 and abs(by - oy) < hh + oh + 2 for ox, oy, ow, oh in boxes):
                     continue  # on another name
                 covered = sum(1 for qx, qy in dot_px if abs(bx - qx) < hw + 5 and abs(by - qy) < hh + 5)
-                if best is None or covered < best[0]:
-                    best = (covered, dx, dy)
-                if covered == 0:
+                own = gap_to(cx, cy, bx, by, hw, hh)
+                closer = sum(1 for qx, qy in others if gap_to(qx, qy, bx, by, hw, hh) <= own + 4)
+                score = (covered, closer)
+                if best is None or score < best[0]:
+                    best = (score, dx, dy)
+                if score == (0, 0):
                     break
-            if best is not None and best[0] == 0:
+            if best is not None and best[0] == (0, 0):
                 break
-        if best is None:  # nowhere free: straight above, joined by a line
-            best = (0, 0, 70 + 16 * len(out))
+        if best is None:  # nowhere free: straight above
+            best = ((0, 0), 0, 70 + 16 * len(out))
         _, dx, dy = best
         boxes.append((cx + dx, cy + dy, hw, hh))
-        far = abs(dx) > hw + 14 or abs(dy) > hh + 14
         out.append(dict(x=x, y=y, text=text, showarrow=True, ax=dx, ay=-dy, axref="pixel", ayref="pixel",
-                        arrowhead=0, arrowwidth=1, standoff=5,
-                        arrowcolor=c["muted"] if far else "rgba(0,0,0,0)",
+                        arrowhead=0, arrowwidth=1, standoff=4, arrowcolor=c["muted"],
                         font=dict(size=11, color=c["ink2"]), bgcolor=label_backing(c), borderpad=1))
     return out
 

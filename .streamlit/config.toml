@@ -1,7 +1,7 @@
-# Night match (dark) and day match (light). The site follows your computer's
-# setting; switch in the ⋮ menu → Settings → Theme.
+# The night-match look: dark, whatever your computer is set to.
 
-[theme.dark]
+[theme]
+base = "dark"
 primaryColor = "#f2b632"
 backgroundColor = "#0a1322"
 secondaryBackgroundColor = "#13203a"
@@ -13,26 +13,9 @@ font = "'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif"
 headingFont = "'Barlow Condensed', 'Arial Narrow', sans-serif"
 headingFontWeights = [700, 700, 700]
 
-[theme.dark.sidebar]
+[theme.sidebar]
 backgroundColor = "#071020"
 secondaryBackgroundColor = "#101b31"
-
-[theme.light]
-primaryColor = "#1d6b45"
-backgroundColor = "#f3f5ef"
-secondaryBackgroundColor = "#e6eadf"
-textColor = "#0f1b2d"
-linkColor = "#1d6b45"
-borderColor = "#d5dacb"
-baseRadius = "12px"
-font = "'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif"
-headingFont = "'Barlow Condensed', 'Arial Narrow', sans-serif"
-headingFontWeights = [700, 700, 700]
-
-[theme.light.sidebar]
-backgroundColor = "#0f1b2d"
-secondaryBackgroundColor = "#18273f"
-textColor = "#e9eef6"
 
 [client]
 toolbarMode = "minimal"

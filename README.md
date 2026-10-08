@@ -106,8 +106,7 @@ the scorecard leaves no doubt (about two thirds of them, nearly all the big ones
 **Hover** over any bar or dot to see the player's full figures and rank. Hover a chart and click the
 **camera** in its top-right corner to save it as a picture.
 
-**Night or day look:** the site follows your Windows setting. Change it in the **⋮** menu (top right) →
-**Settings → Theme**.
+**Night look:** the site is always dark (the night-match look), whatever Windows is set to.
 
 ---
 

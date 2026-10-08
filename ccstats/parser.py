@@ -617,26 +617,21 @@ def parse_scorecard(text: str, source: str = "") -> Match:
 
 
 def _check_margin(match: Match) -> None:
-    """Work the margin out from the scores rather than trusting the printed
-    result: one CC2026 scorecard says "India won by 127 runs" for 377 v 200.
-    Rain-adjusted results (D/L, DLS, revised target) are left as printed."""
+    """A margin the scores don't give is a rain-affected result: the game prints the official margin by the rain
+    rule (DLS) without saying so.  "India won by 127 runs" for 377 v 200 all out is one: England's chase was cut
+    to 40 overs (no bowler had more than 8), so their target was revised.  The printed margin is the result in the
+    record books, so it's kept; the note says why it differs from the totals."""
     if match.result_type != "win" or not match.innings or re.search(r"d/?l|dls|revised|target", match.result, re.I):
         return
     agg: dict[str, int] = {}
     for inn in match.innings:
         agg[inn.team] = agg.get(inn.team, 0) + inn.total
     loser = next((t for t in (match.team1, match.team2) if t != match.winner), "")
-    last = match.innings[-1]
-    if match.margin_wickets is not None and last.team == match.winner:
-        real = 10 - last.wickets
-        if real != match.margin_wickets:
-            match.margin_note = f"The game printed {match.margin_wickets} wickets; the scores give {real}."
-            match.margin_wickets = real
-    elif match.margin_runs is not None and loser in agg:
-        real = agg[match.winner] - agg[loser]
-        if real != match.margin_runs and real > 0:
-            match.margin_note = f"The game printed {match.margin_runs} runs; the scores give {real}."
-            match.margin_runs = real
+    if match.margin_runs is not None and match.winner in agg and loser in agg:
+        diff = agg[match.winner] - agg[loser]
+        if diff != match.margin_runs:
+            match.margin_note = (f"Rain-affected: won by {match.margin_runs} run{'s' * (match.margin_runs != 1)} by the "
+                                 f"rain rule (DLS); the totals differ by {diff}.")
 
 
 def _fix_follow_on(match: Match) -> None:

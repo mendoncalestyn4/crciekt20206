@@ -109,6 +109,14 @@ def test_result_margins_follow_from_the_scores(path):
         assert last.team == m.winner  # won by wickets = won batting last
         assert m.margin_wickets == 10 - last.wickets
         assert agg[m.winner] > agg[loser]
+    elif m.margin_note.startswith("Rain-affected"):
+        # the rain rule decided it: the side batting second had its innings cut (fewer overs per bowler than a full
+        # innings allows, or it stopped short of its balls without being bowled out); the printed margin stands
+        chase = m.innings[-1]
+        per_bowler = 60 if max(i.balls for i in m.innings) > 120 else 24  # 10 overs in a one-day game, 4 in a T20
+        cut = max(b.balls for b in chase.bowling) < per_bowler or not chase.all_out
+        assert chase.team == loser and cut
+        assert m.margin_runs > 0
     else:
         assert agg[m.winner] - agg[loser] == m.margin_runs
 
@@ -165,14 +173,19 @@ def test_follow_on_chase_is_not_a_declaration(career):
     assert chase.innings_no == 4 and not chase.declared
 
 
-def test_misprinted_margin_is_corrected_from_the_scores():
+def test_a_rain_affected_margin_is_kept_as_printed():
+    # 377 v 200 all out, "India won by 127 runs": England's chase was cut to 40 overs (no bowler has more than 8),
+    # so the margin is by the rain rule (DLS) and is the official one
     path = Path(__file__).parent / "fixtures" / "16_jul_2026-eng_v_ind_2nd_odi.txt"
     m = parse_scorecard(path.read_text(), path.name)
     assert m.result == "India won by 127 runs"  # what the game printed
-    assert m.margin_runs == 177  # 377 - 200
-    assert "127" in m.margin_note
+    assert m.margin_runs == 127
+    assert m.margin_note.startswith("Rain-affected") and "177" in m.margin_note  # 377 - 200
+    assert max(b.balls for b in m.innings[1].bowling) == 48  # 8 overs: a 40-over innings
 
 
-def test_results_shown_on_the_site_use_the_corrected_margin(career):
+def test_results_shown_on_the_site_say_when_the_rain_rule_decided_the_margin(career):
     row = career.matches.set_index("source").loc["16_jul_2026-eng_v_ind_2nd_odi.txt"]
-    assert row.result == "India won by 177 runs" and row.margin_runs == 177
+    assert row.result == "India won by 127 runs (DLS)" and row.margin_runs == 127
+    plain = career.matches[career.matches.margin_note == ""]
+    assert not plain.result.str.contains("DLS").any()

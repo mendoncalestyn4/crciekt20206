@@ -42,10 +42,9 @@ def safe_section(name: str):
 
 
 def is_night() -> bool:
-    try:
-        return st.context.theme.type == "dark"
-    except Exception:
-        return False
+    """The site always has the night look (.streamlit/config.toml sets the one dark theme), whatever the
+    computer or browser is set to, so the page, its tables and its charts all match it."""
+    return True
 
 
 def colours() -> dict:
