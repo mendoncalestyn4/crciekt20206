@@ -5,6 +5,7 @@ from ccstats import rankings as R
 from ccstats import seasonal as SN
 from ccstats import teamdeep as TD
 from ui import state
+from ui.theme import counted
 from ui.charts import CONFIG, _axis, _layout, bars, fmt
 from ui.theme import html_table, safe_section, chart_note, colours, page_header
 
@@ -19,7 +20,7 @@ page_header("Rankings", "Who's on top right now",
             "Player ratings and team Elo for one section. Recent form counts most, so these move as you play.")
 sections = m.section.value_counts()
 state.recall("rk_section", "section", list(sections.index))
-section = st.selectbox("Section", list(sections.index), key="rk_section", on_change=state.remember("rk_section", "section"), format_func=lambda s: f"{s} · {sections[s]} matches")
+section = st.selectbox("Section", list(sections.index), key="rk_section", on_change=state.remember("rk_section", "section"), format_func=lambda s: counted(s, sections[s]))
 c = colours()
 intl_secs = SN.international_sections(career)
 tab_names = ["Player ratings", "Rankings history", "Team Elo"] + (["International rating"] if intl_secs else [])

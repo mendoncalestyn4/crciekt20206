@@ -264,6 +264,12 @@ def explain_list(rows: list[tuple[str, str]]) -> None:
     st.markdown(f'<ul class="explain">{items}</ul>', unsafe_allow_html=True)
 
 
+def counted(name: str, n: int) -> str:
+    """'T20 Blast · 115 matches' in a box; a long name keeps its words and shows the count short, so it fits:
+    'County Championship · Division 2 (32)'."""
+    return f"{name} · {n} match{'' if n == 1 else 'es'}" if len(name) <= 24 else f"{name} ({n})"
+
+
 def esc(v) -> str:
     import html
     return html.escape(str(v))

@@ -10,6 +10,7 @@ from ccstats import winprob as WP
 from ui.theme import colours
 from ccstats.stats import Scope, bars_for, kind_of, ordinal
 from ui import state
+from ui.theme import counted
 from ui.xi import best_xi_cached, team_sheet
 from ui.charts import _n, signed, pct, CONFIG, bars, fmt, race_chart, say
 from ui.theme import chart_note, html_table, kpis, match_link, page_header, player_link, safe_section
@@ -22,10 +23,10 @@ state.stop_if_no_matches(career)
 
 m = career.matches
 page_header("Teams", "Team record", "Pick a section and a team. Every comparison is against the average of all the teams in that section.")
-c1, c2, c3, c4 = st.columns([1.9, 1, 1.5, 1.7])
+c1, c2, c3, c4 = st.columns([2.15, 0.95, 1.35, 1.65])  # room for "County Championship · Division 2 (32)"
 sections = m.section.value_counts()
 state.recall("tm_section", "section", list(sections.index))
-section = c1.selectbox("Section", list(sections.index), key="tm_section", on_change=state.remember("tm_section", "section"), format_func=lambda s: f"{s} · {sections[s]} matches")
+section = c1.selectbox("Section", list(sections.index), key="tm_section", on_change=state.remember("tm_section", "section"), format_func=lambda s: counted(s, sections[s]))
 seasons = sorted(m[m.section == section].season.unique(), reverse=True)
 state.recall("tm_season", "season", ["All seasons"] + seasons)
 season = c2.selectbox("Season", ["All seasons"] + seasons, key="tm_season", on_change=state.remember("tm_season", "season"))

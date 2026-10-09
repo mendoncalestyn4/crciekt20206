@@ -6,6 +6,7 @@ from ccstats import playerdeep as PD
 from ccstats import teamdeep as TD
 from ccstats.stats import Scope
 from ui import state
+from ui.theme import counted
 from ui.charts import _n, signed, pct, CONFIG, bars, fmt
 from ui.theme import chart_note, html_table, kpis, match_link, page_header, player_link, safe_section
 
@@ -22,7 +23,7 @@ page_header("Player stories", "The stories behind the numbers",
 c1, c2 = st.columns([2, 1])
 sections = m.section.value_counts()
 state.recall("st_section", "section", list(sections.index))
-section = c1.selectbox("Section", list(sections.index), key="st_section", on_change=state.remember("st_section", "section"), format_func=lambda s: f"{s} · {sections[s]} matches")
+section = c1.selectbox("Section", list(sections.index), key="st_section", on_change=state.remember("st_section", "section"), format_func=lambda s: counted(s, sections[s]))
 seasons = sorted(m[m.section == section].season.unique(), reverse=True)
 state.recall("st_season", "season", ["All seasons"] + seasons)
 season = c2.selectbox("Season", ["All seasons"] + seasons, key="st_season", on_change=state.remember("st_season", "season"))

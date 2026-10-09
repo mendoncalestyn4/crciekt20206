@@ -6,6 +6,7 @@ import streamlit as st
 from ccstats import analysis as A
 from ccstats.stats import Scope, stat_definitions
 from ui import state
+from ui.theme import counted
 from ui.charts import CONFIG, _axis, _layout, fmt
 from ui.theme import chart_note, colours, page_header
 
@@ -22,7 +23,7 @@ c1, c2, c3 = st.columns([2, 1, 1])
 sections = m.section.value_counts()
 state.recall("cp_section", "section", list(sections.index))
 section = c1.selectbox("Section", list(sections.index), key="cp_section", on_change=state.remember("cp_section", "section"),
-                       format_func=lambda s: f"{s} · {sections[s]} matches")
+                       format_func=lambda s: counted(s, sections[s]))
 seasons = sorted(m[m.section == section].season.unique(), reverse=True)
 state.recall("cp_season", "season", ["All seasons"] + seasons)
 season = c2.selectbox("Season", ["All seasons"] + seasons, key="cp_season", on_change=state.remember("cp_season", "season"))

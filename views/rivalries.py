@@ -4,6 +4,7 @@ import streamlit as st
 from ccstats import extras as E
 from ccstats.stats import Scope
 from ui import state
+from ui.theme import counted
 from ui.charts import CONFIG, bars, fmt
 from ui.theme import chart_note, page_header
 
@@ -18,7 +19,7 @@ page_header("Rivalries", "Every head to head",
             "Every pair of teams that have met, the record between them, and who has done best in those games.")
 sections = m.section.value_counts()
 state.recall("rv_section", "section", list(sections.index))
-section = st.selectbox("Section", list(sections.index), key="rv_section", on_change=state.remember("rv_section", "section"), format_func=lambda s: f"{s} · {sections[s]} matches")
+section = st.selectbox("Section", list(sections.index), key="rv_section", on_change=state.remember("rv_section", "section"), format_func=lambda s: counted(s, sections[s]))
 ids = Scope(sections=[section]).match_ids(m)
 rv = E.rivalries(career, ids)
 if rv.empty:

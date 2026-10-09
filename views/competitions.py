@@ -9,6 +9,7 @@ from ccstats import seasonal as SN
 from ccstats import tables as T
 from ccstats import teamplay as TP
 from ui import state
+from ui.theme import counted
 from ui.charts import odds_chart
 from ui.theme import chart_note, html_table, page_header, safe_section
 
@@ -26,7 +27,7 @@ c1, c2 = st.columns([2, 1])
 # which is finer than the stats sections: every ODI is in the ODIs section, but the World Cup has its own table.
 events = m.event.value_counts()
 state.recall("cp2_event", "event", list(events.index))
-event = c1.selectbox("Competition", list(events.index), key="cp2_event", on_change=state.remember("cp2_event", "event"), format_func=lambda s: f"{s} · {events[s]} matches")
+event = c1.selectbox("Competition", list(events.index), key="cp2_event", on_change=state.remember("cp2_event", "event"), format_func=lambda s: counted(s, events[s]))
 seasons = sorted(m[m.event == event].season.unique(), reverse=True)
 state.recall("cp2_season", "season", seasons)
 season = c2.selectbox("Season", seasons, key="cp2_season", on_change=state.remember("cp2_season", "season"))

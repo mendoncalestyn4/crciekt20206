@@ -10,6 +10,7 @@ from ccstats import seasonal as SN
 from ccstats import teamplay as TP
 from ccstats import winprob as WP
 from ui import state
+from ui.theme import counted
 from ccstats.stats import ordinal
 from ui.charts import _n, pct, CONFIG, bars, fmt, say, signed
 from ui.theme import (chart_note, esc, form_strip, html_table, kpis, match_link, page_header, player_link, safe_section)
@@ -77,8 +78,7 @@ state.recall("op_section", "section", choices)
 
 c1, c2 = st.columns([2.3, 1.7])  # a long competition name (County Championship · Division 1) fits
 pick = c1.selectbox("Competition", choices, key="op_section", on_change=state.remember("op_section", "section"),
-                    format_func=lambda s: f"{s} · {int(counts[intl_sections].sum())} matches" if s == INTL
-                    else f"{s} · {counts[s]} matches")
+                    format_func=lambda s: counted(s, int(counts[intl_sections].sum()) if s == INTL else int(counts[s])))
 group = m[m.section.isin(intl_sections)] if pick == INTL else m[m.section == pick]  # every format here
 if pick == INTL:
     fmts = intl_sections + ["All"]

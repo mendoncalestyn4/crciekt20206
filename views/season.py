@@ -1,5 +1,6 @@
 import calendar
 
+import pandas as pd
 import streamlit as st
 
 from ccstats import fixtures as FX
@@ -67,15 +68,31 @@ with tab_cal, safe_section("calendar"):
         else:
             st.caption(f"{len(in_season)} matches in {CV.season_label(sy)}. Hover a day for its games; pick a team to "
                        "see its results and fixtures to come.")
-    elif seasons_ and games.empty:
-        st.info(f"No matches for {team} yet: their fixtures to come are on the Whole season view.")
     elif seasons_:
-        months = sorted({(d.year, d.month) for d in games.date}, reverse=True)
+        # your fixtures still to come: on their day when the schedule has the date, else listed under the month
+        up_days, up_notes = {}, {}
+        for _, r in (todo_.iterrows() if todo_ is not None else []):
+            a_ = r["anchor"]
+            if pd.isna(a_):
+                continue
+            who = r["opponent"] or r["series"].replace(FX.AUTO, "").split(" · ")[0]
+            if r["date"]:
+                d_ = pd.Timestamp(r["date"])
+                up_days.setdefault((d_.year, d_.month, d_.day), []).append(
+                    f"<a class='UP' title='{esc(r['series'].replace(FX.AUTO, ''))} · to come'>⏳ v {esc(who)}</a>")
+            else:
+                up_notes.setdefault((a_.year, a_.month), {}).setdefault(r["series"].replace(FX.AUTO, ""), 0)
+                up_notes[(a_.year, a_.month)][r["series"].replace(FX.AUTO, "")] += 1
+        months = sorted({(d.year, d.month) for d in games.date} | {k[:2] for k in up_days} | set(up_notes), reverse=True)
+        if st.session_state.get("se_month") not in months:  # the month of the latest game, else the next fixture
+            st.session_state["se_month"] = ((games.date.max().year, games.date.max().month) if len(games)
+                                            else months[-1])
         ym = v2.selectbox("Month", months, format_func=lambda x: f"{calendar.month_name[x[1]]} {x[0]}", key="se_month")
         y, mo = ym
         cal = calendar.Calendar(firstweekday=0)
         by_day = {}
-        for r in games[(games.date.dt.year == y) & (games.date.dt.month == mo)].sort_values(["date", "match_id"]).itertuples():
+        in_month = games[(games.date.dt.year == y) & (games.date.dt.month == mo)] if len(games) else games
+        for r in in_month.sort_values(["date", "match_id"]).itertuples():
             if team == "All teams":
                 cls = "NR"
                 text = f"{r.home.split()[0]} v {r.away.split()[0]}"
@@ -91,13 +108,16 @@ with tab_cal, safe_section("calendar"):
         for week in cal.monthdatescalendar(y, mo):
             cells = []
             for d in week:
-                inner = f"<div class='d'>{d.day}</div>" + "".join(by_day.get(d.day, [])) if d.month == mo else f"<div class='d'>{d.day}</div>"
+                inner = (f"<div class='d'>{d.day}</div>" + "".join(by_day.get(d.day, []))
+                         + "".join(up_days.get((y, mo, d.day), [])) if d.month == mo else f"<div class='d'>{d.day}</div>")
                 cells.append(f"<td class='{'' if d.month == mo else 'out'}'>{inner}</td>")
             rows.append("<tr>" + "".join(cells) + "</tr>")
         head = "".join(f"<th>{d}</th>" for d in ("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"))
         st.markdown(f"<table class='cal'><thead><tr>{head}</tr></thead><tbody>{''.join(rows)}</tbody></table>",
                     unsafe_allow_html=True)
-        month_games = games[(games.date.dt.year == y) & (games.date.dt.month == mo)]
+        for name_, n_ in up_notes.get((y, mo), {}).items():
+            st.markdown(f"⏳ **{esc(name_)}** · {n_} match{'es' if n_ != 1 else ''} to come, dates to come")
+        month_games = games[(games.date.dt.year == y) & (games.date.dt.month == mo)] if len(games) else games
         if team != "All teams" and len(month_games):
             w = int((month_games.winner == team).sum())
             lost = int(((month_games.winner != team) & (month_games.winner != "")).sum())

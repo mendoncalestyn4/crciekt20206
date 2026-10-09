@@ -151,7 +151,7 @@ if report:
         with st.expander(f"{len(bad)} file(s) could not be read"):
             st.dataframe(pd.DataFrame([(r.source, r.message) for r in bad], columns=["File", "Reason"]), hide_index=True)
 
-mine = state.my_teams(career, unplayed=True) if not career.matches.empty else []
+mine = state.my_teams(career, unplayed=True)  # your team tab even before its first match
 if mine:
     tabs = st.tabs([f"🏏 {t}" for t in mine] + ["Everything"])
     for i, t in enumerate(mine):

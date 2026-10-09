@@ -4,6 +4,7 @@ import streamlit as st
 from ccstats import extras as E
 from ccstats.stats import Scope
 from ui import state
+from ui.theme import counted
 from ui.charts import _n, pct, CONFIG, bars, fmt
 from ui.theme import chart_note, page_header
 
@@ -20,7 +21,7 @@ page_header("Hall of fame", "The big performers",
 c1, c2 = st.columns([2, 1])
 sections = m.section.value_counts()
 state.recall("hf_section", "section", list(sections.index))
-section = c1.selectbox("Section", list(sections.index), key="hf_section", on_change=state.remember("hf_section", "section"), format_func=lambda s: f"{s} · {sections[s]} matches")
+section = c1.selectbox("Section", list(sections.index), key="hf_section", on_change=state.remember("hf_section", "section"), format_func=lambda s: counted(s, sections[s]))
 seasons = sorted(m[m.section == section].season.unique(), reverse=True)
 state.recall("hf_season", "season", ["All seasons"] + seasons)
 season = c2.selectbox("Season", ["All seasons"] + seasons, key="hf_season", on_change=state.remember("hf_season", "season"))

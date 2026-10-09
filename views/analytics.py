@@ -4,6 +4,7 @@ from ccstats import players as PL
 from ccstats import teamplay as TP
 from ccstats.stats import Scope
 from ui import state
+from ui.theme import counted
 from ui.charts import _n, pct, CONFIG, bars, fmt, quadrant_chart
 from ui.theme import chart_note, html_table, page_header, player_link, safe_section
 
@@ -20,7 +21,7 @@ page_header("Analytics", "Under the bonnet",
 c1, c2 = st.columns([2, 1])
 sections = m.section.value_counts()
 state.recall("an_section", "section", list(sections.index))
-section = c1.selectbox("Section", list(sections.index), key="an_section", on_change=state.remember("an_section", "section"), format_func=lambda s: f"{s} · {sections[s]} matches")
+section = c1.selectbox("Section", list(sections.index), key="an_section", on_change=state.remember("an_section", "section"), format_func=lambda s: counted(s, sections[s]))
 seasons = sorted(m[m.section == section].season.unique(), reverse=True)
 state.recall("an_season", "season", ["All seasons"] + seasons)
 season = c2.selectbox("Season", ["All seasons"] + seasons, key="an_season", on_change=state.remember("an_season", "season"))

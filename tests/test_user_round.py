@@ -374,3 +374,28 @@ def test_unclear_catches_count_for_the_team_with_nothing_to_do():
                                                               & (c.matches.season == m.season)].match_id)
                         & (c.fielding.team == r.team) & (c.fielding.kind == "caught")]
         assert any(x[0] == "Fielding" for x in card) and len(fc) >= 1
+
+
+def test_season_one_month_shows_fixtures_to_come(career):
+    fx = (F.make_series("India", "Sri Lanka", "ODI", 3, "away", "2026-12")
+          + F.make_series("India", "England", "T20I", 1, "home", "", "2027-01-15"))
+    at = page("season.py", career, fx=fx).run()
+    ok(at)
+    seg(at, "Show").set_value("One month").run()
+    ok(at)
+    month = next(s for s in at.main.selectbox if s.label == "Month")
+    assert "December 2026" in month.options and "January 2027" in month.options  # months with only fixtures to come
+    month.set_value((2026, 12)).run()
+    ok(at)
+    assert any("v Sri Lanka" in m.value and "dates to come" in m.value for m in at.markdown)
+    next(s for s in at.main.selectbox if s.label == "Month").set_value((2027, 1)).run()
+    ok(at)
+    assert any("⏳ v England" in m.value for m in at.markdown)
+
+
+def test_home_shows_your_team_before_the_first_match():
+    empty = Career.build("Brand new", [])
+    at = page("home.py", empty, mine=("India",)).run()
+    ok(at)
+    assert [t.label for t in at.tabs][:2] == ["🏏 India", "Everything"]
+    assert any("No matches for India yet" in i.value for i in at.main.info)

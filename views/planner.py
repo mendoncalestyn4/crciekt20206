@@ -5,6 +5,7 @@ from ccstats import preview as PV
 from ccstats import teamplay as TP
 from ccstats.stats import Scope
 from ui import state
+from ui.theme import counted
 from ui.charts import fmt
 from ui.theme import html_table, page_header, player_link, safe_section
 
@@ -28,7 +29,7 @@ state.recall("pl_section_t", "section", [s_ for s_ in sections.index if s_ == de
 if "pl_section_t" not in st.session_state:
     st.session_state["pl_section_t"] = default_sec
 c1, c2, c3 = st.columns([2, 1, 1.6])
-section = c1.selectbox("Section", list(sections.index), key="pl_section_t", on_change=state.remember("pl_section_t", "section"), format_func=lambda s: f"{s} · {sections[s]} matches")
+section = c1.selectbox("Section", list(sections.index), key="pl_section_t", on_change=state.remember("pl_section_t", "section"), format_func=lambda s: counted(s, sections[s]))
 seasons = sorted(m[m.section == section].season.unique(), reverse=True)
 state.recall("pl_season_t", "season", ["All seasons"] + seasons)
 season = c2.selectbox("Season", ["All seasons"] + seasons, key="pl_season_t", on_change=state.remember("pl_season_t", "season"))
