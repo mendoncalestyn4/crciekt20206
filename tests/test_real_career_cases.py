@@ -215,9 +215,9 @@ def test_data_check_buttons_on_shared_names_and_leftovers():
     at.session_state["career_obj"] = c
     at.run()
     assert not at.exception
-    assert [t.label.split(" · ")[0] for t in at.tabs] == ["Unclear catches", "Name shared by 2 players",
-                                                         "Player with 2 names", "Games left out", "Scorecards",
-                                                         "Your changes"]
+    # catches the scorecard can't give to one player just count for the team: their tab is last, nothing to do
+    assert [t.label.split(" · ")[0] for t in at.tabs] == ["Name shared by 2 players", "Player with 2 names",
+                                                         "Games left out", "Scorecards", "Your changes", "Team catches"]
     at.button(key="dc_inc_0").click().run()  # count the old final again
     assert not at.exception and at.session_state["career_obj"].leftovers.empty
     at.button(key="dc_ui_0").click().run()  # undo from Your changes
