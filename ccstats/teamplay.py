@@ -343,8 +343,9 @@ def season_halves(career, ids, team: str) -> pd.DataFrame:
     return pd.DataFrame(rows + [total]) if rows else pd.DataFrame(columns=["season", "early", "late"])
 
 
-def after_result(career, ids, team: str = "") -> pd.DataFrame:
-    """Record in the next game after a win, a loss and a draw (one section's games in date order)."""
+def after_result(career, ids, team: str = "", venue: str = "all") -> pd.DataFrame:
+    """Record in the next game after a win, a loss and a draw (one section's games in date order); with `venue`
+    (home / away), only next games played there."""
     g = games(career, ids)
     rows = []
     for tm, x in g.groupby("team"):
@@ -356,12 +357,16 @@ def after_result(career, ids, team: str = "") -> pd.DataFrame:
     if not rows:
         return pd.DataFrame(columns=["after", "played", "won", "lost", "drawn", "tied", "no_result", "win_pct", "decided"])
     y = pd.concat(rows)
+    if venue != "all":
+        y = y[y.venue == venue]
     return pd.DataFrame([dict(after=f"After a {OUTCOME_WORD[k].replace('won', 'win').replace('lost', 'loss').replace('drawn', 'draw')}",
-                              **record(y[y.prev == k])) for k in ("W", "L", "D") if (y.prev == k).any()])
+                              **record(y[y.prev == k])) for k in ("W", "L", "D") if (y.prev == k).any()],
+                        columns=["after", "played", "won", "lost", "drawn", "tied", "no_result", "win_pct", "decided"])
 
 
-def revenge(career, ids, team: str) -> dict:
-    """Games against a side that beat them the last time they met, against the rest."""
+def revenge(career, ids, team: str, venue: str = "all") -> dict:
+    """Games against a side that beat them the last time they met, against the rest; with `venue` (home / away),
+    only the games played there (the last meeting before each counts wherever it was)."""
     g = games(career, ids)
     t = g[g.team == team].sort_values(["date", "match_id"])
     last: dict[str, str] = {}
@@ -370,6 +375,8 @@ def revenge(career, ids, team: str) -> dict:
         flags.append(last.get(r.opponent) == "L")
         last[r.opponent] = r.outcome
     t = t.assign(revenge=flags)
+    if venue != "all":
+        t = t[t.venue == venue]
     return dict(revenge=record(t[t.revenge]), other=record(t[~t.revenge]), rows=t[t.revenge])
 
 

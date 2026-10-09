@@ -12,6 +12,7 @@ career = state.current()
 if career is None:
     st.info("Load a career on the Home page first.")
     st.stop()
+state.stop_if_no_matches(career)
 
 m = career.matches
 page_header("Team planner", "Plan your next game",
@@ -20,8 +21,9 @@ page_header("Team planner", "Plan your next game",
 sections = m.section.value_counts()
 mine_all = state.my_teams(career)
 # open on a section where your team plays
-default_sec = next((s for s in sections.index if set(m[m.section == s].home) & set(mine_all)
-                    or set(m[m.section == s].away) & set(mine_all)), sections.index[0])
+default_sec = state._my_default(career, "section") or next(
+    (s for s in sections.index if set(m[m.section == s].home) & set(mine_all) or set(m[m.section == s].away) & set(mine_all)),
+    sections.index[0])
 state.recall("pl_section_t", "section", [s_ for s_ in sections.index if s_ == default_sec or not mine_all])
 if "pl_section_t" not in st.session_state:
     st.session_state["pl_section_t"] = default_sec
@@ -43,15 +45,20 @@ team = c3.selectbox("Team", teams, key="pl_team_t")  # the planner is for the te
 if not mine_all:
     st.caption("Tip: pick your team(s) under **My team** in the sidebar and every page opens on them.")
 
-tabs = st.tabs(["Qualification", "Batting order", "Bowling plan", "Knocking on the door", "Partnerships"])
+evs = here[~here.knockout & (here.home.eq(team) | here.away.eq(team))]
+options = sorted({(e, s_) for e, s_ in zip(evs.event, evs.season)}, key=lambda x: (x[1], x[0]), reverse=True)
+options = [o for o in options if TP.has_knockouts(career, o[0])]
+names = ["Qualification", "Batting order", "Bowling plan", "Knocking on the door", "Partnerships"]
+if not options:  # nothing to qualify for (bilateral series): the tabs for your next game come first
+    names = names[1:] + names[:1]
+tab_of = dict(zip(names, st.tabs(names)))
+tabs = [tab_of[n] for n in ("Qualification", "Batting order", "Bowling plan", "Knocking on the door", "Partnerships")]
 
 # ---------------------------------------------------------------- 58
 with tabs[0], safe_section("qualification"):
-    evs = here[~here.knockout & (here.home.eq(team) | here.away.eq(team))]
-    options = sorted({(e, s_) for e, s_ in zip(evs.event, evs.season)}, key=lambda x: (x[1], x[0]), reverse=True)
-    options = [o for o in options if TP.has_knockouts(career, o[0])]
     if not options:
-        st.info("Nothing to qualify for here: no knockout stage (bilateral series, or a league the table decides).")
+        st.info("Nothing to qualify for here: no knockout stage (bilateral series, or a league the table decides). "
+                "The other tabs are for your next game.")
     else:
         q1, q2, q3 = st.columns([2, 1, 1])
         ev = q1.selectbox("Competition", options, format_func=lambda o: f"{o[0]} {o[1]}", key="pl_q_event")

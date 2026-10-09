@@ -78,6 +78,24 @@ What the site does, the decisions behind it, and what is built so far.
 - ✅ **Title race** (idea 3) on Competitions, and playoff / title chances on Home
 - ✅ **Most valuable players** (idea 4) on Season review: impact points, or the IPL's MVP points in T20
 
+## Done in this round (from playing a new career as a country)
+
+- ✅ **Which teams do you play as?** asked once per career and saved with it; a new career starts with the same teams
+- ✅ Team vs team **Where**: at one side's home (the other away) or neutral, so "only against each other" works
+- ✅ Teams page **Home / Away** applies to the whole page, not only the top tiles
+- ✅ Opponent preview: your team always choosable, every side listed, opens on your next match, clear message when a
+  side hasn't played that format yet
+- ✅ Next opponent (Home, Fixtures): any side, your scheduled opponents first; **Preview any opponent** on Fixtures
+- ✅ **Season calendar, April to March**, on Season and Fixtures, with the series still to come in each month
+- ✅ Home and away always from the scorecards; a series added at the wrong venue is put right and marked 📍
+- ✅ Every page opens on your team's latest competition until you pick another
+- ✅ A brand-new career with no matches: every page says what to do instead of breaking
+- ✅ Batter v bowler guides the second pick; Find a player says where they rank or why they're not shown
+- ✅ Button rows can't be un-clicked into an empty choice; nothing cut off at desktop width
+- ✅ Catches the scorecard can't give to one player count for the team: nothing to sort out
+- ✅ T20 judged on fifties: conversion to 50 (hundreds on their own), 50s before 100s, danger zone 20–49
+  highlighted, match impact bonus for a fifty and a smaller one for a hundred
+
 Ideas to decide on later:
 
 - "Since you last looked" panel on Home: new matches, records, milestones, table moves, form changes

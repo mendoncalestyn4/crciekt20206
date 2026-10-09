@@ -12,6 +12,7 @@ career = state.current()
 if career is None:
     st.info("Load a career on the Home page first.")
     st.stop()
+state.stop_if_no_matches(career)
 
 m = career.matches
 page_header("Rankings", "Who's on top right now",
@@ -30,7 +31,7 @@ with tab_p:
     if table.empty:
         st.info(f"Nobody has {R.MIN_INNINGS} innings in {section} yet, so there are no ratings.")
     else:
-        kind = st.segmented_control("Rating", ["Batting", "Bowling", "All-round"], default="Batting", key="rk_kind") or "Batting"
+        kind = st.segmented_control("Rating", ["Batting", "Bowling", "All-round"], default="Batting", required=True, key="rk_kind") or "Batting"
         col = {"Batting": "batting", "Bowling": "bowling", "All-round": "all_round"}[kind]
         t = table[table[col].notna()].sort_values(col, ascending=False).head(20)
         left, right = st.columns([1.1, 1], gap="medium")
@@ -143,7 +144,7 @@ with tab_t:
 
 # ---------------------------------------------------------------- 107 · rankings history
 with tab_h, safe_section("rankings history"):
-    what_h = st.segmented_control("Rating", ["Batting", "Bowling"], default="Batting", key="rk_h_kind") or "Batting"
+    what_h = st.segmented_control("Rating", ["Batting", "Bowling"], default="Batting", required=True, key="rk_h_kind") or "Batting"
     hist_t, reigns = state.memo(SN.ranking_history, career, section, what_h.lower())
     if hist_t.empty:
         st.info(f"Nobody has {R.MIN_INNINGS} innings in {section} yet, so there's no rankings history.")
@@ -174,7 +175,7 @@ with tab_h, safe_section("rankings history"):
 # ---------------------------------------------------------------- 107 · combined international rating
 if intl_secs:
     with tabs_[3], safe_section("international rating"):
-        what_i = st.segmented_control("Rating", ["Batting", "Bowling"], default="Batting", key="rk_i_kind") or "Batting"
+        what_i = st.segmented_control("Rating", ["Batting", "Bowling"], default="Batting", required=True, key="rk_i_kind") or "Batting"
         ci = state.memo(SN.combined_international, career, what_i.lower())
         if ci.empty:
             st.info(f"Nobody has {R.MIN_INNINGS} innings in an international format yet.")

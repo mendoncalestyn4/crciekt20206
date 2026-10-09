@@ -4,7 +4,7 @@ import streamlit as st
 
 from ccstats import analysis as A
 from ccstats import deep as D
-from ccstats.stats import POSITION_GROUPS, Scope, rank, stat_definitions
+from ccstats.stats import POSITION_GROUPS, Scope, ordinal, rank, stat_definitions
 from ui import state
 from ui.charts import CONFIG, dot_chart, fmt, ranked_bars
 from ui.theme import chart_note, explain_list, page_header
@@ -13,6 +13,7 @@ career = state.current()
 if career is None:
     st.info("Load a career on the Home page first.")
     st.stop()
+state.stop_if_no_matches(career)
 
 page_header("Stat by stat", "Who's best, who's worst",
             "Pick a section and a stat. The left chart ranks players on that one stat; the right chart shows where every "
@@ -22,7 +23,7 @@ m = career.matches
 sections = m.section.value_counts()
 labels = {s: f"{s} · {n} match{'es' if n > 1 else ''}" for s, n in sections.items()}
 
-c1, c2, c3 = st.columns([2.2, 1.6, 1.3])
+c1, c2, c3 = st.columns([2.1, 1.5, 1.5])  # room for all three discipline buttons
 state.recall("sbs_section", "section", list(sections.index))
 section = c1.selectbox("Section", list(sections.index), format_func=labels.get, key="sbs_section", on_change=state.remember("sbs_section", "section"))
 combine = c1.toggle("Combine sections", key="sbs_combine",
@@ -36,7 +37,7 @@ if combine:
 in_sections = m[m.section.isin(chosen)]
 seasons = sorted(in_sections.season.unique(), reverse=True)
 picked_seasons = c2.multiselect("Seasons", seasons, key="sbs_seasons", placeholder="All seasons")
-disc = c3.segmented_control("Discipline", ["Batting", "Bowling", "Fielding"], default="Batting", key="sbs_disc") or "Batting"
+disc = c3.segmented_control("Discipline", ["Batting", "Bowling", "Fielding"], default="Batting", required=True, key="sbs_disc") or "Batting"
 
 f1, f2, f3, f4 = st.columns([1.4, 1.6, 1.1, 1.2])
 events = sorted(in_sections.event.unique())
@@ -103,7 +104,7 @@ options = MINS[disc][base.kind]
 default_min = next((v for v in reversed(options[:3]) if (table[min_col] >= v).sum() >= 12), options[0])
 
 c4, c5, c6, c7 = st.columns([1.1, 1, 1.3, 1.6])
-view = c4.segmented_control("Ranking", ["Best", "Worst"], default="Best", key="sbs_view",
+view = c4.segmented_control("Ranking", ["Best", "Worst"], default="Best", required=True, key="sbs_view",
                             disabled=disc == "Fielding") or "Best"
 if disc == "Fielding":
     view = "Best"
@@ -115,7 +116,7 @@ highlight = c7.selectbox("Find a player", ["—"] + names, key="sbs_find")
 only = st.multiselect("Only these players", names, key="sbs_only", placeholder="Everyone (or pick players to compare)")
 highlight = "" if highlight == "—" else highlight
 
-stat_label = st.pills("Stat", [s.label for s in defs], default=defs[0].label, key=f"sbs_stat_{disc}") or defs[0].label
+stat_label = st.pills("Stat", [s.label for s in defs], default=defs[0].label, required=True, key=f"sbs_stat_{disc}") or defs[0].label
 stat = next(s for s in defs if s.label == stat_label)
 raw_stat = stat
 
@@ -129,7 +130,7 @@ if len(season_list) > 1:
 measure = measures[0]
 if len(measures) > 1:
     measure = st.segmented_control(
-        "Measure against", measures, default=measures[0], key="sbs_measure",
+        "Measure against", measures, default=measures[0], required=True, key="sbs_measure",
         help="Each section's own average: every player is first compared with the average player of each section they "
              "played in, then that is combined, so a T20 strike rate and a Test strike rate can be added up fairly. "
              "Each season's own average: the same, season by season, so a high-scoring year doesn't flatter anyone.") \
@@ -168,6 +169,30 @@ st.markdown(f"<p class='statdef'><b>{stat.label}</b>: {stat.definition} <span cl
 if pool.empty:
     st.warning("Nobody qualifies with these settings. Lower the minimum or pick another season.")
     st.stop()
+
+# Find a player: where they rank, or why they aren't on the charts
+if highlight:
+    rk = ranked.reset_index(drop=True)
+    hit = rk.index[rk.player == highlight]
+    row = table[table.player == highlight]
+    if len(hit):
+        pos = int(hit[0]) + 1
+        st.info(f"🔎 **{highlight}**: {ordinal(pos)} of {len(rk)} on {stat.label.lower()} "
+                f"({fmt(rk.at[hit[0], stat.column], stat.decimals)}), highlighted on both charts"
+                + (f" (outside the top {top} in the bar chart: pick a bigger Show to see their bar)." if pos > top else "."))
+    else:
+        if only and highlight not in only:
+            why = "they're not in Only these players"
+        elif len(row) and row[stat.column].isna().all():
+            why = f"they have no {stat.label.lower()} figure yet"
+        elif stat.keepers_only:
+            why = "this stat counts wicketkeepers only"
+        elif len(row) and int(row[min_col].max()) < minimum:
+            why = (f"{int(row[min_col].max())} {unit} so far, under the minimum of {minimum}: set Minimum to qualify "
+                   "lower to see them")
+        else:
+            why = "they don't qualify with these settings"
+        st.info(f"🔎 **{highlight}** isn't on these charts: {why}.")
 
 left, right = st.columns(2, gap="medium")
 with left:

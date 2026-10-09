@@ -13,7 +13,7 @@ import json
 import os
 import re
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 
 from . import competitions as C
@@ -82,6 +82,7 @@ class CareerSettings:
     remembered: dict = field(default_factory=dict)  # last section / season / team picked, so every page opens on it
     fixtures: list = field(default_factory=list)  # your schedule (the Fixtures page)
     goals: list = field(default_factory=list)  # season goals (the Fixtures page)
+    teams_asked: bool = False  # the "which teams do you play as?" question was answered (or turned off)
 
 
 def write_atomic(path: Path, data: str | bytes) -> None:
@@ -162,7 +163,7 @@ class CareerStore:
         return out
 
     # what you set on the pages (saved with save_settings); a career save never takes these from a stale copy
-    YOURS = ("my_teams", "notes", "remembered", "fixtures", "goals")
+    YOURS = ("my_teams", "notes", "remembered", "fixtures", "goals", "teams_asked")
 
     def save(self, career: Career, settings: CareerSettings) -> None:
         d = self._dir(career.name)
@@ -185,8 +186,8 @@ class CareerStore:
     def load_settings(self, name: str, fresh: bool = False) -> tuple[Path, CareerSettings]:
         d = self._dir(name)
         raw = read_json(d / "settings.json", fresh=fresh)
-        return d, CareerSettings(**{k: v for k, v in raw.items() if k in ("name", "folder", "updated", "my_teams", "notes", "remembered",
-                                                                  "fixtures", "goals")})
+        known = {f.name for f in fields(CareerSettings)}  # a newer or older file's other keys are left out
+        return d, CareerSettings(**{k: v for k, v in raw.items() if k in known})
 
     def save_settings(self, settings: CareerSettings) -> None:
         """Only the settings (e.g. My team), without rewriting the career file."""
@@ -200,6 +201,21 @@ class CareerStore:
         career = Career.from_pack((d / "career.stats-pack.zip").read_bytes())
         career.name = name
         return career, settings
+
+    # ------------------------------------------------------------ preferences for every career on this PC
+    def preferences(self) -> dict:
+        """e.g. {"last_teams": [...]}: the teams you picked last time, offered to a new career."""
+        try:
+            data = read_json(self.root / "preferences.json")
+            return data if isinstance(data, dict) else {}
+        except (OSError, ValueError):
+            return {}
+
+    def save_preference(self, key: str, value) -> None:
+        prefs = self.preferences()
+        prefs[key] = value
+        self.root.mkdir(parents=True, exist_ok=True)
+        write_atomic(self.root / "preferences.json", json.dumps(prefs, indent=1))
 
     def delete(self, name: str) -> None:
         d = self._dir(name)

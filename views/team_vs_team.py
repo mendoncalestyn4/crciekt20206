@@ -14,10 +14,12 @@ career = state.current()
 if career is None:
     st.info("Load a career on the Home page first.")
     st.stop()
+state.stop_if_no_matches(career)
 
 m = career.matches
 page_header("Team vs team", "Head to head",
-            "Pick a section and two teams. Switch between overall, home and away (each team's own), or only the games they played against each other.")
+            "Pick a section and two teams. Choose where: all venues, at one team's home (the other side away), or "
+            "neutral grounds; and all their matches or only the games against each other.")
 r1 = st.columns([2, 1, 1.5, 1.5])
 sections = m.section.value_counts()
 state.recall("tv_section", "section", list(sections.index))
@@ -31,25 +33,54 @@ teams = sorted(set(here.home) | set(here.away))
 if len(teams) < 2:
     st.info("This section needs at least two teams.")
     st.stop()
+# Team A starts on your team, Team B on the side it has played most here (both stay as you pick them)
+mine_here = [t for t in state.my_teams(career) if t in teams]
+if st.session_state.get("tv_a") not in teams:
+    st.session_state["tv_a"] = mine_here[0] if mine_here else teams[0]
 a = r1[2].selectbox("Team A", teams, key="tv_a")
-b = r1[3].selectbox("Team B", [t for t in teams if t != a], key="tv_b")
-r2 = st.columns([1.7, 2.6, 1.7])
-venue_label = r2[0].segmented_control("Venue", ["Overall", "Home", "Away"], default="Overall", key="tv_venue") or "Overall"
-which = r2[1].segmented_control("Matches", ["All matches", "Only against each other"], default="All matches", key="tv_which") or "All matches"
-venue = venue_label.lower().replace("overall", "all")
+others = [t for t in teams if t != a]
+if st.session_state.get("tv_b") not in others:
+    met = pd.concat([here.away[here.home == a], here.home[here.away == a]]).value_counts()
+    st.session_state["tv_b"] = met.index[0] if len(met) else others[0]
+b = r1[3].selectbox("Team B", others, key="tv_b")
+
+r2 = st.columns([3.3, 1.7])  # long team names: "At Royal Challengers Bengaluru's home" needs the room
+# where the games were played, from Team A's side: at A's home is B away, and the other way round
+grounds = ["all", "a_home", "b_home"] + (["neutral"] if here.neutral.any() else [])
+ground_words = {"all": "All venues", "a_home": f"At {a}'s home", "b_home": f"At {b}'s home", "neutral": "Neutral"}
+ground_opts = [ground_words[g] for g in grounds]
+if st.session_state.get("tv_ground") not in ground_opts:  # first time, or the team whose home it was isn't picked now
+    st.session_state["tv_ground"] = "All venues"
+ground_label = r2[0].segmented_control("Where", ground_opts, required=True, key="tv_ground",
+                                       help=f"At {a}'s home: {a}'s home games and {b}'s away games (with Only against "
+                                            f"each other: their meetings at {a}'s ground).") or "All venues"
+ground = {v: k for k, v in ground_words.items()}.get(ground_label, "all")
+which = r2[1].segmented_control("Matches", ["All matches", "Only against each other"], default="All matches", required=True, key="tv_which") or "All matches"
 h2h = which != "All matches"
+venue_a, venue_b = {"all": ("all", "all"), "a_home": ("home", "away"), "b_home": ("away", "home"),
+                    "neutral": ("neutral", "neutral")}[ground]
 
 
 def scope_for(team, other):
-    return Scope(sections=[section], seasons=base_scope.seasons, team=team, venue=venue, opponent=other if h2h else "")
+    return Scope(sections=[section], seasons=base_scope.seasons, team=team, venue=venue_a if team == a else venue_b,
+                 opponent=other if h2h else "")
 
 
 ids_a, ids_b = scope_for(a, b).match_ids(m), scope_for(b, a).match_ids(m)
-if venue != "all" and here.neutral.all():
-    st.info(f"{section} matches are played at neutral venues, so there are no home or away games. Choose Overall.")
+if ground != "all" and here.neutral.all():
+    st.info(f"{section} matches are played at neutral venues, so there are no home or away games. Choose All venues.")
     st.stop()
 if len(ids_a) == 0 or len(ids_b) == 0:
-    st.info("One of the teams has no matches with these settings.")
+    where_ = {"home": " at home", "away": " away", "neutral": " at a neutral ground", "all": ""}
+    if h2h:
+        missing = [f"{a} and {b} haven't met{' here' if ground == 'all' else ''} yet" if ground in ("all", "neutral")
+                   else f"{a} and {b} haven't met at {a if ground == 'a_home' else b}'s home yet"]
+        if ground == "neutral":
+            missing = [f"{a} and {b} haven't met at a neutral ground yet"]
+    else:
+        missing = [f"{t} haven't played{where_[v]} in {section} yet"
+                   for t, ids_, v in ((a, ids_a, venue_a), (b, ids_b, venue_b)) if len(ids_) == 0]
+    st.info(". ".join(missing) + ". Choose another **Where**" + (" or **All matches**" if h2h else "") + ".")
     st.stop()
 
 c = colours()
@@ -137,10 +168,12 @@ with right:
     with st.container(border=True):
         st.markdown("**Head to head**")
         meet = here[((here.home == a) & (here.away == b)) | ((here.home == b) & (here.away == a))]
-        if venue == "home":
+        if ground == "a_home":
             meet = meet[(meet.home == a) & ~meet.neutral]
-        elif venue == "away":
-            meet = meet[(meet.away == a) & ~meet.neutral]
+        elif ground == "b_home":
+            meet = meet[(meet.home == b) & ~meet.neutral]
+        elif ground == "neutral":
+            meet = meet[meet.neutral]
         aw, bw = int((meet.winner == a).sum()), int((meet.winner == b).sum())
         if meet.empty:
             st.caption("They haven't met with these settings.")

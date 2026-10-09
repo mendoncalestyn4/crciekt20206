@@ -102,10 +102,11 @@ with st.sidebar:
         settings = state.settings_of(career.name)
         if settings and settings.folder:
             st.caption("New matches from your Scorecards folder are added automatically.")
-        st.caption(f"{len(career.matches):,} matches")
-        all_teams = sorted(set(career.matches.home) | set(career.matches.away))
+        st.caption(f"{len(career.matches):,} match{'' if len(career.matches) == 1 else 'es'}")
+        # every team in the career and every national side, so a country can be picked before its first match
+        all_teams = state.team_choices(career)
         if all_teams:
-            st.session_state["sb_my_teams"] = state.my_teams(career)
+            st.session_state["sb_my_teams"] = [t for t in state.my_teams(career, unplayed=True) if t in all_teams]
 
             def _save_my_teams():
                 c = state.current()
@@ -118,6 +119,43 @@ with st.sidebar:
                                 "Saved with this career.")
         search_box(career)
     watch_status()
+
+
+
+@st.dialog("Which teams do you play as?", width="medium", on_dismiss=lambda: state.not_now_teams(state.current()))
+def ask_teams(c) -> None:
+    """Asked once per career, when it has no teams yet: the answer is saved with the career."""
+    st.markdown("Pick the country, franchise or county you control in **" + c.name + "** (more than one if you "
+                "manage a franchise and a country). Home then opens on your team, and the planner, previews, fixtures "
+                "and every page start from it.")
+    choices = state.team_choices(c)
+    picked = st.multiselect("Your teams", choices, default=state.last_teams(c), key="ask_teams_pick",
+                            placeholder="Type a team's name")
+    if len(state.last_teams(c)):
+        st.caption("Ticked: the teams you picked last time.")
+    if c.matches.empty or not (set(choices) - state.nations()):
+        st.caption("A franchise or county appears here after its first match: add it then under **My team** in the "
+                   "sidebar.")
+    b1, b2, b3 = st.columns([1, 1, 1.6])
+    if b1.button("Save", type="primary", disabled=not picked, width="stretch", key="ask_teams_save"):
+        state.set_my_teams(c, picked)
+        st.rerun()
+    if b2.button("Not now", width="stretch", key="ask_teams_later"):
+        state.not_now_teams(c)
+        st.rerun()
+    if b3.button("I don't play as one team", width="stretch", key="ask_teams_never",
+                 help="Don't ask again for this career. You can still pick under My team in the sidebar."):
+        state.dont_ask_teams(c)
+        st.rerun()
+    st.caption("Saved with this career on this PC, so you're only asked once. Change it any time under **My team** "
+               "in the sidebar.")
+
+
+try:
+    if state.should_ask_teams(state.current()):
+        ask_teams(state.current())
+except Exception:  # noqa: BLE001 - the question must never stop the site
+    pass
 
 pages = {
     "": [st.Page("views/home.py", title="Home", icon=":material/home:", default=True)],

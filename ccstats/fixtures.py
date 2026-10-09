@@ -737,7 +737,36 @@ def track(career, fixtures: list[dict], auto=()) -> pd.DataFrame:
         todo = g[g.status == "to come"]
         if len(todo):
             t.loc[todo.index[0], "status"] = "next"
+    # home and away come from the scorecards (the side named first is at home): a series put at the other venue
+    # in the schedule takes the venue its played matches show, for the matches still to come too
+    t["venue_fixed"], t["venue_planned"] = False, ""
+    is_series = (t.kind == "match") & t.venue.isin(["home", "away"])
+    for (team, series), g in t[is_series].groupby(["team", "series"]):
+        done = g[(g.status == "played") & g.match_id.isin(info.index)]
+        if done.empty:
+            continue
+        mr = info.loc[done.match_id.iloc[0]]
+        if mr.neutral:
+            continue
+        real = "home" if mr.home == team else "away"
+        if (g.venue != real).any():
+            t.loc[g.index, "venue_planned"] = g.venue
+            t.loc[g.index, "venue"] = real
+            t.loc[g.index, "venue_fixed"] = True
     return t[cols + [c for c in t.columns if c not in cols]]
+
+
+def upcoming(career, fixtures: list[dict], teams) -> pd.DataFrame:
+    """Every match still to come for these teams with a known opponent, soonest first: what's in the schedule, and
+    the rest of a series under way (its later matches)."""
+    teams = [t for t in dict.fromkeys(teams or ()) if t]
+    if not teams:
+        return pd.DataFrame(columns=COLUMNS + ["status", "anchor"])
+    t = track(career, fixtures, auto=tuple(teams))
+    if t.empty:
+        return t
+    t = t[t.team.isin(teams) & t.status.isin(["next", "to come"]) & (t.opponent.fillna("") != "")]
+    return t.sort_values(["anchor", "no"]).reset_index(drop=True)
 
 
 def summary(tracked: pd.DataFrame, team: str) -> dict:
@@ -772,13 +801,14 @@ def series_groups(tracked: pd.DataFrame, team: str) -> list[dict]:
 
 
 def with_venues(career, tracked: pd.DataFrame):
-    """A copy of the career where every match in your schedule has the home side
-    your schedule gives (the scorecards don't name the ground).  Matches not in
-    your schedule are untouched.  Returns the same career when nothing changes."""
+    """A copy of the career where the series your schedule marks neutral are played at a neutral ground (a
+    scorecard can't say that).  Home and away themselves always come from the scorecards: the side named first is
+    at home, so a schedule saying otherwise (a series added with the wrong Where) never swaps them; see
+    venue_mismatches.  Returns the same career when nothing changes."""
     if tracked is None or tracked.empty:
         return career
     # series only: a tournament row's venue (older schedules saved "neutral") never overrides its scorecards
-    played = tracked[(tracked.match_id != "") & tracked.match_id.notna() & tracked.venue.isin(["home", "away", "neutral"])
+    played = tracked[(tracked.match_id != "") & tracked.match_id.notna() & (tracked.venue == "neutral")
                      & (tracked.kind == "match")]
     if played.empty:
         return career
@@ -787,19 +817,8 @@ def with_venues(career, tracked: pd.DataFrame):
     changed = False
     for r in played.itertuples():
         i = pos.get(r.match_id)
-        if i is None:
-            continue
-        home, away, team = m.at[i, "home"], m.at[i, "away"], r.team
-        if r.venue == "neutral":
-            if not m.at[i, "neutral"]:
-                m.at[i, "neutral"] = True
-                changed = True
-            continue
-        if m.at[i, "neutral"]:
-            m.at[i, "neutral"] = False
-            changed = True
-        if (r.venue == "home" and away == team) or (r.venue == "away" and home == team):
-            m.at[i, "home"], m.at[i, "away"] = away, home
+        if i is not None and not m.at[i, "neutral"]:
+            m.at[i, "neutral"] = True
             changed = True
     if not changed:
         return career

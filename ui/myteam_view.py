@@ -7,6 +7,7 @@ import pandas as pd
 import streamlit as st
 
 from ccstats import extras as E
+from ccstats import fixtures as FX
 from ccstats import myteam as MT
 from ccstats import players as PL
 from ccstats import seasonal as SN
@@ -28,7 +29,8 @@ def render(career, team: str, key: str) -> None:
     m = career.matches
     secs = state.memo(MT.sections_of, career, team)
     if not secs:
-        st.info(f"No matches for {team} yet.")
+        st.info(f"No matches for {team} yet: this tab fills in after their first game. Add their schedule on the "
+                "**Fixtures** page meanwhile, and the next match and series previews show up here.")
         return
     # ---------------------------------------------------------------- banner
     with safe_section("banner"):
@@ -106,13 +108,12 @@ def render(career, team: str, key: str) -> None:
                                 + "  \n".join(lines))
                     st.caption("Rating: Elo before and after this game. Table: league position before and after. ▲ a "
                                "big game for the player (well above their season average before it, or a haul); ▼ a "
-                               "low score after a run of good ones. Next opponent: the scorecards don't hold the "
-                               "fixture list, so pick them under Rivals below.")
+                               "low score after a run of good ones. Next opponent: from your schedule (Fixtures "
+                               "page); preview any side under Rivals below.")
 
     # ---------------------------------------------------------------- 144 / 148 · next up (from your schedule)
     with safe_section("next up"):
         sched = state.fixtures(career)
-        from ccstats import fixtures as FX
         # your schedule, plus what the team played since it starts that isn't in it (and the next knockout game)
         tr = state.memo(FX.track, career, sched, auto=(team,))
         mine_tr = tr[tr.team == team] if len(tr) else tr
@@ -248,10 +249,20 @@ def render(career, team: str, key: str) -> None:
             if rows:
                 html_table(rows, ["Opponent", "Played", "Record", "Win %"], numeric={1, 3})
             # ---------------------------------------------------------------- next opponent
-            opps = sorted(set(op.opponent))
+            # whoever is next in your schedule first, then every other side here (met or not)
+            here_ = m[m.section == section]
+            sec_fmts = set(here_.format)
+            up_ = state.memo(FX.upcoming, career, state.fixtures(career), (team,))
+            sched_o = [o for o in dict.fromkeys(up_[up_.format.isin(sec_fmts)].opponent) if o != team] if len(up_) else []
+            opps = sched_o + sorted((set(here_.home) | set(here_.away)) - {team} - set(sched_o))
             if opps:
                 c1, c2 = st.columns([2, 1], vertical_alignment="bottom")
-                nxt = c1.selectbox("Next opponent", opps, key=f"mt_next_{key}")
+                if st.session_state.get(f"mt_next_{key}") not in opps:
+                    st.session_state[f"mt_next_{key}"] = opps[0]
+                nxt = c1.selectbox("Next opponent", opps, key=f"mt_next_{key}",
+                                   format_func=lambda t: t + ("  ·  next match" if sched_o and t == sched_o[0] else
+                                                              "  ·  in your schedule" if t in sched_o else ""),
+                                   help="Your scheduled opponents first (Fixtures page), then every side here.")
                 if c2.button("Preview →", key=f"mt_go_{key}"):
                     intl = section in ("Tests", "ODIs", "T20Is")
                     st.session_state["op_section"] = "Internationals" if intl else section

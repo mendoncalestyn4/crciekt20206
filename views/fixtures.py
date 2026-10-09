@@ -7,6 +7,7 @@ import streamlit as st
 
 from ccstats import fixtures as FX
 from ccstats import seasonal as SN
+from ui import calendar_view as CV
 from ui import state
 from ui.charts import fmt
 from ui.theme import esc, form_strip, html_table, kpis, match_link, page_header, player_link, safe_section
@@ -22,7 +23,7 @@ page_header("Fixtures", "Your schedule",
             "chances, WTC race, milestones and goals update with it.")
 
 all_teams = sorted(set(m.home) | set(m.away))
-mine = state.my_teams(career)
+mine = state.my_teams(career, unplayed=True)  # a country picked before its first match too
 team_opts = mine + [t for t in all_teams if t not in mine]
 if not team_opts:
     st.info("No matches yet.")
@@ -83,20 +84,57 @@ def next_title(r) -> str:
 def go_preview(opp: str, fmt_: str, venue: str) -> None:
     intl = fmt_ in FX.INTL
     secs = SN.international_sections(career)
-    st.session_state["op_section"] = "Internationals" if intl else m[(m.format == fmt_) & (
-        (m.home == team) | (m.away == team))].section.mode().iloc[0]
-    if intl and fmt_ in secs:
-        st.session_state["op_format"] = secs[fmt_]
+    if intl and secs:
+        st.session_state["op_section"] = "Internationals"
+        if fmt_ in secs:
+            st.session_state["op_format"] = secs[fmt_]
+    else:  # the team's own section in that format (or, before its first game in it, any section in it)
+        mine_f = m[(m.format == fmt_) & ((m.home == team) | (m.away == team))]
+        any_f = mine_f if len(mine_f) else m[m.format == fmt_]
+        if len(any_f):
+            st.session_state["op_section"] = any_f.sort_values("date").section.iloc[-1]
     st.session_state["op_mine"] = team
     st.session_state["op_opp"] = opp
-    st.session_state["op_pred_where"] = {"home": "Home", "away": "Away"}.get(venue, "Neutral")
+    st.session_state["op_pred_where"] = st.session_state["op_where"] = \
+        {"home": "Home", "away": "Away"}.get(venue, "Neutral")
     st.switch_page("views/opponent.py")
+
+
+def preview_any() -> None:
+    """Preview any opponent: the ones still to come in your schedule first, then every other side."""
+    todo_ = mine_rows[mine_rows.status.isin(["next", "to come"]) & (mine_rows.opponent.fillna("") != "")] \
+        if len(mine_rows) else mine_rows
+    sched_o = list(dict.fromkeys(todo_.opponent)) if len(todo_) else []
+    pool = set(all_teams) | (FX.NATIONS if national else set())
+    if national:
+        pool &= FX.NATIONS
+    rest = sorted(pool - set(sched_o) - {team})
+    opts = [t for t in sched_o if t != team] + rest
+    if not opts:
+        return
+    with st.container(border=True):
+        st.markdown("**🔎 Preview any opponent** · your history against them, their form, key players and a plan")
+        p1, p2, p3 = st.columns([2.2, 1.2, 1], vertical_alignment="bottom")
+        o = p1.selectbox("Team to preview", opts, key="fx_any_opp",
+                         format_func=lambda t: t + ("  ·  in your schedule" if t in sched_o else ""))
+        their = todo_[todo_.opponent == o] if len(todo_) else todo_
+        f_default = their.format.iloc[0] if len(their) else None
+        if f_default is None:
+            last_ = m[((m.home == team) | (m.away == team)) & m.format.isin(formats_here)].sort_values("date")
+            f_default = last_.format.iloc[-1] if len(last_) else formats_here[0]
+        if st.session_state.get("fx_any_fmt_for") != (team, o):  # a new team: its scheduled (or your latest) format
+            st.session_state["fx_any_fmt_for"] = (team, o)
+            st.session_state["fx_any_fmt"] = f_default if f_default in formats_here else formats_here[0]
+        f = p2.selectbox("Format", formats_here, key="fx_any_fmt")
+        if p3.button("Preview →", key="fx_any_go", width="stretch"):
+            go_preview(o, f, their.venue.iloc[0] if len(their) and their.format.iloc[0] == f else "")
 
 
 # ================================================================ schedule
 with tabs[0]:
     if mine_rows.empty:
         st.info(f"No schedule for {team} yet.")
+        preview_any()
         st.markdown(HOW_TO)
     else:
         if not scheduled_any:
@@ -129,6 +167,7 @@ with tabs[0]:
                             st.markdown("⚔️ Key battles: " + "; ".join(kb) + ".")
                         if st.button(f"Full preview of {nopp} →", key="fx_go_preview"):
                             go_preview(nopp, nfmt, nven)
+            preview_any()
             # ---------------------------------------------------------- 141 · tracker
             if sm["missing"]:
                 st.warning(f"⚠️ {sm['missing']} fixture{'s' if sm['missing'] != 1 else ''} should have been played by now but "
@@ -153,6 +192,11 @@ with tabs[0]:
                 is_auto = str(r.get("auto")) == "True"
                 series = (esc(r["series"].replace(FX.AUTO, "")) + " <span title='auto-added: not in your schedule, so "
                           "added from the scorecards'>🆕</span>" if is_auto else esc(r["series"]))
+                if str(r.get("venue_fixed")) == "True":
+                    planned, real = venue_word(r.get("venue_planned", "")), venue_word(r["venue"])
+                    series += (f" <span title='You put this series {esc(planned)}, but its scorecards show {esc(team)} "
+                               f"{esc(real)}: the scorecards are used. Change Home/away in the table below to match.'>"
+                               f"📍 {esc(real)}</span>")
                 opp = r["opponent"] if r["kind"] == "tournament" else ""
                 if r["kind"] == "tournament" and stage and not opp and r["status"] != "played":
                     opp = "to be decided"
@@ -160,9 +204,10 @@ with tabs[0]:
             html_table(rows, ["", "Series", "Match", "Opponent", "When", "Result"], raw={1, 5})
             st.caption("A match is ticked off when the game saves its scorecard: it's matched by the two teams, the "
                        "format and its place in the series, so dates don't need to be exact. Click a result for its "
-                       "scorecard. Home and away for these matches come from your schedule. "
+                       "scorecard. Home and away come from the scorecards (the side named first is at home); 📍 marks a series "
+                       "you put at the other venue (hover it). Mark a series neutral if it was played at a neutral ground. "
                        "🆕 Auto-added: played but not in your schedule (or more matches than you put in), so added "
-                       "from the scorecards with the rest of its series; their home and away come from the scorecards. "
+                       "from the scorecards with the rest of its series. "
                        "In a tournament, the next knockout game (semi-final, final …) appears once you're through to "
                        "it, against the winner of the other tie when that's been played.")
     # ---------------------------------------------------------- 3 · edit the schedule like a table
@@ -230,7 +275,7 @@ with tabs[0]:
 with tabs[1], safe_section("add matches"):
     st.markdown(HOW_TO)
     kind = st.segmented_control("What are you adding?", ["Series or match", "Tournament"], default="Series or match",
-                                key="fx_kind") or "Series or match"
+                                required=True, key="fx_kind") or "Series or match"
     months = list(range(1, 13))
     years = list(range(year_now - 1, year_now + 4))
     if kind == "Series or match":
@@ -240,10 +285,10 @@ with tabs[1], safe_section("add matches"):
             if national:
                 opps = [t for t in opps if t in FX.NATIONS]
             opp = a1.selectbox("Opponent", opps, key="fx_opp")
-            ffmt = a2.segmented_control("Format", formats_here, default=formats_here[0], key="fx_fmt") or formats_here[0]
+            ffmt = a2.segmented_control("Format", formats_here, default=formats_here[0], required=True, key="fx_fmt") or formats_here[0]
             b1, b2 = st.columns(2)
-            n = b1.pills("How many matches", list(range(1, 8)), default=3, key="fx_n") or 1
-            ven = b2.segmented_control("Where", ["Home", "Away", "Neutral"], default="Home", key="fx_venue") or "Home"
+            n = b1.pills("How many matches", list(range(1, 8)), default=3, required=True, key="fx_n") or 1
+            ven = b2.segmented_control("Where", ["Home", "Away", "Neutral"], default="Home", required=True, key="fx_venue") or "Home"
             d1, d2, d3 = st.columns([1, 1, 1.3])
             mo = d1.selectbox("Month", months, index=max(0, int(latest.month) - 1) if pd.notna(latest) else 0,
                               format_func=lambda x: calendar.month_name[x], key="fx_month")
@@ -268,7 +313,7 @@ with tabs[1], safe_section("add matches"):
             name = a1.text_input("Name", key="fx_tother", placeholder="e.g. Asia Cup") if pick == "Other…" else pick
             tf_default = FX.TOURNAMENT_FORMAT.get(pick, formats_here[0])
             tfmt = a2.segmented_control("Format", formats_here, default=tf_default if tf_default in formats_here
-                                        else formats_here[0], key="fx_tfmt") or formats_here[0]
+                                        else formats_here[0], required=True, key="fx_tfmt") or formats_here[0]
             b1, b2, b3 = st.columns(3)
             tmo = b1.selectbox("Month it starts", months, index=max(0, int(latest.month) - 1) if pd.notna(latest) else 0,
                                format_func=lambda x: calendar.month_name[x], key="fx_tmonth")
@@ -293,8 +338,12 @@ with tabs[1], safe_section("add matches"):
         txt = st.text_area("Your schedule", key="fx_text", height=160, label_visibility="collapsed",
                            placeholder="England 3 Tests away Jan 2027")
         if st.button("Read these lines", key="fx_read"):
-            rows_, errs_ = FX.parse_lines(txt, team, all_teams + sorted(FX.NATIONS - set(all_teams)))
-            st.session_state["fx_parsed"] = (rows_, errs_)
+            if not (txt or "").strip():
+                st.session_state.pop("fx_parsed", None)
+                st.warning("Type at least one line first, like the examples above.")
+            else:
+                rows_, errs_ = FX.parse_lines(txt, team, all_teams + sorted(FX.NATIONS - set(all_teams)))
+                st.session_state["fx_parsed"] = (rows_, errs_)
         parsed = st.session_state.get("fx_parsed")
         if parsed:
             rows_, errs_ = parsed
@@ -403,50 +452,30 @@ with tabs[2], safe_section("series"):
 
 # ================================================================ 143 · year calendar
 with tabs[3], safe_section("calendar"):
-    yrs = sorted({int(y) for y in m[(m.home == team) | (m.away == team)].date.dt.year}
-                 | {int(str(x)[:4]) for x in mine_rows.month if x} if len(mine_rows) else
-                 {int(y) for y in m[(m.home == team) | (m.away == team)].date.dt.year})
-    if not yrs:
-        st.info(f"No matches or fixtures for {team} yet.")
+    team_dates = m[(m.home == team) | (m.away == team)].date
+    todo_rows = mine_rows[mine_rows.status.isin(["to come", "next"])] if len(mine_rows) else mine_rows
+    seasons_ = CV.seasons_for(list(team_dates) + [a for a in (todo_rows.anchor if len(todo_rows) else []) if pd.notna(a)])
+    if not seasons_:
+        st.info(f"No matches or fixtures for {team} yet. Add your schedule on the Add matches tab.")
     else:
-        cy = st.selectbox("Year", yrs, index=len(yrs) - 1 if year_now not in yrs else yrs.index(year_now), key="fx_cal_year")
-        days, by_month = FX.calendar_entries(career, tracked, team, int(cy))
-        cal = calendar.Calendar(firstweekday=0)
-        grid = st.columns(3, gap="small")
-        for mo in range(1, 13):
-            cells_html = []
-            for week in cal.monthdatescalendar(int(cy), mo):
-                cells = []
-                for d in week:
-                    if d.month != mo:
-                        cells.append("<td class='out'></td>")
-                        continue
-                    items = days.get(pd.Timestamp(d), [])
-                    inner = f"<div class='d'>{d.day}</div>"
-                    for e in items:
-                        short = {"Test": "T", "ODI": "O", "T20I": "20", "T20": "20"}.get(e["format"], e["format"][:2])
-                        label = f"{e['outcome'] or '·'} {short}"
-                        tip = f"v {e['opponent']} · {e['format']} · {venue_word(e['venue'])} · {e['result'] or 'to come'}"
-                        if e["match_id"]:
-                            inner += f"<a class='{e['outcome']}' href='match?match={esc(e['match_id'])}' target='_self' title='{esc(tip)}'>{esc(label)}</a>"
-                        else:
-                            inner += f"<a class='UP' title='{esc(tip)}'>{esc(short)} {esc(e['opponent'][:3])}</a>"
-                    cells.append(f"<td>{inner}</td>")
-                cells_html.append("<tr>" + "".join(cells) + "</tr>")
-            extra = by_month.get(mo, [])
-            note = ""
-            if extra:
-                groups_ = list(dict.fromkeys(e["series"] for e in extra))
-                note = "<div class='small'>⏳ " + "<br>⏳ ".join(esc(g) for g in groups_) + "</div>"
-            head = "".join(f"<th>{d}</th>" for d in "MTWTFSS")
-            with grid[(mo - 1) % 3]:
-                st.markdown(f"<div style='font-weight:700;margin-top:6px'>{calendar.month_name[mo]}</div>"
-                            f"<table class='cal mini'><thead><tr>{head}</tr></thead><tbody>{''.join(cells_html)}</tbody>"
-                            f"</table>{note}", unsafe_allow_html=True)
-        played_y = sum(1 for v in days.values() for e in v if e["kind"] == "played")
-        st.caption(f"{team} in {cy}: {played_y} matches played. Blue: won · red: lost · grey: drawn, tied or no result · "
-                   "dashed: still to come. T = Test, O = ODI, 20 = T20. Series without a date yet are listed under "
-                   "their month (⏳). Click a played match for its scorecard.")
+        # opens on the season of your next fixture, else of your latest game
+        nxt_ = todo_rows.anchor.min() if len(todo_rows) and todo_rows.anchor.notna().any() else None
+        now_ = CV.season_of(nxt_) if nxt_ is not None else (CV.season_of(team_dates.max()) if len(team_dates) else seasons_[0])
+        if st.session_state.get("fx_cal_season") not in seasons_:
+            st.session_state["fx_cal_season"] = now_ if now_ in seasons_ else seasons_[0]
+        cy = st.selectbox("Season", seasons_, format_func=CV.season_label, key="fx_cal_season")
+        days, notes = CV.team_chips(career, team, tracked, int(cy))
+        st.markdown(CV.season_html(int(cy), days, notes, CV.today_in_game(career)), unsafe_allow_html=True)
+        played_y = int((((m.home == team) | (m.away == team)) & (m.date.map(CV.season_of) == int(cy))).sum())
+        to_come_ = sum(len(v) for v in notes.values())
+        st.caption(f"{team} in {CV.season_label(int(cy))}: {played_y} match{'es' if played_y != 1 else ''} played. "
+                   "W blue: won · L red: lost · grey: drawn, tied or no result · dashed: still to come. T = Test, "
+                   "O = ODI, 20 = T20 (and the first letters of the opponent). A series still to come whose dates you "
+                   "didn't give is in the yellow box at the top of its month; give the first match's date when you add "
+                   "it and it's on its day too. The outlined day is the latest match played. Click a result for its "
+                   "scorecard.")
+        if to_come_ == 0 and not any("UP" in c for v in days.values() for c in v):
+            st.caption("Nothing still to come this season in your schedule: add it on the **Add matches** tab.")
 
 # ================================================================ 149 · WTC race
 with tabs[4], safe_section("WTC race"):

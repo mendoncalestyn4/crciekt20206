@@ -151,7 +151,7 @@ if report:
         with st.expander(f"{len(bad)} file(s) could not be read"):
             st.dataframe(pd.DataFrame([(r.source, r.message) for r in bad], columns=["File", "Reason"]), hide_index=True)
 
-mine = state.my_teams(career) if not career.matches.empty else []
+mine = state.my_teams(career, unplayed=True) if not career.matches.empty else []
 if mine:
     tabs = st.tabs([f"🏏 {t}" for t in mine] + ["Everything"])
     for i, t in enumerate(mine):
@@ -197,8 +197,7 @@ with overview:
                     f"{'are' if auto_left > 1 else 'is'} left out of every figure (you reloaded a save and the knockouts "
                     "went differently). See Data check → Games left out.")
         shared = checks.shared_names(career)
-        unclear = int((~career.fielding.resolved).sum())
-        if len(shared) or unclear:
+        if len(shared):  # (a catch whose fielder the scorecard can't name just counts for the team: nothing to do)
             with st.container(border=True):
                 c1, c2 = st.columns([4, 1], vertical_alignment="center")
                 items = []
@@ -207,9 +206,6 @@ with overview:
                     items.append(f"**{len(shared)} name{'s are' if len(shared) > 1 else ' is'} used by two different players**, "
                                  f"so their stats are mixed together (e.g. *{ex.player}* at {ex.teams[0]} and {ex.teams[1]}). "
                                  "One click keeps them apart.")
-                if unclear:
-                    items.append(f"**{unclear} catch{'es' if unclear > 1 else ''}** where the scorecard only printed a surname "
-                                 "shared by two players: pick who took them, or accept the suggestions.")
                 c1.markdown("**Worth a minute of your time**  \n" + "  \n".join(f"👉 {t}" for t in items))
                 c2.markdown("<a class='btnlink' href='data_check' target='_self'>Open Data check →</a>", unsafe_allow_html=True)
         st.write("")

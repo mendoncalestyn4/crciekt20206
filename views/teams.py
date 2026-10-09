@@ -18,6 +18,7 @@ career = state.current()
 if career is None:
     st.info("Load a career on the Home page first.")
     st.stop()
+state.stop_if_no_matches(career)
 
 m = career.matches
 page_header("Teams", "Team record", "Pick a section and a team. Every comparison is against the average of all the teams in that section.")
@@ -35,15 +36,24 @@ base_kind = kind_of(here)  # t20 / one / multi: the bars for close games, good s
 teams = sorted(set(here.home) | set(here.away))
 state.recall("tm_team", "team", teams)
 team = c3.selectbox("Team", teams, key="tm_team", on_change=state.remember("tm_team", "team"))
-venue_label = c4.segmented_control("Venue", ["Overall", "Home", "Away"], default="Overall", key="tm_venue") or "Overall"
+venue_label = c4.segmented_control("Venue", ["Overall", "Home", "Away"], default="Overall", required=True, key="tm_venue") or "Overall"
 venue = venue_label.lower().replace("overall", "all")
+# Home / Away: everything about this team counts only its games there (tids); the tables of every team and the
+# "every team" figures say what they count
+if venue == "all":
+    tids = ids
+else:
+    tids = pd.Index(here[((here.home == team) if venue == "home" else (here.away == team)) & ~here.neutral].match_id)
+scope_t = scope if venue == "all" else Scope(sections=[section], seasons=scope.seasons, team=team, venue=venue)
 
 table = A.team_table(career, ids, venue)
 if team not in set(table.team):
     if venue != "all" and here.neutral.all():
         st.info(f"{section} matches are played at neutral venues, so there are no home or away games. Choose Overall.")
     else:
-        st.info(f"{team} have no {venue_label.lower()} matches here.")
+        other_ = [v for v in ("Overall", "Home", "Away") if v != venue_label]
+        st.info(f"{team} haven't played {'at home' if venue == 'home' else 'away'} in {section}"
+                f"{'' if season == 'All seasons' else ' ' + season} yet. Choose **{other_[0]}** or **{other_[1]}**.")
     st.stop()
 me = table.set_index("team").loc[team]
 limited = np.isfinite(me.nrr)
@@ -58,19 +68,25 @@ kpis([("Played", f"{int(me.played)}"), ("Won–Lost", f"{int(me.won)}–{int(me.
      + [("Current run", f"{cur[1]} {dict(W='won', L='lost', D='drawn', T='tied', NR='no result').get(cur[0], '')}" if cur[0] else "–"),
         ("Last 5", f"<span class='small'>{' '.join(sk['last5'])}</span>" if sk["last5"] else "–")])  # fits the tile
 st.caption(f"Longest winning run: {sk['longest_win']} · longest losing run: {sk['longest_loss']}")
+if venue != "all":
+    st.info(f"**{venue_label} games only:** everything about {team} on this page counts their {len(tids)} "
+            f"{venue_label.lower()} game{'s' if len(tids) != 1 else ''} here: results, players, how they win, opponents, "
+            "series. The tables of every team (ratings, how teams play, discipline) and the 'every team' columns still "
+            "count every game here.", icon="📍")
 # ---------------------------------------------------------------- 99 · batting and bowling ratings
 with safe_section("ratings"):
     ur = state.memo(TD.unit_ratings, career, ids)
     if team in set(ur.team):
         u = ur.set_index("team").loc[team]
         st.markdown(f"**Batting rating {u.batting:.0f}** ({ordinal(u.batting_rank)} of {len(ur)}) · **Bowling rating "
-                    f"{u.bowling:.0f}** ({ordinal(u.bowling_rank)} of {len(ur)}) · 1000 = average, recent games count most. "
+                    f"{u.bowling:.0f}** ({ordinal(u.bowling_rank)} of {len(ur)}) · 1000 = average, recent games count most"
+                    + (", every game here. " if venue != "all" else ". ")
                     + ("The weaker half needs the work." if abs(u.batting - u.bowling) >= 50 else "Well balanced."))
 
 tab_over, tab_win, tab_opp, tab_season, tab_series, tab_squad, tab_res = st.tabs(
     ["Overview", "How they win", "Opponents and stages", "Season", "Series and Tests", "Squad", "Results"])
 with tab_over:
-    keep = A.keepers(career, ids, team)
+    keep = A.keepers(career, tids, team)
     if len(keep):
         st.markdown("🧤 **Wicketkeeper" + ("s" if len(keep) > 1 else "") + ":** " +
                     ", ".join(f"{p} ({n} stumping{'s' * (n != 1)})" for p, n in zip(keep.player, keep.stumpings)))
@@ -114,7 +130,7 @@ with tab_over:
                    "conceded and economy lower is better, so conceding less shows blue.")
 
     left, right = st.columns(2, gap="medium")
-    bat_t, bowl_t, _, _ = state.tables(career, scope, by_team=True)
+    bat_t, bowl_t, _, _ = state.tables(career, scope_t, by_team=True)
     my_bat = bat_t[bat_t.team == team].sort_values("runs", ascending=False).head(6)
     my_bowl = bowl_t[(bowl_t.team == team) & (bowl_t.wickets > 0)].sort_values(["wickets", "average"], ascending=[False, True]).head(6)
     my_bat = my_bat[my_bat.runs > 0]
@@ -217,7 +233,8 @@ with tab_over:
         left, right = st.columns([1.3, 1], gap="medium")
         with left:
             with st.container(border=True):
-                st.markdown(f"**How {team} play** · more (right) or less (left) than the average team, not better or worse")
+                st.markdown(f"**How {team} play** · more (right) or less (left) than the average team, not better or worse"
+                            + (" · every game here" if venue != "all" else ""))
                 st.plotly_chart(bars(labels, diffs, "% more or less than the average team", 0, texts=texts,
                                      colour=colours()["s2"], x_range=[min(min(diffs), 0) - (max(diffs) - min(min(diffs), 0)) * 1.1 - 8,
                                                                       max(max(diffs), 0) + (max(max(diffs), 0) - min(diffs)) * 0.9 + 8]),
@@ -231,7 +248,8 @@ with tab_over:
         disc = E.discipline(career, ids)
         with right:
             with st.container(border=True):
-                st.markdown("**Discipline** · extras given away per match (fewest first)")
+                st.markdown("**Discipline** · extras given away per match (fewest first)"
+                            + (" · every game here" if venue != "all" else ""))
                 d = disc.head(12)
                 st.plotly_chart(bars([t + ("  ◀" if t == team else "") for t in d.team], d.extras_per_match, "Extras per match", 1,
                                      notes=[f"wides {fmt(w, 1)} · no-balls {fmt(n, 1)} · byes {fmt(b, 1)} · leg byes {fmt(lb, 1)} per match"
@@ -265,11 +283,12 @@ second = "Batting second" if multi else "Chasing"
 
 # ---------------------------------------------------------------- 135 · squad changes
 with tab_squad, safe_section("best XI"):
-    team_sheet(best_xi_cached(career, ids, team),
-               f"{'All-time' if season == 'All seasons' else season} XI · {team} in {section}", show_team=False)
+    team_sheet(best_xi_cached(career, tids, team),
+               f"{'All-time' if season == 'All seasons' else season} XI · {team} in {section}"
+               + (f" · {venue_label.lower()} games" if venue != "all" else ""), show_team=False)
 
 with tab_squad, safe_section("squad changes"):
-    sc = state.memo(TD.squad_changes, career, ids, team)
+    sc = state.memo(TD.squad_changes, career, tids, team)
     intl_ = sc.attrs.get("international", False)
     st.markdown(f"**Who came in and who went out** · {'series to series' if intl_ else 'season to season'}")
     if sc.empty:
@@ -310,7 +329,8 @@ with tab_res:
 # ---------------------------------------------------------------- 1, 2, 3, 23 · how they win
 with tab_win:
     with safe_section("batting first or chasing"):
-        bft, avg_bf = state.memo(TP.bat_first_table, career, ids)
+        _, avg_bf = state.memo(TP.bat_first_table, career, ids)
+        bft = state.memo(TP.bat_first_table, career, tids)[0]
         me_bf = bft.set_index("team").loc[team] if team in set(bft.team) else None
         with st.container(border=True):
             st.markdown(f"**Batting first or {second.lower()}** · {team} against every team in {section}")
@@ -334,7 +354,7 @@ with tab_win:
                                                             " Ties and no-results are left out of win %."))
     left, right = st.columns(2, gap="medium")
     with left, safe_section("close games"):
-        cg = state.memo(TP.close_games, career, ids, team)
+        cg = state.memo(TP.close_games, career, tids, team)
         with st.container(border=True):
             st.markdown(f"**Close games** · won or lost by under {bars_for(base_kind)['close_runs']} runs or by 1-2 "
                         "wickets, or tied")
@@ -348,7 +368,7 @@ with tab_win:
                         for r in cg["rows"].sort_values("date", ascending=False).head(8).itertuples()]
                 html_table(rows, ["Date", "Opponent", "", "Margin"])
     with right, safe_section("openers' start"):
-        ss = state.memo(TP.start_split, career, ids, team)
+        ss = state.memo(TP.start_split, career, tids, team)
         sa = state.memo(TP.start_split, career, ids, "")
         with st.container(border=True):
             st.markdown("**The openers' start** · result when the first wicket fell…")
@@ -359,7 +379,7 @@ with tab_win:
             html_table(rows, ["First wicket fell", "Record", f"{team} win %", "Every team"], numeric={2, 3})
             st.caption("Their first innings of each game. A good start is worth this much to them.")
     with safe_section("targets"):
-        tb = state.memo(TP.target_buckets, career, ids, team)
+        tb = state.memo(TP.target_buckets, career, tids, team)
         ta = state.memo(TP.target_buckets, career, ids, "")
         with st.container(border=True):
             label = "fourth-innings target" if multi else "first-innings total"
@@ -383,23 +403,25 @@ with tab_win:
     # ---------------------------------------------------------------- 96 · dominance
     with safe_section("dominance"), st.container(border=True):
         dm = state.memo(TD.dominance, career, ids)
+        dm_t = dm if venue == "all" else state.memo(TD.dominance, career, tids)  # this team's own games there
         st.markdown("**How they win and lose** · thrashings, comfortable results and scrapes")
-        if team in set(dm.team):
-            r_ = dm.set_index("team").loc[team]
+        if team in set(dm_t.team):
+            r_ = dm_t.set_index("team").loc[team]
             b_ = bars_for(base_kind)
             html_table([["Wins", int(r_.won_thrashing), int(r_.won_comfortable), int(r_.won_scrape)],
                         ["Defeats", int(r_.lost_thrashing), int(r_.lost_comfortable), int(r_.lost_scrape)]],
                        ["", "Thrashing", "Comfortable", "Scrape"], numeric={1, 2, 3})
-            rank_ = int(list(dm.team).index(team)) + 1
+            rank_ = int(list(dm.team).index(team)) + 1 if team in set(dm.team) else None
             st.caption(f"Thrashing: {b_['thrash_runs']}+ runs or {b_['thrash_wkts']}+ wickets"
                        + (" (or an innings)" if base_kind == "multi" else "") + f". Scrape: under {b_['close_runs']} runs "
                        f"or 1-2 wickets. Dominance index {r_['index']:+.0f} (thrashings won minus heavy defeats, per 100 "
-                       f"games): {rank_} of {len(dm)} here."
+                       + (f"games): {rank_} of {len(dm)} here." if venue == "all" or rank_ is None else
+                          f"{venue_label.lower()} games).")
                        + (f" Draws: {int(r_.drawn)}." if r_.drawn else ""))
     # ---------------------------------------------------------------- 133 · comebacks
     with safe_section("comebacks"), st.container(border=True):
         with st.spinner("Working out the win chance through every match…"):
-            cb_all = state.memo(WP.comebacks, career, ids)
+            cb_all = state.memo(WP.comebacks, career, tids)
         cb = cb_all[cb_all.winner == team]
         against = cb_all[cb_all.loser == team]
         st.markdown(f"**Comebacks** · {team} wins from a losing position (their chance fell under 25%)")
@@ -417,13 +439,13 @@ with tab_win:
 with tab_opp:
     left, right = st.columns(2, gap="medium")
     with left, safe_section("league and knockouts"):
-        sr = state.memo(TP.stage_record, career, ids, team)
+        sr = state.memo(TP.stage_record, career, tids, team)
         with st.container(border=True):
             st.markdown("**League games and knockouts**")
             rows = [[r.stage, r.played, TP.wdl(r._asdict()), f"{pct(r.win_pct)}"] for r in sr.itertuples() if r.played]
             html_table(rows, ["", "Played", "Record", "Win %"], numeric={1, 3})
     with right, safe_section("bounce back"):
-        ar = state.memo(TP.after_result, career, ids, team)
+        ar = state.memo(TP.after_result, career, ids, team, venue=venue)
         with st.container(border=True):
             st.markdown("**Bouncing back** · their next game after…")
             rows = [[r.after, r.played, TP.wdl(r._asdict()), f"{pct(r.win_pct)}"] for r in ar.itertuples()]
@@ -432,7 +454,7 @@ with tab_opp:
             else:
                 st.caption("Not enough games yet.")
     with safe_section("opponents"):
-        op = state.memo(TP.opponents, career, ids, team)
+        op = state.memo(TP.opponents, career, tids, team)
         with st.container(border=True):
             st.markdown("**Every opponent** · ⭐ favourite and 👻 bogey team (met at least twice)")
             rows = [[("⭐ " if r.favourite else "👻 " if r.bogey else "") + r.opponent, r.played, TP.wdl(r._asdict()),
@@ -451,7 +473,7 @@ with tab_opp:
             st.caption(f"The average home side here wins {pct(fz.attrs['average'])}. A fortress is well above that: "
                        "winning there is worth more.")
     with safe_section("revenge"):
-        rv = state.memo(TP.revenge, career, ids, team)
+        rv = state.memo(TP.revenge, career, ids, team, venue=venue)
         with st.container(border=True):
             st.markdown("**Revenge games** · against a side that beat them the last time they met")
             html_table([["Revenge games", TP.wdl(rv["revenge"]), f"{pct(rv['revenge']['win_pct'])}"],
@@ -486,7 +508,7 @@ with tab_season:
                                f"Shows how the season unfolded: when {team} climbed or slipped. Positions follow the league "
                                "table (points, then net run rate). Hover a line for points.")
     with safe_section("early and late season"):
-        sh = state.memo(TP.season_halves, career, ids, team)
+        sh = state.memo(TP.season_halves, career, tids, team)
         with st.container(border=True):
             st.markdown("**Early or late starters** · league games in the first and second half of each season")
             if sh.empty:
@@ -503,7 +525,7 @@ with tab_series:
     if has_series:
         left, right = st.columns(2, gap="medium")
         with left, safe_section("first blood"):
-            fb = state.memo(TP.first_blood, career, ids, team)
+            fb = state.memo(TP.first_blood, career, tids, team)
             fa = state.memo(TP.first_blood, career, ids, "")
             with st.container(border=True):
                 st.markdown("**First blood** · how their series went after the first match")
@@ -515,7 +537,7 @@ with tab_series:
                              f"{pct(every.get(r.start, np.nan))}"] for r in fb.itertuples()]
                     html_table(rows, ["", "Series", "Won–drawn–lost", "Series won", "Every team"], numeric={1, 3, 4})
         with right, safe_section("deciders and dead rubbers"):
-            si = state.memo(TP.situations, career, ids, team)
+            si = state.memo(TP.situations, career, tids, team)
             with st.container(border=True):
                 st.markdown("**Deciders and dead rubbers**")
                 rows = [[r.situation, r.played, TP.wdl(r._asdict()), f"{pct(r.win_pct)}"] for r in si.itertuples() if r.played]
@@ -535,7 +557,7 @@ with tab_series:
             st.caption("Second innings: each team's second time batting in a match (after a follow-on too). "
                        "Chases: batting in the 4th innings, with how those games ended.")
         with safe_section("follow-on and declarations"):
-            fo = state.memo(TP.follow_on_and_declarations, career, ids, team)
+            fo = state.memo(TP.follow_on_and_declarations, career, tids, team)
             with st.container(border=True):
                 st.markdown("**Follow-on and declarations** · what happened next")
                 if fo.empty:

@@ -11,6 +11,7 @@ career = state.current()
 if career is None:
     st.info("Load a career on the Home page first.")
     st.stop()
+state.stop_if_no_matches(career)
 
 m = career.matches
 page_header("Season review", "The end-of-season review",
@@ -167,7 +168,7 @@ with safe_section("most valuable players"), st.container(border=True):
     how = "Impact points"
     if dots_:
         how = st.segmented_control("Points", ["Impact points", "IPL MVP points"], default="Impact points",
-                                   key=f"rv_mvp_how_{section}") or "Impact points"
+                                   required=True, key=f"rv_mvp_how_{section}") or "Impact points"
     mvp = state.memo(MV.season_mvp, career, section, season, "ipl" if how == "IPL MVP points" else "impact")
     if mvp.empty:
         st.caption("No players yet.")

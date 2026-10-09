@@ -131,8 +131,8 @@ def test_danger_zones_add_up_to_every_dismissal(season):
         assert d.outs.sum() == len(mine) == d.attrs["dismissals"]
         if len(mine):
             assert d.pct.sum() == pytest.approx(100)
-        # T20 bands: 0-9, 10-19, 20-29, 30-49, 50+
-        expect = [((mine.runs >= lo) & (mine.runs <= hi)).sum() for lo, hi in [(0, 9), (10, 19), (20, 29), (30, 49)]]
+        # T20 bands: 0-9, 10-19, 20-49 (got in, out before 50: the one highlighted), 50+
+        expect = [((mine.runs >= lo) & (mine.runs <= hi)).sum() for lo, hi in [(0, 9), (10, 19), (20, 49)]]
         expect.append((mine.runs >= 50).sum())
         assert d.outs.tolist() == expect
     assert d.all_pct.sum() == pytest.approx(100)
@@ -205,11 +205,15 @@ def test_match_impact_matches_the_formula(season):
     econ = w.runs.sum() / w.balls.sum()
     assert d.runs.sum() == b.runs.sum() and d.wickets.sum() == w.wickets.sum()
     f = season.fielding[season.fielding.match_id.isin(ids) & season.fielding.resolved]
-    for r in d.sample(25, random_state=1).itertuples():
+    fifties = d[d.runs >= 50]
+    assert len(fifties)
+    for r in pd.concat([d.sample(25, random_state=1), fifties.head(10)]).itertuples():
         mb = b[(b.match_id == r.match_id) & (b.player == r.player)]
         mw = w[(w.match_id == r.match_id) & (w.player == r.player)]
         mf = f[(f.match_id == r.match_id) & (f.player == r.player)]
-        want = (mb.runs.sum() + 0.5 * (mb.runs.sum() - mb.balls.sum() * sr)
+        # T20: a fifty is the big score (+15), a hundred a smaller extra on top (+10)
+        bonus = 15 * int((mb.runs >= 50).sum()) + 10 * int((mb.runs >= 100).sum())
+        want = (mb.runs.sum() + 0.5 * (mb.runs.sum() - mb.balls.sum() * sr) + bonus
                 + mw.wickets.sum() * rpw + (mw.balls.sum() * econ - mw.runs.sum()) + len(mf) * rpw * 0.25)
         assert r.impact == pytest.approx(want)
 

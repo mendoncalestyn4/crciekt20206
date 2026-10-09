@@ -32,7 +32,7 @@ class Scope:
     formats: list[str] = field(default_factory=list)
     seasons: list[str] = field(default_factory=list)
     team: str = ""
-    venue: str = "all"  # all / home / away (from `team`'s point of view)
+    venue: str = "all"  # all / home / away / neutral (from `team`'s point of view)
     opponent: str = ""
     stages: str = "all"  # all / league / knockout
     positions: list[int] = field(default_factory=list)  # batting positions to count (empty = all); batting only
@@ -62,6 +62,8 @@ class Scope:
                 m = m[(m.home == self.team) & ~m.neutral]
             elif self.venue == "away":
                 m = m[(m.away == self.team) & ~m.neutral]
+            elif self.venue == "neutral":
+                m = m[m.neutral]
             if self.opponent:
                 m = m[(m.home == self.opponent) | (m.away == self.opponent)]
         return pd.Index(m.match_id)

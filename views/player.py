@@ -16,12 +16,15 @@ career = state.current()
 if career is None:
     st.info("Load a career on the Home page first.")
     st.stop()
+state.stop_if_no_matches(career)
 
 players = sorted(set(career.batting.player) | set(career.bowling.player))
 wanted = st.query_params.get("player")
 if wanted in players and "pl_player" not in st.session_state:
     st.session_state["pl_player"] = wanted
 player = st.selectbox("Player", players, key="pl_player", placeholder="Type a name, e.g. S Gill", index=None)
+if player and st.query_params.get("player") != player:  # in the address too: a refresh or bookmark keeps them
+    st.query_params["player"] = player
 if not player:
     page_header("Player", "Pick a player", "Type a name in the box above. Every player who has batted or bowled in this career is listed.")
     st.stop()
@@ -76,9 +79,15 @@ BOWL_HELP = {"Mat": "Matches played", "Inns": "Innings bowled in", "Overs": "Six
              "5w": "Five or more wickets in an innings", "10m": "Ten or more wickets in a match"}
 
 
-def record_table(df: pd.DataFrame, first: str, bowling: bool, key: str) -> None:
-    """The standard batting or bowling table, identical in every section."""
+def record_table(df: pd.DataFrame, first: str, bowling: bool, key: str, fifties_first: bool = False) -> None:
+    """The standard batting or bowling table, identical in every section (in T20, `fifties_first`: the 50s column
+    before the 100s, as the fifty is the big score there)."""
     helps = BOWL_HELP if bowling else BAT_HELP
+    if fifties_first and "50" in df and "100" in df:
+        cols = list(df.columns)
+        i, j = cols.index("100"), cols.index("50")
+        cols[i], cols[j] = cols[j], cols[i]
+        df = df[cols]
     cfg = {c: st.column_config.NumberColumn(c, help=h, format="%d") for c, h in helps.items()
            if c in df and c not in ("HS", "Overs", "BBI", "BBM", "Avg", "SR", "Econ")}
     cfg |= {c: st.column_config.TextColumn(c, help=helps[c]) for c in ("HS", "Overs", "BBI", "BBM") if c in df}
@@ -249,7 +258,19 @@ if "Batting" in tabs:
             if dz.attrs.get("dismissals", 0) == 0:
                 st.caption("Never dismissed here.")
             else:
-                st.plotly_chart(paired_bars(dz.zone, dz.pct, dz.all_pct, player, "Every batter here", "% of dismissals", 0,
+                key_zone = PD.KEY_ZONE.get(dz.attrs.get("kind"))
+                key_label = PD.zone_label(*key_zone) if key_zone else None
+                if key_label in set(dz.zone):
+                    kz = dz[dz.zone == key_label].iloc[0]
+                    st.markdown(f"<div class='tc' style='border:1px dashed var(--accent,#f2b632);border-radius:8px;"
+                                f"padding:6px 10px;margin:2px 0 6px'>⭐ <b>Got in, out before 50 ({key_label}): "
+                                f"{kz.pct:.0f}% of their dismissals</b> ({int(kz.outs)} of {dz.attrs['dismissals']}), "
+                                f"every batter here {kz.all_pct:.0f}%"
+                                + (" · <b>a weak spot</b>" if kz.pct >= kz.all_pct + 5 else
+                                   " · better than most" if kz.pct <= kz.all_pct - 5 else "") + "</div>",
+                                unsafe_allow_html=True)
+                labels_ = [z + "  ⭐" if z == key_label else z for z in dz.zone]
+                st.plotly_chart(paired_bars(labels_, dz.pct, dz.all_pct, player, "Every batter here", "% of dismissals", 0,
                                             notes=[f"{n} dismissals" for n in dz.outs]),
                                 width="stretch", config=CONFIG, key="pl_danger")
                 worst = dz.assign(gap=dz.pct - dz.all_pct).sort_values("gap", ascending=False).iloc[0]
@@ -275,10 +296,16 @@ if "Batting" in tabs:
                 chart_note(lead + ("; ".join(parts) + "." if parts else ""),
                            "Shows whether they turn starts into big scores. Key marks: "
                            + ", ".join(str(k) for k in keys) + " in this format; the grey dots are every batter here.")
+                if fn.attrs.get("kind") == "t20":
+                    h_, f_ = fn.attrs.get("hundreds", 0), fn.attrs.get("fifties", 0)
+                    st.markdown(f"**Hundreds, on their own:** {h_} in {fn.attrs['innings']} innings"
+                                + (f" · {fn.attrs['fifty_to_100']:.0f}% of their {f_} fifties went on to 100 "
+                                   f"(everyone: {pct(fn.attrs['all_fifty_to_100'])})" if f_ else "")
+                                + ". In T20 the fifty is the big score, so the chart stops there.")
         with st.container(border=True):
             st.markdown(f"**Every season in {section}** · the same columns as the table at the top")
             record_table(A.batting_record(career, ids, player, by="season").sort_values("season", ascending=False),
-                         "season", False, "pl_bat_seasons")
+                         "season", False, "pl_bat_seasons", fifties_first=PL.kind_of_ids(career, ids) == "t20")
 
         st.subheader("Average in different situations", anchor=False)
         st.caption(f"Each chart splits the same innings one way. The dashed line is their overall average ({fmt(b.average, 1)}).")

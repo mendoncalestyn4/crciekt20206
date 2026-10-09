@@ -4,6 +4,7 @@ import streamlit as st
 
 from ccstats import analysis as A
 from ccstats import extras as E
+from ccstats import fixtures as FX
 from ccstats import preview as PV
 from ccstats import seasonal as SN
 from ccstats import teamplay as TP
@@ -17,6 +18,7 @@ career = state.current()
 if career is None:
     st.info("Load a career on the Home page first.")
     st.stop()
+state.stop_if_no_matches(career)
 
 m = career.matches
 page_header("Opponent preview", "Know your opponent",
@@ -24,6 +26,8 @@ page_header("Opponent preview", "Know your opponent",
             "form, their key players and weak spots, and a plan to beat them.")
 
 INTL = "Internationals"
+FMT_SECTION = {"Test": "Tests", "ODI": "ODIs", "T20I": "T20Is"}
+ONE = {"Tests": "a Test", "ODIs": "an ODI", "T20Is": "a T20I"}
 intl_sections = [s for s in ("Tests", "ODIs", "T20Is") if s in set(m.section)]
 counts = m.section.value_counts()
 choices = [s for s in counts.index if s not in intl_sections]
@@ -31,13 +35,58 @@ if intl_sections:
     choices = [INTL] + choices
 mine_default = state.my_teams(career)
 
-c1, c2, c3, c4 = st.columns([1.7, 1.3, 1.5, 1.5])
+
+def place_of(team: str, fmt: str) -> tuple[str | None, str | None]:
+    """(competition, format) on this page for a team's game in a format: Internationals and its format, or the
+    team's latest section in that format."""
+    if fmt in FMT_SECTION and FMT_SECTION[fmt] in intl_sections:
+        return INTL, FMT_SECTION[fmt]
+    x = m[(m.format == fmt) & ((m.home == team) | (m.away == team))].sort_values("date")
+    return (x.section.iloc[-1] if len(x) else None), None
+
+
+# the page opens on your next match (from your schedule, or the next game of a series under way); without one, on
+# your team's latest game. A choice you make (or a Preview button elsewhere) is kept.
+up = state.memo(FX.upcoming, career, state.fixtures(career), tuple(mine_default)) if mine_default else None
+nxt = up.iloc[0] if up is not None and len(up) else None
+if "op_section" not in st.session_state:
+    start = None
+    if nxt is not None:
+        start = (nxt["team"], nxt["format"], nxt["opponent"])
+    elif mine_default:
+        last_ = m[(m.home.isin(mine_default)) | (m.away.isin(mine_default))].sort_values("date")
+        if len(last_):
+            r_ = last_.iloc[-1]
+            me_ = r_.home if r_.home in mine_default else r_.away
+            start = (me_, r_.format, r_.away if r_.home == me_ else r_.home)
+    if start is not None:
+        sec_, fmt_ = place_of(start[0], start[1])
+        if sec_ in choices:
+            st.session_state["op_section"] = sec_
+            if fmt_:
+                st.session_state["op_format"] = fmt_
+            st.session_state["op_mine"] = start[0]
+            st.session_state["op_opp"] = start[2]
+            if nxt is not None and nxt["venue"] in ("home", "away", "neutral"):  # where your next match is
+                st.session_state["op_pred_where"] = st.session_state["op_where"] = nxt["venue"].title()
+    else:
+        last_pick = state._remembered(career).get("section")
+        if last_pick in intl_sections:  # e.g. ODIs, picked on another page
+            st.session_state["op_section"], st.session_state["op_format"] = INTL, last_pick
 state.recall("op_section", "section", choices)
+
+c1, c2 = st.columns([2.3, 1.7])  # a long competition name (County Championship · Division 1) fits
 pick = c1.selectbox("Competition", choices, key="op_section", on_change=state.remember("op_section", "section"),
                     format_func=lambda s: f"{s} · {int(counts[intl_sections].sum())} matches" if s == INTL
                     else f"{s} · {counts[s]} matches")
+group = m[m.section.isin(intl_sections)] if pick == INTL else m[m.section == pick]  # every format here
 if pick == INTL:
-    fmt_pick = c2.segmented_control("Format", intl_sections + ["All"], default=intl_sections[0], key="op_format") \
+    fmts = intl_sections + ["All"]
+    if st.session_state.get("op_format") not in fmts:
+        # your team's format: the one it played most recently, else the first
+        mg = group[group.home.isin(mine_default) | group.away.isin(mine_default)].sort_values("date")
+        st.session_state["op_format"] = mg.section.iloc[-1] if len(mg) else intl_sections[0]
+    fmt_pick = c2.segmented_control("Format", fmts, required=True, key="op_format") or st.session_state.get("op_format") \
         or intl_sections[0]
     sections = intl_sections if fmt_pick == "All" else [fmt_pick]
 else:
@@ -45,19 +94,71 @@ else:
     c2.caption(" ")
 ids = m[m.section.isin(sections)].match_id
 here = m[m.match_id.isin(ids)]
-teams = sorted(set(here.home) | set(here.away))
-if len(teams) < 2:
+fmt_teams = set(here.home) | set(here.away)
+where_note = " + ".join(sections)
+fmt_words = "games here" if len(sections) > 1 or pick != INTL else sections[0]
+
+# your team: any side in this competition (every format), yours first. Opponent: every side in it, and whoever is
+# next in your schedule even before they've played a game here
+group_teams = sorted(set(group.home) | set(group.away))
+yours = [t for t in mine_default if t in group_teams or (pick == INTL and t in FX.NATIONS)]
+mine_opts = ["—"] + yours + [t for t in group_teams if t not in yours]
+if st.session_state.get("op_mine") not in mine_opts:
+    st.session_state["op_mine"] = yours[0] if yours else "—"
+c3, c4 = st.columns(2)
+mine = c3.selectbox("Your team", mine_opts, key="op_mine",
+                    help="Any side here; yours first (pick them under My team in the sidebar). Your history against "
+                         "them, side by side and your best XI need your team.")
+group_fmts = set(group.format)
+sched = up[(up.team == mine) & up.format.isin(group_fmts)] if up is not None and len(up) and mine != "—" else None
+sched_opps = list(dict.fromkeys(sched.opponent)) if sched is not None else []
+opp_opts = sorted((set(group_teams) | set(sched_opps)) - {mine})
+if len(opp_opts) < 1:
     st.info("Not enough teams here yet.")
     st.stop()
-mine_opts = ["—"] + teams
-default_mine = next((t for t in mine_default if t in teams), None)
-if "op_mine" not in st.session_state or st.session_state["op_mine"] not in mine_opts:
-    st.session_state["op_mine"] = default_mine or "—"
-mine = c3.selectbox("Your team", mine_opts, key="op_mine")
-opp_opts = [t for t in teams if t != mine]
-opp = c4.selectbox("Opponent", opp_opts, key="op_opp")
+if st.session_state.get("op_opp") not in opp_opts:
+    if sched_opps and sched_opps[0] in opp_opts:
+        st.session_state["op_opp"] = sched_opps[0]
+    else:
+        met_ = here[(here.home == mine) | (here.away == mine)].sort_values("date")
+        last_opp = (met_.away.iloc[-1] if met_.home.iloc[-1] == mine else met_.home.iloc[-1]) if len(met_) else None
+        st.session_state["op_opp"] = last_opp if last_opp in opp_opts else opp_opts[0]
+
+
+def opp_label(t: str) -> str:
+    tags = []
+    if sched_opps and t == sched_opps[0]:
+        tags.append("next")
+    elif t in sched_opps:
+        tags.append("scheduled")
+    if t not in fmt_teams:
+        tags.append(f"no {fmt_words if fmt_words != 'games here' else 'games'} yet")
+    return t + (f" ({', '.join(tags)})" if tags else "")
+
+
+opp = c4.selectbox("Opponent", opp_opts, key="op_opp", format_func=opp_label,
+                   help="Every side here, and the teams still to come in your schedule (Fixtures page).")
 mine = None if mine == "—" else mine
-where_note = " + ".join(sections)
+
+if opp not in fmt_teams:
+    played_ = group[(group.home == opp) | (group.away == opp)]
+    by_sec = played_.section.value_counts()
+    if pick == INTL and len(by_sec) and fmt_pick != "All":
+        st.info(f"**{opp} haven't played {ONE.get(fmt_pick, fmt_pick)} in this career yet.** They have played "
+                + ", ".join(f"{n} {s}" for s, n in by_sec.items()) + ": switch the format to see them.")
+        def _to(s_):
+            return lambda: st.session_state.update(op_format=s_)
+        bcols = st.columns(len(by_sec) + 3)
+        for i_, s_ in enumerate(by_sec.index):
+            bcols[i_].button(f"Show {s_}", key=f"op_to_{s_}", on_click=_to(s_))
+    else:
+        st.info(f"**{opp} haven't played a game here in this career yet.** Their preview fills in as soon as they have"
+                + (f" (they're in your schedule: {sched[sched.opponent == opp].series.iloc[0].replace(FX.AUTO, '')})."
+                   if opp in sched_opps else "."))
+    st.stop()
+if mine and mine not in fmt_teams:
+    st.caption(f"ℹ️ {mine} haven't played {ONE.get(fmt_words, 'here')} yet in this career: your history against "
+               f"{opp}, side by side and your best XI fill in after your first. Their side of the preview is below.")
 
 pv = state.memo(E.opponent_preview, career, ids, opp)
 tm = pv["matches"]
@@ -73,13 +174,15 @@ st.caption(f"{opp} in {where_note}. Last 5: W won, L lost, D drawn, T tied, olde
 if mine:
     with safe_section("predicted result"), st.container(border=True):
         p1, p2 = st.columns([3, 1.4], vertical_alignment="center")
-        where_p = p2.segmented_control("Where", ["Home", "Away", "Neutral"], default="Neutral", key="op_pred_where") \
+        st.session_state.setdefault("op_pred_where", "Neutral")
+        where_p = p2.segmented_control("Where", ["Home", "Away", "Neutral"], required=True, key="op_pred_where") \
             or "Neutral"
         pr = state.memo(WP.predict, career, ids, mine, opp, where_p.lower())
         parts = [f"**{mine} {pr['win']:.0f}%**"] + ([f"draw {pr['draw']:.0f}%"] if pr["multi"] else []) + \
             [f"**{opp} {pr['lose']:.0f}%**"]
         p1.markdown("**🔮 Predicted result** · " + " · ".join(parts))
-        rows = [[name, why, (f"{val:.0f}%" if i == 0 else f"{val:+.1f}") ] for i, (name, why, val) in enumerate(pr["steps"])]
+        rows = [[name, why, (f"{val:.0f}%" if i == 0 else f"{val + 0.0:+.1f}".replace("-0.0", "0.0").replace("+0.0", "0.0"))]
+                for i, (name, why, val) in enumerate(pr["steps"])]
         html_table(rows, ["Step", "Why", f"{mine} chance (start, then change)"], numeric={2})
         st.caption("Built in steps: the Elo chance first, then small nudges for recent form, head to head and home "
                    "ground, each capped so no single one can swing it far."
@@ -168,7 +271,7 @@ with tab_h2h:
                 st.markdown("**Who gets whom out** · dismissals by each bowler of each batter (run-outs left out)")
                 t1, t2 = st.columns([2, 1.4])
                 scope_mu = t1.segmented_control("Count", ["Only our meetings", "Every match these players faced each other"],
-                                                default="Only our meetings", key="op_mu_scope") or "Only our meetings"
+                                                default="Only our meetings", required=True, key="op_mu_scope") or "Only our meetings"
                 current_only = t2.toggle("Current players only", key="op_mu_cur",
                                          help="Only players in each team's last 5 games here.")
                 mu = state.memo(PV.matchups, career, ids, mine, opp, everywhere=scope_mu != "Only our meetings",
@@ -311,7 +414,8 @@ with tab_them:
         with safe_section("home and away"), st.container(border=True):
             vr = state.memo(PV.venue_record, career, ids, opp)
             st.markdown("**Home and away**")
-            where = st.segmented_control("You are", ["Home", "Away", "Neutral"], default="Home", key="op_where") or "Home"
+            st.session_state.setdefault("op_where", "Home")
+            where = st.segmented_control("You are", ["Home", "Away", "Neutral"], required=True, key="op_where") or "Home"
             theirs = {"Home": "away", "Away": "home", "Neutral": "neutral"}[where]
             r_ = vr[theirs]
             html_table([[f"{v.title()} games", TP.wdl(vr[v]), f"{pct(vr[v]['win_pct'])}"] for v in ("home", "away", "neutral")

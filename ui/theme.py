@@ -87,7 +87,10 @@ h2 { text-transform: uppercase; font-size: 1.7rem !important; }
 .kpi::after { content: ""; position: absolute; left: 16px; right: 16px; top: 0; height: 2px; background: {accent}; opacity: .8; }
 .kpi span { display: block; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: .14em;
   text-transform: uppercase; color: {muted}; font-weight: 700; }
-.kpi strong { display: block; font-family: 'Barlow Condensed', sans-serif; font-size: clamp(24px, 2.5vw, 38px); line-height: 1.05;
+.kpi { container-type: inline-size; }
+/* a long figure (143,250 runs) shrinks to fit its tile instead of being cut off: --n is its number of characters */
+.kpi strong { display: block; font-family: 'Barlow Condensed', sans-serif; line-height: 1.05;
+  font-size: min(clamp(24px, 2.5vw, 38px), calc(150cqw / var(--n, 4)));
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   font-weight: 800; font-variant-numeric: tabular-nums; color: {ink}; text-shadow: {glow}; }
 .kpi strong .small { font-size: .66em; letter-spacing: .04em; }
@@ -159,16 +162,20 @@ a.btnlink { display: inline-block; padding: 7px 14px; border-radius: 10px; borde
 a.btnlink:hover { background: {accent_soft}; }
 
 /* ---------- small tables with links ---------- */
-.tblwrap { overflow-x: auto; }
+.tblwrap { overflow-x: auto; container-type: inline-size; }
 table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
 table.tbl th { text-align: left; font-family: 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase;
-  font-size: 12px; color: {muted}; font-weight: 700; padding: 4px 8px; border-bottom: 1px solid {panel_edge}; white-space: nowrap; }
-table.tbl td { padding: 5px 8px; border-bottom: 1px solid {grid}; color: {ink2}; vertical-align: top; }
+  font-size: 12px; color: {muted}; font-weight: 700; padding: 4px 7px; border-bottom: 1px solid {panel_edge};
+  line-height: 1.15; vertical-align: bottom; }  /* long headings wrap, so a table fits a half-width box */
+table.tbl td { padding: 5px 7px; border-bottom: 1px solid {grid}; color: {ink2}; vertical-align: top; }
+table.tbl td.num { white-space: nowrap; }
 table.tbl td.num, table.tbl th.num { text-align: right; }
 table.tbl tr.hi td { color: {ink}; font-weight: 700; background: {accent_soft}; }
 table.tbl tr.dim td { opacity: .45; }
 table.tbl a { color: {ink} !important; text-decoration: none; border-bottom: 1px dotted {muted}; }
 table.tbl a:hover { color: {accent} !important; border-bottom-color: {accent}; }
+/* a table in a half-width box: a little tighter, so it fits without scrolling sideways */
+@container (max-width: 520px) { table.tbl { font-size: 12.5px; } table.tbl td, table.tbl th { padding-left: 5px; padding-right: 5px; } }
 .tick { color: {good}; font-weight: 800; }
 .chartnote { font-size: 13.5px; color: {ink2}; margin: 2px 0 6px; line-height: 1.45; display: grid; gap: 3px; }
 .chartnote b { color: {ink}; }
@@ -200,6 +207,15 @@ table.cal td a.D, table.cal td a.T, table.cal td a.NR { background: {mid}; }
 table.cal td a.UP { border: 1px dashed {muted}; color: {muted} !important; }
 table.cal.mini { border-spacing: 2px; } table.cal.mini td { height: 34px; font-size: 10px; padding: 1px 3px; }
 table.cal.mini td a { font-size: 10px; padding: 0 2px; margin-top: 1px; }
+table.cal td a.N { background: {mid}; cursor: help; }
+table.cal td.today { border-color: {accent}; }
+.calgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 22px; align-items: start; }
+.calgrid .mon h4 { font-size: 15px; font-weight: 700; margin: 0 0 2px; padding: 0; color: {ink}; }
+.calgrid .mon.empty h4 { color: {muted}; }
+.calgrid .tc { border: 1px dashed {accent}; background: {accent_soft}; border-radius: 8px; padding: 3px 8px; margin: 3px 0 2px;
+  font-size: 12px; color: {ink}; line-height: 1.35; }
+.calgrid .tc b { color: {accent}; }
+.calgrid .ms { font-size: 11.5px; color: {ink2}; margin: 0 0 2px; line-height: 1.35; }
 .grade { display: inline-block; min-width: 34px; text-align: center; border-radius: 8px; padding: 2px 6px;
   font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 20px; }
 .grade.A { background: {pos}; color: #fff; } .grade.B { background: rgba(57,135,229,.45); color: {ink}; }
@@ -226,9 +242,12 @@ def page_header(eyebrow: str, title: str, lede: str = "") -> None:
 
 
 def kpis(items: list[tuple[str, str]]) -> None:
+    import re
     cols = st.columns(len(items))
     for col, (label, value) in zip(cols, items):
-        col.markdown(f'<div class="kpi"><span>{label}</span><strong>{value}</strong></div>', unsafe_allow_html=True)
+        n = max(len(re.sub(r"<[^>]+>", "", str(value))), 4)  # its length as shown, so a long one can shrink to fit
+        col.markdown(f'<div class="kpi"><span>{label}</span><strong style="--n:{n}">{value}</strong></div>',
+                     unsafe_allow_html=True)
 
 
 def scoreboard(label: str, home: str, home_score: str, away: str, away_score: str, result: str) -> None:

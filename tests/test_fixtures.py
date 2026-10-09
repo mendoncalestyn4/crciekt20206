@@ -239,8 +239,10 @@ def test_a_series_longer_than_scheduled_gets_its_extra_matches(career):
     assert list(t.auto) == [False, False, True] and t.match_id.is_unique
     real = career.matches[career.matches.series_id == "Test-7"].sort_values("series_match_no")
     assert list(t.match_id) == list(real.match_id)
-    c2 = F.with_venues(career, t)  # the extra Test is in the same series: away too
-    assert (c2.matches.set_index("match_id").loc[list(t.match_id)].away == "England").all()
+    # the scorecards have England at home (named first) in all three, the extra one too: the schedule's 'away' is
+    # put right for the whole series, and the teams are never swapped
+    assert (t.venue == "home").all() and t.venue_fixed.all()
+    assert F.with_venues(career, t) is career
 
 
 def test_your_schedule_and_the_auto_added_never_share_a_match(career):
@@ -269,28 +271,26 @@ def test_every_match_of_every_team_is_in_its_schedule(career):
 
 
 # --------------------------------------------------------------------------- 154 · home and away from your schedule
-def test_venues_follow_the_schedule(career):
-    fx = F.make_series("England", "Pakistan", "Test", 3, "away", "2026-08")  # say England were away
+def test_home_and_away_come_from_the_scorecards(career):
+    """The side named first on a scorecard is at home. A series added with the wrong Where (England 'away' to
+    Pakistan, when the scorecards have England at home) never swaps the teams: the series takes the scorecards'
+    venue, for its matches still to come too, and is marked so the Fixtures page can say so."""
+    fx = F.make_series("England", "Pakistan", "Test", 3, "away", "2026-08")  # wrongly entered: England were at home
     t = F.track(career, fx)
-    c2 = F.with_venues(career, t)
-    assert c2 is not career and getattr(c2, "_venue_base") is career
-    for mid in t.match_id:
-        r = c2.matches.set_index("match_id").loc[mid]
-        assert r.away == "England" and r.home == "Pakistan"
-        inn = c2.innings[c2.innings.match_id == mid]
-        assert (inn.home == (inn.team == "Pakistan")).all()
-    # nothing else moved, and the original is untouched
-    other = ~c2.matches.match_id.isin(t.match_id)
-    assert (c2.matches[other].home.values == career.matches[other].home.values).all()
-    assert (career.matches.set_index("match_id").loc[t.match_id].home == "England").all()
-    assert len(c2.matches) == len(career.matches) and (c2.matches.winner.values == career.matches.winner.values).all()
-    # the schedule agreeing with the scorecards changes nothing
+    assert F.with_venues(career, t) is career  # nothing swapped
+    mine = t[t.team == "England"]
+    assert (mine.venue == "home").all() and mine.venue_fixed.all() and (mine.venue_planned == "away").all()
+    assert (career.matches.set_index("match_id").loc[mine[mine.status == "played"].match_id].home == "England").all()
+    # entered right: nothing to put right
     same = F.track(career, F.make_series("England", "Pakistan", "Test", 3, "home", "2026-08"))
-    assert F.with_venues(career, same) is career
-    # neutral
-    c3 = F.with_venues(career, F.track(career, F.make_series("England", "Pakistan", "Test", 3, "neutral", "2026-08")))
-    assert c3.matches.set_index("match_id").loc[t.match_id].neutral.all()
-    assert not c3.innings[c3.innings.match_id.isin(t.match_id)].home.any()
+    assert not same.venue_fixed.any() and F.with_venues(career, same) is career
+    # neutral: a scorecard can't say so, the schedule can
+    tn = F.track(career, F.make_series("England", "Pakistan", "Test", 3, "neutral", "2026-08"))
+    c3 = F.with_venues(career, tn)
+    played = tn[tn.status == "played"].match_id
+    assert c3.matches.set_index("match_id").loc[played].neutral.all()
+    assert not c3.innings[c3.innings.match_id.isin(played)].home.any()
+    assert getattr(c3, "_venue_base") is career and len(c3.matches) == len(career.matches)
 
 
 # --------------------------------------------------------------------------- 145 / 148 · series chances

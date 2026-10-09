@@ -9,7 +9,7 @@ import pandas as pd
 from . import teamplay as TP
 from .analysis import team_table
 from .records import played_order
-from .stats import Scope, player_tables
+from .stats import Scope
 
 
 def sections_of(career, team: str) -> list[str]:
@@ -188,8 +188,10 @@ def report_card(career, team: str, section: str, season: str) -> list[tuple[str,
     out.append(("Batting", _grade(d), f"{me.rpw_for:.1f} runs per wicket, average team {avg.rpw_for:.1f}"))
     d = (avg.rpw_against - me.rpw_against) / avg.rpw_against * 100 if avg.rpw_against else np.nan
     out.append(("Bowling", _grade(d), f"{me.rpw_against:.1f} runs per wicket conceded, average team {avg.rpw_against:.1f}"))
-    _, _, fld, _ = player_tables(career, Scope(sections=[section], seasons=[season]), by_team=True)
-    cpm = fld.groupby("team").catches.sum() / tt.set_index("team").played
+    # every catch the side took, also those the scorecard can't give to one player (they count for the team)
+    sids = Scope(sections=[section], seasons=[season]).match_ids(career.matches)
+    fc = career.fielding[career.fielding.match_id.isin(sids) & (career.fielding.kind == "caught")]
+    cpm = (fc.groupby("team").size() / tt.set_index("team").played).dropna()
     if team in cpm.index and cpm.mean():
         d = (cpm[team] - cpm.mean()) / cpm.mean() * 100
         out.append(("Fielding", _grade(d), f"{cpm[team]:.1f} catches a game, average team {cpm.mean():.1f}"))

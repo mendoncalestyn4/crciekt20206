@@ -13,6 +13,7 @@ career = state.current()
 if career is None:
     st.info("Load a career on the Home page first.")
     st.stop()
+state.stop_if_no_matches(career)
 
 m = career.matches
 page_header("Player stories", "The stories behind the numbers",
@@ -46,7 +47,7 @@ tabs = st.tabs(["Form guide", "Milestones and records", "Win when they fire", "H
 # ---------------------------------------------------------------- 18
 with tabs[0], safe_section("form guide"):
     fb, fw = state.memo(PL.form_guide, career, ids)
-    left, right = st.columns(2, gap="medium")
+    left, right = st.container(), st.container()  # wide tables: one under the other
     with left, st.container(border=True):
         st.markdown("**Batters** · last 5 innings (oldest first), against their own average")
         if fb.empty:
@@ -97,7 +98,7 @@ with tabs[1], safe_section("milestones"):
 # ---------------------------------------------------------------- 8
 with tabs[2], safe_section("win when they fire"):
     wb, ww = state.memo(PL.win_when, career, ids)
-    left, right = st.columns(2, gap="medium")
+    left, right = st.container(), st.container()  # wide tables: one under the other
     big_, haul_ = wb.attrs.get("big", 50), wb.attrs.get("haul", 3)
     for box, d, title, what in ((left, wb, f"When they make {big_}+", f"{big_}+ scores"),
                                 (right, ww, f"When they take {haul_}+ wickets", f"{haul_}-wicket hauls")):
@@ -114,7 +115,7 @@ with tabs[2], safe_section("win when they fire"):
 # ---------------------------------------------------------------- 12
 with tabs[3], safe_section("heroes in defeat"):
     hb, hw = state.memo(PL.heroes_in_defeat, career, ids)
-    left, right = st.columns(2, gap="medium")
+    left, right = st.container(), st.container()  # wide tables: one under the other
     with left, st.container(border=True):
         st.markdown("**Best innings in a losing side**")
         rows = [[player_link(r.player), f"{r.runs}{'' if r.out else '*'} ({r.balls})", r.team, r.opposition,
@@ -200,7 +201,7 @@ with tabs[6], safe_section("after a hundred"):
 
 # ---------------------------------------------------------------- 65
 with tabs[7], safe_section("pairs"):
-    left, right = st.columns(2, gap="medium")
+    left, right = st.container(), st.container()  # wide tables: one under the other
     with left, st.container(border=True):
         bp = state.memo(PL.batting_pairs, career, ids)
         st.markdown("**Batting partners** · stands together (2+)")
@@ -301,7 +302,7 @@ with tabs[11], safe_section("match impact"):
     if mi.empty:
         st.info("No matches yet.")
     else:
-        left, right = st.columns(2, gap="medium")
+        left, right = st.container(), st.container()  # wide tables: one under the other
         with left, st.container(border=True):
             st.markdown("**Biggest single-match impact**")
             top_ = mi.sort_values("impact", ascending=False).head(15)
@@ -351,12 +352,46 @@ with tabs[12], safe_section("badges"):
 
 # ---------------------------------------------------------------- 120
 with tabs[13], safe_section("batter v bowler"):
-    bat_names = sorted(career.batting[career.batting.match_id.isin(ids) & career.batting.did_bat].player.unique())
-    bowl_names = sorted(career.bowling[career.bowling.match_id.isin(ids) & (career.bowling.balls > 0)].player.unique())
+    everywhere = bool(st.session_state.get("st_bvb_all"))
+    scope_ids = None if everywhere else ids
+    bat_rows = career.batting[career.batting.did_bat & (True if everywhere else career.batting.match_id.isin(ids))]
+    bowl_rows = career.bowling[(career.bowling.balls > 0) & (True if everywhere else career.bowling.match_id.isin(ids))]
+    bat_names = sorted(bat_rows.player.unique())
+    bowl_names = sorted(bowl_rows.player.unique())
+    # once one is picked, the other box lists who they've actually met first (most dismissals first)
+    pick_bat, pick_bowl = st.session_state.get("st_bvb_bat"), st.session_state.get("st_bvb_bowl")
+    vs_bat = state.memo(PD.faced, career, scope_ids, batter=pick_bat) if pick_bat in bat_names else None
+    vs_bowl = state.memo(PD.faced, career, scope_ids, bowler=pick_bowl) if pick_bowl in bowl_names else None
+    if vs_bat is not None:
+        bowl_names = list(vs_bat.name) + [x for x in bowl_names if x not in set(vs_bat.name)]
+    if vs_bowl is not None:
+        bat_names = list(vs_bowl.name) + [x for x in bat_names if x not in set(vs_bowl.name)]
+    met_bat = dict(zip(vs_bat.name, vs_bat.dismissals)) if vs_bat is not None else {}
+    met_bowl = dict(zip(vs_bowl.name, vs_bowl.dismissals)) if vs_bowl is not None else {}
+    for k_, names_ in (("st_bvb_bat", bat_names), ("st_bvb_bowl", bowl_names)):
+        if st.session_state.get(k_) not in names_ + [None]:
+            st.session_state[k_] = None
     c1_, c2_, c3_ = st.columns([1.3, 1.3, 1])
-    batter = c1_.selectbox("Batter", bat_names, key="st_bvb_bat", index=None, placeholder="Pick a batter")
-    bowler = c2_.selectbox("Bowler", bowl_names, key="st_bvb_bowl", index=None, placeholder="Pick a bowler")
-    everywhere = c3_.toggle("Every competition", key="st_bvb_all", help="Count every match in the career, not only this section.")
+    batter = c1_.selectbox("Batter", bat_names, key="st_bvb_bat", index=None, placeholder="Pick a batter",
+                           format_func=lambda x: x + (f"  ·  out to them {met_bowl[x]}×" if met_bowl.get(x) else
+                                                      "  ·  met" if x in met_bowl else ""))
+    bowler = c2_.selectbox("Bowler", bowl_names, key="st_bvb_bowl", index=None, placeholder="Pick a bowler",
+                           format_func=lambda x: x + (f"  ·  got them out {met_bat[x]}×" if met_bat.get(x) else
+                                                      "  ·  met" if x in met_bat else ""))
+    c3_.toggle("Every competition", key="st_bvb_all", help="Count every match in the career, not only this section.")
+    if bool(batter) != bool(bowler):
+        one, table_ = (batter, vs_bat) if batter else (bowler, vs_bowl)
+        other = "bowlers" if batter else "batters"
+        if table_ is None or table_.empty:
+            st.info(f"No {other} met {one} yet" + ("" if everywhere else f" in {section}") + ".")
+        else:
+            st.markdown(f"**{one} against every {other[:-1]} met** · most dismissals first; pick one above for every "
+                        "innings between them")
+            html_table([[player_link(r.name), r.innings, r.dismissals, r.runs] for r in table_.head(12).itertuples()],
+                       [other[:-1].capitalize(), "Innings met", "Got out" if batter else "Got them out",
+                        "Batter's runs in those innings"], numeric={1, 2, 3}, raw={0})
+    elif not batter:
+        st.caption("Pick a batter, a bowler, or both.")
     if batter and bowler:
         bv = PD.batter_v_bowler(career, batter, bowler, None if everywhere else ids)
         inns_ = bv["innings"]
@@ -369,7 +404,7 @@ with tabs[13], safe_section("batter v bowler"):
                   ("Average v this bowler", fmt(bv["runs_when_out"] / bv["dismissals"], 1) if bv["dismissals"] else "–")])
             verdict = ("bowler on top" if bv["dismissals"] / bv["meetings"] >= 0.4 else
                        "batter on top" if bv["dismissals"] == 0 and bv["meetings"] >= 3 else "even")
-            st.markdown(f"**Verdict: {verdict}** ({bv['dismissals']} dismissals in {bv['meetings']} innings).")
+            st.markdown(f"**Verdict: {verdict}** ({_n(bv['dismissals'], 'dismissal')} in {bv['meetings']} innings).")
             html_table([[match_link(r.match_id, f"{r.date:%d %b %Y}"), r.section, f"{r.runs}{'' if r.out else '*'} ({r.balls})",
                          ("✔ " + r.dismissal) if r.bowler == bowler and r.out else r.dismissal or "not out",
                          f"{r.bowl_wkts}/{r.bowl_runs}"] for r in inns_.itertuples()],

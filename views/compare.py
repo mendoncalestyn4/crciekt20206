@@ -13,6 +13,7 @@ career = state.current()
 if career is None:
     st.info("Load a career on the Home page first.")
     st.stop()
+state.stop_if_no_matches(career)
 
 page_header("Compare players", "Side by side",
             "Pick a section and up to four players. Each chart shows one stat, with the section average as a dashed line.")
@@ -25,7 +26,7 @@ section = c1.selectbox("Section", list(sections.index), key="cp_section", on_cha
 seasons = sorted(m[m.section == section].season.unique(), reverse=True)
 state.recall("cp_season", "season", ["All seasons"] + seasons)
 season = c2.selectbox("Season", ["All seasons"] + seasons, key="cp_season", on_change=state.remember("cp_season", "season"))
-disc = c3.segmented_control("Discipline", ["Batting", "Bowling"], default="Batting", key="cp_disc") or "Batting"
+disc = c3.segmented_control("Discipline", ["Batting", "Bowling"], default="Batting", required=True, key="cp_disc") or "Batting"
 scope = Scope(sections=[section], seasons=[] if season == "All seasons" else [season])
 bat, bowl, _, base = state.tables(career, scope)
 table = bat if disc == "Batting" else bowl

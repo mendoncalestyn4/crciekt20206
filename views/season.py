@@ -2,10 +2,12 @@ import calendar
 
 import streamlit as st
 
+from ccstats import fixtures as FX
 from ccstats import rankings as R
 from ccstats import tables as T
 from ccstats import winprob as WP
 from ccstats.competitions import shown_name
+from ui import calendar_view as CV
 from ui import state
 from ui.charts import _n
 from ui.theme import colours, esc, html_table, page_header, safe_section
@@ -14,11 +16,12 @@ career = state.current()
 if career is None:
     st.info("Load a career on the Home page first.")
     st.stop()
+state.stop_if_no_matches(career)
 
 m = career.matches
-page_header("Season", "Results calendar and series",
-            "Every result on a calendar, every bilateral series and how it stands, and how far each competition "
-            "has got this season.")
+page_header("Season", "Calendar and series",
+            "A whole season (April to March) on one calendar: every result, and your fixtures still to come; every "
+            "bilateral series and how it stands, and how far each competition has got this season.")
 teams = sorted(set(m.home) | set(m.away))
 mine = state.my_teams(career)
 c1, c2 = st.columns([1.6, 2])
@@ -26,15 +29,49 @@ team = c1.selectbox("Team", ["All teams"] + teams, key="se_team",
                     index=(teams.index(mine[0]) + 1) if mine else 0)
 games = m if team == "All teams" else m[(m.home == team) | (m.away == team)]
 
-tab_cal, tab_series, tab_progress = st.tabs(["Results calendar", "Series tracker", "Season progress"])
+tab_cal, tab_series, tab_progress = st.tabs(["Calendar", "Series tracker", "Season progress"])
 
 # ---------------------------------------------------------------- calendar
 with tab_cal, safe_section("calendar"):
-    if games.empty:
+    # your schedule's fixtures still to come (Fixtures page), for the team picked
+    tracked = (state.memo(FX.track, career, state.fixtures(career), auto=(team,))
+               if team != "All teams" else None)
+    todo_ = tracked[(tracked.team == team) & tracked.status.isin(["to come", "next"])] if tracked is not None and len(tracked) else None
+    seasons_ = CV.seasons_for(list(games.date) + (list(todo_.anchor.dropna()) if todo_ is not None else []))
+    if not seasons_:
         st.info("No matches yet.")
     else:
+        v1, v2 = st.columns([1.3, 2.7], vertical_alignment="bottom")
+        st.session_state.setdefault("se_view", "Whole season")
+        view = v1.segmented_control("Show", ["Whole season", "One month"], required=True, key="se_view") or "Whole season"
+    if seasons_ and view == "Whole season":
+        nxt_ = todo_.anchor.min() if todo_ is not None and len(todo_) and todo_.anchor.notna().any() else None
+        latest_ = games.date.max() if len(games) else None
+        now_ = CV.season_of(nxt_) if nxt_ is not None else (CV.season_of(latest_) if latest_ is not None else seasons_[0])
+        if st.session_state.get("se_season") not in seasons_:
+            st.session_state["se_season"] = now_ if now_ in seasons_ else seasons_[0]
+        sy = int(v2.selectbox("Season", seasons_, format_func=CV.season_label, key="se_season"))
+        if team == "All teams":
+            days, notes = CV.all_teams_chips(career, sy), {}
+        else:
+            days, notes = CV.team_chips(career, team, tracked, sy)
+        st.markdown(CV.season_html(sy, days, notes, CV.today_in_game(career)), unsafe_allow_html=True)
+        in_season = games[games.date.map(CV.season_of) == sy]
+        if team != "All teams":
+            w = int((in_season.winner == team).sum())
+            lost = int(((in_season.winner != team) & (in_season.winner != "")).sum())
+            st.caption(f"{team} in {CV.season_label(sy)}: played {len(in_season)}, won {w}, lost {lost}. W blue: won · "
+                       "L red: lost · grey: drawn, tied or no result · dashed: still to come (from your schedule on the "
+                       "Fixtures page; a series without dates is in the yellow box at the top of its month). T = Test, "
+                       "O = ODI, 20 = T20. Click a result for its scorecard.")
+        else:
+            st.caption(f"{len(in_season)} matches in {CV.season_label(sy)}. Hover a day for its games; pick a team to "
+                       "see its results and fixtures to come.")
+    elif seasons_ and games.empty:
+        st.info(f"No matches for {team} yet: their fixtures to come are on the Whole season view.")
+    elif seasons_:
         months = sorted({(d.year, d.month) for d in games.date}, reverse=True)
-        ym = c2.selectbox("Month", months, format_func=lambda x: f"{calendar.month_name[x[1]]} {x[0]}", key="se_month")
+        ym = v2.selectbox("Month", months, format_func=lambda x: f"{calendar.month_name[x[1]]} {x[0]}", key="se_month")
         y, mo = ym
         cal = calendar.Calendar(firstweekday=0)
         by_day = {}

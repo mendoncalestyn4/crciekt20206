@@ -9,6 +9,7 @@ career = state.current()
 if career is None:
     st.info("Load a career on the Home page first.")
     st.stop()
+state.stop_if_no_matches(career)
 
 page_header("Honours board", "Champions",
             "Every competition's winners, season by season, with the top run-scorer and wicket-taker, and each "

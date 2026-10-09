@@ -15,6 +15,7 @@ career = state.current()
 if career is None:
     st.info("Load a career on the Home page first.")
     st.stop()
+state.stop_if_no_matches(career)
 
 page_header("Data check", "Check and fix",
             "The scorecards leave a few things unclear. Each one is explained below, with a one-click fix where there's a "
@@ -53,9 +54,6 @@ n_changes = (len(fx.merges) + len(fx.splits) + len(fx.credits) + len(fx.include)
 
 # ---------------------------------------------------------------- what needs you
 todo, fine = [], []
-if len(unc):
-    todo.append(f"👉 **{len(unc)} catches or stumpings** don't say which fielder took them"
-                + (f" ({len(sug)} can be sorted in one click)" if len(sug) else "") + " → *Unclear catches*")
 if len(shared):
     todo.append(f"👉 **{len(shared)} names** are used by two different players, so their stats are mixed together "
                 "(one click to keep them apart) → *Name shared by 2 players*")
@@ -95,21 +93,22 @@ with st.container(border=True):
         st.markdown("\n".join(f"- {t}" for t in todo))
     st.markdown(" · ".join(fine))
 
-tabs = st.tabs([f"Unclear catches · {len(unc)}", f"Name shared by 2 players · {len(shared)}",
-                f"Player with 2 names · {len(merges)}", f"Games left out · {len(left)}",
-                f"Scorecards · {bad_cards + len(failed_files)}", f"Your changes · {n_changes}"])
-t_catch, t_shared, t_merge, t_left, t_cards, t_changes = tabs
+tabs = st.tabs([f"Name shared by 2 players · {len(shared)}", f"Player with 2 names · {len(merges)}",
+                f"Games left out · {len(left)}", f"Scorecards · {bad_cards + len(failed_files)}",
+                f"Your changes · {n_changes}", f"Team catches · {len(unc)}"])
+t_shared, t_merge, t_left, t_cards, t_changes, t_catch = tabs
 
 # ---------------------------------------------------------------- unclear catches
 with t_catch:
-    st.markdown("**Who took the catch?** The scorecard prints only the fielder's surname, like *c Mendis*. When a side "
-                "has two players with that surname (Sri Lanka's Kusal and Kamindu Mendis are both *K Mendis*), it can't "
-                "say which one took it. Until you choose, the catch counts for the team but for neither player.")
+    st.markdown("**Catches that count for the team.** The scorecard prints only the fielder's surname, like *c Mendis*. "
+                "When a side has two players with that surname (Sri Lanka's Kusal and Kamindu Mendis are both *K Mendis*), "
+                "it can't say which one took it, so the catch counts for the team (in its catches) but for neither "
+                "player. **Nothing to do.** If you want a player to have one, you can still pick them below.")
     st.markdown(note("Already sorted out for you: a catcher can't be the bowler (that's printed <i>c & b</i>), a stumping "
                      "is always the wicketkeeper, and a catch by a substitute fielder (<i>c Sub</i>) counts for the team "
                      "but for no player, as in real cricket."), unsafe_allow_html=True)
     if unc.empty:
-        st.success("Every catch and stumping is credited to a player.")
+        st.success("Every catch and stumping has its player.")
     else:
         if len(sug):
             with st.container(border=True):

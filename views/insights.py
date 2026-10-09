@@ -14,6 +14,7 @@ career = state.current()
 if career is None:
     st.info("Load a career on the Home page first.")
     st.stop()
+state.stop_if_no_matches(career)
 
 m = career.matches
 page_header("Insights", "The bigger picture",
@@ -270,7 +271,10 @@ with tab_break:
     seasons_b = sorted(m[m.section == section_b].season.unique(), reverse=True)
     state.recall("in_b_season", "season", seasons_b)
     season_b = c2.selectbox("Season", seasons_b, key="in_b_season", on_change=state.remember("in_b_season", "season"))
-    min_inns = c3.selectbox("Minimum innings in both", [3, 5, 8, 10], index=1, key="in_b_min")
+    earlier_b = any(s < season_b for s in seasons_b)
+    min_inns = c3.selectbox("Minimum innings in both", [3, 5, 8, 10], index=1, key="in_b_min", disabled=not earlier_b,
+                            help="Innings needed in this season and in the earlier ones." + (
+                                "" if earlier_b else " Needs an earlier season of this competition to compare with."))
     bat, bowl = I.breakouts(career, section_b, season_b, min_inns)
     if bat.empty and bowl.empty and not any(s < season_b for s in seasons_b):
         st.info(f"{season_b} is the first season of {section_b} here, so there's nothing earlier to compare with.")

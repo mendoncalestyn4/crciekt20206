@@ -14,6 +14,7 @@ career = state.current()
 if career is None:
     st.info("Load a career on the Home page first.")
     st.stop()
+state.stop_if_no_matches(career)
 
 m = career.matches.sort_values(["date", "match_id"], ascending=False)
 inn_all = career.innings
@@ -50,6 +51,8 @@ if wanted in labels and "mt_match" not in st.session_state:
     st.session_state["mt_match"] = wanted
 mid = st.selectbox(f"Match ({len(labels)} to choose from, newest first)", list(labels), format_func=labels.get,
                    key="mt_match", index=None, placeholder="Type to search, e.g. 'Final' or 'Kent'")
+if mid and st.query_params.get("match") != mid:  # in the address too: a refresh or bookmark keeps it
+    st.query_params["match"] = mid
 if not mid:
     # ---------------------------------------------------------------- 102 · the best games
     with safe_section("best games"), st.container(border=True):

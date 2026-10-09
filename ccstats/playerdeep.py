@@ -15,9 +15,12 @@ from .stats import KIND
 # 89 · danger zones
 # --------------------------------------------------------------------------- #
 
-ZONES = {"t20": [(0, 9), (10, 19), (20, 29), (30, 49), (50, None)],
+ZONES = {"t20": [(0, 9), (10, 19), (20, 49), (50, None)],  # T20: 20-49 is the band that matters (got in, out before 50)
          "one": [(0, 9), (10, 29), (30, 49), (50, 99), (100, None)],
          "multi": [(0, 9), (10, 29), (30, 49), (50, 99), (100, 149), (150, None)]}
+
+
+KEY_ZONE = {"t20": (20, 49)}  # highlighted on the Players page
 
 
 def zone_label(lo: int, hi: int | None) -> str:
@@ -45,7 +48,7 @@ def danger_zones(career, ids, player: str) -> pd.DataFrame:
 # 90 · conversion funnel
 # --------------------------------------------------------------------------- #
 
-FUNNEL = {"t20": ([10, 20, 30, 40, 50, 75, 100], [20, 50]),
+FUNNEL = {"t20": ([10, 20, 30, 40, 50], [20, 50]),  # in T20 the fifty is the big score: 100s are counted on their own
           "one": ([10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150], [30, 50, 80, 100]),
           "multi": ([10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200], [50, 80, 100])}
 
@@ -80,6 +83,11 @@ def funnel(career, ids, player: str) -> pd.DataFrame:
         prev = (me, al)
     d = pd.DataFrame(rows)
     d.attrs.update(innings=len(mine), kind=kind, keys=keys)
+    if kind == "t20":  # hundreds on their own: how many, and how often a fifty went on to one
+        f_me, f_all = int((mine.runs >= 50).sum()), int((inn.runs >= 50).sum())
+        h_me, h_all = int((mine.runs >= 100).sum()), int((inn.runs >= 100).sum())
+        d.attrs.update(hundreds=h_me, fifties=f_me, fifty_to_100=h_me / f_me * 100 if f_me else np.nan,
+                       all_fifty_to_100=h_all / f_all * 100 if f_all else np.nan)
     return d
 
 
@@ -152,12 +160,16 @@ def rank_by_season(career, section: str, player: str) -> pd.DataFrame:
 # --------------------------------------------------------------------------- #
 
 
+FIFTY_BONUS, HUNDRED_BONUS = 15, 10  # T20 match impact, in runs
+
+
 def match_impact(career, ids) -> pd.DataFrame:
     """One number per player per match.  Batting: runs, and in white-ball cricket
     half the runs above (or below) what the section's strike rate would have made
     off the same balls.  Bowling: wickets worth the section's runs per wicket, plus
     in white-ball cricket the runs kept below the section's economy.  Fielding: a
-    catch or stumping is a quarter of a wicket."""
+    catch or stumping is a quarter of a wicket.  In T20 the fifty is the big score: reaching 50 is worth
+    FIFTY_BONUS more, and a hundred a smaller HUNDRED_BONUS on top (it's rare, so it doesn't swamp the rest)."""
     kind = kind_of_ids(career, ids)
     m = career.matches[career.matches.match_id.isin(ids)]
     inn_all = career.innings[career.innings.match_id.isin(ids)]
@@ -168,7 +180,8 @@ def match_impact(career, ids) -> pd.DataFrame:
     sr = b.runs.sum() / max(b.balls.sum(), 1)
     econ = w.runs.sum() / max(w.balls.sum(), 1)
     white = kind != "multi"
-    bat = b.assign(pts=b.runs + ((b.runs - b.balls * sr) * 0.5 if white else 0)) \
+    bonus = ((b.runs >= 50) * FIFTY_BONUS + (b.runs >= 100) * HUNDRED_BONUS) if kind == "t20" else 0
+    bat = b.assign(pts=b.runs + ((b.runs - b.balls * sr) * 0.5 if white else 0) + bonus) \
         .groupby(["match_id", "team", "player"]).agg(bat=("pts", "sum"), runs=("runs", "sum")).reset_index()
     bowl = w.assign(pts=w.wickets * rpw + ((w.balls * econ - w.runs) if white else 0)) \
         .groupby(["match_id", "team", "player"]).agg(bowl=("pts", "sum"), wickets=("wickets", "sum"),
@@ -390,6 +403,33 @@ def batter_v_bowler(career, batter: str, bowler: str, ids=None) -> dict:
     got = met[met.out & (met.bowler == bowler)]
     return dict(innings=met, dismissals=len(got), meetings=len(met),
                 runs=int(met.runs.sum()), runs_when_out=int(got.runs.sum()))
+
+
+def faced(career, ids=None, batter: str = "", bowler: str = "") -> pd.DataFrame:
+    """Every bowler a batter has met (bowling at their side while they batted), or every batter a bowler has
+    bowled at: innings met, how often that bowler got them out, and the batter's runs in those innings.
+    Most dismissals first (then most meetings)."""
+    bat = career.batting[career.batting.did_bat]
+    bowl = career.bowling[career.bowling.balls > 0]
+    if ids is not None:
+        bat = bat[bat.match_id.isin(ids)]
+        bowl = bowl[bowl.match_id.isin(ids)]
+    if batter:
+        bat = bat[bat.player == batter]
+    if bowler:
+        bowl = bowl[bowl.player == bowler]
+    met = bat.merge(bowl[["match_id", "innings_no", "team", "player"]].rename(
+        columns={"team": "bowl_team", "player": "bowl_player"}), on=["match_id", "innings_no"])
+    met = met[met.bowl_team != met.team]
+    cols = ["name", "innings", "dismissals", "runs"]
+    if met.empty:
+        return pd.DataFrame(columns=cols)
+    met = met.assign(got=met.out & (met.bowler == met.bowl_player))
+    key = "bowl_player" if batter else "player"
+    g = (met.groupby(key).agg(innings=("match_id", "size"), dismissals=("got", "sum"), runs=("runs", "sum"))
+         .reset_index().rename(columns={key: "name"}))
+    g["dismissals"] = g.dismissals.astype(int)
+    return g.sort_values(["dismissals", "innings", "name"], ascending=[False, False, True]).reset_index(drop=True)[cols]
 
 
 # --------------------------------------------------------------------------- #

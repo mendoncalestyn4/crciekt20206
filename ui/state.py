@@ -27,6 +27,15 @@ def demo_career() -> Career:
     return Career.build(DEMO_NAME, files)
 
 
+def stop_if_no_matches(c: Career) -> None:
+    """A career with no matches yet (a new save, an empty Scorecards folder): say so instead of an empty page."""
+    if c.matches.empty:
+        st.info("**No matches in this career yet.** Play a match in Cricket Captain (with *Autosave scorecards* on in "
+                "Options) and this page fills in within about 20 seconds. Meanwhile you can add your schedule on the "
+                "**Fixtures** page.")
+        st.stop()
+
+
 def career_names() -> list[str]:
     return store().names()
 
@@ -101,24 +110,76 @@ def tables(c: Career, scope: Scope, by_team: bool = False):
 
 
 # --------------------------------------------------------------------------- my team
-def my_teams(c: Career | None) -> list[str]:
-    """The teams you play as in this career (saved with the career on this PC)."""
+def my_teams(c: Career | None, unplayed: bool = False) -> list[str]:
+    """The teams you play as in this career (saved with the career on this PC): those with a match in it, or with
+    `unplayed`, also the ones picked before their first match."""
     if c is None:
         return []
     teams = set(c.matches.home) | set(c.matches.away)
     s = settings_of(c.name) if c.name in career_names() else None
     picked = s.my_teams if s is not None else st.session_state.get(f"my_teams::{c.name}", [])
-    return [t for t in picked if t in teams]
+    return [t for t in picked if unplayed or t in teams]
 
 
 def set_my_teams(c: Career, teams: list[str]) -> None:
+    """Save your teams with the career (and remember them for the next new career)."""
+    teams = list(dict.fromkeys(teams))
+    if teams:
+        try:
+            store().save_preference("last_teams", teams)
+        except OSError:
+            pass  # a read-only disk: the career itself still keeps them
     if c.name in career_names():
         s = settings_of(c.name)
         if s is not None:
-            s.my_teams = list(teams)
+            s.my_teams = teams
+            s.teams_asked = True
             store().save_settings(s)
             return
-    st.session_state[f"my_teams::{c.name}"] = list(teams)
+    st.session_state[f"my_teams::{c.name}"] = teams
+
+
+# --------------------------------------------------------------------------- "which teams do you play as?"
+def team_choices(c: Career) -> list[str]:
+    """Every team you could be playing as: the ones in this career and every national side."""
+    from ccstats import fixtures as FX
+    return sorted(set(c.matches.home) | set(c.matches.away) | set(FX.NATIONS))
+
+
+def nations() -> set[str]:
+    from ccstats import fixtures as FX
+    return set(FX.NATIONS)
+
+
+def should_ask_teams(c: Career | None) -> bool:
+    """A saved career with no teams picked that hasn't been asked yet (this browser session can say not now)."""
+    if c is None or c.name == DEMO_NAME or c.name not in career_names():
+        return False
+    if st.session_state.get(f"teams_not_now::{c.name}"):
+        return False
+    s = settings_of(c.name)
+    return s is not None and not s.my_teams and not s.teams_asked
+
+
+def last_teams(c: Career) -> list[str]:
+    """The teams you picked last time (in any career), as a start for this one."""
+    try:
+        prev = store().preferences().get("last_teams", [])
+    except OSError:
+        prev = []
+    ok = set(team_choices(c))
+    return [t for t in prev if t in ok]
+
+
+def not_now_teams(c: Career) -> None:
+    st.session_state[f"teams_not_now::{c.name}"] = True
+
+
+def dont_ask_teams(c: Career) -> None:
+    s = settings_of(c.name)
+    if s is not None:
+        s.teams_asked = True
+        store().save_settings(s)
 
 
 # --------------------------------------------------------------------------- cache
@@ -185,13 +246,34 @@ def _remembered(c: Career | None) -> dict:
 
 def recall(key: str, kind: str, options: list) -> None:
     """Before a section / season / team box: open it on what you last picked
-    anywhere on the site (if it's one of the choices here).  The box's own choice
-    wins while you stay on the page."""
+    anywhere on the site (if it's one of the choices here); before you've picked
+    one, on your team's latest section, competition or the team itself (unless the
+    box has an 'All …' choice, which stays the start).  The box's own choice wins
+    while you stay on the page."""
     if key in st.session_state:
         return
-    v = _remembered(current()).get(kind)
-    if v is not None and v in list(options):
+    options = list(options)
+    c = current()
+    v = _remembered(c).get(kind)
+    if (v is None or v not in options) and not any(str(o).startswith("All ") for o in options):
+        v = _my_default(c, kind)
+    if v is not None and v in options:
         st.session_state[key] = v
+
+
+def _my_default(c: Career | None, kind: str):
+    """Your team's latest section / competition, or your team (for a box you haven't used yet)."""
+    mine = my_teams(c)
+    if not mine or kind not in ("section", "event", "team"):
+        return None
+    if kind == "team":
+        return mine[0]
+    m = c.matches
+    g = m[m.home.isin(mine) | m.away.isin(mine)]
+    if g.empty:
+        return None
+    last = g.sort_values(["date", "match_id"]).iloc[-1]
+    return last.section if kind == "section" else last.event
 
 
 def remember(key: str, kind: str):
