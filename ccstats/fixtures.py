@@ -359,6 +359,49 @@ def parse_lines(text: str, team: str, known: list[str]) -> tuple[list[dict], lis
     return rows, errors
 
 
+def schedule_items(fixtures: list[dict], team: str) -> list[dict]:
+    """What you added for a team, one entry per series or tournament (earliest first): its name, kind, opponent,
+    format, number of matches, home or away, month, the first match's date if given, and its rows."""
+    items: dict[str, dict] = {}
+    for r in fixtures:
+        if r.get("team") != team:
+            continue
+        it = items.setdefault(r["series"], dict(series=r["series"], kind="series" if r.get("opponent") else "tournament",
+                                                rows=[]))
+        it["rows"].append(r)
+    out = []
+    for it in items.values():
+        rows = sorted(it["rows"], key=lambda x: int(x.get("no") or 0))
+        first = rows[0]
+        it.update(rows=rows, opponent=first.get("opponent", ""), format=first.get("format", ""),
+                  venue=first.get("venue", ""), month=next((x["month"] for x in rows if x.get("month")), ""),
+                  date=next((x["date"] for x in rows if x.get("date")), ""), n=len(rows),
+                  games=int(first.get("games") or 0))
+        out.append(it)
+    return sorted(out, key=lambda it: (it["date"] or (it["month"] + "-01" if it["month"] else "9999"), it["series"]))
+
+
+def replace_item(fixtures: list[dict], team: str, series: str, new_rows: list[dict]) -> list[dict]:
+    """The schedule with one series (or tournament) swapped for new rows, where it was in the list."""
+    out, done = [], False
+    for r in fixtures:
+        if r.get("team") == team and r.get("series") == series:
+            if not done:
+                out.extend(new_rows)
+                done = True
+            continue
+        out.append(r)
+    return out if done else out + new_rows
+
+
+def delete_item(fixtures: list[dict], team: str, series: str | None = None) -> tuple[list[dict], list[dict]]:
+    """(the schedule without that series, or without all of the team's schedule when `series` is None; what was
+    taken out, so it can be put back)."""
+    gone = [r for r in fixtures if r.get("team") == team and (series is None or r.get("series") == series)]
+    keep = [r for r in fixtures if not (r.get("team") == team and (series is None or r.get("series") == series))]
+    return keep, gone
+
+
 def merge(existing: list[dict], new: list[dict]) -> tuple[list[dict], int]:
     """Add new rows, skipping any series already in the schedule (same team, label and match number)."""
     have = {(r["team"], r["series"], int(r["no"])) for r in existing}

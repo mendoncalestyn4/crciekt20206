@@ -47,13 +47,14 @@ HOW_TO = (
     "2. Pick the **opponent**, the **format**, **how many matches**, **home or away** and the **month**.\n"
     "3. Press **Add series**. Do the same for each series in your year (a World Cup goes under **Tournament**).\n"
     "4. That's it: you don't need dates. Each match takes its date from its scorecard when you play it.\n\n"
-    "Made a mistake, or the game moved a series? Fix it in the table under **Change, add or delete matches** "
-    "on the Schedule tab.\n\n"
+    "Made a mistake, or the game moved a series? Open the **Change or delete** tab: every series and tournament you "
+    "added has ✏️ Change and 🗑️ Delete (and a deleted one can be put back).\n\n"
     "**Forgot something?** No problem: any match your team plays that isn't in your schedule is added by itself "
     "(marked *auto-added*), with the rest of its series. In a tournament, the semi-final and final are added once "
     "you're through to them.")
 
-tabs = st.tabs(["Schedule", "Add matches", "Series", "Calendar", "WTC race", "Milestones", "Goals"])
+tabs = st.tabs(["Schedule", "Add matches", "Change or delete", "Series", "Calendar", "WTC race", "Milestones", "Goals"])
+t_sched, t_add, t_edit, t_series, t_cal, t_wtc, t_miles, t_goals = tabs
 
 
 def when_text(r) -> str:
@@ -130,8 +131,146 @@ def preview_any() -> None:
             go_preview(o, f, their.venue.iloc[0] if len(their) and their.format.iloc[0] == f else "")
 
 
+def _key(text: str) -> str:
+    import hashlib
+    return hashlib.md5(f"{team}|{text}".encode()).hexdigest()[:10]
+
+
+def _save(rows: list[dict], message: str, undo: tuple | None = None) -> None:
+    state.set_fixtures(career, rows)
+    st.session_state.pop("fx_editing", None)
+    st.session_state.pop("fx_confirm", None)
+    if undo is not None:
+        st.session_state["fx_undo"] = undo
+    st.toast(message, icon="📅")
+    st.rerun()
+
+
+def edit_panel() -> None:
+    """Everything you added for this team, one series or tournament a row: change it or delete it."""
+    items = FX.schedule_items(schedule, team)
+    undo = st.session_state.get("fx_undo")
+    if undo and undo[0] == team:
+        u1, u2 = st.columns([4, 1], vertical_alignment="center")
+        u1.info(f"Deleted: {undo[1]}.")
+        if u2.button("↩️ Undo", key="fx_undo_btn", width="stretch"):
+            st.session_state.pop("fx_undo", None)
+            back = [r for r in undo[2] if r not in schedule]
+            _save(schedule + back, "Put back")
+    if not items:
+        st.info(f"Nothing added for {team} yet. Add a series or tournament on the **Add matches** tab; it shows here "
+                "to change or delete.")
+        return
+    st.markdown(f"**What you added for {team}** · press ✏️ to change a series (opponent, format, how many, home or "
+                "away, month or date) or 🗑️ to delete it")
+    st.caption("Matches already played keep their results: they're matched to their scorecards again after a change. "
+               "Series marked 🆕 auto-added on the Schedule tab come from the scorecards, so they aren't listed here.")
+    status = {}
+    if len(tracked):
+        for sr, g in tracked[tracked.team == team].groupby("series"):
+            status[sr] = (int((g.status == "played").sum()), len(g))
+    for it in items:
+        k = _key(it["series"])
+        played, total = status.get(it["series"], (0, it["n"]))
+        when = (pd.Timestamp(it["date"]).strftime("%d %b %Y") if it["date"] else FX.month_label(it["month"])) or "no month"
+        with st.container(border=True):
+            a, b_, c = st.columns([5, 1, 1], vertical_alignment="center")
+            icon = "🏆" if it["kind"] == "tournament" else "🏏"
+            a.markdown(f"{icon} **{esc(it['series'])}**  \n<span class='small'>{played} of {total} played · {esc(when)}"
+                       + (f" · {venue_word(it['venue'])}" if venue_word(it["venue"]) else "") + "</span>",
+                       unsafe_allow_html=True)
+            if b_.button("✏️ Change", key=f"fx_ch_{k}", width="stretch"):
+                st.session_state["fx_editing"] = it["series"]
+                st.session_state.pop("fx_confirm", None)
+            if c.button("🗑️ Delete", key=f"fx_del_{k}", width="stretch"):
+                st.session_state["fx_confirm"] = it["series"]
+                st.session_state.pop("fx_editing", None)
+            if st.session_state.get("fx_confirm") == it["series"]:
+                st.warning(f"Delete **{it['series']}** ({it['n']} match{'es' if it['n'] != 1 else ''}) from your schedule? "
+                           "Results already played stay in your career.")
+                d1, d2, _ = st.columns([1.4, 1, 3])
+                if d1.button("Yes, delete it", type="primary", key=f"fx_yes_{k}", width="stretch"):
+                    rows, gone = FX.delete_item(schedule, team, it["series"])
+                    _save(rows, f"Deleted {it['series']}", (team, it["series"], gone))
+                if d2.button("Cancel", key=f"fx_no_{k}", width="stretch"):
+                    st.session_state.pop("fx_confirm", None)
+                    st.rerun()
+            if st.session_state.get("fx_editing") == it["series"]:
+                change_form(it, k)
+    with st.expander(f"Delete {team}'s whole schedule"):
+        st.caption(f"Takes every series and tournament you added for {team} out of the schedule (results already "
+                   "played stay in your career). You can put it back straight after with Undo.")
+        sure = st.checkbox(f"Yes, delete all {len(items)} of them", key="fx_del_all_sure")
+        if st.button("Delete the whole schedule", disabled=not sure, key="fx_del_all"):
+            rows, gone = FX.delete_item(schedule, team)
+            st.session_state.pop("fx_del_all_sure", None)
+            _save(rows, f"Deleted {team}'s schedule", (team, f"{team}'s whole schedule ({len(items)} items)", gone))
+
+
+def change_form(it: dict, k: str) -> None:
+    """A series or tournament's details, filled in as they are now; Save puts the changed one in its place."""
+    months = list(range(1, 13))
+    y0 = int(it["month"][:4]) if it["month"] else year_now
+    years = sorted(set(range(year_now - 1, year_now + 4)) | {y0})
+    m0 = int(it["month"][5:7]) if it["month"] else (int(latest.month) if pd.notna(latest) else 1)
+    fmts = formats_here + ([it["format"]] if it["format"] and it["format"] not in formats_here else [])
+    with st.container(border=True):
+        st.markdown(f"**Change {esc(it['series'])}**")
+        if it["kind"] == "series":
+            opps = [t for t in team_opts + [t for t in sorted(FX.NATIONS) if t not in all_teams] if t != team]
+            if national:
+                opps = [t for t in opps if t in FX.NATIONS]
+            if it["opponent"] and it["opponent"] not in opps:
+                opps = [it["opponent"]] + opps
+            e1, e2, e3 = st.columns(3)
+            opp = e1.selectbox("Opponent", opps, index=opps.index(it["opponent"]) if it["opponent"] in opps else 0,
+                               key=f"fx_e_opp_{k}")
+            fmt_ = e2.selectbox("Format", fmts, index=fmts.index(it["format"]) if it["format"] in fmts else 0,
+                                key=f"fx_e_fmt_{k}")
+            n = e3.number_input("How many matches", 1, 10, int(it["n"]), key=f"fx_e_n_{k}")
+            f1, f2, f3, f4 = st.columns([1.3, 1, 1, 1.4])
+            wheres = ["Home", "Away", "Neutral"]
+            st.session_state.setdefault(f"fx_e_ven_{k}", (it["venue"] or "home").title())
+            ven = f1.segmented_control("Where", wheres, required=True, key=f"fx_e_ven_{k}") or "Home"
+            mo = f2.selectbox("Month", months, index=m0 - 1, format_func=lambda x: calendar.month_name[x], key=f"fx_e_mo_{k}")
+            yr = f3.selectbox("Year", years, index=years.index(y0), key=f"fx_e_yr_{k}")
+            st.session_state.setdefault(f"fx_e_know_{k}", bool(it["date"]))
+            know = f4.toggle("I know the first match's date", key=f"fx_e_know_{k}")
+            first = None
+            if know:
+                d0 = pd.Timestamp(it["date"]).date() if it["date"] else dt.date(yr, mo, 1)
+                first = st.date_input("First match", value=d0, key=f"fx_e_date_{k}")
+            new_rows = FX.make_series(team, opp, fmt_, int(n), ven.lower(),
+                                      f"{first.year:04d}-{first.month:02d}" if first else f"{yr:04d}-{mo:02d}",
+                                      first.strftime("%Y-%m-%d") if first else "")
+        else:
+            e1, e2 = st.columns(2)
+            name0 = it["series"].split(" · ")[0]
+            names = FX.TOURNAMENTS + ([name0] if name0 not in FX.TOURNAMENTS else [])
+            name = e1.selectbox("Tournament", names, index=names.index(name0), key=f"fx_e_tn_{k}")
+            fmt_ = e2.selectbox("Format", fmts, index=fmts.index(it["format"]) if it["format"] in fmts else 0,
+                                key=f"fx_e_tfmt_{k}")
+            f1, f2, f3 = st.columns(3)
+            mo = f1.selectbox("Month it starts", months, index=m0 - 1, format_func=lambda x: calendar.month_name[x],
+                              key=f"fx_e_tmo_{k}")
+            yr = f2.selectbox("Year", years, index=years.index(y0), key=f"fx_e_tyr_{k}")
+            games = f3.number_input("Games you'll play (0 = don't know)", 0, 15, int(it["games"]), key=f"fx_e_tg_{k}")
+            new_rows = FX.make_tournament(team, FX.canonical_tournament(name), fmt_, f"{yr:04d}-{mo:02d}", int(games))
+        st.caption(f"Becomes: **{esc(new_rows[0]['series'])}**" + (f" ({len(new_rows)} matches)" if len(new_rows) > 1 else ""))
+        s1, s2, _ = st.columns([1, 1, 3])
+        if s1.button("Save", type="primary", key=f"fx_e_save_{k}", width="stretch"):
+            others = [r for r in schedule if not (r["team"] == team and r["series"] == it["series"])]
+            if any(r["team"] == team and r["series"] == new_rows[0]["series"] for r in others):
+                st.warning("You already have a series exactly like that in the schedule: change something, or delete one.")
+            else:
+                _save(FX.replace_item(schedule, team, it["series"], new_rows), f"Changed to {new_rows[0]['series']}")
+        if s2.button("Cancel", key=f"fx_e_cancel_{k}", width="stretch"):
+            st.session_state.pop("fx_editing", None)
+            st.rerun()
+
+
 # ================================================================ schedule
-with tabs[0]:
+with t_sched:
     if mine_rows.empty:
         st.info(f"No schedule for {team} yet.")
         preview_any()
@@ -210,8 +349,13 @@ with tabs[0]:
                        "from the scorecards with the rest of its series. "
                        "In a tournament, the next knockout game (semi-final, final …) appears once you're through to "
                        "it, against the winner of the other tie when that's been played.")
+# ================================================================ change or delete what you added
+with t_edit:
+    with safe_section("change or delete"):
+        edit_panel()
     # ---------------------------------------------------------- 3 · edit the schedule like a table
-    with safe_section("edit schedule"), st.expander("✏️ Change, add or delete matches", expanded=False):
+    with safe_section("edit schedule"), st.expander("Match by match (advanced): change any cell, add or delete rows",
+                                                    expanded=False):
         mine_fx = [r for r in schedule if r["team"] == team]
         st.caption("Change any cell, add a row at the bottom, or select rows and press delete (the bin icon). "
                    "Then press **Save changes**. Month: like 'Jan 2027'. Date: only if you know it. Matches already "
@@ -272,7 +416,7 @@ with tabs[0]:
                 st.rerun()
 
 # ================================================================ add matches
-with tabs[1], safe_section("add matches"):
+with t_add, safe_section("add matches"):
     st.markdown(HOW_TO)
     kind = st.segmented_control("What are you adding?", ["Series or match", "Tournament"], default="Series or match",
                                 required=True, key="fx_kind") or "Series or match"
@@ -360,7 +504,7 @@ with tabs[1], safe_section("add matches"):
                     st.rerun()
 
 # ================================================================ series: live, previews, reports
-with tabs[2], safe_section("series"):
+with t_series, safe_section("series"):
     groups = FX.series_groups(tracked, team) if len(tracked) else []
     if not groups:
         st.info("Add a series on the Add matches tab to see its chances, preview and report here.")
@@ -451,7 +595,7 @@ with tabs[2], safe_section("series"):
                         unsafe_allow_html=True)
 
 # ================================================================ 143 · year calendar
-with tabs[3], safe_section("calendar"):
+with t_cal, safe_section("calendar"):
     team_dates = m[(m.home == team) | (m.away == team)].date
     todo_rows = mine_rows[mine_rows.status.isin(["to come", "next"])] if len(mine_rows) else mine_rows
     seasons_ = CV.seasons_for(list(team_dates) + [a for a in (todo_rows.anchor if len(todo_rows) else []) if pd.notna(a)])
@@ -478,7 +622,7 @@ with tabs[3], safe_section("calendar"):
             st.caption("Nothing still to come this season in your schedule: add it on the **Add matches** tab.")
 
 # ================================================================ 149 · WTC race
-with tabs[4], safe_section("WTC race"):
+with t_wtc, safe_section("WTC race"):
     race = FX.wtc_race(career, tracked, team) if len(tracked) else (FX.wtc_race(career, FX.track(career, []), team)
                                                                    if team in SN.WTC_TEAMS else None)
     if race is None:
@@ -509,7 +653,7 @@ with tabs[4], safe_section("WTC race"):
             st.caption("Add your Tests for this cycle on the Add matches tab to see what you need to reach the final.")
 
 # ================================================================ 150 · milestone countdown
-with tabs[5], safe_section("milestones"):
+with t_miles, safe_section("milestones"):
     mc = FX.milestone_countdown(career, tracked, team) if len(mine_rows) else pd.DataFrame()
     if mc.empty:
         st.info("Add fixtures to see which milestones your players could reach in them.")
@@ -527,7 +671,7 @@ with tabs[5], safe_section("milestones"):
                    "promise.")
 
 # ================================================================ 151 · season goals
-with tabs[6], safe_section("goals"):
+with t_goals, safe_section("goals"):
     gl = state.goals(career)
     mine_g = [g for g in gl if g.get("team") == team or g.get("kind") == "player"]
     if mine_g:

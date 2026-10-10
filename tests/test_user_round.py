@@ -399,3 +399,45 @@ def test_home_shows_your_team_before_the_first_match():
     ok(at)
     assert [t.label for t in at.tabs][:2] == ["🏏 India", "Everything"]
     assert any("No matches for India yet" in i.value for i in at.main.info)
+
+
+# --------------------------------------------------------------------------- change or delete your schedule
+def test_schedule_items_change_and_delete():
+    fx = (F.make_series("India", "England", "Test", 3, "away", "2027-01")
+          + F.make_tournament("India", "T20 World Cup", "T20I", "2027-06", 7)
+          + F.make_series("Mumbai Indians", "Chennai Super Kings", "T20", 1, "home", "2027-04"))
+    items = F.schedule_items(fx, "India")
+    assert [(i["kind"], i["n"], i["opponent"], i["venue"], i["month"]) for i in items] == [
+        ("series", 3, "England", "away", "2027-01"), ("tournament", 1, "", "", "2027-06")]
+    new = F.make_series("India", "England", "Test", 5, "home", "2027-02")
+    fx2 = F.replace_item(fx, "India", items[0]["series"], new)
+    assert len(fx2) == len(fx) + 2 and fx2[:5] == new  # in its place, the rest untouched
+    assert [i["n"] for i in F.schedule_items(fx2, "India")] == [5, 1]
+    kept, gone = F.delete_item(fx2, "India", new[0]["series"])
+    assert len(gone) == 5 and all(r["series"] != new[0]["series"] for r in kept)
+    kept_all, gone_all = F.delete_item(fx2, "India")
+    assert [r["team"] for r in kept_all] == ["Mumbai Indians"] and len(gone_all) == 6
+
+
+def test_change_or_delete_tab(career):
+    fx = F.make_series("India", "Sri Lanka", "ODI", 3, "away", "2026-12")
+    at = page("fixtures.py", career, fx=fx).run()
+    ok(at)
+    assert any(t.label == "Change or delete" for t in at.tabs)
+    # change: 3 ODIs away in December -> 5 ODIs at home
+    next(b for b in at.main.button if b.label == "✏️ Change").click().run()
+    ok(at)
+    next(n for n in at.main.number_input if str(n.key).startswith("fx_e_n_")).set_value(5).run()
+    next(s for s in at.main.segmented_control if str(s.key).startswith("fx_e_ven_")).set_value("Home").run()
+    next(b for b in at.main.button if b.label == "Save").click().run()
+    ok(at)
+    now = at.session_state[f"fixtures::{career.name}"]
+    assert len(now) == 5 and {r["venue"] for r in now} == {"home"} and now[0]["series"].startswith("v Sri Lanka · 5 ODIs")
+    # delete, then undo
+    next(b for b in at.main.button if b.label == "🗑️ Delete").click().run()
+    next(b for b in at.main.button if b.label == "Yes, delete it").click().run()
+    ok(at)
+    assert at.session_state[f"fixtures::{career.name}"] == []
+    next(b for b in at.main.button if b.label == "↩️ Undo").click().run()
+    ok(at)
+    assert len(at.session_state[f"fixtures::{career.name}"]) == 5
