@@ -14,6 +14,7 @@ from ui.theme import counted
 from ccstats.stats import ordinal
 from ui.charts import _n, pct, CONFIG, bars, fmt, say, signed
 from ui.theme import (chart_note, esc, form_strip, html_table, kpis, match_link, page_header, player_link, safe_section)
+from ccstats.stats import poss
 
 career = state.current()
 if career is None:
@@ -234,7 +235,7 @@ with tab_h2h:
                     k = mt["key"][team]
                     with col:
                         with st.container(border=True):
-                            st.markdown(f"**{team}'s key players in these games**")
+                            st.markdown(f"**{poss(team)} key players in these games**")
                             rows, cls = [], []
                             for x in k["runs"].itertuples():
                                 rows.append([player_link(x.player), f"{x.runs} runs", f"{x.innings} inns, best {x.best}"])
@@ -277,8 +278,8 @@ with tab_h2h:
                 mu = state.memo(PV.matchups, career, ids, mine, opp, everywhere=scope_mu != "Only our meetings",
                                 current_only=current_only)
                 cols = st.columns(2, gap="medium")
-                for col, key_, title, tag in ((cols[0], "their_bowlers", f"{opp}'s bowlers v your batters", "⚠️ Danger man"),
-                                              (cols[1], "our_bowlers", f"Your bowlers v {opp}'s batters", "🎯 Best weapon")):
+                for col, key_, title, tag in ((cols[0], "their_bowlers", f"{poss(opp)} bowlers v your batters", "⚠️ Danger man"),
+                                              (cols[1], "our_bowlers", f"Your bowlers v {poss(opp)} batters", "🎯 Best weapon")):
                     d = mu[key_].head(10)
                     with col:
                         st.markdown(f"**{title}**")
@@ -311,7 +312,7 @@ with tab_them:
                 tot = pv["batters"].runs.sum()
                 share = top.runs.iloc[0] / tot * 100 if tot else 0
                 chart_note(f"{top.player.iloc[0]} has {top.runs.iloc[0]} runs in their last 10 games, {share:.0f}% of "
-                           f"the {tot} runs {opp}'s batters made in that time.",
+                           f"the {tot} runs {poss(opp)} batters made in that time.",
                            "Who is scoring for them right now: the batters to plan for and get out early.")
     with right:
         with st.container(border=True):

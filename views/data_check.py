@@ -10,6 +10,7 @@ from ccstats import names as NM
 from ccstats.loader import Fixes
 from ui import state
 from ui.theme import page_header
+from ccstats.stats import poss
 
 career = state.current()
 if career is None:
@@ -216,7 +217,7 @@ with t_merge:
         if c2.button("Same player", key=f"dc_m_{i}"):
             f = fixes_copy()
             f.merges[r.other] = r.keep
-            apply(f, f"Done: {r.other}'s games now count for {r.keep}.")
+            apply(f, f"Done: {poss(r.other)} games now count for {r.keep}.")
     with st.expander("Join any two names yourself"):
         players = sorted(set(career.batting.player) | set(career.bowling.player))
         c1, c2 = st.columns(2)
@@ -230,7 +231,7 @@ with t_merge:
         if st.button("Count them as one player", disabled=not (a and b) or together, key="dc_m_go"):
             f = fixes_copy()
             f.merges[a] = b
-            apply(f, f"Done: {a}'s games now count for {b}.")
+            apply(f, f"Done: {poss(a)} games now count for {b}.")
 
 # ---------------------------------------------------------------- games left out
 with t_left:

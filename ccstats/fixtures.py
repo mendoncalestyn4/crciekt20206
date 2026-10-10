@@ -70,13 +70,34 @@ def series_label(opponent: str, fmt: str, n: int, venue: str, month: str, date: 
     return " · ".join(bits)
 
 
-def make_series(team: str, opponent: str, fmt: str, n: int, venue: str = "", month: str = "", date: str = "") -> list[dict]:
-    """Rows for a series of n matches (1 = a one-off)."""
-    if date and not month:
-        month = pd.Timestamp(date).strftime("%Y-%m")
-    label = series_label(opponent, fmt, n, venue, month, date)
+def make_series(team: str, opponent: str, fmt: str, n: int, venue: str = "", month: str = "", date: str = "",
+                dates: list[str] | None = None) -> list[dict]:
+    """Rows for a series of n matches (1 = a one-off). `date` is the first match's date; `dates` gives each
+    match's ('' where it isn't known yet). The month is the first known date's, if any."""
+    dates = [str(d or "") for d in (dates or [])][:n]
+    dates += [""] * (n - len(dates))
+    if date and not dates[0]:
+        dates[0] = date
+    known = [d for d in dates if d]
+    if known:
+        month = pd.Timestamp(known[0]).strftime("%Y-%m")
+    label = series_label(opponent, fmt, n, venue, month, dates[0])
     return [dict(id=new_id(), team=team, series=label, opponent=opponent, format=fmt, no=k, venue=venue,
-                 date=date if k == 1 else "", month=month, games=0) for k in range(1, n + 1)]
+                 date=dates[k - 1], month=month, games=0) for k in range(1, n + 1)]
+
+
+def dates_in_order(dates: list) -> str:
+    """'' when the known dates (blanks skipped) go forward match by match; otherwise what's wrong."""
+    last = None
+    for k, d in enumerate(dates, start=1):
+        if not d:
+            continue
+        d = pd.Timestamp(d)
+        if last is not None and d <= last[1]:
+            return (f"Match {k}'s date ({d:%d %b %Y}) is "
+                    + ("the same day as" if d == last[1] else "before") + f" match {last[0]}'s ({last[1]:%d %b %Y}).")
+        last = (k, d)
+    return ""
 
 
 def make_tournament(team: str, name: str, fmt: str, month: str = "", games: int = 0) -> list[dict]:
@@ -376,7 +397,7 @@ def schedule_items(fixtures: list[dict], team: str) -> list[dict]:
         it.update(rows=rows, opponent=first.get("opponent", ""), format=first.get("format", ""),
                   venue=first.get("venue", ""), month=next((x["month"] for x in rows if x.get("month")), ""),
                   date=next((x["date"] for x in rows if x.get("date")), ""), n=len(rows),
-                  games=int(first.get("games") or 0))
+                  dates=[x.get("date") or "" for x in rows], games=int(first.get("games") or 0))
         out.append(it)
     return sorted(out, key=lambda it: (it["date"] or (it["month"] + "-01" if it["month"] else "9999"), it["series"]))
 
@@ -518,6 +539,140 @@ def _event_ok(title: str, words: list[str], event: str) -> bool:
     # "World Cup" isn't the U19 World Cup or a qualifier: a word that makes another event must be in the name too
     extra = re.findall(rf"\b(qualifier|{_MODIFIERS})\b", ev)
     return all(x in title.lower() for x in extra)
+
+
+DEFAULT_GAP = {"Test": 8, "First-class": 7}  # days from one match of a series to the next; 2 for the shorter formats
+
+
+def series_gaps(career) -> dict:
+    """Days from one match of a series to the next, by format: the career's own (its series' average gap, once it
+    has a few), else 8 for a Test, 7 for a first-class game and 2 for the rest."""
+    gaps = dict(DEFAULT_GAP)
+    m = career.matches
+    s = m[m.series_id != ""].sort_values(["series_id", "date"])
+    if len(s):
+        d = s.assign(gap=s.groupby("series_id").date.diff().dt.days).dropna(subset=["gap"])
+        for fmt, g in d.groupby("format"):
+            if len(g) >= 3:
+                gaps[fmt] = max(1, int(round(float(g.gap.mean()))))
+    return gaps
+
+
+def _text(v) -> str:
+    return v if isinstance(v, str) else ""
+
+
+def place(t: pd.DataFrame, m: pd.DataFrame, gaps: dict) -> pd.DataFrame:
+    """When each fixture is, or should be (`anchor`), and whether that's worked out from a date near it
+    (`estimated`); fixtures long gone without a scorecard marked, and each team's next one.
+
+    - played: its scorecard's date. To come: the date you gave it.
+    - the rest of a series: from the match before it (or after it) with a date, the format's usual gap apart
+      (between two dates: spread evenly); with no date in the series at all, its month.
+    - the game is played in date order, so what's left of a series under way comes before a series still to
+      start (squeezed in before one you gave a date), and a series known only by its month waits until after
+      the team's last game and whatever is under way."""
+    day = pd.Timedelta(days=1)
+    far = pd.Timestamp("2200-01-01")
+
+    def gap_of(fmt) -> pd.Timedelta:
+        return pd.Timedelta(days=gaps.get(fmt, 2))
+
+    t = t.copy()
+    t["date"] = [_text(d) for d in t["date"]]
+    t["month"] = [_text(d) for d in t["month"]]
+    t["anchor"] = pd.Series(pd.NaT, index=t.index, dtype="datetime64[ns]")
+    t["estimated"] = False
+    own_of = t["_anchor"] if "_anchor" in t.columns else pd.Series(pd.NaT, index=t.index)
+    for _, g in t.groupby(["team", "series"], sort=False):
+        g = g.sort_values("no")
+        played = g[g.status == "played"]
+        if not (g.kind == "match").all():  # a tournament: its games by date, what's left the day after the last
+            last = pd.to_datetime(played.played_date).max() if len(played) else pd.NaT
+            for i, r in g.iterrows():
+                if r["status"] == "played":
+                    t.at[i, "anchor"] = r["played_date"]
+                elif pd.notna(last):
+                    t.at[i, "anchor"] = last + day
+                else:
+                    t.at[i, "anchor"] = (_month_start(r["month"]) if r["month"] else far) + day * int(r["no"] or 0)
+            continue
+        gp = gap_of(g.format.iloc[0])
+        dated = {int(r["no"]): pd.Timestamp(r["played_date"]) for _, r in played.iterrows()}
+        last_played = max(dated.values()) if dated else None
+        for _, r in g[g.status != "played"].iterrows():
+            if r["date"]:
+                d = pd.Timestamp(r["date"])
+                if last_played is None or d > last_played:  # a date before a match already played can't be right
+                    dated[int(r["no"])] = d
+        nos = sorted(dated)
+        for i, r in g.iterrows():
+            no = int(r["no"] or 0)
+            if r["status"] == "played":
+                t.at[i, "anchor"] = r["played_date"]
+            elif pd.notna(own_of[i]):  # a match of a series under way whose scorecard is missing
+                t.at[i, "anchor"] = own_of[i]
+            elif no in dated:
+                t.at[i, "anchor"] = dated[no]
+            else:
+                before, after = [j for j in nos if j < no], [j for j in nos if j > no]
+                if before and after:
+                    j1, j2 = max(before), min(after)
+                    t.at[i, "anchor"] = dated[j1] + (dated[j2] - dated[j1]) * ((no - j1) / (j2 - j1))
+                elif before:
+                    t.at[i, "anchor"] = dated[max(before)] + gp * (no - max(before))
+                elif after:
+                    t.at[i, "anchor"] = dated[min(after)] - gp * (min(after) - no)
+                else:
+                    t.at[i, "anchor"] = (_month_start(r["month"]) if r["month"] else far) + gp * max(no - 1, 0)
+                    continue
+                t.at[i, "estimated"] = True
+    t = t.drop(columns=["_anchor"], errors="ignore")
+    # a fixture whose time has long gone with no scorecard (wrong month or opponent, or a file the game didn't save)
+    last_of = {}
+    for team, g in t.groupby("team"):
+        last_of[team] = last = m[(m.home == team) | (m.away == team)].date.max()
+        if pd.notna(last):
+            stale = g[(g.status == "to come") & (g.anchor < last - pd.Timedelta(days=30))]
+            t.loc[stale.index, "status"] = "no scorecard"
+    # each team's fixtures still to come, in the order the game will play them
+    for team, g in t.groupby("team", sort=False):
+        todo = g[g.status == "to come"]
+        if todo.empty:
+            continue
+        started = set(g[g.status == "played"].series)
+        blocks = list(todo.groupby("series", sort=False))
+        under = [(s, b) for s, b in blocks if s in started]
+        fresh = [(s, b) for s, b in blocks if s not in started]
+        hard = [t.loc[b.index, "anchor"].min() for _, b in fresh if (b.date != "").any()]
+        for s, b in under:  # what's left of a series under way: before the next series you gave a date
+            if not (b.kind == "match").all():
+                continue
+            lp = pd.to_datetime(g[(g.series == s) & (g.status == "played")].played_date).max()
+            soft = b[b.date == ""].sort_values("no")
+            later = [h for h in hard if pd.notna(h) and h > lp]
+            if soft.empty or not later or t.loc[soft.index, "anchor"].max() < min(later):
+                continue
+            step = (min(later) - lp) / (len(soft) + 1)
+            for k, i in enumerate(soft.index, start=1):
+                t.at[i, "anchor"] = lp + step * k
+                t.at[i, "estimated"] = True
+        # a series still to start that's known only by its month: after the team's last game and what's under way
+        ends = [last_of.get(team)] + [t.loc[b.index, "anchor"].max() for _, b in under]
+        prev_end = max((e for e in ends if pd.notna(e)), default=pd.NaT)
+        for k in sorted(range(len(fresh)), key=lambda k: (t.loc[fresh[k][1].index, "anchor"].min(), k)):
+            b = fresh[k][1]
+            first, gp = t.loc[b.index, "anchor"].min(), gap_of(b.format.iloc[0])
+            if not (b.date != "").any() and pd.notna(prev_end) and first < prev_end + gp:
+                t.loc[b.index, "anchor"] = t.loc[b.index, "anchor"] + (prev_end + gp - first)
+            end = t.loc[b.index, "anchor"].max()
+            prev_end = end if pd.isna(prev_end) else max(prev_end, end)
+    t = t.sort_values(["team", "anchor", "no"], kind="stable").reset_index(drop=True)
+    for team, g in t.groupby("team"):
+        todo = g[g.status == "to come"]
+        if len(todo):
+            t.loc[todo.index[0], "status"] = "next"
+    return t
 
 
 def track(career, fixtures: list[dict], auto=()) -> pd.DataFrame:
@@ -744,42 +899,7 @@ def track(career, fixtures: list[dict], auto=()) -> pd.DataFrame:
     for c in cols:
         if c not in t:
             t[c] = np.nan
-    # the order: played by date; to come by its date, else its month (+ its number), else after everything
-    def key(r):
-        if r["status"] == "played":
-            return r["played_date"]
-        if "_anchor" in r and pd.notna(r["_anchor"]):
-            return r["_anchor"]
-        if r["date"]:
-            return pd.Timestamp(r["date"])
-        if r["month"]:
-            return _month_start(r["month"]) + pd.Timedelta(days=int(r["no"] or 0))
-        return pd.Timestamp("2200-01-01") + pd.Timedelta(days=int(r["no"] or 0))
-    t["anchor"] = [key(r) for _, r in t.iterrows()]
-    t = t.drop(columns=["_anchor"], errors="ignore")
-    # a fixture still to come can't be before a match already played in the same series (a knockout game
-    # follows the last one within days; the next match of a series by its number)
-    for (team, series), g in t.groupby(["team", "series"]):
-        done = g[g.status == "played"]
-        if len(done):
-            last = done.anchor.max()
-            for i in g[(g.status == "to come")].index:
-                if t.at[i, "anchor"] <= last:
-                    gap = 1 if t.at[i, "kind"] == "tournament" else int(t.at[i, "no"] or 1) - int(
-                        done.no.max() if done.no.notna().any() else 0)
-                    t.at[i, "anchor"] = last + pd.Timedelta(days=max(gap, 1))
-    t = t.sort_values(["team", "anchor", "no"]).reset_index(drop=True)
-    # a fixture whose time has long gone with no scorecard (wrong month or opponent, or a file the game didn't save)
-    for team, g in t.groupby("team"):
-        last = m[(m.home == team) | (m.away == team)].date.max()
-        if pd.isna(last):
-            continue
-        stale = g[(g.status == "to come") & (g.anchor < last - pd.Timedelta(days=30))]
-        t.loc[stale.index, "status"] = "no scorecard"
-    for team, g in t.groupby("team"):
-        todo = g[g.status == "to come"]
-        if len(todo):
-            t.loc[todo.index[0], "status"] = "next"
+    t = place(t, m, series_gaps(career))
     # home and away come from the scorecards (the side named first is at home): a series put at the other venue
     # in the schedule takes the venue its played matches show, for the matches still to come too
     t["venue_fixed"], t["venue_planned"] = False, ""

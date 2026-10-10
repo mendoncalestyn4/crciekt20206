@@ -9,6 +9,7 @@ from ccstats.parser import balls_to_overs
 from ui import state
 from ui.charts import CONFIG, fmt, win_chance_chart, wicket_timeline
 from ui.theme import chart_note, explain_list, html_table, match_link, page_header, safe_section, scoreboard
+from ccstats.stats import poss
 
 career = state.current()
 if career is None:
@@ -129,7 +130,7 @@ with safe_section("match report"):
             st.plotly_chart(win_chance_chart(line, t1, t2, multi_, row.result), width="stretch", config=CONFIG, key="mt_winchance")
             sw = W.biggest_swing(line)
             low = W.lowest_for_winner(line)
-            shows = (f"The biggest swing came at {sw['at']}: {t1}'s chance went from {sw['before']:.0f}% to "
+            shows = (f"The biggest swing came at {sw['at']}: {poss(t1)} chance went from {sw['before']:.0f}% to "
                      f"{sw['after']:.0f}%." if sw else "")
             if low:
                 shows += f" The winner's lowest point was {low[0]:.0f}% at {low[1]}."

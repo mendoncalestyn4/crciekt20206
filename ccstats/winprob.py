@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 
 from .stats import KIND
+from .stats import poss
 
 BAND = {"t20": 10, "one": 20, "multi": 30}  # runs either side of the lead counted as 'similar'
 MIN_GAMES = 8
@@ -404,7 +405,7 @@ def match_report(career, match_id: str, line: pd.DataFrame | None = None) -> str
     big = stands[(stands.innings_no == first.innings_no)].sort_values("runs", ascending=False).head(1)
     top1 = bat[bat.innings_no == first.innings_no].sort_values("runs", ascending=False).head(1)
     s = f"{first.team} made {tot(first)}"
-    lead_by = (f", led by {top1.player.iloc[0]}'s {top1.runs.iloc[0]}{'' if top1.out.iloc[0] else '*'}"
+    lead_by = (f", led by {poss(top1.player.iloc[0])} {top1.runs.iloc[0]}{'' if top1.out.iloc[0] else '*'}"
                if len(top1) and top1.runs.iloc[0] >= 30 else "")
     if len(col):
         c0 = col.iloc[0]
@@ -429,7 +430,7 @@ def match_report(career, match_id: str, line: pd.DataFrame | None = None) -> str
     # the rest of the innings
     for i in inn.iloc[1:].itertuples():
         t = bat[bat.innings_no == i.innings_no].sort_values("runs", ascending=False).head(1)
-        lead = f", led by {t.player.iloc[0]}'s {t.runs.iloc[0]}{'' if t.out.iloc[0] else '*'}" if len(t) and t.runs.iloc[0] >= 30 else ""
+        lead = f", led by {poss(t.player.iloc[0])} {t.runs.iloc[0]}{'' if t.out.iloc[0] else '*'}" if len(t) and t.runs.iloc[0] >= 30 else ""
         sents.append(f"{i.team} replied with {tot(i)}{lead}." if i.innings_no == 2 else f"{i.team} then made {tot(i)}{lead}.")
     # the result, and the turning point
     res = r.result
@@ -437,8 +438,7 @@ def match_report(career, match_id: str, line: pd.DataFrame | None = None) -> str
         sw = biggest_swing(line)
         if sw and abs(sw["change"]) >= 15:
             team1 = line.attrs["team1"]
-            poss = team1 + ("'" if team1.endswith("s") else "'s")
-            sents.append(f"The turning point came at {sw['at']}: {poss} chance went from {sw['before']:.0f}% to "
+            sents.append(f"The turning point came at {sw['at']}: {poss(team1)} chance went from {sw['before']:.0f}% to "
                          f"{sw['after']:.0f}%.")
     sents.append(f"{res}." if not res.endswith(".") else res)
     if r.player_of_match:

@@ -124,7 +124,10 @@ def render(career, team: str, key: str) -> None:
             with st.container(border=True):
                 lines = [f"**📅 Your schedule:** {sm['played']} of {sm['total']} played"]
                 if nx is not None:
-                    when = (f"{pd.Timestamp(nx['date']):%d %b %Y}" if nx["date"] else FX.month_label(nx["month"]))
+                    when = (f"{pd.Timestamp(nx['date']):%d %b %Y}" if nx["date"] else
+                            f"about {pd.Timestamp(nx['anchor']):%d %b %Y}"
+                            if str(nx.get("estimated")) == "True" and pd.notna(nx.get("anchor")) else
+                            FX.month_label(nx["month"]))
                     name = nx["series"].replace(FX.AUTO, "").split(" · ")[0]
                     stage = nx.get("stage") if isinstance(nx.get("stage"), str) else ""
                     what = (f"{name} {stage}" + (f" v {nx['opponent']}" if nx["opponent"] else "") if stage else

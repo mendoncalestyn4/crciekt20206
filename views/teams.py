@@ -14,6 +14,7 @@ from ui.theme import counted
 from ui.xi import best_xi_cached, team_sheet
 from ui.charts import _n, signed, pct, CONFIG, bars, fmt, race_chart, say
 from ui.theme import chart_note, html_table, kpis, match_link, page_header, player_link, safe_section
+from ccstats.stats import poss
 
 career = state.current()
 if career is None:
@@ -143,7 +144,7 @@ with tab_over:
             if len(my_bat):
                 team_runs = bat_t[bat_t.team == team].runs.sum()
                 chart_note(f"{my_bat.player.iloc[0]} has {my_bat.runs.iloc[0]} runs, {my_bat.runs.iloc[0] / team_runs * 100:.0f}% "
-                           f"of {team}'s {team_runs} runs; the top {len(my_bat)} together make "
+                           f"of {poss(team)} {team_runs} runs; the top {len(my_bat)} together make "
                            f"{my_bat.runs.sum() / team_runs * 100:.0f}%.",
                            "Who carries the batting, and how much the team leans on its top run-scorers.")
     with right:
@@ -154,7 +155,7 @@ with tab_over:
             if len(my_bowl):
                 team_w = bowl_t[bowl_t.team == team].wickets.sum()
                 chart_note(f"{my_bowl.player.iloc[0]} has {int(my_bowl.wickets.iloc[0])} wickets, "
-                           f"{my_bowl.wickets.iloc[0] / team_w * 100:.0f}% of {team}'s {int(team_w)}; the top "
+                           f"{my_bowl.wickets.iloc[0] / team_w * 100:.0f}% of {poss(team)} {int(team_w)}; the top "
                            f"{len(my_bowl)} take {my_bowl.wickets.sum() / team_w * 100:.0f}%.",
                            "Who takes the wickets, and whether the attack is spread or rests on one or two bowlers.")
 
@@ -169,7 +170,7 @@ with tab_over:
                             width="stretch", config=CONFIG, key="tm_depth")
             if len(dep) and dep.runs.sum():
                 top_g = dep.sort_values("share", ascending=False).iloc[0]
-                chart_note(f"{top_g.share:.0f}% of {team}'s runs come from the {top_g.group.lower()} (the average team: "
+                chart_note(f"{top_g.share:.0f}% of {poss(team)} runs come from the {top_g.group.lower()} (the average team: "
                            f"{ref.get(top_g.group, 0):.0f}%). The tail (8-11) makes {dep.share.iloc[-1]:.0f}%.",
                            "Shows how deep the batting goes: if the top order makes most of the runs, early wickets hurt "
                            "this team more than most.")
@@ -241,7 +242,7 @@ with tab_over:
                                                                       max(max(diffs), 0) + (max(max(diffs), 0) - min(diffs)) * 0.9 + 8]),
                                 width="stretch", config=CONFIG, key="tm_style")
                 i_max = int(np.argmax(np.abs(diffs))) if diffs else 0
-                chart_note((f"{team}'s biggest difference is {labels[i_max].lower()}: {diffs[i_max]:+.0f}% against "
+                chart_note((f"{poss(team)} biggest difference is {labels[i_max].lower()}: {diffs[i_max]:+.0f}% against "
                             "the average team.") if diffs else "Not enough games yet.",
                            "Shows how they play, not how well: a team can win either way. Each bar compares this "
                            "team's figure with the average of all teams in the section.")

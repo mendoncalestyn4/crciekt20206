@@ -11,6 +11,7 @@ from ui import calendar_view as CV
 from ui import state
 from ui.charts import fmt
 from ui.theme import esc, form_strip, html_table, kpis, match_link, page_header, player_link, safe_section
+from ccstats.stats import poss
 
 career = state.current()
 if career is None:
@@ -46,7 +47,10 @@ HOW_TO = (
     "1. Open the **Add matches** tab.\n"
     "2. Pick the **opponent**, the **format**, **how many matches**, **home or away** and the **month**.\n"
     "3. Press **Add series**. Do the same for each series in your year (a World Cup goes under **Tournament**).\n"
-    "4. That's it: you don't need dates. Each match takes its date from its scorecard when you play it.\n\n"
+    "4. Dates are up to you. Know them from the game's fixture list? Switch on **I know the dates** and type each "
+    "match's date: your next match and the calendar are then exact. Leave any out and it's worked out from the "
+    "match before it (shown as *about 12 Jun*). Either way, a match takes its real date from its scorecard once "
+    "it's played.\n\n"
     "Made a mistake, or the game moved a series? Open the **Change or delete** tab: every series and tournament you "
     "added has ✏️ Change and 🗑️ Delete (and a deleted one can be put back).\n\n"
     "**Forgot something?** No problem: any match your team plays that isn't in your schedule is added by itself "
@@ -58,11 +62,41 @@ t_sched, t_add, t_edit, t_series, t_cal, t_wtc, t_miles, t_goals = tabs
 
 
 def when_text(r) -> str:
+    """The scorecard's date; the date you gave; 'about 12 Jun 2026' worked out from the match before or after it
+    in the series; else the month."""
     if r["status"] == "played":
         return f"{pd.Timestamp(r['played_date']):%d %b %Y}"
     if r["date"]:
         return f"{pd.Timestamp(r['date']):%d %b %Y}"
+    if str(r.get("estimated")) == "True" and pd.notna(r.get("anchor")):
+        return f"about {pd.Timestamp(r['anchor']):%d %b %Y}"
     return FX.month_label(r["month"]) or "date to come"
+
+
+def first_date(prefix: str, n: int, given: list[str] = ()):
+    """The first date in a series' date boxes (as typed so far, or as saved before the boxes were opened)."""
+    for j in range(n):
+        key = f"{prefix}_{j + 1}"
+        d = st.session_state.get(key) if key in st.session_state else (
+            pd.Timestamp(given[j]).date() if j < len(given) and given[j] else None)
+        if d:
+            return d
+    return None
+
+
+def date_boxes(prefix: str, n: int, given: list[str], fmt_: str) -> list[str]:
+    """A date box for each match of a series (left empty: not known yet). 'YYYY-MM-DD', or '' for each."""
+    from ccstats.stats import ordinal
+    out, per_row = [], 5
+    for start in range(0, n, per_row):
+        cols = st.columns(per_row)
+        for j in range(start, min(n, start + per_row)):
+            key = f"{prefix}_{j + 1}"
+            if key not in st.session_state and j < len(given) and given[j]:
+                st.session_state[key] = pd.Timestamp(given[j]).date()
+            d = cols[j - start].date_input(f"{ordinal(j + 1)} {fmt_}", value=None, key=key, format="DD/MM/YYYY")
+            out.append(d.strftime("%Y-%m-%d") if d else "")
+    return out
 
 
 def venue_word(v: str) -> str:
@@ -197,14 +231,14 @@ def edit_panel() -> None:
                     st.rerun()
             if st.session_state.get("fx_editing") == it["series"]:
                 change_form(it, k)
-    with st.expander(f"Delete {team}'s whole schedule"):
+    with st.expander(f"Delete {poss(team)} whole schedule"):
         st.caption(f"Takes every series and tournament you added for {team} out of the schedule (results already "
                    "played stay in your career). You can put it back straight after with Undo.")
         sure = st.checkbox(f"Yes, delete all {len(items)} of them", key="fx_del_all_sure")
         if st.button("Delete the whole schedule", disabled=not sure, key="fx_del_all"):
             rows, gone = FX.delete_item(schedule, team)
             st.session_state.pop("fx_del_all_sure", None)
-            _save(rows, f"Deleted {team}'s schedule", (team, f"{team}'s whole schedule ({len(items)} items)", gone))
+            _save(rows, f"Deleted {poss(team)} schedule", (team, f"{poss(team)} whole schedule ({len(items)} items)", gone))
 
 
 def change_form(it: dict, k: str) -> None:
@@ -216,6 +250,7 @@ def change_form(it: dict, k: str) -> None:
     fmts = formats_here + ([it["format"]] if it["format"] and it["format"] not in formats_here else [])
     with st.container(border=True):
         st.markdown(f"**Change {esc(it['series'])}**")
+        wrong = ""  # dates out of match order
         if it["kind"] == "series":
             opps = [t for t in team_opts + [t for t in sorted(FX.NATIONS) if t not in all_teams] if t != team]
             if national:
@@ -228,21 +263,28 @@ def change_form(it: dict, k: str) -> None:
             fmt_ = e2.selectbox("Format", fmts, index=fmts.index(it["format"]) if it["format"] in fmts else 0,
                                 key=f"fx_e_fmt_{k}")
             n = e3.number_input("How many matches", 1, 10, int(it["n"]), key=f"fx_e_n_{k}")
-            f1, f2, f3, f4 = st.columns([1.3, 1, 1, 1.4])
+            f1, f2, f3, f4 = st.columns([1.3, 1, 1, 1.4], vertical_alignment="bottom")
             wheres = ["Home", "Away", "Neutral"]
             st.session_state.setdefault(f"fx_e_ven_{k}", (it["venue"] or "home").title())
             ven = f1.segmented_control("Where", wheres, required=True, key=f"fx_e_ven_{k}") or "Home"
-            mo = f2.selectbox("Month", months, index=m0 - 1, format_func=lambda x: calendar.month_name[x], key=f"fx_e_mo_{k}")
-            yr = f3.selectbox("Year", years, index=years.index(y0), key=f"fx_e_yr_{k}")
-            st.session_state.setdefault(f"fx_e_know_{k}", bool(it["date"]))
-            know = f4.toggle("I know the first match's date", key=f"fx_e_know_{k}")
-            first = None
-            if know:
-                d0 = pd.Timestamp(it["date"]).date() if it["date"] else dt.date(yr, mo, 1)
-                first = st.date_input("First match", value=d0, key=f"fx_e_date_{k}")
-            new_rows = FX.make_series(team, opp, fmt_, int(n), ven.lower(),
-                                      f"{first.year:04d}-{first.month:02d}" if first else f"{yr:04d}-{mo:02d}",
-                                      first.strftime("%Y-%m-%d") if first else "")
+            st.session_state.setdefault(f"fx_e_know_{k}", any(it.get("dates") or [it["date"]]))
+            typed = first_date(f"fx_e_d_{k}", int(n), it.get("dates") or [it["date"]]) \
+                if st.session_state.get(f"fx_e_know_{k}") else None
+            if typed:  # the month is the first date's: no box saying otherwise
+                f2.markdown(f"**Month**  \n{typed:%B %Y} · from your dates")
+                mo, yr = typed.month, typed.year
+            else:
+                mo = f2.selectbox("Month", months, index=m0 - 1, format_func=lambda x: calendar.month_name[x],
+                                  key=f"fx_e_mo_{k}")
+                yr = f3.selectbox("Year", years, index=years.index(y0), key=f"fx_e_yr_{k}")
+            know = f4.toggle("I know the dates", key=f"fx_e_know_{k}",
+                             help="The date of each match from the game's fixture list. Leave any you don't know "
+                                  "empty: it's worked out from the match before it.")
+            dates = date_boxes(f"fx_e_d_{k}", int(n), it.get("dates") or [it["date"]], fmt_) if know else []
+            wrong = FX.dates_in_order(dates)
+            if wrong:
+                st.error(wrong + " Put the dates in match order.")
+            new_rows = FX.make_series(team, opp, fmt_, int(n), ven.lower(), f"{yr:04d}-{mo:02d}", dates=dates)
         else:
             e1, e2 = st.columns(2)
             name0 = it["series"].split(" · ")[0]
@@ -256,9 +298,11 @@ def change_form(it: dict, k: str) -> None:
             yr = f2.selectbox("Year", years, index=years.index(y0), key=f"fx_e_tyr_{k}")
             games = f3.number_input("Games you'll play (0 = don't know)", 0, 15, int(it["games"]), key=f"fx_e_tg_{k}")
             new_rows = FX.make_tournament(team, FX.canonical_tournament(name), fmt_, f"{yr:04d}-{mo:02d}", int(games))
-        st.caption(f"Becomes: **{esc(new_rows[0]['series'])}**" + (f" ({len(new_rows)} matches)" if len(new_rows) > 1 else ""))
+        given = sum(bool(r["date"]) for r in new_rows)
+        st.caption(f"Becomes: **{esc(new_rows[0]['series'])}**" + (f" ({len(new_rows)} matches" if len(new_rows) > 1 else "")
+                   + (f", {given} with a date" if given and len(new_rows) > 1 else "") + (")" if len(new_rows) > 1 else ""))
         s1, s2, _ = st.columns([1, 1, 3])
-        if s1.button("Save", type="primary", key=f"fx_e_save_{k}", width="stretch"):
+        if s1.button("Save", type="primary", key=f"fx_e_save_{k}", width="stretch", disabled=bool(wrong)):
             others = [r for r in schedule if not (r["team"] == team and r["series"] == it["series"])]
             if any(r["team"] == team and r["series"] == new_rows[0]["series"] for r in others):
                 st.warning("You already have a series exactly like that in the schedule: change something, or delete one.")
@@ -433,19 +477,33 @@ with t_add, safe_section("add matches"):
             b1, b2 = st.columns(2)
             n = b1.pills("How many matches", list(range(1, 8)), default=3, required=True, key="fx_n") or 1
             ven = b2.segmented_control("Where", ["Home", "Away", "Neutral"], default="Home", required=True, key="fx_venue") or "Home"
-            d1, d2, d3 = st.columns([1, 1, 1.3])
-            mo = d1.selectbox("Month", months, index=max(0, int(latest.month) - 1) if pd.notna(latest) else 0,
-                              format_func=lambda x: calendar.month_name[x], key="fx_month")
-            yr = d2.selectbox("Year", years, index=years.index(year_now) if year_now in years else 0, key="fx_year")
-            know = d3.toggle("I know the first match's date", key="fx_know")
-            first = d3.date_input("First match", value=dt.date(yr, mo, 1), key="fx_date") if know else None
-            preview = FX.make_series(team, opp, ffmt, int(n), ven.lower(), f"{yr:04d}-{mo:02d}",
-                                     first.strftime("%Y-%m-%d") if first else "")
-            st.caption(f"Adds: **{preview[0]['series']}** ({len(preview)} match{'es' if len(preview) != 1 else ''}).")
-            if st.button("Add series", type="primary", key="fx_add_series"):
+            d1, d2, d3 = st.columns([1, 1, 1.3], vertical_alignment="bottom")
+            typed = first_date("fx_d", int(n)) if st.session_state.get("fx_know") else None
+            if typed:  # the month is the first date's: no box saying otherwise
+                d1.markdown(f"**Month**  \n{typed:%B %Y} · from your dates")
+                mo, yr = typed.month, typed.year
+            else:
+                mo = d1.selectbox("Month", months, index=max(0, int(latest.month) - 1) if pd.notna(latest) else 0,
+                                  format_func=lambda x: calendar.month_name[x], key="fx_month")
+                yr = d2.selectbox("Year", years, index=years.index(year_now) if year_now in years else 0, key="fx_year")
+            know = d3.toggle("I know the dates", key="fx_know",
+                             help="Type the date of each match from the game's fixture list. Leave any you don't know "
+                                  "empty: it's worked out from the match before it.")
+            dates = date_boxes("fx_d", int(n), [], ffmt) if know else []
+            wrong = FX.dates_in_order(dates)
+            if wrong:
+                st.error(wrong + " Put the dates in match order.")
+            preview = FX.make_series(team, opp, ffmt, int(n), ven.lower(), f"{yr:04d}-{mo:02d}", dates=dates)
+            given = sum(bool(d) for d in dates)
+            st.caption(f"Adds: **{preview[0]['series']}** ({len(preview)} match{'es' if len(preview) != 1 else ''}"
+                       + (f", {given} with a date" if given else "") + ")."
+                       + (" The month comes from the first date you gave." if given else ""))
+            if st.button("Add series", type="primary", key="fx_add_series", disabled=bool(wrong)):
                 rows, added = FX.merge(schedule, preview)
                 if added:
                     state.set_fixtures(career, rows)
+                    for k_ in [k_ for k_ in st.session_state if str(k_).startswith("fx_d_")]:
+                        del st.session_state[k_]  # the next series starts with empty date boxes
                     st.toast(f"Added {preview[0]['series']}", icon="📅")
                     st.rerun()
                 else:

@@ -9,6 +9,7 @@ from ui import state
 from ui.theme import counted
 from ui.charts import _n, signed, pct, CONFIG, bars, fmt
 from ui.theme import chart_note, html_table, kpis, match_link, page_header, player_link, safe_section
+from ccstats.stats import poss
 
 career = state.current()
 if career is None:
@@ -157,7 +158,7 @@ with tabs[4], safe_section("carried the team"):
                                         zip(top.runs, top.team_runs, top.innings, top.team)]),
                             width="stretch", config=CONFIG, key="st_carried")
             t0 = top.iloc[0]
-            chart_note(f"{t0.player} makes {t0.share:.1f}% of {t0.team}'s runs in the innings they bat ({t0.runs} of "
+            chart_note(f"{t0.player} makes {t0.share:.1f}% of {poss(t0.team)} runs in the innings they bat ({t0.runs} of "
                        f"{t0.team_runs}). An even share across 11 batters would be about 9%.",
                        "Shows which teams lean on one batter: if they fail, the team usually does too.")
 
@@ -397,7 +398,7 @@ with tabs[13], safe_section("batter v bowler"):
         bv = PD.batter_v_bowler(career, batter, bowler, None if everywhere else ids)
         inns_ = bv["innings"]
         if inns_.empty:
-            st.info(f"{bowler} has never bowled at {batter}'s side while {batter} batted" +
+            st.info(f"{bowler} has never bowled at {poss(batter)} side while {batter} batted" +
                     ("" if everywhere else f" in {section}") + ".")
         else:
             kpis([("Innings met", f"{bv['meetings']}"), (f"{bowler.split()[-1]} got them out", f"{bv['dismissals']}"),

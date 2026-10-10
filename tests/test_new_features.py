@@ -75,11 +75,13 @@ def test_every_named_stand_fits_the_batters_runs(season):
 # ---------------------------------------------------------------- 53 headlines
 def test_latest_is_the_last_one_played_not_the_last_date(season):
     """The game saves some scorecards dated months ahead; the latest result is the last one saved."""
+    import zipfile
     files = [(NEW.name, NEW.read_bytes())]
-    now = time.time()
+    # saved 10 days before the season's first file (from the zip itself, so the test doesn't age with the clock)
+    first_saved = min(time.mktime(i.date_time + (0, 0, -1)) for i in zipfile.ZipFile(NEW).infolist())
     future = Path(__file__).parent / "fixtures" / "1_oct_2026-ind_v_wi_1st_odi.txt"
     c = Career.build("t", files)
-    c = Career.build("t", [(future.name, future.read_bytes(), now - 10 * 86400)], existing=c.texts,
+    c = Career.build("t", [(future.name, future.read_bytes(), first_saved - 10 * 86400)], existing=c.texts,
                      times={**c.times})
     order = RC.played_order(c)
     assert order.date.max() == pd.Timestamp("2026-10-01")  # the October ODI is the latest date...

@@ -8,6 +8,7 @@ from ui import state
 from ui.theme import counted
 from ui.charts import CONFIG, _axis, _layout, bars, fmt
 from ui.theme import html_table, safe_section, chart_note, colours, page_header
+from ccstats.stats import poss
 
 career = state.current()
 if career is None:
@@ -160,7 +161,7 @@ with tab_h, safe_section("rankings history"):
                             width="stretch", config=CONFIG, key="rk_h_bars")
             h0 = top_h.iloc[0]
             most1 = hist_t.sort_values(["at_no1", "peak"], ascending=False).iloc[0]
-            chart_note(f"The highest {what_h.lower()} rating in {section} was {h0.player}'s {h0.peak:.0f} on "
+            chart_note(f"The highest {what_h.lower()} rating in {section} was {poss(h0.player)} {h0.peak:.0f} on "
                        f"{h0.peak_date:%d %b %Y} (now {fmt(h0.current, 0)}). {most1.player} has spent the most matches at "
                        f"No. 1: {int(most1.at_no1)}.",
                        "Who reached the greatest heights, not just who is on top today. Each rating is the one they had "

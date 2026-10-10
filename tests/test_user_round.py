@@ -53,30 +53,62 @@ def seg(at, label):
 # --------------------------------------------------------------------------- Team vs team: where
 def test_team_vs_team_where_is_one_side_at_home_and_the_other_away(career):
     m = career.matches
+    odis = m[m.section == "ODIs"]
     at = page("team_vs_team.py", career, tv_section="ODIs", tv_a="India", tv_b="England").run()
     ok(at)
-    where = seg(at, "Where")
-    assert list(where.options)[:3] == ["All venues", "At India's home", "At England's home"]
-    # all their matches, at England's home: India's away games against England's home games
-    where.set_value("At England's home").run()
+    # they've met: the page opens on their meetings, and Where says how many there were at each ground
+    assert seg(at, "Matches").value == "Against each other"
+    meet = odis[((odis.home == "England") & (odis.away == "India")) | ((odis.home == "India") & (odis.away == "England"))]
+    at_eng = int(((meet.home == "England") & ~meet.neutral).sum())
+    at_ind = int(((meet.home == "India") & ~meet.neutral).sum())
+    assert list(seg(at, "Where").options)[:3] == [f"All venues ({len(meet)})", f"At India's home ({at_ind})",
+                                                  f"At England's home ({at_eng})"]
+    seg(at, "Where").set_value(f"At England's home ({at_eng})").run()
     ok(at)
-    odis = m[m.section == "ODIs"]
+    assert at_eng >= 1 and f"{at_eng} meeting" in text(at)
+    # at India's home they haven't met in ODIs: a clear message naming both, never a dead "no matches"
+    seg(at, "Where").set_value(f"At India's home ({at_ind})").run()
+    ok(at)
+    assert at_ind == 0 and "India and England haven't played each other in ODIs at India's home yet" in text(at)
+    # against anyone, England home and India away: each side's own games, said plainly on the page and the tiles
+    seg(at, "Matches").set_value("Against anyone").run()
+    seg(at, "Where").set_value("India away · England home").run()
+    ok(at)
     india_away = odis[(odis.away == "India") & ~odis.neutral]
     england_home = odis[(odis.home == "England") & ~odis.neutral]
-    tiles = " ".join(m.value for m in at.markdown if "class='kpi'" in m.value)
+    tiles = " ".join(x.value for x in at.markdown if "class='kpi'" in x.value)
     assert tiles.count("<span>Played</span><strong>") == 2
     assert f"<span>Played</span><strong>{len(india_away)}</strong>" in tiles.split("England")[0]
     assert f"<span>Played</span><strong>{len(england_home)}</strong>" in tiles.split("England", 1)[1]
-    # only against each other, at England's home: their meetings there (both sides count the same games)
-    seg(at, "Matches").set_value("Only against each other").run()
+    assert "away games v anyone" in tiles and "home games v anyone" in tiles
+    assert any("Each team's own record against anyone" in i.value and "India's away games" in i.value
+               and "England's home games" in i.value for i in at.info)
+
+
+def test_team_vs_team_two_sides_that_never_met(career):
+    """The screenshot: Australia v Bangladesh in ODIs, never played each other. The page must not look like a
+    head to head: it opens on each side's own games and says they haven't met."""
+    m = career.matches
+    odis = m[m.section == "ODIs"]
+    met = odis[((odis.home == "Australia") & (odis.away == "Bangladesh")) | ((odis.home == "Bangladesh") & (odis.away == "Australia"))]
+    assert met.empty
+    at = page("team_vs_team.py", career, mine=("Australia",), tv_section="ODIs", tv_a="Australia", tv_b="Bangladesh").run()
     ok(at)
-    meet = odis[(odis.home == "England") & (odis.away == "India")]
-    assert len(meet) >= 1
-    assert f"{len(meet)} meeting" in text(at)
-    # at India's home they haven't met in ODIs: a clear message naming both, never a dead "no matches"
-    seg(at, "Where").set_value("At India's home").run()
+    assert seg(at, "Matches").value == "Against anyone"
+    assert any("Australia and Bangladesh haven't played each other here yet" in i.value for i in at.info)
+    seg(at, "Where").set_value("Australia away · Bangladesh home").run()
     ok(at)
-    assert "India and England haven't met at India's home yet" in text(at)
+    tiles = " ".join(x.value for x in at.markdown if "class='kpi'" in x.value)
+    assert "away games v anyone" in tiles and "home games v anyone" in tiles
+    assert "Australia and Bangladesh haven't played each other in ODIs at Bangladesh's home yet" in text(at)
+    # asking for their meetings says so plainly and points to Against anyone
+    seg(at, "Matches").set_value("Against each other").run()
+    ok(at)
+    assert any("haven't played each other in ODIs" in i.value and "Against anyone" in i.value for i in at.info)
+    # picking another opponent starts again on the right kind of match
+    next(s for s in at.main.selectbox if s.label == "Team B").set_value("South Africa").run()
+    ok(at)
+    assert seg(at, "Matches").value == "Against each other"
 
 
 def test_team_vs_team_starts_on_your_team(career):
@@ -441,3 +473,99 @@ def test_change_or_delete_tab(career):
     next(b for b in at.main.button if b.label == "↩️ Undo").click().run()
     ok(at)
     assert len(at.session_state[f"fixtures::{career.name}"]) == 5
+
+
+# --------------------------------------------------------------------------- the next match, and a date for every match
+@pytest.fixture(scope="module")
+def tour():
+    """2026 only, with England's Tests v Pakistan stopped after the 1st (19 Aug): the 2nd and 3rd are still to come."""
+    keep = [p for p in FIXTURES if "2026" in p.name and "eng_v_pak_2nd_tst" not in p.name
+            and "eng_v_pak_3rd_tst" not in p.name]
+    return Career.build("Tour", [(p.name, p.read_bytes()) for p in keep])
+
+
+def _next(c, fx, team="England"):
+    t = F.track(c, fx, auto=(team,))
+    nx = t[(t.team == team) & (t.status == "next")]
+    up = F.upcoming(c, fx, [team])
+    assert len(nx) == 1 and len(up)
+    assert (up.format.iloc[0], int(up.no.iloc[0])) == (nx.format.iloc[0], int(nx.no.iloc[0]))
+    return t, nx.iloc[0]
+
+
+def test_next_is_the_rest_of_the_series_under_way_however_it_was_typed(tour):
+    tests = lambda **k: F.make_series("England", "Pakistan", "Test", 3, "home", **k)  # noqa: E731
+    odis = lambda **k: F.make_series("England", "Pakistan", "ODI", 3, "home", **k)  # noqa: E731
+    gap = pd.Timedelta(days=F.series_gaps(tour).get("Test", 8))
+    cases = {"first dates": tests(date="2026-08-19") + odis(date="2026-09-20"),
+             "months only": tests(month="2026-08") + odis(month="2026-08"),
+             "ODIs listed first": odis(month="2026-08") + tests(month="2026-08"),
+             "ODIs dated, Tests by month": tests(month="2026-08") + odis(date="2026-09-20"),
+             "only the ODIs": odis(month="2026-08")}  # the Tests come from the scorecards (auto-added)
+    for name, fx in cases.items():
+        t, nx = _next(tour, fx)
+        assert (nx.format, int(nx.no)) == ("Test", 2), name
+        assert nx.anchor == pd.Timestamp("2026-08-19") + gap and nx.estimated, name  # from the 1st Test's date
+        mine = t[(t.team == "England") & t.status.isin(["next", "to come"])]
+        assert list(mine.format) == ["Test", "Test", "ODI", "ODI", "ODI"], name  # the Tests finish first
+        assert mine.anchor.is_monotonic_increasing, name
+
+
+def test_dates_you_type_are_used_and_a_series_under_way_fits_before_the_next(tour):
+    fx = (F.make_series("England", "Pakistan", "Test", 3, "home", dates=["2026-08-19", "2026-08-27", "2026-09-09"])
+          + F.make_series("England", "Pakistan", "ODI", 3, "home", dates=["2026-09-20", "", "2026-09-26"]))
+    t, nx = _next(tour, fx)
+    assert (nx.format, int(nx.no), nx.anchor, bool(nx.estimated)) == ("Test", 2, pd.Timestamp("2026-08-27"), False)
+    odi = t[(t.format == "ODI") & (t.team == "England") & t.series.str.contains("Pakistan")].set_index("no")
+    assert odi.anchor[1] == pd.Timestamp("2026-09-20") and odi.anchor[3] == pd.Timestamp("2026-09-26")
+    assert odi.anchor[2] == pd.Timestamp("2026-09-23") and odi.estimated[2]  # halfway between the two it sits between
+    # the ODIs typed for 1 Sep: the 2nd and 3rd Tests (no dates) are squeezed in before them, in order
+    fx = F.make_series("England", "Pakistan", "Test", 3, "home", date="2026-08-19") + \
+        F.make_series("England", "Pakistan", "ODI", 3, "home", date="2026-09-01")
+    t, nx = _next(tour, fx)
+    mine = t[(t.team == "England") & t.status.isin(["next", "to come"])]
+    assert list(zip(mine.format, mine.no)) == [("Test", 2), ("Test", 3), ("ODI", 1), ("ODI", 2), ("ODI", 3)]
+    assert pd.Timestamp("2026-08-19") < mine.anchor.iloc[0] < mine.anchor.iloc[1] < pd.Timestamp("2026-09-01")
+
+
+def test_make_series_with_every_date_and_the_order_check():
+    rows = F.make_series("India", "Sri Lanka", "ODI", 3, "away", "2026-11", dates=["2026-12-02", "", "2026-12-08"])
+    assert [r["date"] for r in rows] == ["2026-12-02", "", "2026-12-08"]
+    assert {r["month"] for r in rows} == {"2026-12"}  # the month follows the first date given
+    assert rows[0]["series"] == "v Sri Lanka · 3 ODIs · away · Dec 2026"
+    assert F.dates_in_order(["2026-12-02", "", "2026-12-08"]) == ""
+    assert "Match 3" in F.dates_in_order(["2026-12-02", "2026-12-05", "2026-12-04"])
+    assert "same day" in F.dates_in_order(["2026-12-02", "2026-12-02"])
+    assert F.schedule_items(rows, "India")[0]["dates"] == ["2026-12-02", "", "2026-12-08"]
+
+
+def test_add_and_change_a_series_with_a_date_for_every_match(career):
+    import datetime as dt
+    at = page("fixtures.py", career).run()
+    ok(at)
+    next(s for s in at.main.selectbox if s.key == "fx_opp").set_value("Sri Lanka").run()
+    next(s for s in at.main.segmented_control if s.key == "fx_fmt").set_value("ODI").run()
+    next(t for t in at.main.toggle if t.key == "fx_know").set_value(True).run()
+    ok(at)
+    boxes = [d for d in at.main.date_input if str(d.key).startswith("fx_d_")]
+    assert [d.label for d in boxes] == ["1st ODI", "2nd ODI", "3rd ODI"] and all(d.value is None for d in boxes)
+    # out of order: a clear message and no Add
+    boxes[0].set_value(dt.date(2026, 12, 8))
+    boxes[1].set_value(dt.date(2026, 12, 5)).run()
+    assert any("Match 2's date" in e.value for e in at.error)
+    assert next(b for b in at.main.button if b.key == "fx_add_series").disabled
+    next(d for d in at.main.date_input if d.key == "fx_d_1").set_value(dt.date(2026, 12, 2)).run()
+    assert not at.error
+    next(b for b in at.main.button if b.key == "fx_add_series").click().run()
+    ok(at)
+    now = at.session_state[f"fixtures::{career.name}"]
+    assert [r["date"] for r in now] == ["2026-12-02", "2026-12-05", ""] and now[0]["month"] == "2026-12"
+    # change it: the boxes come back filled in; give the 3rd its date
+    next(b for b in at.main.button if b.label == "✏️ Change").click().run()
+    ok(at)
+    filled = [d for d in at.main.date_input if str(d.key).startswith("fx_e_d_")]
+    assert [d.value for d in filled] == [dt.date(2026, 12, 2), dt.date(2026, 12, 5), None]
+    filled[2].set_value(dt.date(2026, 12, 8)).run()
+    next(b for b in at.main.button if b.label == "Save").click().run()
+    ok(at)
+    assert [r["date"] for r in at.session_state[f"fixtures::{career.name}"]] == ["2026-12-02", "2026-12-05", "2026-12-08"]

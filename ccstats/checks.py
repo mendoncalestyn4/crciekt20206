@@ -11,6 +11,7 @@ from itertools import combinations
 import pandas as pd
 
 from .parser import resolve_candidates
+from .stats import poss
 
 
 def _base(name: str) -> str:
@@ -85,7 +86,7 @@ def uncredited(career) -> pd.DataFrame:
             top, second = counts.get(ranked[0], 0), counts.get(ranked[1], 0)
             if top >= 2 and top >= 2 * max(second, 1):
                 suggestion = ranked[0]
-                reason = (f"{ranked[0]} has taken {top} of {r.team}'s clear catches this season, "
+                reason = (f"{ranked[0]} has taken {top} of {poss(r.team)} clear catches this season, "
                           + ", ".join(f"{c} {counts.get(c, 0)}" for c in ranked[1:]))
         rows.append(dict(credit_key=r.credit_key, match_id=r.match_id, date=mm.date,
                          match=f"{mm.date:%d %b %Y} · {mm.home} v {mm.away}", innings_no=r.innings_no, team=r.team,

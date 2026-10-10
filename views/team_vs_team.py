@@ -10,6 +10,7 @@ from ui import state
 from ui.theme import counted
 from ui.charts import player_profile, CONFIG, _axis, _layout, fmt, label_annotations
 from ui.theme import chart_note, colours, explain_list, page_header
+from ccstats.stats import poss
 
 career = state.current()
 if career is None:
@@ -19,8 +20,9 @@ state.stop_if_no_matches(career)
 
 m = career.matches
 page_header("Team vs team", "Head to head",
-            "Pick a section and two teams. Choose where: all venues, at one team's home (the other side away), or "
-            "neutral grounds; and all their matches or only the games against each other.")
+            "Pick a section and two teams. Against each other: only their meetings, at any ground or one side's home. "
+            "Against anyone: each team's own games, to size up two sides that haven't met (home games next to away "
+            "games, as for a game at one team's ground).")
 r1 = st.columns([2.2, 0.9, 1.45, 1.45])  # room for "County Championship · Division 2 (32)"
 sections = m.section.value_counts()
 state.recall("tv_section", "section", list(sections.index))
@@ -45,19 +47,42 @@ if st.session_state.get("tv_b") not in others:
     st.session_state["tv_b"] = met.index[0] if len(met) else others[0]
 b = r1[3].selectbox("Team B", others, key="tv_b")
 
-r2 = st.columns([3.3, 1.7])  # long team names: "At Royal Challengers Bengaluru's home" needs the room
-# where the games were played, from Team A's side: at A's home is B away, and the other way round
+meet_all = here[((here.home == a) & (here.away == b)) | ((here.home == b) & (here.away == a))]
+n_met = len(meet_all)
+where_scope = section + ("" if season == "All seasons" else f" in {season}")
+# new teams (or section, season): their games against each other if they've met here, else each side's own games
+if st.session_state.get("tv_pair") != (section, season, a, b):
+    st.session_state["tv_pair"] = (section, season, a, b)
+    st.session_state["tv_which"] = "Against each other" if n_met else "Against anyone"
+    st.session_state["tv_ground_k"] = "all"
+which = st.segmented_control(
+    "Matches", ["Against each other", "Against anyone"], required=True, key="tv_which",
+    help="Against each other: only the games between these two. Against anyone: each team's own games against "
+         "everyone, to compare two sides that haven't met (or haven't met much).") or "Against each other"
+h2h = which == "Against each other"
+# where: against each other, at one side's home (the other away) with how many meetings there; against anyone, each
+# side's own home or away games, as they would be for a game at one team's ground
 grounds = ["all", "a_home", "b_home"] + (["neutral"] if here.neutral.any() else [])
-ground_words = {"all": "All venues", "a_home": f"At {a}'s home", "b_home": f"At {b}'s home", "neutral": "Neutral"}
+if h2h:
+    n_at = {"all": n_met, "a_home": int(((meet_all.home == a) & ~meet_all.neutral).sum()),
+            "b_home": int(((meet_all.home == b) & ~meet_all.neutral).sum()), "neutral": int(meet_all.neutral.sum())}
+    ground_words = {"all": f"All venues ({n_at['all']})", "a_home": f"At {poss(a)} home ({n_at['a_home']})",
+                    "b_home": f"At {poss(b)} home ({n_at['b_home']})", "neutral": f"Neutral ({n_at['neutral']})"}
+else:
+    ground_words = {"all": "All venues", "a_home": f"{a} home · {b} away", "b_home": f"{a} away · {b} home",
+                    "neutral": "Both at neutral grounds"}
 ground_opts = [ground_words[g] for g in grounds]
-if st.session_state.get("tv_ground") not in ground_opts:  # first time, or the team whose home it was isn't picked now
-    st.session_state["tv_ground"] = "All venues"
-ground_label = r2[0].segmented_control("Where", ground_opts, required=True, key="tv_ground",
-                                       help=f"At {a}'s home: {a}'s home games and {b}'s away games (with Only against "
-                                            f"each other: their meetings at {a}'s ground).") or "All venues"
+if st.session_state.get("tv_ground") not in ground_opts:  # first time, other teams, or the other kind of match
+    k0 = st.session_state.get("tv_ground_k", "all")
+    st.session_state["tv_ground"] = ground_words[k0 if k0 in grounds else "all"]
+# its own row: "Royal Challengers Bengaluru home · Chennai Super Kings away" needs the width
+ground_label = st.segmented_control(
+    "Where", ground_opts, required=True, key="tv_ground",
+    help=("Their meetings, and how many there were at each ground." if h2h else
+          f"{a} home · {b} away: {poss(a)} home games against anyone, next to {poss(b)} away games against anyone, as they "
+          f"would be for a game at {poss(a)} ground.")) or ground_opts[0]
 ground = {v: k for k, v in ground_words.items()}.get(ground_label, "all")
-which = r2[1].segmented_control("Matches", ["All matches", "Only against each other"], default="All matches", required=True, key="tv_which") or "All matches"
-h2h = which != "All matches"
+st.session_state["tv_ground_k"] = ground
 venue_a, venue_b = {"all": ("all", "all"), "a_home": ("home", "away"), "b_home": ("away", "home"),
                     "neutral": ("neutral", "neutral")}[ground]
 
@@ -74,15 +99,25 @@ if ground != "all" and here.neutral.all():
 if len(ids_a) == 0 or len(ids_b) == 0:
     where_ = {"home": " at home", "away": " away", "neutral": " at a neutral ground", "all": ""}
     if h2h:
-        missing = [f"{a} and {b} haven't met{' here' if ground == 'all' else ''} yet" if ground in ("all", "neutral")
-                   else f"{a} and {b} haven't met at {a if ground == 'a_home' else b}'s home yet"]
-        if ground == "neutral":
-            missing = [f"{a} and {b} haven't met at a neutral ground yet"]
+        at_ = {"all": "", "a_home": f" at {poss(a)} home", "b_home": f" at {poss(b)} home", "neutral": " at a neutral ground"}
+        st.info(f"**{a} and {b} haven't played each other in {where_scope}{at_[ground]} yet.** "
+                + ("Choose another **Where** (the number is how many times they've met there), or " if n_met else
+                   "Choose ")
+                + "**Against anyone** to compare each team's own games.")
     else:
-        missing = [f"{t} haven't played{where_[v]} in {section} yet"
+        missing = [f"{t} haven't played{where_[v]} in {where_scope} yet"
                    for t, ids_, v in ((a, ids_a, venue_a), (b, ids_b, venue_b)) if len(ids_) == 0]
-    st.info(". ".join(missing) + ". Choose another **Where**" + (" or **All matches**" if h2h else "") + ".")
+        st.info(". ".join(missing) + ". Choose another **Where**.")
     st.stop()
+if not h2h:  # say plainly whose games these are: never a meeting that didn't happen
+    side = {"all": ("all {t} games", "all {t} games"), "a_home": ("{t} home games", "{t} away games"),
+            "b_home": ("{t} away games", "{t} home games"),
+            "neutral": ("{t} games at neutral grounds", "{t} games at neutral grounds")}[ground]
+    st.info(f"**Each team's own record against anyone:** {side[0].format(t=poss(a))} ({len(ids_a)}) next to "
+            f"{side[1].format(t=poss(b))} ({len(ids_b)}), in {where_scope}. "
+            + (f"They have played each other {'once' if n_met == 1 else f'{n_met} times'} here: choose **Against "
+               "each other** for just " + ("that game." if n_met == 1 else "those.") if n_met else
+               f"{a} and {b} haven't played each other here yet."))
 
 c = colours()
 col_a, col_b = c["s1"], c["s2"]
@@ -102,12 +137,23 @@ def high_total(team, ids):
     return int(i.runs.max()) if len(i) else 0
 
 
+def games_of(team, venue, opp) -> str:
+    """'home games v anyone', 'v Bangladesh, away': whose games a tile counts."""
+    at = {"home": "at home", "away": "away", "neutral": "at neutral grounds", "all": ""}[venue]
+    if h2h:
+        return f"v {opp}" + (f", {at}" if at else "")
+    return {"home": "home games v anyone", "away": "away games v anyone", "neutral": "neutral-ground games v anyone",
+            "all": "all games v anyone"}[venue]
+
+
 def tile(col, team, r, other, colour):
     win = lambda x, y: f"color:{c['good']}" if x > y else ""
     extra = (f"<div><span>Net run rate</span><strong style='{win(r.nrr, other.nrr)}'>{r.nrr:+.2f}</strong></div>" if limited
              else f"<div><span>Drawn</span><strong>{int(r.drawn)}</strong></div>")
+    sub = games_of(team, venue_a if team == a else venue_b, b if team == a else a)
     col.markdown(
         f"<div class='kpi' style='border-top:3px solid {colour}'><span style='font-size:22px;letter-spacing:.02em;color:{c['ink']}'>{team}</span>"
+        f"<span style='display:block;font-size:13px;color:{c['muted']};margin-top:2px'>{sub}</span>"
         f"<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px 12px;margin-top:8px'>"
         f"<div><span>Played</span><strong>{int(r.played)}</strong></div>"
         f"<div><span>Won–Lost</span><strong style='{win(r.won, other.won)}'>{int(r.won)}–{int(r.lost)}</strong></div>"
@@ -177,7 +223,8 @@ with right:
             meet = meet[meet.neutral]
         aw, bw = int((meet.winner == a).sum()), int((meet.winner == b).sum())
         if meet.empty:
-            st.caption("They haven't met with these settings.")
+            at_ = {"all": "", "a_home": f" at {poss(a)} home", "b_home": f" at {poss(b)} home", "neutral": " at a neutral ground"}
+            st.caption(f"{a} and {b} haven't played each other in {where_scope}{at_[ground]} yet.")
         else:
             st.markdown(f"**{len(meet)} meeting{'s' * (len(meet) != 1)}:** {a} {aw} – {bw} {b}"
                         + (f", {len(meet) - aw - bw} other" if len(meet) - aw - bw else ""))
@@ -238,7 +285,7 @@ with left:
                          base.strike_rate / 100, f"section strike rate {fmt(base.strike_rate, 1)}",
                          lambda r: f"<b>{r.player}</b> · {r.team}<br>{player_profile(r)}")
         fast = lambda d: (d[d.balls > 0].runs / d[d.balls > 0].balls * 100 > base.strike_rate).mean() * 100  # noqa: E731
-        chart_note(f"{fast(bat_a):.0f}% of {a}'s batters and {fast(bat_b):.0f}% of {b}'s score faster than the section's "
+        chart_note(f"{fast(bat_a):.0f}% of {poss(a)} batters and {fast(bat_b):.0f}% of {poss(b)} score faster than the section's "
                    f"{fmt(base.strike_rate, 1)} per 100 balls.",
                    "Compares the two batting line-ups player by player: who scores quickly and who has faced the most.")
         explain_list([("dot", f"<b>Blue</b>: {a}. <b>Orange</b>: {b}."),
@@ -252,7 +299,7 @@ with right:
                          f"a wicket every {fmt(base.bowl_strike_rate, 1)} balls",
                          lambda r: f"<b>{r.player}</b> · {r.team}<br>{player_profile(r)}")
         often = lambda d: (d[d.balls > 0].wickets / d[d.balls > 0].balls * base.bowl_strike_rate > 1).mean() * 100  # noqa: E731
-        chart_note(f"{often(bowl_a):.0f}% of {a}'s bowlers and {often(bowl_b):.0f}% of {b}'s take wickets more often than "
+        chart_note(f"{often(bowl_a):.0f}% of {poss(a)} bowlers and {often(bowl_b):.0f}% of {poss(b)} take wickets more often than "
                    f"one every {fmt(base.bowl_strike_rate, 1)} balls.",
                    "Compares the two attacks bowler by bowler: who takes wickets and who has done the most bowling.")
         explain_list([("line", "<b>Dashed line</b>: the section's average wicket rate."),
@@ -284,7 +331,7 @@ with left:
         team_bars("tv_raa", bat_a[bat_a.innings > 0], bat_b[bat_b.innings > 0], "runs_above_average", "Runs above average",
                   lambda r: f"<b>{r.player}</b> · {r.team}<br>{player_profile(r)}")
         pa, pb = (bat_a.runs_above_average > 0).mean() * 100, (bat_b.runs_above_average > 0).mean() * 100
-        chart_note(f"{pa:.0f}% of {a}'s batters and {pb:.0f}% of {b}'s beat the average batter. Team totals: {a} "
+        chart_note(f"{pa:.0f}% of {poss(a)} batters and {pb:.0f}% of {poss(b)} beat the average batter. Team totals: {a} "
                    f"{bat_a.runs_above_average.sum():+.0f}, {b} {bat_b.runs_above_average.sum():+.0f} runs.",
                    "Runs scored minus what an average batter in this section would have made: who is pulling their "
                    "weight. Right of the line beat the average.")
@@ -294,7 +341,7 @@ with right:
         team_bars("tv_saved", bowl_a, bowl_b, "runs_saved", "Runs saved",
                   lambda r: f"<b>{r.player}</b> · {r.team}<br>{player_profile(r)}")
         pa, pb = (bowl_a.runs_saved > 0).mean() * 100, (bowl_b.runs_saved > 0).mean() * 100
-        chart_note(f"{pa:.0f}% of {a}'s bowlers and {pb:.0f}% of {b}'s beat the average bowler. Team totals: {a} "
+        chart_note(f"{pa:.0f}% of {poss(a)} bowlers and {pb:.0f}% of {poss(b)} beat the average bowler. Team totals: {a} "
                    f"{bowl_a.runs_saved.sum():+.0f}, {b} {bowl_b.runs_saved.sum():+.0f} runs saved.",
                    "Runs kept below the section average, with extra wickets turned into runs: which bowlers really "
                    "help. Right of the line beat the average.")
