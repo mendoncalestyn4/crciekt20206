@@ -83,6 +83,7 @@ class CareerSettings:
     fixtures: list = field(default_factory=list)  # your schedule (the Fixtures page)
     goals: list = field(default_factory=list)  # season goals (the Fixtures page)
     teams_asked: bool = False  # the "which teams do you play as?" question was answered (or turned off)
+    forecasts: dict = field(default_factory=dict)  # each series' chances before ball one (Fixtures), kept to check
 
 
 def write_atomic(path: Path, data: str | bytes) -> None:
@@ -163,7 +164,7 @@ class CareerStore:
         return out
 
     # what you set on the pages (saved with save_settings); a career save never takes these from a stale copy
-    YOURS = ("my_teams", "notes", "remembered", "fixtures", "goals", "teams_asked")
+    YOURS = ("my_teams", "notes", "remembered", "fixtures", "goals", "teams_asked", "forecasts")
 
     def save(self, career: Career, settings: CareerSettings) -> None:
         d = self._dir(career.name)

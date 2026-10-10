@@ -200,3 +200,174 @@ def test_goals_and_forecasts(tour):
     chk = P.forecast_check(tr3, "England", saved)
     assert done["state"] == "done"
     assert len(chk) == 1 and chk[0]["right"] == (done["won"] > done["lost"]) and chk[0]["result"] == f"{done['won']}–{done['lost']}"
+
+
+# --------------------------------------------------------------------------- the Fixtures page itself
+from streamlit.testing.v1 import AppTest  # noqa: E402
+
+ROOT = Path(__file__).parent.parent
+
+
+def page(c, fx, team="England", **state):
+    at = AppTest.from_file(str(ROOT / "views" / "fixtures.py"), default_timeout=240)
+    at.session_state["career_obj"] = c
+    at.session_state[f"my_teams::{c.name}"] = [team]
+    at.session_state[f"fixtures::{c.name}"] = fx
+    for k, v in state.items():
+        at.session_state[k] = v
+    return at
+
+
+def ok(at):
+    assert not at.exception, [e.message for e in at.exception]
+    assert not [w for w in at.warning if "couldn't be shown" in w.value], [w.value for w in at.warning]
+    assert not at.error, [e.value for e in at.error]
+
+
+def everything(at) -> str:
+    return " ".join([m.value for m in at.markdown] + [c.value for c in at.caption] + [i.value for i in at.info])
+
+
+def test_schedule_tab_check_fix_and_undo(tour):
+    fx = (F.make_series("England", "Pakistan", "Test", 3, "home", month="2026-06")  # played from 19 Aug
+          + F.make_series("England", "Pakistan", "ODI", 3, "home", month="2026-09"))
+    at = page(tour, fx).run()
+    ok(at)
+    text = everything(at)
+    assert "Schedule check" in text and "change its month to Aug 2026?" in text
+    fix = next(b for b in at.main.button if b.label == "✅ Fix it")
+    fix.click().run()
+    ok(at)
+    now = at.session_state[f"fixtures::{tour.name}"]
+    assert next(r for r in now if r["format"] == "Test")["month"] == "2026-08"
+    assert "Schedule check: nothing looks wrong" in everything(at)
+    next(b for b in at.main.button if b.label == "↩️ Undo").click().run()
+    ok(at)
+    assert at.session_state[f"fixtures::{tour.name}"] == fx  # back exactly as it was
+
+
+def test_schedule_tab_chances_form_outlook_and_next_match(tour):
+    at = page(tour, schedule()).run()
+    ok(at)
+    tables = " ".join(m.value for m in at.markdown if "<table" in m.value)
+    assert "Your chance" in tables and "Their form" in tables
+    assert tables.count("% · easy") + tables.count("% · even") + tables.count("% · hard") == 2 + 3 + 2
+    text = everything(at)
+    assert "The season ahead" in text and "Heading for" in " ".join(m.value for m in at.markdown)
+    assert "Their last" in text  # the next match's opponent form
+    assert any(c.key == "fx_outlook" for c in at.get("plotly_chart")) or "fx_outlook" in str(at.session_state)
+    # forecasts are kept for the series that haven't started
+    saved = at.session_state[f"forecasts::{tour.name}"]
+    assert set(saved) == {P.forecast_key("England", s["series"]) for s in
+                          F.series_groups(F.track(tour, schedule(), auto=("England",)), "England") if s["state"] == "to come"}
+
+
+def test_series_tab_extras_note_goal_and_suggestions(tour):
+    at = page(tour, schedule()).run()
+    ok(at)
+    text = everything(at)
+    assert "Under way: v Pakistan · 3 Tests" in text
+    assert "Records in reach" in text and "in ODI series" not in text
+    # a note on a series: saved, then shown on the next-match box when it's that series
+    box = next(t for t in at.main.text_input if str(t.key).startswith("fx_note_l0_"))
+    box.set_value("Rest Anderson for the 3rd Test").run()
+    next(b for b in at.main.button if b.key == f"{box.key}_save").click().run()
+    ok(at)
+    assert "Rest Anderson for the 3rd Test" in everything(at)
+    # make it a goal, then the suggestions no longer offer it
+    next(b for b in at.main.button if b.label == "🎯 Make winning this series a goal").click().run()
+    ok(at)
+    goals = at.session_state[f"goals::{tour.name}"]
+    assert any(g["kind"] == "series" and "Pakistan · 3 Tests" in g["series"] for g in goals)
+    sugg = [b for b in at.main.button if str(b.key).startswith("fx_sugg_") and b.key != "fx_sugg_all"]
+    n = len(sugg)
+    next(b for b in at.main.button if b.key == "fx_sugg_all").click().run()
+    ok(at)
+    assert len(at.session_state[f"goals::{tour.name}"]) == len(goals) + n
+    assert not [b for b in at.main.button if str(b.key).startswith("fx_sugg_")]
+
+
+def test_fixtures_page_for_every_team_with_and_without_a_schedule(career):
+    m = career.matches
+    for team in sorted(set(m.home) | set(m.away))[:40]:
+        fmt_ = "Test" if team in F.NATIONS else "T20"
+        fx = F.make_series(team, "England" if team != "England" else "India", fmt_, 2, "away", month="2027-01")
+        for sched in ([], fx):
+            at = page(career, sched, team=team, fx_team=team).run()
+            ok(at)
+
+
+# --------------------------------------------------------------------------- best and worst, series review
+from ccstats import teamreport as TR  # noqa: E402
+from ccstats.playerdeep import match_impact  # noqa: E402
+
+
+def test_match_card_best_and_worst(career):
+    m = career.matches
+    for r in m[m.format.isin(["ODI", "Test", "T20I", "T20"])].itertuples():
+        for side in (r.home, r.away):
+            card = TR.match_card(career, r.match_id, side)
+            assert card is not None
+            imp = match_impact(career, F.format_ids(career, side, r.format))
+            mine = imp[(imp.match_id == r.match_id) & (imp.team == side)].sort_values("impact", ascending=False)
+            assert [p for p, _, _ in card["best"]] == list(mine.player.head(3))
+            assert np.allclose([v for _, _, v in card["best"]], mine.impact.head(3))
+            best = {p for p, _, _ in card["best"]}
+            assert not best & {p for p, _, _ in card["worst"]}
+            assert [v for _, _, v in card["worst"]] == sorted(v for _, _, v in card["worst"])
+    one = m.iloc[0]
+    assert TR.match_card(career, one.match_id, "Nobody FC") is None
+
+
+def test_match_card_figures_are_the_scorecards(career):
+    r = career.matches[career.matches.format == "ODI"].iloc[0]
+    card = TR.match_card(career, r.match_id, r.home)
+    b = career.batting[(career.batting.match_id == r.match_id) & (career.batting.team == r.home) & career.batting.did_bat]
+    w = career.bowling[(career.bowling.match_id == r.match_id) & (career.bowling.team == r.home)]
+    for p, fig, _ in card["best"] + card["worst"]:
+        bp = b[b.player == p]
+        if len(bp) and bp.balls.sum():
+            assert fig.startswith(f"{int(bp.runs.sum())}{'' if bp.out.any() else '*'} ({int(bp.balls.sum())})")
+        wp = w[w.player == p]
+        if len(wp) and wp.balls.sum():
+            assert f"{int(wp.wickets.sum())}/{int(wp.runs.sum())}" in fig
+
+
+def test_series_review_advice_follows_its_rules(career):
+    m = career.matches
+    x = m[(m.series_id != "") & m.format.isin(["Test", "ODI", "T20I"])]
+    checked = 0
+    for sid, g in x.groupby("series_id"):
+        for side in (g.home.iloc[0], g.away.iloc[0]):
+            rv = TR.series_review(career, g.match_id, side)
+            if rv is None:
+                continue
+            pl = rv["players"]
+            hi, lo = pl.per_game.quantile(0.67), pl.per_game.quantile(0.33)
+            for r in pl.itertuples():
+                if r.verdict == "use more":
+                    assert r.per_game >= hi and r.per_game > 0
+                    assert not (pd.notna(r.u_per_game) and r.u_games >= 3) or r.per_game > r.u_per_game
+                if r.verdict == "think about dropping":
+                    assert r.games >= 2 and r.per_game <= lo
+            now = rv["now"]
+            assert now["games"] == len(g) and now["won"] == int((g.winner == side).sum())
+            checked += 1
+    assert checked >= 4
+
+
+def test_pages_show_the_reports(tour):
+    m = tour.matches
+    eng = m[(m.home == "England") | (m.away == "England")].iloc[0]
+    at = AppTest.from_file(str(ROOT / "views" / "match.py"), default_timeout=240)
+    at.session_state["career_obj"] = tour
+    at.session_state[f"my_teams::{tour.name}"] = ["England"]
+    at.query_params["match"] = eng.match_id
+    at.run()
+    ok(at)
+    assert any("England: best and worst in this match" in x.value for x in at.markdown)
+    # a finished series: its report has the review
+    fx = F.make_series("England", "India", "T20I", 5, "home", month="2026-07")
+    at = page(tour, fx).run()
+    ok(at)
+    assert "Series review: England" in everything(at)

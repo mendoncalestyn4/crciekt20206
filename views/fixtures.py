@@ -6,12 +6,14 @@ import pandas as pd
 import streamlit as st
 
 from ccstats import fixtures as FX
+from ccstats import planning as PLN
 from ccstats import seasonal as SN
 from ui import calendar_view as CV
 from ui import state
 from ui.charts import fmt
-from ui.theme import esc, form_strip, html_table, kpis, match_link, page_header, player_link, safe_section
-from ccstats.stats import poss
+from ui.theme import (chart_note, colours, esc, form_strip, html_table, kpis, match_link, page_header, player_link,
+                      safe_section)
+from ccstats.stats import ordinal, poss
 
 career = state.current()
 if career is None:
@@ -35,6 +37,7 @@ team = c1.selectbox("Schedule for", team_opts, key="fx_team",
 schedule = state.fixtures(career)
 # what you scheduled, plus everything the team has played since your schedule starts that isn't in it
 tracked = state.memo(FX.track, career, schedule, auto=(team,))
+state.add_forecasts(career, PLN.take_forecasts(career, tracked, team, state.forecasts(career)))  # 10 · before ball one
 mine_rows = tracked[tracked.team == team] if len(tracked) else tracked
 scheduled_any = any(r.get("team") == team for r in schedule)
 national = team in FX.NATIONS
@@ -86,7 +89,6 @@ def first_date(prefix: str, n: int, given: list[str] = ()):
 
 def date_boxes(prefix: str, n: int, given: list[str], fmt_: str) -> list[str]:
     """A date box for each match of a series (left empty: not known yet). 'YYYY-MM-DD', or '' for each."""
-    from ccstats.stats import ordinal
     out, per_row = [], 5
     for start in range(0, n, per_row):
         cols = st.columns(per_row)
@@ -165,12 +167,225 @@ def preview_any() -> None:
             go_preview(o, f, their.venue.iloc[0] if len(their) and their.format.iloc[0] == f else "")
 
 
+LEVEL_ICON = {"easy": "🟢", "even": "⚪", "hard": "🔴"}
+
+
+def schedule_check() -> None:
+    """1 · Anything that looks wrong in what you added for this team, each with a one-click fix where there is one."""
+    issues = PLN.check(career, schedule, tracked, team)
+    if not issues:
+        if scheduled_any:
+            st.caption("🔍 Schedule check: nothing looks wrong.")
+        return
+    with st.container(border=True):
+        st.markdown(f"**🔍 Schedule check** · {len(issues)} thing{'s' if len(issues) != 1 else ''} to look at")
+        for j, x in enumerate(issues):
+            a_, b_ = st.columns([5, 1.1], vertical_alignment="center")
+            a_.markdown(f"⚠️ {esc(x['text'])}")
+            if x["fix"]:
+                label = "🗑️ Delete it" if x["fix"].get("delete") else "✅ Fix it"
+                if b_.button(label, key=f"fx_fix_{j}_{_key(x['series'] + x['kind'])}", width="stretch"):
+                    _save(PLN.apply_fix(schedule, team, x["series"], x["fix"]), f"Fixed: {x['series']}",
+                          (team, f"Fixed: {x['series']}", schedule))
+            else:
+                b_.caption("Change it on the **Change or delete** tab")
+
+
+def rivalry_text(opp: str, fmt_: str) -> str:
+    """14 · '👻 Bogey team: 1–4 against them in ODIs' / '😊 Favourite opponent …', or ''."""
+    rv = PLN.rivalry(career, team, opp, fmt_)
+    if not rv:
+        return ""
+    games = FX.plural(fmt_, 2).split(" ", 1)[1]
+    return (f"👻 **Bogey team:** {esc(team)} are {rv['text']} against them in {games}" if rv["kind"] == "bogey" else
+            f"😊 **Favourite opponent:** {esc(team)} are {rv['text']} against them in {games}")
+
+
+def season_outlook() -> None:
+    """3 · 4 · How hard what's left of the season looks, fixture by fixture, and the record you're heading for."""
+    from ui.charts import CONFIG, _axis, _layout
+    import plotly.graph_objects as go
+    ch_all = PLN.chances(career, tracked, team)
+    if ch_all.empty:
+        return
+    sy = CV.season_of(ch_all.anchor.min())
+    start, end = pd.Timestamp(year=sy, month=4, day=1), pd.Timestamp(year=sy + 1, month=4, day=1)
+    pr = PLN.projection(career, tracked, team, start, end)
+    ch = pr["chances"]
+    if ch.empty:
+        return
+    now = pr["now"]
+    with st.container(border=True):
+        st.markdown(f"**📈 The season ahead · {CV.season_label(sy)}** · {len(ch)} match{'es' if len(ch) != 1 else ''} "
+                    "left with a known opponent")
+        drawn = lambda d: f" ({d:.0f} D)" if round(d) else ""  # noqa: E731
+        kpis([("Record so far", f"{now['W']}–{now['L']}" + drawn(now["D"])),
+              ("Heading for", f"{pr['exp_won']:.0f}–{pr['exp_lost']:.0f}" + drawn(pr["exp_drawn"])),
+              ("Likely wins", f"{pr['low']} to {pr['high']}"),
+              ("Easy · even · hard", " · ".join(str(int((ch.level == k).sum())) for k in ("easy", "even", "hard")))])
+        tough = PLN.toughest_run(ch)
+        if tough and tough["hard"]:
+            what = ", ".join(f"v {r.opponent} ({r.format} {int(r.no)})" for r in tough["rows"].itertuples())
+            rr = tough["rows"]
+            st.markdown(f"**Toughest run:** {esc(what)} ({esc(rr.when.iloc[0])} to {esc(rr.when.iloc[-1])}): your chance "
+                        f"of winning averages {rr.win.mean():.0f}%.")
+        c_ = colours()
+        col = {"easy": c_["good"], "even": c_["muted"], "hard": c_["neg"]}
+        labels = [f"{r.when} · v {r.opponent} · {r.format} {int(r.no)}" for r in ch.itertuples()]
+        share = ch.win.reset_index(drop=True)
+        fig = go.Figure(go.Bar(x=share[::-1], y=labels[::-1], orientation="h",
+                               marker=dict(color=[col[x] for x in ch.level][::-1], line=dict(width=0)),
+                               text=[f"{v:.0f}%" for v in share][::-1], textposition="outside", cliponaxis=False,
+                               textfont=dict(size=11, color=c_["ink2"]),
+                               customdata=[f"win {w:.0f}%" + (f" · draw {d:.0f}%" if d >= 0.5 else "") + f" · lose {lo:.0f}%"
+                                           for w, d, lo in zip(ch.win, ch.draw, ch.lose)][::-1],
+                               hovertemplate="<b>%{y}</b><br>%{customdata}<extra></extra>"))
+        fig.update_layout(**_layout(c_, height=max(220, 26 * len(ch) + 80), bargap=0.3,
+                                    xaxis=_axis(c_, "Chance of winning (%)", range=[0, 108]),
+                                    yaxis=dict(showgrid=False, tickfont=dict(size=11, color=c_["ink"]), automargin=True),
+                                    margin=dict(l=10, r=30, t=10, b=10)))
+        st.plotly_chart(fig, width="stretch", config=CONFIG, key="fx_outlook")
+        hardest = ch.iloc[int(np.argmin(share.to_numpy()))]
+        chart_note(f"{int((ch.level == 'easy').sum())} easy, {int((ch.level == 'even').sum())} even and "
+                   f"{int((ch.level == 'hard').sum())} hard; the hardest is v {esc(hardest.opponent)} "
+                   f"({esc(hardest.when)}, {hardest.win:.0f}% to win).",
+                   "Shows which games to rest players for and which to go all out in. Green: easy (you win 60% or more "
+                   "of the games that end in a result), grey: even, red: hard (40% or less); in a Test the draws are "
+                   "left out of that, so a 35% win chance with many draws can still be even. Each game's chance is the "
+                   "same one Opponent preview gives (Elo ratings, form, head to head and venue).")
+        bf = pr["by_format"]
+        if bf:
+            html_table([[f_, f"{v['won']}–{v['lost']}" + (f" ({v['drawn']} D)" if v["drawn"] else ""), v["left"],
+                         f"{v['exp_won']:.0f}–{v['exp_lost']:.0f}"] for f_, v in bf.items()],
+                       ["Format", "Record so far", "Left", "Heading for"], numeric={2})
+        st.caption("Heading for: your record so far plus each game left counted by its chance (so it can say 9–5 "
+                   "when every game left is close). Likely wins: 8 times in 10 the season ends inside this range."
+                   + (f" {pr['unknown']} tournament game{'s' if pr['unknown'] != 1 else ''} with no opponent yet "
+                      "aren't counted." if pr["unknown"] else ""))
+
+
+def series_extras(s: dict, i: str) -> None:
+    """7 · 8 · 12 · 16 · 23 · 24 for one series: conditions where it's played, who travels well, your past series
+    with them, records in reach, your note, and making it a goal."""
+    opp, fmt_ = s["opponent"], s["format"]
+    games = FX.plural(fmt_, 2).split(" ", 1)[1]
+    host = opp if s["venue"] == "away" else team if s["venue"] == "home" else None
+    left, right = st.columns(2, gap="medium")
+    with left:
+        # 12 · past series with them
+        h = PLN.series_history(career, team, opp, fmt_)
+        done_ = [r for r in h["rows"] if r["result"] != "under way"]
+        st.markdown(f"**📜 {esc(team)} v {esc(opp)}: past {esc(fmt_)} series**")
+        if done_:
+            st.markdown("  \n".join(f"{r['start']:%b %Y} · {venue_word(r['venue']) or r['venue']} · "
+                                    f"**{r['result']}** {r['score']}" for r in done_[-5:]))
+            line = f"Series: won {h['won']}, lost {h['lost']}" + (f", drawn {h['drawn']}" if h["drawn"] else "")
+            if s["venue"] == "away" and h["away"]["series"]:
+                line += f" · in {esc(opp)}: won {h['away']['won']} of {h['away']['series']}"
+            st.caption(line + ".")
+        else:
+            st.caption("No series between them in this format yet: this is the first.")
+        # 16 · records in reach
+        recs = PLN.series_records(career, team, opp, fmt_, int(s["total"]))
+        if recs:
+            st.markdown("**🏆 Records in reach**  \n" + "  \n".join(esc(x) for x in recs[:5]))
+    with right:
+        # 7 · conditions where it's played
+        if host:
+            cd = PLN.conditions(career, host, fmt_)
+            if cd:
+                th, ev = cd["there"], cd["everywhere"]
+                rows_ = [["Games", th["games"], ev["games"]],
+                         ["First-innings score", fmt(th["first"], 0), fmt(ev["first"], 0)],
+                         ["Batting first wins", fmt(th["bat_first_win"], 0) + "%", fmt(ev["bat_first_win"], 0) + "%"],
+                         ["Runs per wicket", fmt(th["runs_per_wicket"], 1), fmt(ev["runs_per_wicket"], 1)]]
+                if th["multi"]:
+                    rows_.append(["Drawn", fmt(th["draws"], 0) + "%", fmt(ev["draws"], 0) + "%"])
+                st.markdown(f"**🌍 {games} in {esc(host)}** (their home games) against everywhere")
+                html_table(rows_, ["", f"In {host}", "Everywhere"], numeric={1, 2})
+                bf_there = th["bat_first_win"]
+                if np.isfinite(bf_there):
+                    st.caption(("Bat first if you win the toss: " if bf_there >= 55 else
+                                "Chase if you win the toss: " if bf_there <= 45 else "Toss matters little: ")
+                               + f"batting first wins {bf_there:.0f}% there.")
+            else:
+                st.caption(f"Not enough {games} in {host} yet to say what conditions are like.")
+        # 8 · who travels well
+        if s["venue"] == "away":
+            tv = PLN.travellers(career, team, fmt_, host=opp)
+            if tv["away_games"] < 3:
+                tv = PLN.travellers(career, team, fmt_)
+            if len(tv["bat"]) or len(tv["bowl"]):
+                st.markdown(f"**🧳 Who travels well** · {esc(team)} {esc(tv['label'])} against at home")
+                bits = [f"{player_link(r.player)} averages {fmt(r.avg_away, 1)} {esc(tv['label'])} ({fmt(r.avg_home, 1)} "
+                        f"at home)" for r in tv["bat"].head(2).itertuples() if np.isfinite(r.diff) and r.diff >= 5]
+                bits += [f"{player_link(r.player)} takes wickets at {fmt(r.avg_away, 1)} {esc(tv['label'])} "
+                         f"({fmt(r.avg_home, 1)} at home)" for r in tv["bowl"].head(2).itertuples()
+                         if np.isfinite(r.diff) and r.diff >= 3]
+                worse = [f"{player_link(r.player)} ({fmt(r.avg_away, 1)} {esc(tv['label'])} v {fmt(r.avg_home, 1)})"
+                         for r in tv["bat"].tail(2).itertuples() if np.isfinite(r.diff) and r.diff < -10]
+                if bits:
+                    st.markdown("  \n".join(bits), unsafe_allow_html=True)
+                if worse:
+                    st.markdown("Struggle away: " + ", ".join(worse), unsafe_allow_html=True)
+                if not bits and not worse:
+                    st.caption("Nobody's record changes much away from home.")
+    # 23 · your note
+    note_key = f"fx_note_{i}_{_key(s['series'])}"
+    old = state.series_note(career, team, s["series"])
+    n1, n2 = st.columns([5, 1], vertical_alignment="bottom")
+    txt = n1.text_input("📝 Your note on this series", value=old, key=note_key, max_chars=300,
+                        placeholder="e.g. rest the strike bowler for the 3rd; try the new opener")
+    if n2.button("Save note", key=f"{note_key}_save", width="stretch", disabled=txt.strip() == old):
+        state.set_series_note(career, team, s["series"], txt)
+        st.toast("Note saved", icon="📝")
+        st.rerun()
+    # 24 · make it a goal
+    gl_ = state.goals(career)
+    if not any(g.get("kind") == "series" and g.get("team") == team and g.get("series") == s["series"] for g in gl_):
+        if st.button("🎯 Make winning this series a goal", key=f"fx_goal_{i}_{_key(s['series'])}"):
+            state.set_goals(career, gl_ + [dict(id=FX.new_id(), kind="series", team=team, series=s["series"])])
+            st.toast("Goal added: see the Goals tab", icon="🎯")
+            st.rerun()
+
+
+def series_review_box(match_ids) -> None:
+    """After a series: every player of yours with advice (use more, keep, think about dropping) against their own
+    usual level, and the series against your previous ones in the format."""
+    from ccstats import teamreport as TR
+    rv = TR.series_review(career, list(match_ids), team)
+    if not rv:
+        return
+    pl = rv["players"]
+    st.markdown(f"**🧑‍🏫 Series review: {esc(team)}**")
+    for verdict, icon in (("use more", "📈 Use more"), ("think about dropping", "📉 Think about dropping")):
+        g = pl[pl.verdict == verdict]
+        if len(g):
+            st.markdown(f"**{icon}:** " + "; ".join(f"{player_link(r.player)} ({esc(r.why)})" for r in g.itertuples()),
+                        unsafe_allow_html=True)
+    keep = pl[pl.verdict == "keep"]
+    if len(keep):
+        st.markdown("**✅ Keep:** " + ", ".join(player_link(p) for p in keep.player), unsafe_allow_html=True)
+    rows_ = [["This series", f"{rv['now']['won']}–{rv['now']['lost']}", fmt(rv["now"]["rpw_for"], 1),
+              fmt(rv["now"]["rpw_against"], 1)]]
+    rows_ += [[esc(e["label"]), f"{e['won']}–{e['lost']}", fmt(e["rpw_for"], 1), fmt(e["rpw_against"], 1)]
+              for e in reversed(rv["earlier"])]
+    if len(rows_) > 1:
+        html_table(rows_, [f"{rv['format']} series", "Won–lost", "Runs per wicket made", "Runs per wicket given"],
+                   numeric={2, 3}, raw={0})
+    st.caption("Use more: among your best by impact a match in this series and above their own usual level (all their "
+               f"earlier {rv['format']}s). Think about dropping: played twice or more, among your lowest and below their "
+               "usual level: a batter averaging under 20 here, or a bowler giving away a quarter more per wicket than "
+               "usual (or no wickets). A guide from the scorecards: you know their form in the nets.")
+
+
 def _key(text: str) -> str:
     import hashlib
     return hashlib.md5(f"{team}|{text}".encode()).hexdigest()[:10]
 
 
 def _save(rows: list[dict], message: str, undo: tuple | None = None) -> None:
+    """Save the schedule. undo: (team, what was done, the whole schedule before it), for the Undo button."""
     state.set_fixtures(career, rows)
     st.session_state.pop("fx_editing", None)
     st.session_state.pop("fx_confirm", None)
@@ -180,17 +395,21 @@ def _save(rows: list[dict], message: str, undo: tuple | None = None) -> None:
     st.rerun()
 
 
-def edit_panel() -> None:
-    """Everything you added for this team, one series or tournament a row: change it or delete it."""
-    items = FX.schedule_items(schedule, team)
+def undo_box(where: str) -> None:
+    """What was just deleted, changed or fixed for this team, with a button that puts the schedule back as it was."""
     undo = st.session_state.get("fx_undo")
     if undo and undo[0] == team:
         u1, u2 = st.columns([4, 1], vertical_alignment="center")
-        u1.info(f"Deleted: {undo[1]}.")
-        if u2.button("↩️ Undo", key="fx_undo_btn", width="stretch"):
+        u1.info(f"{undo[1]}.")
+        if u2.button("↩️ Undo", key=f"fx_undo_btn{where}", width="stretch"):
             st.session_state.pop("fx_undo", None)
-            back = [r for r in undo[2] if r not in schedule]
-            _save(schedule + back, "Put back")
+            _save(list(undo[2]), "Put back as it was")
+
+
+def edit_panel() -> None:
+    """Everything you added for this team, one series or tournament a row: change it or delete it."""
+    items = FX.schedule_items(schedule, team)
+    undo_box("")
     if not items:
         st.info(f"Nothing added for {team} yet. Add a series or tournament on the **Add matches** tab; it shows here "
                 "to change or delete.")
@@ -225,7 +444,7 @@ def edit_panel() -> None:
                 d1, d2, _ = st.columns([1.4, 1, 3])
                 if d1.button("Yes, delete it", type="primary", key=f"fx_yes_{k}", width="stretch"):
                     rows, gone = FX.delete_item(schedule, team, it["series"])
-                    _save(rows, f"Deleted {it['series']}", (team, it["series"], gone))
+                    _save(rows, f"Deleted {it['series']}", (team, f"Deleted: {it['series']}", schedule))
                 if d2.button("Cancel", key=f"fx_no_{k}", width="stretch"):
                     st.session_state.pop("fx_confirm", None)
                     st.rerun()
@@ -238,7 +457,8 @@ def edit_panel() -> None:
         if st.button("Delete the whole schedule", disabled=not sure, key="fx_del_all"):
             rows, gone = FX.delete_item(schedule, team)
             st.session_state.pop("fx_del_all_sure", None)
-            _save(rows, f"Deleted {poss(team)} schedule", (team, f"{poss(team)} whole schedule ({len(items)} items)", gone))
+            _save(rows, f"Deleted {poss(team)} schedule",
+                  (team, f"Deleted: {poss(team)} whole schedule ({len(items)} items)", schedule))
 
 
 def change_form(it: dict, k: str) -> None:
@@ -307,7 +527,8 @@ def change_form(it: dict, k: str) -> None:
             if any(r["team"] == team and r["series"] == new_rows[0]["series"] for r in others):
                 st.warning("You already have a series exactly like that in the schedule: change something, or delete one.")
             else:
-                _save(FX.replace_item(schedule, team, it["series"], new_rows), f"Changed to {new_rows[0]['series']}")
+                _save(FX.replace_item(schedule, team, it["series"], new_rows), f"Changed to {new_rows[0]['series']}",
+                      (team, f"Changed: {it['series']} is now {new_rows[0]['series']}", schedule))
         if s2.button("Cancel", key=f"fx_e_cancel_{k}", width="stretch"):
             st.session_state.pop("fx_editing", None)
             st.rerun()
@@ -333,6 +554,8 @@ with t_sched:
                   ("Next", esc(f"v {nx['opponent']}" if nx is not None and nx["opponent"] else
                                (stage_of(nx) or nx["series"].replace(FX.AUTO, "").split(" · ")[0]) if nx is not None
                                else "–"))])
+            undo_box("_s")
+            schedule_check()
             # ---------------------------------------------------------- 144 · next match
             if nx is not None:
                 with st.container(border=True):
@@ -345,11 +568,21 @@ with t_sched:
                         p = state.memo(WP.predict, career, pr, team, nopp, nven if nven in ("home", "away") else "neutral")
                         st.markdown(f"🔮 **{team} {p['win']:.0f}%**" + (f" · draw {p['draw']:.0f}%" if p["multi"] else "")
                                     + f" · **{nopp} {p['lose']:.0f}%**")
+                        their = PLN.form(career, nopp, nfmt)
+                        bits = ([f"Their last {len(their)}: {form_strip(their)}"] if their else []) + \
+                            ([rivalry_text(nopp, nfmt)] if rivalry_text(nopp, nfmt) else [])
+                        if bits:
+                            st.markdown(" · ".join(bits), unsafe_allow_html=True)
+                        for line in PLN.streaks(career, team, nopp, nfmt, nven):
+                            st.markdown(esc(line))
                         kb = FX.key_battle(career, team, nopp, nfmt)
                         if kb:
                             st.markdown("⚔️ Key battles: " + "; ".join(kb) + ".")
-                        if st.button(f"Full preview of {nopp} →", key="fx_go_preview"):
-                            go_preview(nopp, nfmt, nven)
+                    note = state.series_note(career, team, nx["series"])
+                    if note:
+                        st.markdown(f"📝 **Your note:** {esc(note)}")
+                    if nopp and st.button(f"Full preview of {nopp} →", key="fx_go_preview"):
+                        go_preview(nopp, nfmt, nven)
             preview_any()
             # ---------------------------------------------------------- 141 · tracker
             if sm["missing"]:
@@ -359,6 +592,10 @@ with t_sched:
             st.markdown("**Every fixture** · ✅ played · ⏭ next · ⏳ to come · ⚠️ no scorecard found · 🆕 auto-added")
             icon = {"played": "✅", "next": "⏭", "to come": "⏳", "no scorecard": "⚠️"}
             rows = []
+            ch_ = PLN.chances(career, tracked, team)
+            chance_of = {(r.series, int(r.no)): r for r in ch_.itertuples()}
+            c_ = colours()
+            form_of: dict = {}
             for _, r in mine_rows.iterrows():
                 res = ""
                 stage = stage_of(r)
@@ -367,8 +604,8 @@ with t_sched:
                 elif stage:
                     res = esc(f"{stage} to come")
                 elif r["kind"] == "tournament":
-                    res = esc(f"{int(r['games_left'])} more games planned" if pd.notna(r.get("games_left"))
-                              and r.get("games_left") else "games to come")
+                    gl_ = int(r["games_left"]) if pd.notna(r.get("games_left")) and r.get("games_left") else 0
+                    res = esc(f"{gl_} more game{'s' if gl_ != 1 else ''} planned" if gl_ else "games to come")
                 no = (f"{int(r['no'])}" if r["no"] else "") + (f" · {stage}" if stage else "")
                 if stage == "Final" and r["status"] == "played" and r["outcome"] == "W":
                     no += " 🏆"
@@ -383,8 +620,26 @@ with t_sched:
                 opp = r["opponent"] if r["kind"] == "tournament" else ""
                 if r["kind"] == "tournament" and stage and not opp and r["status"] != "played":
                     opp = "to be decided"
-                rows.append([icon.get(r["status"], ""), series, no, opp, when_text(r), res])
-            html_table(rows, ["", "Series", "Match", "Opponent", "When", "Result"], raw={1, 5})
+                chance, their_form = "", ""
+                k_ = (r["series"], int(r["no"] or 0))
+                if r["status"] in ("next", "to come") and k_ in chance_of:  # 3 · 13 · how hard, and their form
+                    x = chance_of[k_]
+                    tone = {"easy": c_["good"], "hard": c_["neg"]}.get(x.level, c_["ink2"])
+                    chance = (f"<span style='color:{tone}' title='win {x.win:.0f}%"
+                              + (f", draw {x.draw:.0f}%" if x.draw >= 0.5 else "") + f", lose {x.lose:.0f}%'>"
+                              f"{LEVEL_ICON[x.level]} {x.win:.0f}% · {x.level}</span>")
+                    fk = (x.opponent, x.format)
+                    if fk not in form_of:
+                        form_of[fk] = form_strip(PLN.form(career, x.opponent, x.format))
+                        rv = PLN.rivalry(career, team, x.opponent, x.format)
+                        if rv:
+                            form_of[fk] += (f" <span title='{'Bogey team' if rv['kind'] == 'bogey' else 'Favourite opponent'}: "
+                                            f"{esc(team)} are {rv['text']} against them'>"
+                                            f"{'👻' if rv['kind'] == 'bogey' else '😊'}</span>")
+                    their_form = form_of[fk]
+                rows.append([icon.get(r["status"], ""), series, no, opp, when_text(r), chance, their_form, res])
+            html_table(rows, ["", "Series", "Match", "Opponent", "When", "Your chance", "Their form", "Result"],
+                       raw={1, 5, 6, 7})
             st.caption("A match is ticked off when the game saves its scorecard: it's matched by the two teams, the "
                        "format and its place in the series, so dates don't need to be exact. Click a result for its "
                        "scorecard. Home and away come from the scorecards (the side named first is at home); 📍 marks a series "
@@ -392,7 +647,11 @@ with t_sched:
                        "🆕 Auto-added: played but not in your schedule (or more matches than you put in), so added "
                        "from the scorecards with the rest of its series. "
                        "In a tournament, the next knockout game (semi-final, final …) appears once you're through to "
-                       "it, against the winner of the other tie when that's been played.")
+                       "it, against the winner of the other tie when that's been played. Your chance: of winning that "
+                       "game (hover for the draw and defeat), 🟢 easy · ⚪ even · 🔴 hard. Their form: the opponent's "
+                       "last 5 in that format; 👻 a bogey team (you've won 30% or less against them), 😊 a favourite "
+                       "opponent (70% or more).")
+            season_outlook()
 # ================================================================ change or delete what you added
 with t_edit:
     with safe_section("change or delete"):
@@ -583,6 +842,36 @@ with t_series, safe_section("series"):
                                                              list(o["scorelines"].items())[:4])
                        + ". Each game is worked out from the Elo ratings, form, head to head and venue (see Opponent "
                        "preview); every combination of the games left is counted.")
+            with st.expander("More: past series, conditions, who travels well, records in reach, your note"):
+                series_extras(s, f"l{live.index(s)}")
+    # ---------------------------------------------------------- 19 · the way through a tournament
+    for j, tu in enumerate(PLN.tournaments_under_way(career, tracked, team)):
+        from ccstats import odds as OD
+        with st.container(border=True):
+            name = tu["series"].replace(FX.AUTO, "").split(" · ")[0]
+            st.markdown(f"**🏆 Under way: {esc(name)}** · {tu['won']}–{tu['lost']} from {tu['played']} game"
+                        f"{'s' if tu['played'] != 1 else ''}"
+                        + (f" · next: {esc(tu['next_stage'])}" + (f" v {esc(tu['next_opponent'])}" if tu["next_opponent"]
+                                                                   else "") if tu["next_stage"] else ""))
+            od = state.memo(OD.season_odds, career, tu["event"], tu["season"])
+            tb = od["table"]
+            mine_t = tb[tb.team == team] if len(tb) else tb
+            if od["state"] == "open" and len(mine_t):
+                r_ = mine_t.iloc[0]
+                grp = tb[tb.group == r_.group].reset_index(drop=True)
+                pos = int(grp.index[grp.team == team][0]) + 1
+                bits = [f"{ordinal(pos)} in "
+                        + (f"{esc(r_.group)}" if od["groups"] > 1 else "the table")
+                        + f" with {r_.points:g} points, {int(r_.left)} league game{'s' if r_.left != 1 else ''} left"]
+                if np.isfinite(r_.playoffs):
+                    bits.append(f"chance of the knockouts **{r_.playoffs:.0f}%**")
+                if np.isfinite(r_.title):
+                    bits.append(f"of winning it **{r_.title:.0f}%**")
+                st.markdown(" · ".join(bits))
+                st.caption("The rest of the league played out 4,000 times from the team ratings (as on the Team "
+                           "planner page), with the competition's own points and knockout format.")
+            elif tu["next_stage"]:
+                st.caption(f"Through to the {tu['next_stage'].lower()}: the league is over.")
     # ---------------------------------------------------------- 145 · series preview · 146 · picks
     for i, s in enumerate(coming[:3]):
         with st.expander(f"🔮 Preview: {s['series']}", expanded=i == 0):
@@ -617,17 +906,35 @@ with t_series, safe_section("series"):
                             + (f"**Think again:** {', '.join(dict.fromkeys(doubt))}." if doubt else ""))
             elif not pb.empty or not pw_.empty:
                 st.caption("Nobody in your squad stands out against them either way yet.")
+            st.divider()
+            series_extras(s, f"c{i}")
             if st.button(f"Full preview of {s['opponent']} →", key=f"fx_prev_{i}"):
                 go_preview(s["opponent"], s["format"], s["venue"])
     # ---------------------------------------------------------- 152 · series reports
     if done:
         st.markdown("### Series reports")
+        fc_ = PLN.forecast_check(tracked, team, state.forecasts(career))
+        if fc_:
+            right_, exact_ = sum(x["right"] for x in fc_), sum(x["exact"] for x in fc_)
+            st.markdown(f"**🔮 Forecasts made before ball one:** the favourite was right in {right_} of {len(fc_)} "
+                        f"series" + (f", and the exact score came up {exact_} time{'s' if exact_ != 1 else ''}" if exact_
+                                     else "") + ".")
+        fc_by = {x["series"]: x for x in fc_}
     for s in reversed(done):
         with st.expander(f"📋 {s['series']} · {s['won']}–{s['lost']}" + (f" ({s['drawn']} D)" if s["drawn"] else "")):
             rep = FX.series_report(career, s, team)
             if not rep:
                 continue
             st.markdown(f"**{rep['result']}** · {rep['first']:%d %b} to {rep['last']:%d %b %Y}")
+            x = fc_by.get(s["series"])
+            if x:
+                f_ = x["forecast"]
+                st.markdown(f"🔮 Forecast before ball one ({f_.get('made', '')}): {esc(team)} {f_['win']:.0f}%"
+                            + (f" · level {f_['draw']:.0f}%" if f_.get("draw", 0) >= 0.5 else "")
+                            + f" · {esc(s['opponent'])} {f_['lose']:.0f}%"
+                            + (f", likeliest {f_['likely']}" if f_.get("likely") else "")
+                            + f". Result {x['result']}: " + ("✅ the favourite won" if x["right"] else "❌ an upset")
+                            + (", exact score ✓" if x["exact"] else "") + ".")
             if rep["pos"] is not None:
                 p = rep["pos"]
                 st.markdown(f"🏅 **Player of the Series: {player_link(p.player)}** ({esc(p.team)}) · {int(p.runs)} runs, "
@@ -651,6 +958,7 @@ with t_series, safe_section("series"):
                 st.markdown(f"🎯 {esc(x)}")
             st.markdown("Matches: " + " · ".join(match_link(r.match_id, f"{r.date:%d %b}") for r in rep["matches"].itertuples()),
                         unsafe_allow_html=True)
+            series_review_box(rep["matches"].match_id)
 
 # ================================================================ 143 · year calendar
 with t_cal, safe_section("calendar"):
@@ -746,6 +1054,23 @@ with t_goals, safe_section("goals"):
                     st.rerun()
     else:
         st.info("No goals yet. Add one below and watch its progress bar move with every match.")
+    # ---------------------------------------------------------- 24 · ready-made goals from your schedule
+    sugg = PLN.suggested_goals(career, tracked, team, gl)
+    if sugg:
+        with st.container(border=True):
+            st.markdown("**💡 Suggested goals** · from your schedule, one click to add")
+            for j, g in enumerate(sugg[:6]):
+                a_, b_ = st.columns([5, 1], vertical_alignment="center")
+                a_.markdown(esc(FX.goal_label(g)))
+                if b_.button("Add", key=f"fx_sugg_{j}_{_key(FX.goal_label(g))}", width="stretch"):
+                    state.set_goals(career, gl + [dict(g, id=FX.new_id())])
+                    st.toast("Goal added", icon="🎯")
+                    st.rerun()
+            if len(sugg) > 1:
+                if st.button(f"Add all {len(sugg[:6])}", key="fx_sugg_all"):
+                    state.set_goals(career, gl + [dict(g, id=FX.new_id()) for g in sugg[:6]])
+                    st.toast(f"{len(sugg[:6])} goals added", icon="🎯")
+                    st.rerun()
     with st.container(border=True):
         st.markdown("**Add a goal**")
         gk = st.selectbox("Goal", list(FX.GOAL_KINDS), format_func=FX.GOAL_KINDS.get, key="fx_goal_kind")

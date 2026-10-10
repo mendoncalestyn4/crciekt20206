@@ -46,11 +46,22 @@ def level_of(win: float, lose: float) -> str:
     return "easy" if share >= EASY else "hard" if share <= HARD else "even"
 
 
+def when_of(r) -> str:
+    """'12 Jun' for a date you gave, 'about 12 Jun' worked out from a match near it, else 'Jun 2026'."""
+    d = r.get("date") if isinstance(r.get("date"), str) else ""
+    if d:
+        return f"{pd.Timestamp(d):%d %b}"
+    if str(r.get("estimated")) == "True" and pd.notna(r.get("anchor")):
+        return f"about {pd.Timestamp(r['anchor']):%d %b}"
+    return FX.month_label(r.get("month") or "") or (f"{pd.Timestamp(r['anchor']):%b %Y}" if pd.notna(r.get("anchor"))
+                                                     and pd.Timestamp(r["anchor"]).year < 2100 else "date to come")
+
+
 def chances(career, tracked: pd.DataFrame, team: str) -> pd.DataFrame:
     """The team's fixtures still to come with a known opponent, in order, with the chance of each result and how
     hard it looks: easy (you win 60% or more of the decided results), even, or hard (40% or less)."""
     from . import winprob as WP
-    cols = ["series", "opponent", "format", "no", "venue", "anchor", "status", "win", "draw", "lose", "level"]
+    cols = ["series", "opponent", "format", "no", "venue", "anchor", "status", "win", "draw", "lose", "level", "when"]
     if tracked is None or tracked.empty:
         return pd.DataFrame(columns=cols)
     t = tracked[(tracked.team == team) & tracked.status.isin(["next", "to come"])
@@ -67,7 +78,7 @@ def chances(career, tracked: pd.DataFrame, team: str) -> pd.DataFrame:
             continue
         rows.append(dict(series=r["series"], opponent=r["opponent"], format=r["format"], no=r["no"], venue=r["venue"],
                          anchor=r["anchor"], status=r["status"], win=p["win"], draw=p["draw"], lose=p["lose"],
-                         level=level_of(p["win"], p["lose"])))
+                         level=level_of(p["win"], p["lose"]), when=when_of(r)))
     return pd.DataFrame(rows, columns=cols)
 
 
@@ -484,4 +495,26 @@ def forecast_check(tracked: pd.DataFrame, team: str, saved: dict) -> list[dict]:
         res = "you" if s["won"] > s["lost"] else "them" if s["lost"] > s["won"] else "level"
         out.append(dict(series=s["series"], forecast=f, result=f"{s['won']}–{s['lost']}", favourite=fav, winner=res,
                         right=fav == res, exact=f.get("likely") == f"{s['won']}–{s['lost']}"))
+    return out
+
+
+# --------------------------------------------------------------------------- 19 · the way through a tournament
+def tournaments_under_way(career, tracked: pd.DataFrame, team: str) -> list[dict]:
+    """The team's tournaments in the schedule that have started and aren't over: which competition and season
+    (from the games played), how many played, and the next knockout game if they're through to one."""
+    out = []
+    if tracked is None or tracked.empty:
+        return out
+    t = tracked[(tracked.team == team) & (tracked.kind == "tournament")]
+    m = career.matches.set_index("match_id")
+    for series, g in t.groupby("series", sort=False):
+        played = g[(g.status == "played") & g.match_id.isin(m.index)]
+        left = g[g.status.isin(["next", "to come"])]
+        if played.empty or left.empty:
+            continue
+        last = m.loc[played.match_id.iloc[-1]]
+        stage = left.stage.iloc[0] if isinstance(left.stage.iloc[0], str) else ""
+        out.append(dict(series=series, event=last.event, season=last.season, played=len(played),
+                        won=int((played.outcome == "W").sum()), lost=int((played.outcome == "L").sum()),
+                        next_stage=stage, next_opponent=left.opponent.iloc[0] or ""))
     return out

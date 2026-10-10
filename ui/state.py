@@ -321,6 +321,38 @@ def set_fixtures(c: Career, rows: list) -> None:
     _save_list(c, "fixtures", rows)
 
 
+def forecasts(c: Career | None) -> dict:
+    """The forecasts made before each series started (Fixtures), kept so they can be checked afterwards."""
+    if c is None:
+        return {}
+    s = settings_of(c.name) if c.name in career_names() else None
+    return dict(s.forecasts) if s is not None else dict(st.session_state.get(f"forecasts::{c.name}", {}))
+
+
+def add_forecasts(c: Career, new: dict) -> None:
+    """Keep these forecasts (made once: one already kept for a series is never replaced)."""
+    if not new:
+        return
+    if c.name in career_names():
+        s = settings_of(c.name)
+        if s is not None:
+            s.forecasts = {**new, **dict(s.forecasts)}
+            store().save_settings(s)
+            return
+    d = st.session_state.setdefault(f"forecasts::{c.name}", {})
+    for k, v in new.items():
+        d.setdefault(k, v)
+
+
+def series_note(c: Career | None, team: str, series: str) -> str:
+    """Your note on a series in the schedule (kept with your match notes)."""
+    return notes(c).get(f"series::{team}::{series}", "")
+
+
+def set_series_note(c: Career, team: str, series: str, text: str) -> None:
+    set_note(c, f"series::{team}::{series}", text)
+
+
 def goals(c: Career | None) -> list:
     return _settings_list(c, "goals")
 

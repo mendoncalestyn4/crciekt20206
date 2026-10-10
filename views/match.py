@@ -8,7 +8,8 @@ from ccstats.competitions import shown_name
 from ccstats.parser import balls_to_overs
 from ui import state
 from ui.charts import CONFIG, fmt, win_chance_chart, wicket_timeline
-from ui.theme import chart_note, explain_list, html_table, match_link, page_header, safe_section, scoreboard
+from ui.theme import (chart_note, esc, explain_list, html_table, match_link, page_header, player_link, safe_section,
+                      scoreboard)
 from ccstats.stats import poss
 
 career = state.current()
@@ -93,6 +94,25 @@ if bool(row.get("rain", False)):
     st.caption(f"🌧️ {why} Games like this aren't used for par scores, \"Is this total enough?\", lowest total defended "
                "or the win chances of other games; the players' runs and wickets count as normal.")
 st.write("")
+
+# ---------------------------------------------------------------- your side's best and worst in this match
+with safe_section("best and worst"):
+    from ccstats import teamreport as TR
+    for side in [t for t in state.my_teams(career) if t in (row.home, row.away)]:
+        card = state.memo(TR.match_card, career, mid, side)
+        if not card:
+            continue
+        with st.container(border=True):
+            st.markdown(f"**⭐ {esc(side)}: best and worst in this match**")
+            b1, b2 = st.columns(2, gap="medium")
+            b1.markdown("**Best**  \n" + "  \n".join(f"{['🥇', '🥈', '🥉'][i]} {player_link(p)} · {esc(fig)}"
+                                                    for i, (p, fig, _) in enumerate(card["best"])),
+                        unsafe_allow_html=True)
+            b2.markdown("**Did least**  \n" + ("  \n".join(f"🔻 {player_link(p)} · {esc(fig)}" for p, fig, _ in card["worst"])
+                                                or "Everyone who batted or bowled chipped in."), unsafe_allow_html=True)
+            st.caption("By match impact (as on the Player page): runs, with a strike-rate part in white-ball cricket; "
+                       "wickets worth the section's runs per wicket, with an economy part; a little for catches. Did "
+                       "least: of those who batted in the top seven or bowled.")
 
 # ---------------------------------------------------------------- 116 · match journal
 with safe_section("match journal"):
