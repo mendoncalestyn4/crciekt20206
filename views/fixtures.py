@@ -261,7 +261,7 @@ def season_outlook() -> None:
         st.caption("Heading for: your record so far plus each game left counted by its chance (so it can say 9–5 "
                    "when every game left is close). Likely wins: 8 times in 10 the season ends inside this range."
                    + (f" {pr['unknown']} tournament game{'s' if pr['unknown'] != 1 else ''} with no opponent yet "
-                      "aren't counted." if pr["unknown"] else ""))
+                      + ("isn't" if pr["unknown"] == 1 else "aren't") + " counted." if pr["unknown"] else ""))
 
 
 def series_extras(s: dict, i: str) -> None:
