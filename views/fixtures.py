@@ -9,7 +9,7 @@ from ccstats import fixtures as FX
 from ccstats import planning as PLN
 from ccstats import seasonal as SN
 from ui import calendar_view as CV
-from ui import state
+from ui import logos, state
 from ui.charts import fmt
 from ui.theme import (chart_note, colours, esc, form_strip, html_table, kpis, match_link, page_header, player_link,
                       safe_section)
@@ -560,8 +560,10 @@ with t_sched:
             if nx is not None:
                 with st.container(border=True):
                     nfmt, nopp, nven = nx["format"], nx["opponent"], nx["venue"]
+                    if nopp:
+                        logos.heading(nopp, teams=(team, nopp))
                     st.markdown(f"**⏭ Next match:** {esc(next_title(nx))} · "
-                                + (f"{venue_word(nven)} · " if venue_word(nven) else "") + when_text(nx))
+                                + (f"{venue_word(nven)} · " if venue_word(nven) else "") + when_text(nx), unsafe_allow_html=True)
                     if nopp:
                         pr = state.memo(FX.format_ids, career, team, nfmt)
                         from ccstats import winprob as WP
@@ -610,7 +612,8 @@ with t_sched:
                 if stage == "Final" and r["status"] == "played" and r["outcome"] == "W":
                     no += " 🏆"
                 is_auto = str(r.get("auto")) == "True"
-                series = (esc(r["series"].replace(FX.AUTO, "")) + " <span title='auto-added: not in your schedule, so "
+                series = (logos.team(r["opponent"], 28) if r["kind"] == "match" and r["opponent"] else "") + \
+                    (esc(r["series"].replace(FX.AUTO, "")) + " <span title='auto-added: not in your schedule, so "
                           "added from the scorecards'>🆕</span>" if is_auto else esc(r["series"]))
                 if str(r.get("venue_fixed")) == "True":
                     planned, real = venue_word(r.get("venue_planned", "")), venue_word(r["venue"])
@@ -831,6 +834,7 @@ with t_series, safe_section("series"):
     # ---------------------------------------------------------- 148 · live series situation
     for s in live:
         with st.container(border=True):
+            logos.heading(s["opponent"], teams=(team, s["opponent"]))
             o = FX.series_outlook(career, team, s)
             lead = ("level" if s["won"] == s["lost"] else f"{team} lead" if s["won"] > s["lost"] else f"{s['opponent']} lead")
             st.markdown(f"**🔴 Under way: {esc(s['series'])}** · {lead} {s['won']}–{s['lost']}"
@@ -875,6 +879,7 @@ with t_series, safe_section("series"):
     # ---------------------------------------------------------- 145 · series preview · 146 · picks
     for i, s in enumerate(coming[:3]):
         with st.expander(f"🔮 Preview: {s['series']}", expanded=i == 0):
+            logos.heading(s["opponent"], teams=(team, s["opponent"]))
             o = FX.series_outlook(career, team, s)
             st.markdown(f"**Before ball one:** {team} win the series **{o['odds']['A']:.0f}%**"
                         + (f" · drawn {o['odds']['level']:.0f}%" if o["odds"]["level"] >= 0.5 else "")

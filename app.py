@@ -119,6 +119,11 @@ with st.sidebar:
                                 "Saved with this career.")
         search_box(career)
     watch_status()
+    try:
+        from ui import logos as _logos
+        _logos.settings_box()
+    except Exception:  # noqa: BLE001 - the logo settings must never stop the site
+        pass
 
 
 

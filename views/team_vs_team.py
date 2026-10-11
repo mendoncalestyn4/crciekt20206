@@ -6,7 +6,7 @@ import streamlit as st
 from ccstats import analysis as A
 from ccstats import teamplay as TP
 from ccstats.stats import WICKET_VALUE, Scope
-from ui import state
+from ui import logos, state
 from ui.theme import counted
 from ui.charts import player_profile, CONFIG, _axis, _layout, fmt, label_annotations
 from ui.theme import chart_note, colours, explain_list, page_header
@@ -152,7 +152,8 @@ def tile(col, team, r, other, colour):
              else f"<div><span>Drawn</span><strong>{int(r.drawn)}</strong></div>")
     sub = games_of(team, venue_a if team == a else venue_b, b if team == a else a)
     col.markdown(
-        f"<div class='kpi' style='border-top:3px solid {colour}'><span style='font-size:22px;letter-spacing:.02em;color:{c['ink']}'>{team}</span>"
+        f"<div class='kpi' style='border-top:3px solid {colour}'><span style='font-size:22px;letter-spacing:.02em;color:{c['ink']}'>"
+        f"{logos.team(team, 50)}{team}</span>"
         f"<span style='display:block;font-size:13px;color:{c['muted']};margin-top:2px'>{sub}</span>"
         f"<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px 12px;margin-top:8px'>"
         f"<div><span>Played</span><strong>{int(r.played)}</strong></div>"

@@ -8,7 +8,7 @@ from ccstats import players as PL
 from ccstats import seasonal as SN
 from ccstats import tables as T
 from ccstats import teamplay as TP
-from ui import state
+from ui import logos, state
 from ui.theme import counted
 from ui.charts import odds_chart
 from ui.theme import chart_note, html_table, page_header, safe_section
@@ -33,6 +33,7 @@ state.recall("cp2_season", "season", seasons)
 season = c2.selectbox("Season", seasons, key="cp2_season", on_change=state.remember("cp2_season", "season"))
 ids = pd.Index(m[(m.event == event) & (m.season == season)].match_id)
 inn = career.innings[career.innings.match_id.isin(ids)]
+logos.heading(event, season, comp_name=event)
 
 
 def score(mid, team):
@@ -62,6 +63,10 @@ if leagues:
             if len(leagues) > 1 or label not in ("League", "Every team"):
                 st.markdown(f"**{label}**")
             cols = {"team": "Team", "played": "P", "won": "W", "lost": "L"}
+            pics = [logos.uri(x, 64) for x in t.team]
+            if any(pics):  # each side's emblem, when your editor files have one (a blank for the rest)
+                t = t.assign(logo=[x or logos.BLANK for x in pics])
+                cols = {"logo": " ", **cols}
             if t.drawn.any() or not limited:
                 cols["drawn"] = "D"
             if t.tied.any():
@@ -99,8 +104,10 @@ if leagues:
                     cols["rr_for"] = "RR for"
                     cols["rr_against"] = "RR against"
                 cols["moved"] = "Move"
-            st.dataframe(t[list(cols)].rename(columns=cols), width="stretch",
-                         column_config={"NRR": st.column_config.NumberColumn(format="%+.3f"),
+            tall = {"row_height": 58, "height": len(t) * 58 + 40} if "logo" in cols else {}  # every team, no scrolling
+            st.dataframe(t[list(cols)].rename(columns=cols), width="stretch", **tall,
+                         column_config={" ": st.column_config.ImageColumn(" ", width=60),
+                                        "NRR": st.column_config.NumberColumn(format="%+.3f"),
                                         "Pts": st.column_config.NumberColumn(format="%d"),
                                         "Runs/wkt": st.column_config.NumberColumn(format="%.2f"),
                                         "Conceded/wkt": st.column_config.NumberColumn(format="%.2f"),

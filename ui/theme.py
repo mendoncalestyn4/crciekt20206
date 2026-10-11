@@ -63,6 +63,15 @@ CSS = """
 [data-testid="stHeader"] { background: transparent; }
 .block-container { padding-top: 2.4rem; max-width: 1300px; }
 
+/* ---------- logos ---------- */
+img.logo { vertical-align: middle; object-fit: contain; display: inline-block; margin: 0 6px 2px 0; }
+.logohead { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 4px 0 12px; font-size: 1.4rem; }
+.logohead img.logo { margin: 0; }
+.logohead .vs { color: {muted}; font-size: .95rem; margin: 0 6px; }
+.logohead .sub { color: {muted}; font-size: .9rem; margin-left: 6px; }
+.logohead .mine { display: inline-flex; align-items: center; gap: 10px; margin-right: 18px; }
+.board .line img.logo { margin-right: 10px; }
+
 /* ---------- type ---------- */
 h1, h2, h3 { font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif !important; letter-spacing: .01em; }
 h1 { text-transform: uppercase; font-size: clamp(2.3rem, 4.6vw, 3.6rem) !important; line-height: .95 !important; }
@@ -251,10 +260,12 @@ def kpis(items: list[tuple[str, str]]) -> None:
 
 
 def scoreboard(label: str, home: str, home_score: str, away: str, away_score: str, result: str) -> None:
+    from ui import logos
+    hl, al = logos.team(home, 48), logos.team(away, 48)
     st.markdown(
         f'<div class="board"><div class="label">{label}</div>'
-        f'<div class="line"><span>{home}</span><span class="score">{home_score}</span><span class="vs">v</span>'
-        f'<span>{away}</span><span class="score">{away_score}</span></div><div class="res">{result}</div></div>',
+        f'<div class="line"><span>{hl}{home}</span><span class="score">{home_score}</span><span class="vs">v</span>'
+        f'<span>{al}{away}</span><span class="score">{away_score}</span></div><div class="res">{result}</div></div>',
         unsafe_allow_html=True)
 
 

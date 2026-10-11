@@ -140,6 +140,11 @@ if career is None:
 page_header("Career", career.name,
             "International matches are grouped by format (all Tests, all ODIs, all T20Is, World Cups included); "
             "everything else, like IPL, T20 Blast and each County Championship division, is its own section.")
+try:
+    from ui import logos as _logos
+    _logos.my_teams_row(state.my_teams(career, unplayed=True))
+except Exception:  # noqa: BLE001 - a logo must never stop the page
+    pass
 
 report = st.session_state.pop("last_report", None)
 if report:

@@ -9,7 +9,7 @@ from ccstats import preview as PV
 from ccstats import seasonal as SN
 from ccstats import teamplay as TP
 from ccstats import winprob as WP
-from ui import state
+from ui import logos, state
 from ui.theme import counted
 from ccstats.stats import ordinal
 from ui.charts import _n, pct, CONFIG, bars, fmt, say, signed
@@ -161,6 +161,7 @@ if mine and mine not in fmt_teams:
     st.caption(f"ℹ️ {mine} haven't played {ONE.get(fmt_words, 'here')} yet in this career: your history against "
                f"{opp}, side by side and your best XI fill in after your first. Their side of the preview is below.")
 
+logos.heading(opp, where_note, teams=(mine, opp) if mine else (opp,))
 pv = state.memo(E.opponent_preview, career, ids, opp)
 tm = pv["matches"]
 rec = A.team_record(tm)

@@ -9,7 +9,7 @@ from ccstats import teamplay as TP
 from ccstats import winprob as WP
 from ui.theme import colours
 from ccstats.stats import Scope, bars_for, kind_of, ordinal
-from ui import state
+from ui import logos, state
 from ui.theme import counted
 from ui.xi import best_xi_cached, team_sheet
 from ui.charts import _n, signed, pct, CONFIG, bars, fmt, race_chart, say
@@ -65,6 +65,7 @@ if venue != "all":
     tm = tm[tm.venue == venue]
 sk = A.streaks(list(tm.outcome))
 cur = sk["current"]
+logos.heading(team, f"{section}" + ("" if season == "All seasons" else f" · {season}"), teams=(team,))
 kpis([("Played", f"{int(me.played)}"), ("Won–Lost", f"{int(me.won)}–{int(me.lost)}"), ("Win %", f"{me.win_pct:.0f}%")]
      + ([("Net run rate", f"{me.nrr:+.2f}")] if limited else [("Drawn", f"{int(me.drawn)}")])
      + [("Current run", f"{cur[1]} {dict(W='won', L='lost', D='drawn', T='tied', NR='no result').get(cur[0], '')}" if cur[0] else "–"),
