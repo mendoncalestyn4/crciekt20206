@@ -612,7 +612,7 @@ with t_sched:
                 if stage == "Final" and r["status"] == "played" and r["outcome"] == "W":
                     no += " 🏆"
                 is_auto = str(r.get("auto")) == "True"
-                series = (logos.team(r["opponent"], 28) if r["kind"] == "match" and r["opponent"] else "") + \
+                series = (logos.team(r["opponent"], 36) if r["kind"] == "match" and r["opponent"] else "") + \
                     (esc(r["series"].replace(FX.AUTO, "")) + " <span title='auto-added: not in your schedule, so "
                           "added from the scorecards'>🆕</span>" if is_auto else esc(r["series"]))
                 if str(r.get("venue_fixed")) == "True":

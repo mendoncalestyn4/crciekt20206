@@ -9,6 +9,7 @@ from ccstats import preview as PV
 from ccstats import seasonal as SN
 from ccstats import teamplay as TP
 from ccstats import winprob as WP
+from ccstats.competitions import with_stage
 from ui import logos, state
 from ui.theme import counted
 from ccstats.stats import ordinal
@@ -259,9 +260,8 @@ with tab_h2h:
                         f"<div class='side'><span>{esc(t)}</span><b>{esc(s['score'])}</b></div>"
                         f"<div class='who'>🏏 {esc(s['top_bat'])} · 🎯 {esc(s['top_bowl'])}</div>"
                         for t, s in cd["sides"].items())
-                    stage = f" · {esc(cd['stage'])}" if cd["stage"] else ""
                     potm = f"<div class='who'>⭐ Player of the Match: {esc(cd['potm'])}</div>" if cd["potm"] else ""
-                    cards.append(f"<div class='mcard'><div class='top'><span>{cd['date']:%d %b %Y} · {esc(cd['event'])}{stage}"
+                    cards.append(f"<div class='mcard'><div class='top'><span>{cd['date']:%d %b %Y} · {esc(with_stage(cd['event'], cd['stage']))}"
                                  f"</span>{match_link(cd['match_id'], 'Scorecard →')}</div>{sides}{potm}"
                                  f"<div class='story'>{esc(cd['story'])}</div></div>")
                 st.markdown("<div class='mcards'>" + "".join(cards) + "</div>", unsafe_allow_html=True)

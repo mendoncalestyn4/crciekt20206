@@ -359,6 +359,13 @@ def shown_name(section: str, event: str) -> str:
     return section if event in BILATERAL_SECTION.values() else event
 
 
+def with_stage(name: str, stage) -> str:
+    """'Indian Premier League · Final'. A stage the name already says isn't said twice: a County Championship game's
+    stage is its division, and the name is 'County Championship · Division 1' already."""
+    stage = "" if stage is None or stage != stage else str(stage)  # (stage != stage: a missing value, NaN)
+    return f"{name} · {stage}" if stage and stage not in name.split(" · ") else name
+
+
 def section_of(competition: str, stage: str, fmt: str = "", level: str = "") -> str:
     """The unit stats are kept within.  International matches are pooled by
     format: every Test (bilateral series and the World Test Championship Final)

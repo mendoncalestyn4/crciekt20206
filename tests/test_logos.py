@@ -3,6 +3,8 @@ say it, and nothing breaks without them."""
 import base64
 import io
 
+import numpy as np
+
 from PIL import Image
 
 from ccstats import logos as LG
@@ -72,51 +74,118 @@ def test_without_the_list_the_games_own_file_names_work(tmp_path):
     assert b.comp("Indian Premier League").name == "india20overleaguecl.png"
 
 
-def test_dark_logos_get_a_light_coin_and_keep_their_size(tmp_path):
+def decode(uri):
+    return Image.open(io.BytesIO(base64.b64decode(uri.split(",", 1)[1]))).convert("RGBA")
+
+
+def seen(uri):
+    """The picture as it looks on the dark page."""
+    im = decode(uri)
+    page = Image.new("RGBA", im.size, (10, 19, 34, 255))
+    page.alpha_composite(im)
+    return page.convert("RGB")
+
+
+def test_a_logo_with_no_look_picked_is_shown_as_it_is(tmp_path):
+    """Logos outside the IPL, the Hundred, the Big Bash and internationals get nothing added: no line, no white."""
     g = game_folder(tmp_path)
-    sizes = {}
-    for name, coin in (("warwickshireem.png", True), ("sydneygreenem.png", False)):
-        p = g / "editor" / "emblems" / name
-        uri, dark, px = LG._badge(str(p), p.stat().st_mtime_ns, 24, False)
-        assert dark is coin
-        im = Image.open(io.BytesIO(base64.b64decode(uri.split(",", 1)[1]))).convert("RGBA")
-        assert im.size == (px * 2, px * 2)
-        # the logo itself: its colour's pixels, as wide as asked for (48 = 24 at twice the size) with or without a coin
-        logo_colour = (10, 20, 80) if coin else (40, 220, 60)
-        cols = [x for x in range(im.width) if any(im.getpixel((x, y))[:3] == logo_colour for y in range(im.height))]
-        sizes[name] = max(cols) - min(cols) + 1
-        if coin:  # a coin round it: light, just outside the logo, and the picture is bigger to hold it
-            assert px > 24
-            assert im.getpixel((min(cols) - 2, im.height // 2))[3] == 255
-        else:
-            assert px == 24
-    assert sizes["warwickshireem.png"] == sizes["sydneygreenem.png"] == 48
-    # in a table every picture has the same frame, so the logos come out the same size
-    p = g / "editor" / "emblems" / "sydneygreenem.png"
-    assert LG._badge(str(p), p.stat().st_mtime_ns, 24, True)[2] == LG._badge(
-        str(g / "editor" / "emblems" / "warwickshireem.png"), (g / "editor" / "emblems" / "warwickshireem.png").stat().st_mtime_ns,
-        24, True)[2]
-    assert LG.badge(None) == "" and LG.badge(tmp_path / "missing.png") == ""
+    p = g / "editor" / "emblems" / "warwickshireem.png"
+    uri, px = LG.picture(p, 24)
+    im = decode(uri)
+    assert im.size == (px * 2, px * 2)
+    px_ = np.array(im).reshape(-1, 4)
+    colours = {tuple(int(v) for v in c) for c in px_[px_[:, 3] > 0]}
+    assert colours == {(10, 20, 80, 255)}  # only the logo's own colour: nothing light round it
+    cols = [x for x in range(im.width) if any(im.getpixel((x, y))[3] for y in range(im.height))]
+    assert max(cols) - min(cols) + 1 == 48  # 24 across, drawn at twice the size
+    assert LG.badge(None) == "" and LG.badge(tmp_path / "missing.png") == "" and LG.picture(None) == ("", 0)
 
 
-def test_a_see_through_middle_goes_on_the_light_coin(tmp_path):
-    """A logo with an enclosed see-through area (a ring, the middle of a shield) shows the page through it; on the
-    coin that middle shows light, as in the game. The logo itself is unchanged and keeps its size."""
+def test_every_look_has_the_same_frame_so_logos_line_up(tmp_path):
+    g = game_folder(tmp_path)
+    p = g / "editor" / "emblems" / "warwickshireem.png"
+    assert len({LG.picture(p, 36, look)[1] for look in ("plain", "inside", "whole", "line", "C", "D", "nonsense")}) == 1
+
+
+def test_the_picked_looks_go_to_the_right_logos(tmp_path):
+    """A look is picked for a team or competition by name and follows its picture; everyone else is plain."""
+    g = game_folder(tmp_path)
+    em, cl = g / "editor" / "emblems", g / "editor" / "complogos"
+    png(em / "mumbaiem2.png", (0, 90, 200, 255))
+    png(cl / "internationaltestmatchcl.png", (60, 60, 60, 255))
+    with open(g / "editor" / "editemblems.txt", "a", encoding="utf-8") as f:
+        f.write("# === India ===\nMumbai ; myownmumbai\n")
+    with open(g / "editor" / "editcomplogos.txt", "a", encoding="utf-8") as f:
+        f.write("International : Test Match ; internationaltestmatchcl\n")
+    b = LG.LogoBook(LG.find([g]))
+    assert b.style(b.team("Sydney Thunder")) == b.style(b.team("Sydney Green")) == LG.STYLES["Sydney Thunder"] == "inside"
+    assert b.style(b.comp("Tests (bilateral series)")) == b.style(b.comp("World Test Championship Final")) == "C"
+    assert b.style(b.team("Warwickshire")) == "plain"  # no look picked
+    assert b.style(None) == "plain"
+
+
+def test_dark_parts_made_visible_and_inside_as_in_the_game(tmp_path):
+    """C: navy writing on the page turns a light tint of its colour. inside: a gap cut into the logo shows white,
+    as on the game's page, while the page round the logo stays dark."""
     from PIL import ImageDraw
-    ring = Image.new("RGBA", (100, 100), (0, 0, 0, 0))
-    ImageDraw.Draw(ring).ellipse([5, 5, 95, 95], outline=(230, 180, 20, 255), width=14)  # bright gold ring, hollow
-    assert LG.has_holes(ring)
-    dot = Image.new("RGBA", (100, 100), (0, 0, 0, 0))
-    ImageDraw.Draw(dot).ellipse([5, 5, 95, 95], fill=(230, 180, 20, 255))  # the same, filled in: no middle
-    assert not LG.has_holes(dot)
-    o = Image.new("RGBA", (100, 100), (0, 0, 0, 0))
-    ImageDraw.Draw(o).rectangle([0, 0, 99, 99], fill=(230, 180, 20, 255))
-    ImageDraw.Draw(o).rectangle([48, 48, 50, 50], fill=(0, 0, 0, 0))  # a tiny gap, like inside an 'O': not a middle
-    assert not LG.has_holes(o)
-    p = tmp_path / "ring.png"
-    ring.save(p)
-    uri, coin, px = LG._badge(str(p), p.stat().st_mtime_ns, 24, False)
-    assert coin and px > 24
-    im = Image.open(io.BytesIO(base64.b64decode(uri.split(",", 1)[1]))).convert("RGBA")
-    c = im.width // 2
-    assert im.getpixel((c, c))[3] == 255 and min(im.getpixel((c, c))[:3]) > 200  # the middle shows light
+    p = tmp_path / "word.png"
+    im = Image.new("RGBA", (200, 60), (0, 0, 0, 0))
+    ImageDraw.Draw(im).rectangle([10, 10, 190, 50], outline=(20, 30, 110, 255), width=6)  # a thin navy frame
+    im.save(p)
+    plain, c = seen(LG.picture(p, 60, "plain")[0]), seen(LG.picture(p, 60, "C")[0])
+    stroke = [(x, y) for x in range(plain.width) for y in range(plain.height) if plain.getpixel((x, y))[2] > 80]
+    assert stroke and all(sum(c.getpixel(xy)) > sum(plain.getpixel(xy)) + 150 for xy in stroke[::7])  # lighter
+    ring = tmp_path / "ring.png"
+    im = Image.new("RGBA", (100, 100), (0, 0, 0, 0))
+    ImageDraw.Draw(im).ellipse([5, 5, 95, 95], outline=(200, 30, 30, 255), width=14)
+    im.save(ring)
+    inside = seen(LG.picture(ring, 40, "inside")[0])
+    mid = inside.width // 2
+    assert inside.getpixel((mid, mid)) == (255, 255, 255)  # the middle, as on the game's white page
+    assert inside.getpixel((2, 2)) == (10, 19, 34)  # the page round the logo: untouched
+
+
+def test_pictures_saved_under_each_others_names_are_swapped_back(tmp_path, monkeypatch):
+    g = game_folder(tmp_path)
+    em = g / "editor" / "emblems"
+    png(em / "pamirem.png", (1, 2, 3, 255))
+    png(em / "maiwandem.png", (4, 5, 6, 255))
+    with open(g / "editor" / "editemblems.txt", "a", encoding="utf-8") as f:
+        f.write("# === Afghanistan ===\nMaiwand ; maiwandem\nPamir ; pamirem\n")
+    h_pamir_file, h_maiwand_file = LG._md5(em / "pamirem.png"), LG._md5(em / "maiwandem.png")
+    # each file holds the other team's logo: swapped back, for the game's names and the real ones
+    monkeypatch.setattr(LG, "SWAPPED", [("Pamir Legends", "Maiwand Champions", h_maiwand_file, h_pamir_file)])
+    b = LG.LogoBook(LG.find([g]))
+    assert b.team("Pamir Legends").name == b.team("Pamir").name == "maiwandem.png"
+    assert b.team("Maiwand Champions").name == b.team("Maiwand").name == "pamirem.png"
+    # once the files are put right (the pictures no longer match), nothing is swapped
+    monkeypatch.setattr(LG, "SWAPPED", [("Pamir Legends", "Maiwand Champions", h_pamir_file, h_maiwand_file)])
+    b = LG.LogoBook(LG.find([g]))
+    assert b.team("Pamir Legends").name == "pamirem.png" and b.team("Maiwand Champions").name == "maiwandem.png"
+
+
+def test_a_name_two_teams_answer_to_means_the_team_the_scorecards_print_it_for(tmp_path):
+    """'Delhi' is the game's name for the IPL side (printed 'Delhi Capitals') and the printed name of the Ranji side
+    ('Delhi CC' in the game). The site shows printed names, so 'Delhi' is always the Ranji side's emblem, and never
+    the IPL side's when the Ranji side has no picture. Same for competitions: 'National T20 Cup' is printed by
+    Pakistan and Afghanistan, so each is shown with its country and gets its own logo; the bare name gets none."""
+    g = game_folder(tmp_path)
+    em, cl = g / "editor" / "emblems", g / "editor" / "complogos"
+    png(em / "delhiem.png", (200, 30, 30, 255))
+    png(em / "delhiccem.png", (30, 30, 200, 255))
+    png(cl / "pakistan20overtrophycl.png", (0, 150, 60, 255))
+    png(cl / "afghanistandomestic20overcl.png", (0, 60, 150, 255))
+    with open(g / "editor" / "editemblems.txt", "a", encoding="utf-8") as f:
+        f.write("# === India ===\nDelhi ; delhiem\nDelhi CC ; delhiccem\n")
+    with open(g / "editor" / "editcomplogos.txt", "a", encoding="utf-8") as f:
+        f.write("Pakistan : 20 Over Trophy ; pakistan20overtrophycl\n"
+                "Afghanistan : Domestic 20 Over ; afghanistandomestic20overcl\n")
+    for _ in range(2):  # the same answer whatever order the names come in
+        b = LG.LogoBook(LG.find([g]))
+        assert b.team("Delhi Capitals").name == "delhiem.png" and b.team("Delhi").name == "delhiccem.png"
+        assert b.comp("National T20 Cup (Pakistan)").name == "pakistan20overtrophycl.png"
+        assert b.comp("National T20 Cup (Afghanistan)").name == "afghanistandomestic20overcl.png"
+        assert b.comp("National T20 Cup") is None
+    (em / "delhiccem.png").unlink()
+    b = LG.LogoBook(LG.find([g]))
+    assert b.team("Delhi Capitals").name == "delhiem.png" and b.team("Delhi") is None

@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 from ccstats import checks
-from ccstats.competitions import shown_name
+from ccstats.competitions import shown_name, with_stage
 from ccstats.loader import Career
 from ccstats.extras import headlines
 from ccstats.records import played_order
@@ -185,10 +185,10 @@ with overview:
                 parts.append(f"{r.runs}" if r.all_out else f"{r.runs}/{r.wickets}{'d' if r.declared else ''}")
             return " & ".join(parts) or "–"
 
-        stage = f" · {last.stage}" if last.stage else ""
-        scoreboard(f"Latest result · {shown_name(last.section, last.event)}{stage} · {last.date:%d %b %Y}",
+        scoreboard(f"Latest result · {with_stage(shown_name(last.section, last.event), last.stage)} · {last.date:%d %b %Y}",
                    last.home, score(last.home), last.away, score(last.away),
-                   f"{last.result} · Player of the match: {last.player_of_match}" if last.player_of_match else last.result)
+                   f"{last.result} · Player of the match: {last.player_of_match}" if last.player_of_match else last.result,
+                   event=last.event)
         st.write("")
         kpis([("Matches", f"{len(m):,}"), ("Sections", f"{m.section.nunique()}"), ("Seasons", f"{m.season.nunique()}"),
               ("Players", f"{career.batting.player.nunique():,}"),

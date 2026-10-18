@@ -11,8 +11,8 @@ the Steam install folder) or in a folder you choose, and matches each picture to
 game's name or the real one ("Sydney Green" is shown as "Sydney Thunder").  Without the text files, a picture named
 the game's way ("sydneygreenem.png", "india20overleaguecl.png") or after the team ("Sydney Thunder.png") is used.
 
-Pictures are drawn small: a logo that is mostly dark sits on a light coin so it shows on the dark pages; a bright
-one is shown as it is."""
+On the dark pages the IPL, Hundred, Big Bash and international logos are drawn in a look picked for each against
+the original (STYLES, below; see ccstats/logo_look.py); every other logo is shown as it is."""
 
 from __future__ import annotations
 
@@ -26,7 +26,6 @@ from . import names as NM
 
 EMBLEM_DIRS = ("editor/emblems", "emblems", "Editor/Emblems")
 COMP_DIRS = ("editor/complogos", "complogos", "Editor/CompLogos")
-DARK = 95  # average brightness (0-255) of a logo's visible pixels below which it gets a light coin
 
 # the game's international competitions -> the names the site uses for them
 INTERNATIONAL = {
@@ -104,7 +103,13 @@ class LogoBook:
         self.found = found
         self.teams: dict[str, Path] = {}
         self.comps: dict[str, Path] = {}
+        self.styles: dict[str, str] = {}
         self._build()
+        self._fix_swaps()
+        for name, look in STYLES.items():
+            p = self.team(name) or self.comp(name)
+            if p is not None:
+                self.styles.setdefault(str(p), look)
 
     # pictures in a folder, by their name the game's way ('sydneygreenem')
     @staticmethod
@@ -129,6 +134,7 @@ class LogoBook:
                 listed = []
         ref_of = {game: ref for game, ref in listed}
         names = list(dict.fromkeys(list(ref_of) + [g for _, g, _ in NM.TEAMS]))
+        game_keys = {key(g) for g in names}
 
         def picture(game: str, depth: int = 0):
             ref = ref_of.get(game)
@@ -137,16 +143,25 @@ class LogoBook:
                     return pics[key(ref)]
                 if ref in ref_of and depth < 3 and ref != game:  # borrowing another team's emblem
                     return picture(ref, depth + 1)
-            for k in (key(game) + "em", key(game), key(real_of.get(game, "")) + "em", key(real_of.get(game, ""))):
-                if k and k in pics:
+            tries = [key(game) + "em", key(game)]
+            real = key(real_of.get(game, ""))
+            if real and (real == key(game) or real not in game_keys):  # pictures are named the game's way, so a
+                tries += [real + "em", real]  # printed name that is another team's game name is that team's file
+            for k in tries:
+                if k in pics:
                     return pics[k]
             return None
-        for game in names:
-            p = picture(game)
-            if p is not None:
+        # The names the scorecards print, which the site shows, come first: a game's name can be another team's
+        # printed name ('Delhi' is the game's name for the IPL side, printed 'Delhi Capitals', and the printed name
+        # of the Ranji side, 'Delhi CC' in the game), and must always mean the team printed with it.
+        printed = {key(r) for _, _, r in NM.TEAMS}
+        found = {game: picture(game) for game in names}
+        for game, p in found.items():
+            if p is not None and key(game) not in printed:
                 self.teams[key(game)] = p
-                if real_of.get(game):
-                    self.teams[key(real_of[game])] = p
+        for game, p in found.items():
+            if p is not None and real_of.get(game):
+                self.teams[key(real_of[game])] = p
         # competitions: "Country : the game's name" -> the names the site shows
         cpics = self._pictures(self.found.get("complogos"))
         clisted = []
@@ -182,9 +197,33 @@ class LogoBook:
                     shown.add(KNOWN[k][0])
                 if k in SHARED and country in SHARED[k]:
                     shown.add(SHARED[k][country][0])
-                shown.add(printed)
+                else:  # a name two countries print ('National T20 Cup') is shown with the country, never bare
+                    shown.add(printed)
             for s in shown:
                 self.comps.setdefault(key(s), p)
+
+    def _fix_swaps(self) -> None:
+        for one, two, real_one, real_two in SWAPPED:
+            p1, p2 = self.team(one), self.team(two)
+            if p1 and p2 and _md5(p1) == real_two and _md5(p2) == real_one:  # each has the other's picture
+                for k in self._names_of(one):
+                    if self.teams.get(k) == p1:
+                        self.teams[k] = p2
+                for k in self._names_of(two):
+                    if self.teams.get(k) == p2:
+                        self.teams[k] = p1
+
+    @staticmethod
+    def _names_of(name: str) -> set[str]:
+        out = {key(name)}
+        for _, game, real in NM.TEAMS:
+            if real == name or game == name:
+                out |= {key(game), key(real)}
+        return out
+
+    def style(self, path) -> str:
+        """How the logo at this path is drawn (its look, picked for its team or competition), or 'plain'."""
+        return self.styles.get(str(path), "plain") if path else "plain"
 
     def team(self, name: str):
         return self.teams.get(key(name))
@@ -205,90 +244,53 @@ class LogoBook:
         return len([k for k in self.teams if k in game_names]), len({str(p) for p in self.comps.values()})
 
 
-COIN = 1.42  # room a dark logo's coin may take, as a share of the logo's size (a square logo's corners need 1.42)
-HOLE = 0.015  # a see-through area enclosed by the logo, at least this share of it, counts as a see-through middle
+# How each logo is drawn on the dark pages (see ccstats/logo_look.py), picked one by one against the original for the
+# IPL, the Hundred, the Big Bash and internationals. Every other logo is shown as it is.
+STYLES: dict[str, str] = {
+    **dict.fromkeys(("Delhi Capitals", "Gujarat Titans", "Kolkata Knight Riders", "Lucknow Super Giants", "Punjab Kings",
+                     "Sunrisers Hyderabad", "SunRisers Leeds", "Sydney Thunder", "Bangladesh", "Pakistan",
+                     "South Africa"), "inside"),
+    "Chennai Super Kings": "whole",
+    "Mumbai Indians": "line",
+    **dict.fromkeys(("London Spirit", "Southern Brave", "Melbourne Renegades", "Tests", "ODI World Cup", "T20 World Cup",
+                     "Bermuda", "Canada", "Denmark", "Hong Kong", "Nepal", "Papua New Guinea", "Scotland", "UAE",
+                     "Uganda"), "C"),
+    **dict.fromkeys(("Champions Trophy", "Asia Cup", "Asia Cup (T20)"), "D"),
+}
+
+# Pictures known to be saved under each other's names in the game's files: (team, team, MD5 of the picture that is
+# really the first team's, MD5 of the one that is really the second's). When each team's picture is the other's,
+# they are swapped back; once the files are put right, nothing changes.
+SWAPPED = [("Pamir Legends", "Maiwand Champions", "7c1e859ec9d4fc139500b10c231db7a2", "44f1764c00dff695aad4bbd192e982fc")]
 
 
-def has_holes(im) -> bool:
-    """Whether the logo has a see-through middle: an area inside it (the middle of a shield, a ring, a flower) that
-    the designer left see-through, so in the game it shows white. Such a logo goes on the light coin, so the middle
-    shows white here too, without changing anything in the logo itself. Small gaps (inside an 'O') don't count."""
-    import numpy as np
-    from PIL import Image, ImageDraw
-    w, h = im.size
-    mask = im.getchannel("A").point(lambda v: 255 if v < 128 else 0)  # see-through pixels
-    px = mask.load()
-    for x in range(w):  # everything see-through that reaches the edge is outside the logo
-        for y in (0, h - 1):
-            if px[x, y] == 255:
-                ImageDraw.floodfill(mask, (x, y), 128)
-    for y in range(h):
-        for x in (0, w - 1):
-            if px[x, y] == 255:
-                ImageDraw.floodfill(mask, (x, y), 128)
-    arr = np.array(mask)
-    if not (arr == 255).any():
-        return False
-    need = HOLE * max(int((np.array(im.getchannel("A")) >= 128).sum()), 1)
-    for y, x in zip(*np.nonzero(arr == 255)):  # each enclosed area in turn
-        if arr[y, x] != 255:
-            continue
-        ImageDraw.floodfill(mask, (int(x), int(y)), 64)
-        arr = np.array(mask)
-        if (arr == 64).sum() >= need:
-            return True
-        arr[arr == 64] = 0
-        mask = Image.fromarray(arr)
-    return False
+def _md5(path) -> str:
+    import hashlib
+    try:
+        return hashlib.md5(Path(path).read_bytes()).hexdigest()
+    except OSError:
+        return ""
 
 
-@lru_cache(maxsize=2048)
-def _badge(path: str, mtime: int, size: int, pad: bool) -> tuple[str, bool, int]:
-    """(a PNG data URI, whether the logo sits on a light coin, how big to show the picture in pixels).
-
-    The logo itself is always drawn size pixels across, with or without a coin: a dark logo keeps its size and the
-    coin is drawn round it (just big enough for the logo's visible part), so its picture is a little bigger. With
-    pad, every picture gets that bigger frame (bright logos on a see-through one), so a table's column shows all
-    the logos the same size."""
-    import numpy as np
-    from PIL import Image, ImageDraw, ImageStat
-    im = Image.open(path).convert("RGBA")
-    box = im.getchannel("A").point(lambda v: 255 if v > 8 else 0).getbbox()
-    if box:
-        im = im.crop(box)
-    a = im.getchannel("A").point(lambda v: 255 if v > 40 else 0)
-    stat = ImageStat.Stat(im.convert("L"), mask=a)
-    dark = (bool(stat.count[0]) and stat.mean[0] < DARK) or has_holes(im)  # on the light coin
-    s2 = size * 2  # drawn at twice the size, so it stays sharp on a high-resolution screen
-    k = s2 / max(im.width, im.height)  # fitted to the size, bigger or smaller
-    im = im.resize((max(1, round(im.width * k)), max(1, round(im.height * k))), Image.LANCZOS)
-    full = int(round(s2 * COIN)) if (dark or pad) else s2
-    canvas = Image.new("RGBA", (full, full), (0, 0, 0, 0))
-    if dark:  # the smallest circle round the logo's visible pixels, with a little room
-        ys, xs = np.nonzero(np.array(im.getchannel("A")) > 40)
-        r = float(np.sqrt((xs + 0.5 - im.width / 2) ** 2 + (ys + 0.5 - im.height / 2) ** 2).max()) * 1.05 + 3 \
-            if len(xs) else full / 2
-        r = min(r, full / 2 - 1)
-        c = full / 2
-        ImageDraw.Draw(canvas).ellipse([c - r, c - r, c + r, c + r], fill=(233, 238, 247, 255))
-    canvas.alpha_composite(im, ((full - im.width) // 2, (full - im.height) // 2))
-    buf = io.BytesIO()
-    canvas.save(buf, "PNG", optimize=True)
-    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode(), dark, full // 2
+@lru_cache(maxsize=4096)
+def _badge(path: str, mtime: int, size: int, style: str) -> tuple[str, int]:
+    """(a PNG data URI, how big to show the picture in pixels): the logo size pixels across its longest side, drawn
+    in its look, in a square frame that is the same for every logo of that size (so logos line up)."""
+    from . import logo_look
+    return logo_look.draw(path, mtime, size, style if style in logo_look.STYLES else "plain")
 
 
-def badge(path, size: int = 28, pad: bool = True) -> str:
+def badge(path, size: int = 28, style: str = "plain") -> str:
     """A data URI for the logo at this path (the logo size pixels across), or '' if it can't be read."""
-    return picture(path, size, pad)[0]
+    return picture(path, size, style)[0]
 
 
-def picture(path, size: int = 28, pad: bool = False) -> tuple[str, int]:
+def picture(path, size: int = 28, style: str = "plain") -> tuple[str, int]:
     """(data URI, the pixels to show it at) for the logo at this path, or ('', 0)."""
     if not path:
         return "", 0
     try:
         p = Path(path)
-        uri, _, px = _badge(str(p), p.stat().st_mtime_ns, int(size), bool(pad))
-        return uri, px
+        return _badge(str(p), p.stat().st_mtime_ns, int(size), str(style))
     except Exception:  # noqa: BLE001 - a picture that can't be read is simply not shown
         return "", 0

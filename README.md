@@ -116,7 +116,11 @@ the scorecard leaves no doubt (about two thirds of them, nearly all the big ones
 **Hover** over any bar or dot to see the player's full figures and rank. Hover a chart and click the
 **camera** in its top-right corner to save it as a picture.
 
-**Night look:** the site is always dark (the night-match look), whatever Windows is set to.
+**Your team's colours:** pick a national side under **My team** and every page takes its colours: the sidebar and
+a page matched to its shirt (India: a light-brown sidebar on a dark blue page; England: navy on light blue;
+Australia: dark green on yellow; New Zealand: black on light grey), with buttons, headings and tables to match.
+All 31 national sides have colours. Play as no national side and the site has its dark night-match look, whatever
+Windows is set to. Chart colours stay the same blue and orange in every look, so colour-blind players can read them.
 
 ---
 
@@ -136,6 +140,24 @@ count in anyone's Test, ODI, T20I or domestic record, and they have no league ta
 `editteamnames.txt`) in the *Cricket Captain 2026* folder that holds your Scorecards folder (or in the Scorecards
 folder itself). The Stats Pack reads them when it opens your career, and again whenever they change. A competition
 you rename stays the same competition, under the name the site already uses for it, so its records carry on.
+
+## Team and competition logos
+
+The site shows each team's emblem and each competition's logo, from your game's editor files: `editemblems.txt`
+with the `editor\emblems` pictures, and `editcomplogos.txt` with the `editor\complogos` pictures. It finds them in
+the *Cricket Captain 2026* folder that holds your Scorecards folder (or the Scorecards folder itself, or the Steam
+install folder). If yours are somewhere else, open **🎨 Logos** in the sidebar, type the folder that holds them and
+press **Use this folder**.
+
+Each picture goes with the name the site shows for the team or competition, the way the files say: a line can
+point at its own picture or borrow another team's. A team with no picture shows no logo, never someone else's.
+Logos appear on Home (your team, the latest result), Matches, Team vs team, Opponent preview, Fixtures (the next
+match, the fixture list, each series), Competitions (the heading and every team in the league tables) and Teams.
+The IPL, Hundred, Big Bash and international logos are each drawn in a look picked against the original so they
+read on the dark pages (a see-through part shown white as in the game, dark writing made light, or a soft edge line);
+every other logo is shown exactly as it is. On a light team page every logo is shown as in the game. A competition's logo also stands on the scoreboard of each of its matches
+(every Test shows the World Test Championship's; a World Cup's only its own games). Add or change a picture in the
+game and the site picks it up on its next page.
 
 ## Rain and declarations
 

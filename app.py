@@ -13,9 +13,14 @@ from ccstats.loader import Career
 from ccstats.records import new_records
 from ui import state
 from ui.search import search_box
+from ui import theme
 from ui.theme import inject_css
 
 st.set_page_config(page_title="Cricket Captain Stats Pack", page_icon="🏏", layout="wide")
+try:  # your national side's colours on every page (the night look when you play as none)
+    theme.team_look(state.my_teams(state.current(), unplayed=True))
+except Exception:  # noqa: BLE001 - the colours must never stop the site
+    theme.team_look([])
 inject_css()
 
 # Developer start-up options: a folder of scorecards (STATS_PACK_FOLDER) or the demo league (?demo=1).
@@ -196,6 +201,13 @@ nav = st.navigation(pages, expanded=True)  # every page always listed
 goto = st.session_state.pop("search_goto", None)  # set by the search box
 if goto:
     st.switch_page(goto)
+try:  # Streamlit's tables, buttons and sidebar in your team's colours: they show from the next run, so one more
+    if theme.apply_streamlit_colours() and not st.session_state.get("_colours_rerun"):  # (only once in a row)
+        st.session_state["_colours_rerun"] = True
+        st.rerun()
+    st.session_state["_colours_rerun"] = False
+except Exception:  # noqa: BLE001 - the colours must never stop the site (st.rerun isn't an Exception)
+    pass
 try:
     nav.run()
 except Exception as e:  # noqa: BLE001 - shown, never hidden

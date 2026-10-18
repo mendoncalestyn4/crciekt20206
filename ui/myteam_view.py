@@ -12,7 +12,7 @@ from ccstats import myteam as MT
 from ccstats import players as PL
 from ccstats import seasonal as SN
 from ccstats import teamplay as TP
-from ccstats.competitions import shown_name
+from ccstats.competitions import shown_name, with_stage
 
 from . import state
 from .charts import _n, pct, fmt
@@ -60,10 +60,10 @@ def render(career, team: str, key: str) -> None:
     # ---------------------------------------------------------------- latest result + last 5
     last = MT.last_game(career, team)
     if last is not None:
-        stage = f" · {last.stage}" if last.stage else ""
-        scoreboard(f"Latest result · {shown_name(last.section, last.event)}{stage} · {last.date:%d %b %Y}",
+        scoreboard(f"Latest result · {with_stage(shown_name(last.section, last.event), last.stage)} · {last.date:%d %b %Y}",
                    last.home, _score(career, last.match_id, last.home), last.away, _score(career, last.match_id, last.away),
-                   f"{last.result}" + (f" · Player of the match: {last.player_of_match}" if last.player_of_match else ""))
+                   f"{last.result}" + (f" · Player of the match: {last.player_of_match}" if last.player_of_match else ""),
+                   event=last.event)
 
     # ---------------------------------------------------------------- 115 · what changed
     with safe_section("after the match"):

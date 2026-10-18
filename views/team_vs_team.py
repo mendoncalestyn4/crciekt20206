@@ -153,7 +153,7 @@ def tile(col, team, r, other, colour):
     sub = games_of(team, venue_a if team == a else venue_b, b if team == a else a)
     col.markdown(
         f"<div class='kpi' style='border-top:3px solid {colour}'><span style='font-size:22px;letter-spacing:.02em;color:{c['ink']}'>"
-        f"{logos.team(team, 50)}{team}</span>"
+        f"{logos.team(team, 64)}{team}</span>"
         f"<span style='display:block;font-size:13px;color:{c['muted']};margin-top:2px'>{sub}</span>"
         f"<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px 12px;margin-top:8px'>"
         f"<div><span>Played</span><strong>{int(r.played)}</strong></div>"

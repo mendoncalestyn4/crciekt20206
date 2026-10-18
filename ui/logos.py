@@ -64,9 +64,19 @@ def book() -> LG.LogoBook:
     return cached[1]
 
 
+def look(path) -> str:
+    """How this logo is drawn on the page: its look picked for the dark page, or on a light page (your national
+    side's colours) as it is, apart from the white the game shows inside some (the looks that make dark parts show
+    up on a dark page would only fade them on a light one)."""
+    s = book().style(path)
+    from ui.theme import is_night
+    return s if is_night() or s in ("inside", "whole") else "plain"
+
+
 def _img(path, size: int, title: str) -> str:
-    """The logo size pixels across (a dark one on its coin, which makes the picture a little bigger)."""
-    uri, px = LG.picture(path, size) if path else ("", 0)
+    """The logo size pixels across, in its look (every picture of a size has the same frame, so logos side by side
+    or down a table line up)."""
+    uri, px = LG.picture(path, size, look(path)) if path else ("", 0)
     if not uri:
         return ""
     from ui.theme import esc
@@ -94,7 +104,7 @@ def uri(name: str, size: int = 24) -> str | None:
     """The team's emblem as a data URI (for a table's picture column), or None."""
     try:
         p = book().team(name)
-        return LG.badge(p, size) or None if p else None
+        return LG.badge(p, size, look(p)) or None if p else None
     except Exception:  # noqa: BLE001
         return None
 
@@ -102,7 +112,7 @@ def uri(name: str, size: int = 24) -> str | None:
 def heading(title: str, sub: str = "", teams: tuple = (), comp_name: str = "") -> None:
     """A line with the teams' emblems (or a competition's logo) and a title, when there is a picture to show."""
     from ui.theme import esc
-    pics = [team(t, 62) for t in teams] + ([comp(comp_name, 72)] if comp_name else [])
+    pics = [team(t, 84) for t in teams] + ([comp(comp_name, 100)] if comp_name else [])
     if not any(pics):
         return
     if len(teams) == 2:
@@ -116,7 +126,7 @@ def heading(title: str, sub: str = "", teams: tuple = (), comp_name: str = "") -
 def my_teams_row(teams: list) -> None:
     """Your team(s) with their emblems, under the Home page's title (nothing when none has a picture)."""
     from ui.theme import esc
-    pics = [(t, team(t, 64)) for t in teams]
+    pics = [(t, team(t, 84)) for t in teams]
     if not any(p for _, p in pics):
         return
     st.markdown("<div class='logohead'>" + "".join(f"<span class='mine'>{p}<b>{esc(t)}</b></span>" for t, p in pics)

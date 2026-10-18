@@ -109,3 +109,14 @@ def test_home_team_is_first_named_except_at_icc_events():
     assert not classify(load("19_aug_2026-eng_v_pak_1st_tst.txt")).neutral
     assert not classify(load("6_may_2026-hdr_v_pnj_ipl.txt")).neutral
     assert classify(load("23_jun_2027-sl_v_eng_wc_-_f.txt")).neutral
+
+
+def test_a_stage_the_name_already_says_is_not_said_twice():
+    """A County Championship game's stage is its division, and its name says the division already."""
+    from ccstats.competitions import with_stage
+    assert with_stage("County Championship · Division 1", "Division 1") == "County Championship · Division 1"
+    assert with_stage("Indian Premier League", "Final") == "Indian Premier League · Final"
+    assert with_stage("T20 Blast", "North Group") == "T20 Blast · North Group"
+    assert with_stage("ODIs", "") == with_stage("ODIs", None) == with_stage("ODIs", float("nan")) == "ODIs"
+    # "Division 1" inside a longer stage name is still said ("Division 1 play-off" isn't the name's division)
+    assert with_stage("County Championship · Division 1", "Division 1 play-off").endswith("· Division 1 play-off")

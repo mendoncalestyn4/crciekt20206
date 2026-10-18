@@ -63,7 +63,7 @@ if leagues:
             if len(leagues) > 1 or label not in ("League", "Every team"):
                 st.markdown(f"**{label}**")
             cols = {"team": "Team", "played": "P", "won": "W", "lost": "L"}
-            pics = [logos.uri(x, 64) for x in t.team]
+            pics = [logos.uri(x, 72) for x in t.team]
             if any(pics):  # each side's emblem, when your editor files have one (a blank for the rest)
                 t = t.assign(logo=[x or logos.BLANK for x in pics])
                 cols = {"logo": " ", **cols}
@@ -104,9 +104,9 @@ if leagues:
                     cols["rr_for"] = "RR for"
                     cols["rr_against"] = "RR against"
                 cols["moved"] = "Move"
-            tall = {"row_height": 58, "height": len(t) * 58 + 40} if "logo" in cols else {}  # every team, no scrolling
+            tall = {"row_height": 72, "height": len(t) * 72 + 40} if "logo" in cols else {}  # every team, no scrolling
             st.dataframe(t[list(cols)].rename(columns=cols), width="stretch", **tall,
-                         column_config={" ": st.column_config.ImageColumn(" ", width=60),
+                         column_config={" ": st.column_config.ImageColumn(" ", width=80),
                                         "NRR": st.column_config.NumberColumn(format="%+.3f"),
                                         "Pts": st.column_config.NumberColumn(format="%d"),
                                         "Runs/wkt": st.column_config.NumberColumn(format="%.2f"),

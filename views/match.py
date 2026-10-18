@@ -4,7 +4,7 @@ import streamlit as st
 from ccstats import extras as E
 from ccstats import partnerships as P
 from ccstats import winprob as W
-from ccstats.competitions import shown_name
+from ccstats.competitions import shown_name, with_stage
 from ccstats.parser import balls_to_overs
 from ui import state
 from ui.charts import CONFIG, fmt, win_chance_chart, wicket_timeline
@@ -46,8 +46,8 @@ team = c2.selectbox("Team", ["All teams"] + teams, key="mt_team", on_change=stat
 if team != "All teams":
     pool = pool[(pool.home == team) | (pool.away == team)]
 
-labels = {r.match_id: f"{r.date:%d %b %Y} · {r.home} v {r.away} · {shown_name(r.section, r.event)}"
-                      f"{' · ' + r.stage if r.stage else ''} · {r.result}"
+labels = {r.match_id: f"{r.date:%d %b %Y} · {r.home} v {r.away} · {with_stage(shown_name(r.section, r.event), r.stage)}"
+                      f" · {r.result}"
           for r in pool.itertuples()}
 if wanted in labels and "mt_match" not in st.session_state:
     st.session_state["mt_match"] = wanted
@@ -77,12 +77,11 @@ if not mid:
 
 row = m[m.match_id == mid].iloc[0]
 st.divider()
-stage = f" · {row.stage}" if row.stage else ""
 series = (f" · Match {int(row.series_match_no)}" + (f" of {int(row.series_length)}" if pd.notna(row.series_length) else "")
           if pd.notna(row.series_match_no) else "")
-scoreboard(f"{shown_name(row.section, row.event)}{stage}{series} · {row.date:%d %b %Y}", row.home, score_of(mid, row.home), row.away,
+scoreboard(f"{with_stage(shown_name(row.section, row.event), row.stage)}{series} · {row.date:%d %b %Y}", row.home, score_of(mid, row.home), row.away,
            score_of(mid, row.away), row.result + (f" (super over: {row.super_over})" if row.super_over else "")
-           + (f" · Player of the match: {row.player_of_match}" if row.player_of_match else ""))
+           + (f" · Player of the match: {row.player_of_match}" if row.player_of_match else ""), event=row.event)
 if bool(row.get("rain", False)):
     if row.result_type == "no result":
         why = "Abandoned because of rain: it counts as no result, and it's left out of net run rate."
