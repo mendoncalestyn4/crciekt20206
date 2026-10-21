@@ -152,7 +152,83 @@ Every one of these must work on the new site before it replaces the old one.
 
 ---
 
-## 6. The stages
+## 6. Logos: moved over exactly as you approved them
+
+The logo work you approved moves over exactly as it is: the code that finds the pictures, matches names and draws the looks is reused, not rewritten.
+
+**Where the pictures come from (unchanged)**
+- Your Cricket Captain editor files: the `emblems` and `complogos` folders, with `editemblems.txt` and `editcomplogos.txt`.
+- They're looked for in this order:
+  1. the folder you chose;
+  2. the game folder above each Scorecards folder you watch, and the Scorecards folder itself;
+  3. the Steam install folder;
+  4. a `logos` folder in the Stats Pack's own folder.
+- Change a picture in the game and the site picks it up straight away.
+
+**Which picture goes with which name (unchanged, `ccstats/logos.py`)**
+- The name the scorecards print comes first, so "Delhi" (the game's IPL name) can never take "Delhi CC"'s picture.
+- A real-name fallback never takes another team's picture.
+- A competition two countries share is matched only with its country.
+- A team with no picture shows no logo, never someone else's.
+- Pamir Legends and Maiwand Champions, whose pictures your game files have swapped, are swapped back automatically.
+
+**How each logo is drawn (unchanged, `ccstats/logo_look.py`)**
+- Your look picked for every IPL, Hundred, Big Bash and international logo is reused as is (the `STYLES` list): plain, white inside the outline, the whole badge on white, a soft edge line, or dark parts made visible. Every other logo is shown as it is.
+- On a light page every logo is shown as in the game.
+- The pictures are drawn by the same code and served as images from your own PC. They're stored once, so pages stay fast.
+
+**Where logos appear (all kept)**
+- **My team:** your team's badge in the banner, and both teams plus the competition logo on the latest result.
+- **Every scoreboard (Matches, Fixtures, My team):** both teams' badges. The World Test Championship logo appears on every Test; World Cup logos appear only on their own games.
+- **Competitions:** the logo in the heading, and every team's badge in the tables.
+- **Fixtures:** each opponent in the list, and the heading of the next match and of each series.
+- **Teams, Team vs team and Opponent preview:** the team badges in the headings and tiles.
+- **New places the chosen style adds:** leaders, rankings, series and player pages, as in the mock-ups.
+
+**Sizes:** the same relative sizes as now (big in headings, medium on scoreboards, small in tables and lists), scaled to the new design. Every logo of a size keeps the same square frame, so logos line up.
+
+**The logos settings:** the "Logos" box (which folder, how many team and competition logos were found, choose another folder) moves to Settings.
+
+**Proof it's right**
+- The logo tests move over unchanged.
+- Three logo stress tests are run again on the new site:
+  - all 366 team names and 60 competition names matched to the right picture;
+  - all 288 pictures drawn in every look and size;
+  - odd and missing names.
+- A browser check opens every page with logos and fails on a missing or broken picture.
+- You get logo screenshots in stage 0 and stage 1 to approve.
+
+**Still missing:** Namibia and Herat show no logo, because `namibiaem.png` and `heratem.png` aren't in the game's emblems folder. Adding them to the game fixes it.
+
+**To decide with you in stage 0:** England's navy badge is hard to see on dark styles. We'll find a fix you like for your chosen style.
+
+---
+
+## 7. Everything that transfers: part by part
+
+The rule is simple. **Anything that works out a number or makes a decision moves into the engine, with tests, before its page is rebuilt.** The new website only shows things.
+
+| Part of today's site | How it moves to the new site |
+|---|---|
+| **The engine:** `ccstats/` (31 files: parser, loader, stats, players, teams, fixtures, odds, records, rankings, logos, logo looks…) | **Reused as is.** Every data fix lives here, so it comes along automatically. |
+| **Your saved data:** careers, settings, notes, schedules, goals, forecasts, remembered choices, preferences (last teams, logos folder) and backups, in `Documents\Cricket Captain Stats Pack` (`ccstats/local.py`) | **Same files, same code.** The new site reads and writes exactly what the old one does. |
+| **Folder watching** (`Watcher`) and the **Windows folder window** (`ui/pick_folder.py`) | **Reused** by the server. |
+| **Team colours** (31 nations: sidebar, page, buttons, highlights, readable text) in `ui/theme.py` | **Moved** to `ccstats/colours.py` with their tests, then applied to the new style. |
+| **Logo finding and display choice** (`ui/logos.py`: where to look, the light-page rule, the logos box) | **Moved** into the engine or server (see section 6). |
+| **Site memory** (`ui/state.py`): current career, my teams, the first-start question (not now / don't ask again), home and away taken from your schedule, notes, remembered selections | **Moved** to the server with tests, so behaviour is identical. |
+| **Search** (`ui/search.py`: players, teams, sections, matches) | **Moved** to the server, with the box in the new design (Ctrl K). |
+| **Logic inside today's pages** (`views/*.py`, for example parts of Fixtures, Teams and the Player page) | **Moved into the engine page by page**, with a parity test, before the page is rebuilt. |
+| **Chart explanations** ("What it shows" and "What it's for", with the numbers) | **Moved** to the server, so every new chart keeps its explanation. |
+| **Charts** (`ui/charts.py`: Plotly) | **Rebuilt** in your chosen chart style (ECharts). The numbers come from the same engine. |
+| **Page layouts** (`views/`, `ui/myteam_view.py`, `ui/calendar_view.py`, `ui/xi.py`) | **Rebuilt** in your chosen page style, following each page's checklist. |
+| **Tests:** 1,021 today | **Engine and logo tests carry over unchanged.** Tests that drive the old pages become server and browser tests that check the same things. |
+| **Test data:** generated scorecards, the 477-match test career, your 89 real scorecards, and the rain, super-over, declaration and name fixtures | **Carried over** and used for every stage. |
+| **Launcher and zip** (`Start Stats Pack.bat`: first-start set-up and updates) | **Same steps.** It starts the new server instead of Streamlit, and `Start old Stats Pack.bat` stays until the switch-over. |
+| **README and ROADMAP** | **Updated** for the new site at the switch-over. |
+
+---
+
+## 8. The stages
 
 Each stage ends with the same steps:
 1. All tests pass.
@@ -161,18 +237,18 @@ Each stage ends with the same steps:
 
 | Stage | What gets built | About |
 |---|---|---|
-| **0. Foundations** | The server (careers, settings, folder watching); the website shell in your chosen style (menu, search bar, team colours, logos, fonts); the chart kit (your chosen chart style as reusable pieces); the launcher and zip; the test set-up. **You see:** the shell, plus a "style guide" page with every chart piece drawn from your data. | 2–3 days |
+| **0. Foundations** | The server (careers, settings, folder watching); the website shell in your chosen style (menu, search bar, team colours, fonts); logos served exactly as approved, with the logo tests carried over; the chart kit (your chosen chart style as reusable pieces); the launcher and zip; the test set-up. **You see:** the shell, plus a "style guide" page with every chart piece drawn from your data. | 2–3 days |
 | **1. Core pages** | My team home, Player profile, Match (scorecard and report) | 4–5 days |
 | **2. Teams and competitions** | Teams, Team vs team, Opponent preview, Team planner, Rivalries, Competitions, Season, Season review, Honours | 5–6 days |
 | **3. Leaders, records and insights** | Stat by stat, Records, Hall of fame, Rankings, Insights, Analytics, Player stories, Compare players | 4–5 days |
 | **4. Fixtures and tools** | Fixtures (all 8 tabs, the biggest page), careers and uploads, backups, Data check, the first-start question, live alerts | 4–5 days |
-| **5. Final checks and switch-over** | Full test runs, stress tests, a new-user install test from the zip, speed checks, and screenshots of every page and tab. Then the new site becomes `Start Stats Pack.bat`, the old site stays as a backup launcher, and the README is rewritten. | 3–4 days |
+| **5. Final checks and switch-over** | Full test runs, stress tests (including the three logo stress tests), a new-user install test from the zip, speed checks, and screenshots of every page and tab. Then the new site becomes `Start Stats Pack.bat`, the old site stays as a backup launcher, and the README is rewritten. | 3–4 days |
 
 **Total:** about 4 weeks of work (3½ to 5), plus the time you take to approve each stage. After stage 1 you can already use the new Home, Player and Match pages next to the old site.
 
 ---
 
-## 7. How every page gets built (the same recipe each time)
+## 9. How every page gets built (the same recipe each time)
 
 1. **List what the old page shows:** every number, table, chart and option, taken from the old page's code. This is the checklist for that page.
 2. **The server answers with exactly those numbers,** straight from the engine. The website never does its own cricket maths.
@@ -183,7 +259,7 @@ Each stage ends with the same steps:
 
 ---
 
-## 8. Testing and checks (zero errors)
+## 10. Testing and checks (zero errors)
 
 **Tests**
 - **Engine tests:** the current 1,021 keep running unchanged.
@@ -202,11 +278,12 @@ Each stage ends with the same steps:
 
 ---
 
-## 9. Risks, and what we do about each
+## 11. Risks, and what we do about each
 
 | Risk | What we do |
 |---|---|
-| Losing one of the many small fixes | The engine is kept as it is, numbers are checked by parity tests, and every page has its checklist (section 5) |
+| Losing one of the many small fixes | The engine is kept as it is, logic in today's pages moves into the engine first, numbers are checked by parity tests, and every page has its checklist (sections 5 and 7) |
+| A logo going wrong in the move | The logo code is reused unchanged, the logo tests and stress tests are run again, and you approve logo screenshots in stages 0 and 1 (section 6) |
 | It takes longer than planned | Each stage delivers finished pages, and the old site keeps working |
 | Windows quirks (folder window, paths, antivirus, a port already in use) | Keep today's Windows folder window, run only on your own computer, try another port if one is busy, and do the new-user test |
 | Fonts or charts missing without internet | Everything is inside the zip |
@@ -215,7 +292,7 @@ Each stage ends with the same steps:
 
 ---
 
-## 10. What I need from you
+## 12. What I need from you
 
 1. Your pick of page style and chart style, or a mix.
 2. A yes (or changes) at the end of each stage, from the screenshots.
