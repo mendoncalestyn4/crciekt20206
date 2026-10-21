@@ -14,8 +14,12 @@ The five page styles and five chart styles shown as screenshots before the new s
 | `lib.js` | Shared helpers (formatting, partnerships from the fall of wickets, donuts) |
 | `extract_data.py` | Pulls the real numbers from a folder of scorecards into `data.json` |
 | `shoot_pages.py`, `shoot_charts.py` | Screenshot every page / chart with Playwright |
+| `mix.html?idea=1…3` | The mixed style you asked for: Bento as the base, with Broadcast's player page, series tables and leaderboards, Almanack's player-of-the-match summary and Scoreboard's name font. Numbers in Bento's font. Idea 1 = Bento + Broadcast, 2 = Bento + Scoreboard, 3 = clean Bento |
+| `extract_mix.py` | Adds what the mixed style needs (player-of-the-match headlines, the series story, more leaderboards, a Test scorecard) |
+| `shoot_mix.py` | Screenshots of the mixed style, e.g. `python3 shoot_mix.py 1 2 3 --pages=home,match,match:2,match+test` |
 
-Each page style has six pages: `?page=home`, `player`, `match`, `series`, `leaders`, `rankings`.
+Each page style has six pages: `?page=home`, `player`, `match`, `series`, `leaders`, `rankings`; the mixed style adds `squad` and `results`,
+and the match page takes `&inn=2` (the second innings) and `&match=test` (a four-innings Test).
 
 To run them again: `python3 extract_data.py <Scorecards folder>`, write `data.js` as
 `window.D = <data.json>;`, put `echarts.min.js` (ECharts 5.5.1) and a `fonts.css` with the fonts below
