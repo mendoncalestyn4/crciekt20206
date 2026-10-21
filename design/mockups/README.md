@@ -14,7 +14,7 @@ The five page styles and five chart styles shown as screenshots before the new s
 | `lib.js` | Shared helpers (formatting, partnerships from the fall of wickets, donuts) |
 | `extract_data.py` | Pulls the real numbers from a folder of scorecards into `data.json` |
 | `shoot_pages.py`, `shoot_charts.py` | Screenshot every page / chart with Playwright |
-| `mix.html?idea=1…3` | The mixed style you asked for: Bento as the base, with Broadcast's player page, series tables and leaderboards, Almanack's player-of-the-match summary and Scoreboard's name font. Numbers in Bento's font. Idea 1 = Bento + Broadcast, 2 = Bento + Scoreboard, 3 = clean Bento |
+| `mix.html?idea=1…3` | The mixed style you asked for: Bento as the base, with Broadcast's player page, series tables and leaderboards, Almanack's player-of-the-match summary and Scoreboard's name font. Numbers in Bento's font. Idea 1 = Bento + Broadcast, 2 = Bento + Scoreboard, 3 = clean Bento, 4 = idea 2 exactly with idea 1's charts (solid innings bars, percentile bars, a plain form line, solid list bars) and its latest-results strip |
 | `extract_mix.py` | Adds what the mixed style needs (player-of-the-match headlines, the series story, more leaderboards, a Test scorecard) |
 | `shoot_mix.py` | Screenshots of the mixed style, e.g. `python3 shoot_mix.py 1 2 3 --pages=home,match,match:2,match+test` |
 

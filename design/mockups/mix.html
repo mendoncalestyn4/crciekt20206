@@ -10,7 +10,7 @@
      Match page: a TV-style match summary first (top three batters and bowlers in each innings, one each in a Test) with the
        player of the match story, then the scorecard one innings at a time (bowling, then batting)
      Charts: only the kinds already shown on those pages.
-     ?idea=1  Bento × Broadcast   ?idea=2  Bento × Scoreboard   ?idea=3  Clean Bento -->
+     ?idea=1  Bento × Broadcast   ?idea=2  Bento × Scoreboard   ?idea=3  Clean Bento   ?idea=4  idea 2 with idea 1's charts -->
 <style>
 :root { --page:#0f2557; --tile:#162f68; --tile2:#1b3878; --edge:#24427f; --rail:#dab16f; --ink:#f3f6fc; --dim:#9fb0d6; --soft:#c9d5f2;
   --orange:#ee7660; --gold:#dab16f; --blue:#7aa2ff; --win:#45c08a; --loss:#ee6a6a; --deep:#0a1b40; --led:#ffc65a; --r:18px;
@@ -215,16 +215,29 @@ table.tv tr.me td { background: rgba(238,118,96,.16); }
 .itabs button.on { background: var(--ink); color: var(--page); border-color: var(--ink); }
 .i1 .itabs button { border-radius: 4px; } .i1 .itabs button.on { background: var(--gold); border-color: var(--gold); color: var(--deep); }
 .i2 .itabs button.on { background: var(--led); border-color: var(--led); color: #1b1300; }
+/* idea 4: idea 2 exactly, with idea 1's charts (solid bars, a percentile bar, a plain form line) and its latest-results
+   strip, all drawn in idea 2's fonts and colours */
+.i4 .ticker { position: relative; height: 54px; background: var(--tile); border: 1px solid var(--edge); border-radius: var(--r); }
+.i4 .ticker::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: linear-gradient(90deg, #368ee2 0 50%, var(--gold) 50% 100%); }
+.i4 .ticker .lab { font: 400 20px 'Bebas Neue'; letter-spacing: .16em; color: var(--dim); }
+.i4 .tk { font: 400 19px 'Bebas Neue'; letter-spacing: .06em; }
+.i4 .tk b { font: 400 19px 'Bebas Neue'; letter-spacing: .06em; } .i4 .tk b span { font: 700 15px 'Space Grotesk'; color: var(--led); letter-spacing: 0; }
+.i4 .tk .wl { width: 22px; height: 22px; }
+.i4 .bar { height: 8px; border-radius: 0; background: #0d214c; }
+.i4 .bar i { border-radius: 0; background: var(--led) !important; filter: drop-shadow(0 0 4px rgba(255,198,90,.6)); }
+.i4 .pbar .tr2 { border-radius: 2px; height: 16px; background: #13245a; }
+.i4 .pbar .fill { background: var(--led); box-shadow: 0 0 10px rgba(255,198,90,.5); }
 </style></head><body>
 <nav class="rail" id="rail"></nav>
 <div class="main"><div class="head" id="head"></div><div class="grid" id="main"></div></div>
 <script>
 const IDEA = Q.get("idea") || "1";
-document.body.classList.add("i" + IDEA);
+document.body.classList.add("i" + IDEA, ...(IDEA === "4" ? ["i2"] : []));   // idea 4 wears idea 2's look
+const SB = IDEA === "2" || IDEA === "4";   // idea 2's colours and fonts (idea 4 too); idea 4 takes its charts from idea 1
 const SC = 1, NUMF = "Space Grotesk", NUMW = 700;                      // numbers: Bento's font in every idea
 const AXF = "Inter", AXS = 11;
 const LED = "#ffc65a", OR = "#ee7660", GOLD = "#dab16f", BLUE = "#7aa2ff", WIN = "#45c08a", LOSS = "#ee6a6a", OTHER = "#3a5aa0";
-const MINE = IDEA === "2" ? LED : OR;                                   // my team's colour in the charts
+const MINE = SB ? LED : OR;                                   // my team's colour in the charts
 const ICON = {home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>', squad: '<circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2 20c1-3.5 3.8-5.5 7-5.5s6 2 7 5.5M15 14.6c2.6-.3 5 1.2 6 4.4"/>',
   player: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>', results: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M12 5v14M3 12h18"/>',
   series: '<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/>', leaders: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 6h3a3 3 0 0 1-3 4M7 6H4a3 3 0 0 0 3 4"/>',
@@ -241,24 +254,24 @@ const pn = (p, px, style = "") => `<span class="pn" style="font-size:${px}px;${s
 const wl = o => `<span class="wl ${o}">${o}</span>`;
 const head = (title, crumb, chips = ["2026", "All formats"]) => H.innerHTML = `<div><h1>${title}</h1><div class="crumb">${crumb}</div></div>
   <div class="chips">${chips.map((c, i) => `<span class="${i === 0 ? "on" : ""}">${c}</span>`).join("")}</div>
-  ${IDEA === "2" ? `<span class="clock">${ab(TEAM)} · ${dayY(R[0].date).toUpperCase()}</span>` : ""}<div class="pill">🔍 Search anything <kbd>Ctrl K</kbd></div>`;
+  ${SB ? `<span class="clock">${ab(TEAM)} · ${dayY(R[0].date).toUpperCase()}</span>` : ""}<div class="pill">🔍 Search anything <kbd>Ctrl K</kbd></div>`;
 const tile = (span, title, body, o = {}) => `<div class="t ${o.cls || ""}" style="grid-column: span ${span};${o.rows ? `grid-row: span ${o.rows};` : ""}${o.style || ""}">
   ${title ? `<div class="tt"><span class="tl">${title}</span>${o.right ? `<span class="tr">${o.right}</span>` : ""}</div>` : ""}${body}</div>`;
 const sub = (cols, parts) => `<div class="sub" style="grid-column: span 12; grid-template-columns: repeat(${cols}, minmax(0, 1fr))">${parts.join("")}</div>`;
 const hero = o => (IDEA === "3" && !o.always) ? "" : `<section class="hero" style="${o.h ? `min-height:${o.h}px` : ""}">${o.logo ? img(o.logo, o.px || 180) : ""}
   <div style="position:relative;z-index:2"><div class="k">${o.kicker}</div><h2 style="${o.size ? `font-size:${o.size}px` : ""}">${o.title}</h2></div>
   ${o.side ? `<div class="side">${o.side[0]}<b class="${o.sideName ? "isname" : ""}">${o.side[1]}</b>${o.side[2] || ""}</div>` : ""}</section>`;
-const ticker = () => IDEA !== "1" ? "" : `<div class="ticker"><span class="lab">LATEST</span>${R.slice(0, 8).map(r =>
-  `<span class="tk">${wl(r.outcome)}<b>${ab(TEAM)} ${r.us}</b><i>v</i><b>${ab(r.opp)} ${r.them}</b><i>${FORMAT[r.section]} · ${day(r.date)}</i></span>`).join("")}</div>`;
+const ticker = () => !(IDEA === "1" || IDEA === "4") ? "" : `<div class="ticker"><span class="lab">LATEST</span>${R.slice(0, 8).map(r =>
+  `<span class="tk">${wl(r.outcome)}<b>${ab(TEAM)} <span>${r.us}</span></b><i>v</i><b>${ab(r.opp)} <span>${r.them}</span></b><i>${FORMAT[r.section]} · ${day(r.date)}</i></span>`).join("")}</div>`;
 const WORD = {2: "two", 3: "three"};
 const initials = p => p.split(" ").map(x => x[0]).join("").slice(0, 2);
 const overs = b => `${Math.floor(b / 6)}${b % 6 ? "." + b % 6 : ""}`;
 const figText = P => [P.bat ? `${P.bat.text} off ${P.bat.balls}` : "", P.bowl ? `${P.bowl.text} in ${overs(P.bowl.balls)} overs` : ""].filter(Boolean).join(" · ");
 const AX = {axisLabel: {color: "#9fb0d6", fontFamily: AXF, fontSize: AXS}, axisLine: {lineStyle: {color: "#24427f"}}, axisTick: {show: false}, splitLine: {lineStyle: {color: "#203c78"}}};
-const VAL = px => ({fontFamily: NUMF, fontWeight: NUMW, fontSize: Math.round(px * SC), color: IDEA === "2" ? LED : "#fff"});
+const VAL = px => ({fontFamily: NUMF, fontWeight: NUMW, fontSize: Math.round(px * SC), color: SB ? LED : "#fff"});
 const TT = {backgroundColor: "#0f2557", borderColor: "#24427f", textStyle: {color: "#fff", fontFamily: "Inter"}};
 const DON = {font: "Inter", size: 13,
-  centreFont: `${NUMW} ${Math.round(54 * SC)}px ${NUMF}`, centreInk: IDEA === "2" ? LED : "#fff",
+  centreFont: `${NUMW} ${Math.round(54 * SC)}px ${NUMF}`, centreInk: SB ? LED : "#fff",
   subFont: IDEA === "3" ? "500 12px Inter" : IDEA === "1" ? "600 14px Barlow Condensed" : "400 16px Bebas Neue", round: IDEA === "3" ? 8 : 0, pad: 3};
 
 // the Almanack summary: what the player of the match did, then the engine's match report
@@ -281,17 +294,17 @@ function pomCard(P) {
 // Broadcast's leaderboard bars: names on the left, the number and team on the right, my team highlighted
 function leaderBars(el, rows, key, col, o = {}) {
   const vals = rows.map(r => r[key]);
-  return chart(el, {grid: {left: 6, right: (o.right || 96) + (IDEA === "2" ? 24 : 0), top: 4, bottom: 4, containLabel: true}, xAxis: {show: false, max: Math.max(...vals)},
+  return chart(el, {grid: {left: 6, right: (o.right || 96) + (SB ? 24 : 0), top: 4, bottom: 4, containLabel: true}, xAxis: {show: false, max: Math.max(...vals)},
     yAxis: {type: "category", inverse: true, data: rows.map(r => r.player), axisLine: {show: false}, axisTick: {show: false},
       axisLabel: {color: "#f4f6fb", fontFamily: "Bebas Neue", fontSize: o.nameSize || 22, margin: 12}},
     series: [{type: "bar", barWidth: "62%", data: rows.map(r => ({value: r[key], itemStyle: {color: r.team === TEAM ? col : OTHER,
-        borderRadius: IDEA === "3" ? [0, 8, 8, 0] : 0, shadowBlur: IDEA === "2" && r.team === TEAM ? 10 : 0, shadowColor: "rgba(255,198,90,.5)"}})),
+        borderRadius: IDEA === "3" ? [0, 8, 8, 0] : 0, shadowBlur: SB && r.team === TEAM ? 10 : 0, shadowColor: "rgba(255,198,90,.5)"}})),
       label: {show: true, position: "right", ...VAL(o.valSize || 26), formatter: p => `${o.fmt ? o.fmt(p.value) : p.value}` + (o.noTeam ? "" : `  {t|${ab(rows[p.dataIndex].team)}}`),
         rich: {t: {fontFamily: "Bebas Neue", fontSize: 19, color: "#9fb0d6"}}}}]});
 }
 // Broadcast's innings bars (Scoreboard's lit blocks in idea 2)
 function inningsBars(el, inn) {
-  const big = i => i.runs >= 50, col = i => IDEA === "2" ? (big(i) ? WIN : LED) : (big(i) ? GOLD : OR);
+  const big = i => i.runs >= 50, col = i => SB ? (big(i) ? WIN : LED) : (big(i) ? GOLD : OR);
   const cats = inn.map(i => `${ab(i.opp)}\n${day(i.date)}`), max = Math.ceil(Math.max(...inn.map(i => i.runs)) * 1.15 / 10) * 10;
   if (IDEA === "2") return chart(el, {grid: {left: 10, right: 10, top: 30, bottom: 44}, xAxis: {type: "category", data: cats, ...AX, splitLine: {show: false}},
     yAxis: {show: false, max}, series: [{type: "pictorialBar", symbol: "rect", symbolRepeat: true, symbolMargin: 2, symbolClip: true, symbolSize: ["62%", 6], z: 3,
@@ -336,12 +349,12 @@ home() {
   fmts.filter(f => f !== "Tests").forEach(f => { const g = [...R].reverse().filter(r => r.section === f); let c = 0;
     chart("sp_" + f, {grid: {left: 2, right: 2, top: 4, bottom: 4}, xAxis: {type: "category", show: false, data: g.map(r => r.date)}, yAxis: {show: false, scale: true},
       series: [{type: "line", smooth: IDEA === "3" ? .4 : 0, step: IDEA === "2" ? "end" : false, symbol: "none", data: g.map(r => (c += r.outcome === "W" ? 1 : r.outcome === "L" ? -1 : 0)),
-        lineStyle: {width: 3, color: MINE}, areaStyle: {color: {type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{offset: 0, color: IDEA === "2" ? "rgba(255,198,90,.3)" : "rgba(238,118,96,.35)"}, {offset: 1, color: "rgba(0,0,0,0)"}]}}}]}); });
+        lineStyle: {width: 3, color: MINE}, areaStyle: {color: {type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{offset: 0, color: SB ? "rgba(255,198,90,.3)" : "rgba(238,118,96,.35)"}, {offset: 1, color: "rgba(0,0,0,0)"}]}}}]}); });
   chart("rk", {grid: {left: 70, right: 30, top: 10, bottom: 30}, xAxis: {type: "value", min: 1, interval: 1, inverse: true, ...AX, axisLabel: {...AX.axisLabel, formatter: v => ord(v)}},
     yAxis: {type: "category", data: fmts, axisLine: {show: false}, axisTick: {show: false}, axisLabel: {color: "#e4ebfa", fontFamily: "Bebas Neue", fontSize: 22}},
     series: [{type: "bar", barWidth: 10, data: fmts.map(f => banner[f].teams), itemStyle: {color: "#0d214c", borderRadius: 5}, barGap: "-100%", silent: true},
       {type: "scatter", symbolSize: 36, data: fmts.map(f => banner[f].rank), itemStyle: {color: MINE, borderColor: "#fff", borderWidth: 2},
-        label: {show: true, ...VAL(17), color: IDEA === "2" ? "#1b1300" : "#fff", formatter: p => p.value}}]});
+        label: {show: true, ...VAL(17), color: SB ? "#1b1300" : "#fff", formatter: p => p.value}}]});
   chart("cal", {visualMap: {show: false, type: "piecewise", pieces: [{value: 1, color: WIN}, {value: -1, color: LOSS}]},
     calendar: {range: ["2026-06-01", "2026-10-31"], cellSize: [16, 16], top: 20, left: 6, right: 6, itemStyle: {color: "#0d214c", borderColor: "#162f68", borderWidth: 3},
       splitLine: {show: false}, dayLabel: {show: false}, monthLabel: {color: "#9fb0d6", fontFamily: AXF, fontSize: AXS}, yearLabel: {show: false}},
@@ -357,7 +370,7 @@ player() {
     sub(5, [["Runs", o.runs, `${o.innings} innings · ${o.not_outs} not out`], ["Average", f1(o.average), "runs per dismissal"], ["Strike rate", f1(o.strike_rate), "runs per 100 balls"],
       ["50s", o.fifties, `${o.hundreds} hundreds`], ["Best", o.high_score_text, `v ${best.opp} · ${day(best.date)}`]].map(([k, v, s]) =>
       tile(1, k, `${n(v, 72)}<div class="s">${s}</div>`))) +
-    tile(7, "Every innings · ODIs 2026", `<div id="c1" style="height:300px"></div><div class="note">Each bar is one innings, oldest first. ${IDEA === "2" ? "Green" : "Gold"} = 50 or more; * = not out.</div>`) +
+    tile(7, "Every innings · ODIs 2026", `<div id="c1" style="height:300px"></div><div class="note">Each bar is one innings, oldest first. ${SB ? "Green" : "Gold"} = 50 or more; * = not out.</div>`) +
     tile(5, `How they compare · v ${D.radar_pool} ODI batters`, pbars(rd) + `<div class="note">Percentiles: 99 = best in the ODIs this season; 50 = middle of the pack.</div>`) +
     tile(4, "Where the runs come from", `<div id="d1" style="height:270px"></div>`) + tile(4, "How they get out", `<div id="d2" style="height:270px"></div>`) +
     tile(4, "Every format", `<table class="tv"><tr><th>Format</th><th class="r">Inns</th><th class="r">Runs</th><th class="r">Avg</th><th class="r">SR</th><th class="r">HS</th></tr>${Object.entries(SP).map(([k, v]) =>
@@ -365,7 +378,7 @@ player() {
        <td class="r"><span class="tn dimn">${f0(v.strike_rate)}</span></td><td class="r"><span class="tn dimn">${v.high_score_text}</span></td></tr>`).join("")}</table>
       <div class="note" style="margin-top:14px">${Object.entries(SP).map(([k, v]) => `${k}: <b style="color:var(--ink)">${v.fours}</b> fours, <b style="color:var(--ink)">${v.sixes}</b> sixes`).join(" · ")}</div>`);
   inningsBars("c1", inn);
-  const pal = IDEA === "2" ? [LED, "#ff8a3d", "#f1efe6", WIN] : [OR, GOLD, BLUE, WIN];
+  const pal = SB ? [LED, "#ff8a3d", "#f1efe6", WIN] : [OR, GOLD, BLUE, WIN];
   const DC = {...DON, radius: ["48%", "68%"], centreFont: `${NUMW} ${Math.round(44 * SC)}px ${NUMF}`};
   donut("d1", [["Fours", sr.from4, pal[0]], ["Sixes", sr.from6, pal[1]], ["Running", sr.running, pal[2]]], String(sr.runs), "ODI runs", DC);
   donut("d2", Object.entries(sr.how).map(([k, v], i) => [cap(k), v, pal[i % 4]]), String(sr.outs), "dismissals", DC);
@@ -395,7 +408,7 @@ match() {
           <div class="hl" style="font-size:34px;margin-top:0">${esc(P.headline)}</div><div class="deck">${esc(P.report)}</div></div></div></div>`) +
     `<div class="itabs"><span class="tl2">Scorecard</span>${cards.map((c, i) => `<button data-i="${i}">${TOP === 1 ? `${c.team} ${ordn(nth[i] - 1)} innings` : `${ordn(nth[i] - 1)} innings · ${c.team}`} ${sc(c)}</button>`).join("")}</div>
      <div id="innv" class="grid" style="grid-column: span 12"></div>`;
-  const KC = IDEA === "2" ? {caught: LED, bowled: "#ff8a3d", lbw: "#f1efe6", "run out": WIN, stumped: "#8a918b"} : {caught: OR, bowled: GOLD, lbw: BLUE, "run out": WIN, stumped: "#c78bd6"};
+  const KC = SB ? {caught: LED, bowled: "#ff8a3d", lbw: "#f1efe6", "run out": WIN, stumped: "#8a918b"} : {caught: OR, bowled: GOLD, lbw: BLUE, "run out": WIN, stumped: "#c78bd6"};
   const show = i => {
     const c = cards[i], o = opp(c), best = topBowl(c)[0];
     ["pt", "hf"].forEach(id => { const el = document.getElementById(id); if (el) echarts.dispose(el); });
@@ -406,7 +419,7 @@ match() {
          <td class="r"><span class="tn dimn">${x.runs}</span></td><td class="r"><span class="tn">${x.wickets}</span></td><td class="r"><span class="tn dimn">${f2(x.runs / x.balls * 6)}</span></td></tr>`).join("")}</table>
         <div class="note">Highlighted: the best figures in this innings.</div>`) +
       tile(7, `Batting · ${c.team} · ${ordn(nth[i] - 1)} innings`, `<table class="c"><tr><th>Batter</th><th class="r">R</th><th class="r">B</th><th class="r">4s</th><th class="r">6s</th><th class="r">SR</th></tr>${c.bat.filter(x => x.did_bat).map(x =>
-        `<tr class="${x.player === mt.pom ? "me" : ""}"><td>${pn(x.player, 21)}<div class="how">${esc(howOut(x))}</div></td><td class="r"><span class="tn">${x.runs}${x.out ? "" : "*"}</span><span class="inl" style="width:${x.runs / 1.6}px;background:${IDEA === "2" ? LED : OR}"></span></td>
+        `<tr class="${x.player === mt.pom ? "me" : ""}"><td>${pn(x.player, 21)}<div class="how">${esc(howOut(x))}</div></td><td class="r"><span class="tn">${x.runs}${x.out ? "" : "*"}</span><span class="inl" style="width:${x.runs / 1.6}px;background:${SB ? LED : OR}"></span></td>
          <td class="r"><span class="tn dimn">${x.balls}</span></td><td class="r"><span class="tn dimn">${x.fours}</span></td><td class="r"><span class="tn dimn">${x.sixes}</span></td><td class="r"><span class="tn dimn">${f0(x.runs / Math.max(x.balls, 1) * 100)}</span></td></tr>`).join("")}
         <tr><td><span class="pn" style="font-size:21px">Total</span><div class="how">${c.overs} overs · extras ${c.extras}</div></td><td class="r" colspan="5">${n(sc(c), 34)}</td></tr></table>
         <div class="note">Fall: ${c.fow.map(w => `${w.wicket}-${w.score}`).join(", ") || "none"}${c.bat.some(x => x.player === mt.pom) ? " · highlighted: the player of the match" : ""}</div>`) +
@@ -414,7 +427,7 @@ match() {
       tile(4, `How ${c.team} fell`, `<div id="hf" style="height:270px"></div>`);
     const st = stands(c);
     chart("pt", {grid: {left: 34, right: 10, top: 30, bottom: 28}, xAxis: {type: "category", data: st.map(x => ord(x.wicket)), ...AX, splitLine: {show: false}}, yAxis: {...AX, axisLine: {show: false}},
-      series: [{type: "bar", barWidth: "56%", data: st.map(x => ({value: x.runs, itemStyle: {color: x.unbroken ? GOLD : (IDEA === "2" ? LED : OR), borderRadius: IDEA === "3" ? [6, 6, 0, 0] : 0}})),
+      series: [{type: "bar", barWidth: "56%", data: st.map(x => ({value: x.runs, itemStyle: {color: x.unbroken ? GOLD : (SB ? LED : OR), borderRadius: IDEA === "3" ? [6, 6, 0, 0] : 0}})),
         label: {show: true, position: "top", ...VAL(18), formatter: p => p.value + (st[p.dataIndex].unbroken ? "*" : "")}}]});
     const kinds = Object.entries(wicketKinds(c));
     if (kinds.length) donut("hf", kinds.map(([k, v]) => [cap(k), v, KC[k] || "#9fb0d6"]), String(c.wickets), "wickets", {...DON, radius: ["46%", "64%"], centreFont: `${NUMW} 36px ${NUMF}`});
@@ -452,7 +465,7 @@ leaders() {
     tile(6, "Most runs", `<div id="c1" style="height:520px"></div>`, {right: "runs · team"}) + tile(6, "Most wickets", `<div id="c2" style="height:520px"></div>`, {right: "wickets · team"}) +
     tile(6, "Most sixes", `<div id="c3" style="height:300px"></div>`) + tile(6, "Best average · 4+ innings", `<div id="c4" style="height:300px"></div>`) +
     tile(6, "Best strike rate · 60+ balls", `<div id="c5" style="height:300px"></div>`, {right: "runs per 100 balls"}) + tile(6, "Best economy · 10+ overs", `<div id="c6" style="height:300px"></div>`, {right: "runs per over · lower is better"});
-  const W = IDEA === "2" ? LED : GOLD;
+  const W = SB ? LED : GOLD;
   leaderBars("c1", L.bat.slice(0, 10), "runs", MINE); leaderBars("c2", L.bowl.slice(0, 10), "wickets", W);
   leaderBars("c3", X.sixes.slice(0, 6), "sixes", MINE, {valSize: 24}); leaderBars("c4", X.average.slice(0, 6), "average", MINE, {valSize: 24, fmt: f1});
   leaderBars("c5", X.strike_rate.slice(0, 6), "strike_rate", MINE, {valSize: 24, fmt: f0}); leaderBars("c6", X.economy.slice(0, 6), "economy", W, {valSize: 24, fmt: f2});
@@ -471,14 +484,14 @@ rankings() {
     series: [{type: "line", symbol: "none", step: "end", data: ELO.snaps.map(s => s.elo[x.team]), lineStyle: {width: 2, color: x.team === TEAM ? MINE : BLUE}}]}));
   chart("c1", {grid: {left: 44, right: 60, top: 10, bottom: 30}, tooltip: {trigger: "axis", ...TT}, xAxis: {type: "category", data: ELO.snaps.map(s => day(s.date)), ...AX, splitLine: {show: false}},
     yAxis: {scale: true, ...AX, axisLine: {show: false}}, series: ELO.teams.map(t => ({type: "line", name: t, step: "end", symbol: "none", data: ELO.snaps.map(s => s.elo[t]), z: t === TEAM ? 5 : 1,
-      lineStyle: {width: t === TEAM ? 4 : 1.5, color: t === TEAM ? MINE : "rgba(122,162,255,.45)", shadowBlur: IDEA === "2" && t === TEAM ? 10 : 0, shadowColor: LED},
+      lineStyle: {width: t === TEAM ? 4 : 1.5, color: t === TEAM ? MINE : "rgba(122,162,255,.45)", shadowBlur: SB && t === TEAM ? 10 : 0, shadowColor: LED},
       endLabel: {show: t === TEAM || t === T.teams[0].team, color: t === TEAM ? "#fff" : "#9fb0d6", fontFamily: "Bebas Neue", fontSize: 18, formatter: () => ab(t)}}))});
   chart("c2", {grid: {left: 16, right: 60, top: 10, bottom: 30}, xAxis: {type: "category", data: ELO.snaps.map(s => day(s.date)), ...AX, splitLine: {show: false}},
     yAxis: {inverse: true, min: 1, max: ELO.teams.length, interval: 1, splitLine: {show: false}, axisLabel: {show: false}},
     series: ELO.teams.map(t => ({type: "line", name: t, smooth: .3, symbolSize: t === TEAM ? 8 : 0, data: ELO.snaps.map(s => s.rank[t]),
       lineStyle: {width: t === TEAM ? 5 : 1.5, color: t === TEAM ? MINE : "#36559a"}, itemStyle: {color: t === TEAM ? MINE : "#36559a"}, z: t === TEAM ? 5 : 1,
       endLabel: {show: true, color: t === TEAM ? "#fff" : "#9fb0d6", fontFamily: "Bebas Neue", fontSize: t === TEAM ? 18 : 14, formatter: () => ab(t)}}))});
-  leaderBars("b1", T.bat.slice(0, 8), "batting", MINE, {valSize: 24}); leaderBars("b2", T.bowl.slice(0, 8), "bowling", IDEA === "2" ? LED : GOLD, {valSize: 24});
+  leaderBars("b1", T.bat.slice(0, 8), "batting", MINE, {valSize: 24}); leaderBars("b2", T.bowl.slice(0, 8), "bowling", SB ? LED : GOLD, {valSize: 24});
 },
 squad() {
   const Qd = D.squad.ODIs, by = (k, f = () => true) => Qd.filter(f).reduce((m, x) => (x[k] ?? -1) > (m[k] ?? -1) ? x : m, Qd.filter(f)[0]);
@@ -495,7 +508,7 @@ squad() {
       <div class="note">Form: ▲ scoring more in the last five than before, ▼ less, ▬ about the same. Highlighted: the top run-scorer.</div>`) +
     tile(6, "Runs · every batter", `<div id="r1" style="height:430px"></div>`) + tile(6, "Wickets · every bowler", `<div id="r2" style="height:430px"></div>`);
   const mk = (k) => Qd.filter(x => x[k] > 0).sort((a, b) => b[k] - a[k]).map(x => ({...x, team: TEAM}));
-  leaderBars("r1", mk("runs").slice(0, 11), "runs", MINE, {valSize: 24, right: 56, noTeam: true}); leaderBars("r2", mk("wickets").slice(0, 11), "wickets", IDEA === "2" ? LED : GOLD, {valSize: 24, right: 56, noTeam: true});
+  leaderBars("r1", mk("runs").slice(0, 11), "runs", MINE, {valSize: 24, right: 56, noTeam: true}); leaderBars("r2", mk("wickets").slice(0, 11), "wickets", SB ? LED : GOLD, {valSize: 24, right: 56, noTeam: true});
 },
 results() {
   head("Matches", "India · every result · 2026", ["2026", "All formats"]);
