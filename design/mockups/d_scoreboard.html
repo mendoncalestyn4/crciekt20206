@@ -1,0 +1,147 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Scoreboard</title>
+<link href="fonts.css" rel="stylesheet">
+<script src="echarts.min.js"></script><script src="data.js"></script><script src="lib.js"></script>
+<style>
+:root { --bg:#090b0a; --panel:#101412; --edge:#262c29; --led:#ffbf3a; --led2:#ff8a3d; --white:#f1efe6; --dim:#8a918b; --green:#4be08a; --red:#ff5b5b; --brown:#dab16f; --blue:#2255a4; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--white); font-family: Inter, sans-serif; width: 1440px; }
+.board-top { display: flex; align-items: stretch; border-bottom: 3px solid var(--edge); background: #0d100e; }
+.board-top .name { font: 800 26px Doto; color: var(--led); letter-spacing: .06em; padding: 16px 28px; border-right: 3px solid var(--edge); text-shadow: 0 0 10px rgba(255,191,58,.45); }
+.board-top a { font: 400 22px 'Bebas Neue'; letter-spacing: .12em; color: var(--dim); padding: 0 22px; display: flex; align-items: center; border-right: 1px solid var(--edge); text-decoration: none; }
+.board-top a.on { background: var(--led); color: #1b1300; }
+.board-top .clock { margin-left: auto; font: 800 22px Doto; color: var(--green); padding: 0 26px; display: flex; align-items: center; letter-spacing: .08em; }
+main { padding: 22px 26px 36px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+.p { background: var(--panel); border: 2px solid var(--edge); border-radius: 6px; position: relative; padding: 16px 18px 16px; }
+.p::before { content: ""; position: absolute; left: -2px; right: -2px; top: -2px; height: 4px; background: linear-gradient(90deg, var(--blue) 0 50%, var(--brown) 50% 100%); border-radius: 6px 6px 0 0; }
+.p h3 { font: 400 20px 'Bebas Neue'; letter-spacing: .16em; color: var(--dim); margin-bottom: 10px; display: flex; justify-content: space-between; }
+.led { font-family: Doto; font-weight: 900; color: var(--led); text-shadow: 0 0 12px rgba(255,191,58,.5); letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+.white { font: 400 34px/1 'Bebas Neue'; letter-spacing: .06em; color: var(--white); }
+.rowx { display: grid; align-items: center; border-bottom: 1px solid var(--edge); padding: 8px 2px; }
+.rowx:last-child { border-bottom: 0; }
+.lamp { width: 30px; height: 30px; border-radius: 50%; display: inline-grid; place-items: center; font: 900 13px Doto; color: #0a0a0a; }
+.lamp.W { background: var(--green); box-shadow: 0 0 14px rgba(75,224,138,.6); } .lamp.L { background: var(--red); box-shadow: 0 0 14px rgba(255,91,91,.55); }
+.lamp.D, .lamp.NR { background: #777; }
+.k { font: 400 16px 'Bebas Neue'; letter-spacing: .14em; color: var(--dim); }
+.lg { vertical-align: middle; }
+.cols { display: grid; gap: 10px; }
+.small { font: 500 13px Inter; color: var(--dim); }
+</style></head><body>
+<div class="board-top"><div class="name">STATS·PACK</div><span id="tabs" style="display:flex"></span><div class="clock" id="clock"></div></div>
+<main id="main"></main>
+<script>
+const NAV = [["home", "My team"], ["player", "Players"], ["match", "Matches"], ["series", "Series"], ["leaders", "Leaders"], ["rankings", "Rankings"]];
+document.getElementById("tabs").innerHTML = NAV.map(([k, v]) => `<a class="${k === PAGE ? "on" : ""}">${v}</a>`).join("");
+document.getElementById("clock").textContent = "IND · " + dayY(R[0].date).toUpperCase();
+const M = document.getElementById("main");
+const P = (span, title, body, right = "", extra = "") => `<div class="p" style="grid-column: span ${span};${extra}"><h3><span>${title}</span><span>${right}</span></h3>${body}</div>`;
+const LED = "#ffbf3a", DIM = "#262c29";
+// LED bars: a bar drawn as a stack of lit blocks
+const ledBars = (el, cats, vals, opt = {}) => (opt.max = Math.max(opt.max || 0, Math.ceil(Math.max(...vals) * 1.06)), chart(el, {grid: {left: opt.left || 40, right: opt.right || 20, top: 18, bottom: opt.bottom || 30},
+  xAxis: opt.horizontal ? {show: false, max: opt.max} : {type: "category", data: cats, axisLine: {lineStyle: {color: DIM}}, axisTick: {show: false}, axisLabel: {color: "#8a918b", fontFamily: "Bebas Neue", fontSize: 13, interval: 0}},
+  yAxis: opt.horizontal ? {type: "category", inverse: true, data: cats, axisLine: {show: false}, axisTick: {show: false}, axisLabel: {color: "#f1efe6", fontFamily: "Bebas Neue", fontSize: 20}} : {show: false, max: opt.max},
+  series: [{type: "pictorialBar", symbol: "rect", symbolRepeat: opt.horizontal ? "fixed" : true, symbolMargin: opt.gap || 2, symbolClip: true, symbolSize: opt.horizontal ? [opt.block || 7, 18] : ["70%", opt.block || 6], symbolBoundingData: opt.horizontal ? opt.max : undefined,
+    data: vals.map((v, i) => ({value: v, itemStyle: {color: (opt.colour && opt.colour(i)) || LED, shadowBlur: 8, shadowColor: "rgba(255,191,58,.5)"}})), z: 3,
+    label: {show: true, position: opt.horizontal ? "right" : "top", color: "#ffbf3a", fontFamily: "Doto", fontWeight: 900, fontSize: opt.horizontal ? 22 : 18, formatter: opt.fmt}},
+    {type: "pictorialBar", symbol: "rect", symbolRepeat: "fixed", symbolMargin: opt.gap || 2, symbolSize: opt.horizontal ? [opt.block || 7, 18] : ["70%", opt.block || 6], symbolBoundingData: opt.max,
+     data: vals.map(() => opt.max), itemStyle: {color: "#161b18"}, z: 1, silent: true}]}));
+// a ring of lamps: the share lit in each colour
+const lampRing = (el, items, centre, sub) => donut(el, items, centre, sub, {radius: ["62%", "86%"], pad: 3, round: 0, labels: false, centreFont: "900 46px Doto", centreInk: LED, subFont: "400 16px Bebas Neue", subInk: "#8a918b"});
+const meter = (v) => `<span style="display:inline-flex;gap:3px">${Array.from({length: 10}, (_, i) => `<i style="width:16px;height:18px;border-radius:2px;background:${i < Math.round(v / 10) ? LED : "#1c221f"};${i < Math.round(v / 10) ? "box-shadow:0 0 8px rgba(255,191,58,.5)" : ""}"></i>`).join("")}</span>`;
+
+const pages = {
+home() {
+  M.innerHTML =
+    P(8, "Season 2026", `<div style="display:flex;align-items:center;gap:22px">${img(TEAM, 110)}<div><div class="white" style="font-size:72px">India</div>
+      <div class="k">${R.length} matches</div></div><div style="margin-left:auto;text-align:right"><div class="k">Won · Lost</div><div class="led" style="font-size:86px;line-height:1">${won}·${lost}</div></div></div>
+      <div class="cols" style="grid-template-columns: 1.2fr repeat(4, 1fr);margin-top:12px">${["", "W", "L", "Elo", "Rank"].map(h => `<span class="k">${h}</span>`).join("")}
+      ${["T20Is", "ODIs", "Tests"].map(f => { const b = banner[f]; return `<span class="white" style="font-size:30px">${f}</span><span class="led" style="font-size:34px">${b.record.won}</span>
+        <span class="led" style="font-size:34px;color:#ff8a3d">${b.record.lost}</span><span class="led" style="font-size:34px">${f0(b.elo).replace(",", "")}</span><span class="led" style="font-size:34px">${b.rank}/${b.teams}</span>`; }).join("")}</div>`) +
+    P(4, "Won · lost", `<div id="ring" style="height:300px"></div>`) +
+    P(7, `Latest · ${FORMAT[R[0].section]} ${R[0].no} of ${R[0].of}`, `
+      ${[[TEAM, R[0].us], [R[0].opp, R[0].them]].map(([t, s]) => `<div class="rowx" style="grid-template-columns: 60px 1fr auto">${img(t, 48)}<span class="white" style="font-size:44px">${t}</span><span class="led" style="font-size:58px">${s}</span></div>`).join("")}
+      <div class="small" style="margin-top:8px;font-size:15px;color:#4be08a">▶ ${R[0].result.toUpperCase()} · PLAYER OF THE MATCH ${R[0].pom.toUpperCase()}</div>`, dayY(R[0].date)) +
+    P(5, "Form · last 10", `<div style="display:flex;gap:8px;flex-wrap:wrap">${R.slice(0, 10).reverse().map(r => `<span class="lamp ${r.outcome}">${r.outcome}</span>`).join("")}</div>
+      <div class="small" style="margin-top:12px">Oldest → newest</div>
+      <div class="cols" style="grid-template-columns: 1fr auto;margin-top:16px">${SERIES.slice(0, 4).map(s => `<span class="white" style="font-size:24px">${ab(s.opp)} · ${FORMAT[s.section]}s</span><span class="led" style="font-size:26px;color:${s.w > s.l ? "#4be08a" : s.w < s.l ? "#ff5b5b" : LED}">${s.w}-${s.l}</span>`).join("")}</div>`) +
+    P(6, "Batters · T20Is", `<div id="bb" style="height:230px"></div>`, "Runs") + P(6, "Bowlers · T20Is", `<div id="bw" style="height:230px"></div>`, "Wickets");
+  lampRing("ring", [["Won", won, "#4be08a"], ["Lost", lost, "#ff5b5b"]], `${won}/${R.length}`, "WON");
+  ledBars("bb", D.bat.T20Is.slice(0, 5).map(p => p.player.toUpperCase()), D.bat.T20Is.slice(0, 5).map(p => p.runs), {horizontal: true, max: 460, left: 110, right: 70, block: 6});
+  ledBars("bw", D.bowl.T20Is.slice(0, 5).map(p => p.player.toUpperCase()), D.bowl.T20Is.slice(0, 5).map(p => p.wickets), {horizontal: true, max: 24, left: 110, right: 70, block: 10, gap: 3});
+},
+player() {
+  const o = SP.ODIs, sr = D.star_runs, inn = D.star_innings.filter(i => i.section === "ODIs"), rd = D.radar[STAR];
+  M.innerHTML =
+    P(12, "Now batting · ODIs 2026", `<div style="display:flex;align-items:center;gap:24px">${img(TEAM, 96)}<div class="white" style="font-size:84px">${STAR}</div>
+      <div style="margin-left:auto;display:grid;grid-template-columns:repeat(5, auto);gap:4px 34px;text-align:center">${["Runs", "Avg", "SR", "50s", "Best"].map(h => `<span class="k">${h}</span>`).join("")}
+      ${[o.runs, f1(o.average), f1(o.strike_rate), o.fifties, o.high_score_text].map(v => `<span class="led" style="font-size:52px">${v}</span>`).join("")}</div></div>`) +
+    P(8, "Innings by innings", `<div id="c1" style="height:300px"></div>`, "Runs") +
+    P(4, "Where the runs come from", `<div id="d1" style="height:230px"></div><div class="cols" style="grid-template-columns:1fr auto">${[["Fours", sr.from4, "#ffbf3a"], ["Sixes", sr.from6, "#ff8a3d"], ["Running", sr.running, "#f1efe6"]].map(([k, v, c]) =>
+      `<span class="white" style="font-size:22px;color:${c}">${k}</span><span class="led" style="font-size:22px">${v}</span>`).join("")}</div>`) +
+    P(7, `Rated against ${D.radar_pool} ODI batters`, Object.entries(rd).map(([k, v]) => `<div class="rowx" style="grid-template-columns: 220px 1fr 70px"><span class="white" style="font-size:24px">${k}</span>${meter(v)}<span class="led" style="font-size:28px;text-align:right">${f0(v)}</span></div>`).join(""), "Percentile") +
+    P(5, "Dismissals", `<div id="d2" style="height:240px"></div><div class="cols" style="grid-template-columns:1fr auto">${Object.entries(sr.how).map(([k, v]) =>
+      `<span class="white" style="font-size:22px">${k}</span><span class="led" style="font-size:22px">${v}</span>`).join("")}</div>`);
+  ledBars("c1", inn.map(i => `${ab(i.opp)} ${day(i.date)}`), inn.map(i => i.runs), {max: 90, block: 5, gap: 2, colour: i => inn[i].runs >= 50 ? "#4be08a" : LED});
+  lampRing("d1", [["Fours", sr.from4, "#ffbf3a"], ["Sixes", sr.from6, "#ff8a3d"], ["Running", sr.running, "#f1efe6"]], String(sr.runs), "RUNS");
+  lampRing("d2", Object.entries(sr.how).map(([k, v], i) => [k, v, ["#ffbf3a", "#ff8a3d", "#f1efe6", "#4be08a"][i]]), String(sr.outs), "OUT");
+},
+match() {
+  const mt = D.match, [a, b] = mt.cards;
+  const card = c => `<div class="rowx" style="grid-template-columns: 1fr 1.3fr 60px 50px"><span class="k">Batter</span><span class="k">How out</span><span class="k" style="text-align:right">R</span><span class="k" style="text-align:right">B</span></div>` +
+    c.bat.filter(x => x.did_bat).map(x => `<div class="rowx" style="grid-template-columns: 1fr 1.3fr 60px 50px;padding:5px 2px"><span class="white" style="font-size:24px;${x.player === mt.pom ? "color:#4be08a" : ""}">${x.player}</span>
+      <span class="small" style="font-size:14px">${esc(howOut(x))}</span><span class="led" style="font-size:26px;text-align:right">${x.runs}</span><span class="led" style="font-size:20px;text-align:right;color:#8a918b;text-shadow:none">${x.balls}</span></div>`).join("") +
+    `<div class="rowx" style="grid-template-columns: 1fr auto;border-top:2px solid var(--edge)"><span class="white" style="font-size:26px">Total · ${c.overs} overs</span><span class="led" style="font-size:40px">${scoreOf(c)}</span></div>`;
+  M.innerHTML =
+    P(12, `ODI ${mt.no} of ${mt.of} · ${dayY(mt.date)}`, `<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:20px">
+      <div style="display:flex;align-items:center;gap:18px">${img(a.team, 80)}<span class="white" style="font-size:56px">${a.team}</span><span class="led" style="font-size:72px;margin-left:auto">${scoreOf(a)}</span></div>
+      <span class="k" style="font-size:24px">v</span>
+      <div style="display:flex;align-items:center;gap:18px"><span class="led" style="font-size:72px">${scoreOf(b)}</span><span class="white" style="font-size:56px;margin-left:auto">${b.team}</span>${img(b.team, 80)}</div></div>
+      <div class="small" style="text-align:center;margin-top:10px;font-size:16px;color:#4be08a;letter-spacing:.08em">▶ ${mt.result.toUpperCase()} · PLAYER OF THE MATCH ${mt.pom.toUpperCase()}</div>`) +
+    P(6, a.team + " innings", card(a)) + P(6, b.team + " innings", card(b)) +
+    P(8, "Partnerships · runs for each wicket", `<div id="c1" style="height:240px"></div>`, `<span style="color:#ffbf3a">■ ${ab(a.team)}</span> &nbsp; <span style="color:#4be08a">■ ${ab(b.team)}</span>`) +
+    P(4, "How they fell", `<div style="display:grid;grid-template-columns:1fr 1fr"><div id="d1" style="height:200px"></div><div id="d2" style="height:200px"></div></div>
+      <div class="small" style="text-align:center;font:400 16px 'Bebas Neue';letter-spacing:.12em"><span style="color:#ffbf3a">■ caught</span> &nbsp; <span style="color:#ff8a3d">■ bowled</span> &nbsp; <span style="color:#f1efe6">■ lbw</span> &nbsp; <span style="color:#4be08a">■ run out</span></div>`);
+  const sa = stands(a), sb = stands(b);
+  chart("c1", {grid: {left: 30, right: 10, top: 24, bottom: 26}, xAxis: {type: "category", data: Array.from({length: 10}, (_, i) => ord(i + 1)), axisLine: {lineStyle: {color: DIM}}, axisTick: {show: false}, axisLabel: {color: "#8a918b", fontFamily: "Bebas Neue", fontSize: 15}},
+    yAxis: {show: false, max: 180}, series: [[sa, LED], [sb, "#4be08a"]].map(([s, col]) => ({type: "pictorialBar", barGap: "30%", symbol: "rect", symbolRepeat: true, symbolMargin: 2, symbolSize: [12, 5], data: Array.from({length: 10}, (_, i) => s[i] ? s[i].runs : 0),
+      itemStyle: {color: col, shadowBlur: 6, shadowColor: col}, label: {show: true, position: "top", color: col, fontFamily: "Doto", fontWeight: 900, fontSize: 15, formatter: p => p.value || ""}}))});
+  const KC = {caught: "#ffbf3a", bowled: "#ff8a3d", lbw: "#f1efe6", "run out": "#4be08a", stumped: "#8a918b"};
+  [[a, "d1"], [b, "d2"]].forEach(([c, el]) => lampRing(el, Object.entries(wicketKinds(c)).map(([k, v]) => [k, v, KC[k]]), String(c.wickets), ab(c.team)));
+},
+series() {
+  const S = D.series, ss = SERIES.find(s => s.section === "T20Is" && s.opp === "West Indies");
+  M.innerHTML =
+    P(12, "T20I series · October 2026", `<div style="display:flex;align-items:center;gap:26px">${img(TEAM, 90)}<span class="white" style="font-size:64px">India</span>
+      <span class="led" style="font-size:110px;line-height:1">${ss.w}-${ss.l}</span><span class="white" style="font-size:64px">West Indies</span>${img("West Indies", 90)}
+      <div style="margin-left:auto;display:flex;gap:10px">${S.matches.map(r => `<div style="text-align:center"><span class="lamp ${r.outcome}" style="width:52px;height:52px;font-size:20px">${r.outcome}</span><div class="k" style="margin-top:6px">T20I ${r.no}</div></div>`).join("")}</div></div>`) +
+    S.matches.map(r => P(12 / 5 | 0 || 2, `T20I ${r.no} · ${day(r.date)}`, `<div class="led" style="font-size:40px">${r.us}</div><div class="led" style="font-size:26px;color:#8a918b;text-shadow:none">v ${r.them}</div>
+      <div class="small" style="margin-top:6px;color:${r.outcome === "W" ? "#4be08a" : "#ff5b5b"}">${r.result}</div>`, "", "grid-column: span 2")).join("") +
+    P(2, "Runs in series", `<div class="led" style="font-size:44px">${S.matches.reduce((n, r) => n + parseInt(r.us), 0)}</div><div class="k">India</div>
+      <div class="led" style="font-size:44px;color:#8a918b;text-shadow:none;margin-top:6px">${S.matches.reduce((n, r) => n + parseInt(r.them), 0)}</div><div class="k">West Indies</div>`) +
+    P(6, "Most runs", `<div id="bb" style="height:260px"></div>`) + P(6, "Most wickets", `<div id="bw" style="height:260px"></div>`);
+  ledBars("bb", S.bat.slice(0, 6).map(p => `${p.player.toUpperCase()} ${ab(p.team)}`), S.bat.slice(0, 6).map(p => p.runs), {horizontal: true, max: 260, left: 150, right: 60, block: 6, colour: i => S.bat[i].team === TEAM ? LED : "#8a918b"});
+  ledBars("bw", S.bowl.slice(0, 6).map(p => `${p.player.toUpperCase()} ${ab(p.team)}`), S.bowl.slice(0, 6).map(p => p.wickets), {horizontal: true, max: 14, left: 150, right: 60, block: 14, gap: 4, colour: i => S.bowl[i].team === TEAM ? LED : "#8a918b"});
+},
+leaders() {
+  const L = D.leaders.T20Is;
+  const board = (rows, key, extra) => rows.slice(0, 10).map((x, i) => `<div class="rowx" style="grid-template-columns: 44px 40px 1fr 70px 90px"><span class="led" style="font-size:24px;color:#8a918b;text-shadow:none">${i + 1}</span>${img(x.team, 30)}
+    <span class="white" style="font-size:28px;${x.team === TEAM ? "color:#ffbf3a" : ""}">${x.player}</span><span class="k" style="font-size:18px">${ab(x.team)}</span><span class="led" style="font-size:34px;text-align:right">${x[key]}</span></div>`).join("");
+  M.innerHTML = P(6, "Most runs · T20Is 2026", board(L.bat, "runs"), "Runs") + P(6, "Most wickets · T20Is 2026", board(L.bowl, "wickets"), "Wkts") +
+    P(12, "Strike rate of the top ten run-scorers", `<div id="c1" style="height:240px"></div>`, "Runs per 100 balls");
+  ledBars("c1", L.bat.slice(0, 10).map(p => p.player.split(" ").slice(-1)[0].toUpperCase()), L.bat.slice(0, 10).map(p => Math.round(p.strike_rate)), {max: 190, block: 5, gap: 2, colour: i => L.bat[i].team === TEAM ? LED : "#8a918b"});
+},
+rankings() {
+  const T = D.rankings.ODIs;
+  M.innerHTML = P(5, "ODI rankings · Elo", T.teams.map(x => `<div class="rowx" style="grid-template-columns: 40px 38px 1fr 90px"><span class="led" style="font-size:24px;color:#8a918b;text-shadow:none">${x.rank}</span>${img(x.team, 28)}
+      <span class="white" style="font-size:28px;${x.team === TEAM ? "color:#ffbf3a" : ""}">${x.team}</span><span class="led" style="font-size:30px;text-align:right">${f0(x.elo).replace(",", "")}</span></div>`).join(""), "", "grid-row: span 2") +
+    P(7, "India's rating · after every match day", `<div id="c1" style="height:300px"></div>`) +
+    P(7, "Best batters · ODI rating", `<div id="c2" style="height:330px"></div>`);
+  chart("c1", {grid: {left: 50, right: 20, top: 20, bottom: 30}, xAxis: {type: "category", data: ELO.snaps.map(s => day(s.date)), axisLine: {lineStyle: {color: DIM}}, axisTick: {show: false}, axisLabel: {color: "#8a918b", fontFamily: "Bebas Neue", fontSize: 14}},
+    yAxis: {scale: true, splitLine: {lineStyle: {color: "#1a201d"}}, axisLabel: {color: "#8a918b", fontFamily: "Doto", fontWeight: 900}},
+    series: [{type: "line", step: "end", data: ELO.snaps.map(s => s.elo[TEAM]), symbol: "rect", symbolSize: 7, lineStyle: {color: LED, width: 3, shadowBlur: 10, shadowColor: LED}, itemStyle: {color: LED},
+      markLine: {silent: true, symbol: "none", lineStyle: {color: "#8a918b", type: "dashed"}, label: {color: "#8a918b", formatter: "START 1500", fontFamily: "Bebas Neue", fontSize: 14}, data: [{yAxis: 1500}]}}]});
+  const bt = D.rankings.ODIs.bat.slice(0, 8);
+  ledBars("c2", bt.map(p => `${p.player.toUpperCase()} ${ab(p.team)}`), bt.map(p => p.batting), {horizontal: true, max: 800, left: 160, right: 60, block: 6, colour: i => bt[i].team === TEAM ? LED : "#8a918b"});
+}};
+pages[PAGE]();
+</script></body></html>

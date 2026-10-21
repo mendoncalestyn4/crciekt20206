@@ -1,0 +1,193 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Broadcast</title>
+<link href="fonts.css" rel="stylesheet">
+<script src="echarts.min.js"></script><script src="data.js"></script><script src="lib.js"></script>
+<style>
+:root { --navy:#0f2557; --deep:#0a1b40; --slab:#163371; --slab2:#1c3c80; --brown:#dab16f; --orange:#ee7660; --ink:#f4f6fb; --dim:#a9b6d3; --line:#2a4785; --win:#3fb27f; --loss:#e0585b; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--navy); color: var(--ink); font-family: Inter, sans-serif; width: 1440px; }
+.top { height: 64px; display: flex; align-items: stretch; background: var(--deep); }
+.brand { background: var(--brown); color: var(--deep); font: 34px 'Bebas Neue'; letter-spacing: .04em; padding: 0 44px 0 28px; display: flex; align-items: center; clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%); }
+.tabs { display: flex; gap: 6px; margin-left: 20px; }
+.tabs a { font: 600 17px 'Barlow Condensed'; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); display: flex; align-items: center; padding: 0 18px; border-bottom: 4px solid transparent; text-decoration: none; }
+.tabs a.on { color: #fff; border-bottom-color: var(--orange); background: linear-gradient(0deg, rgba(238,118,96,.14), transparent); }
+.search { margin: 14px 24px 14px auto; width: 300px; border-radius: 6px; background: var(--slab); color: var(--dim); font-size: 13px; display: flex; align-items: center; padding: 0 14px; }
+.ticker { height: 40px; background: #081634; display: flex; align-items: center; gap: 26px; padding: 0 24px; overflow: hidden; white-space: nowrap; border-bottom: 2px solid var(--brown); }
+.ticker .lab { font: 700 15px 'Barlow Condensed'; letter-spacing: .14em; color: var(--brown); }
+.tk { font: 600 15px 'Barlow Condensed'; letter-spacing: .04em; color: var(--ink); display: flex; gap: 8px; align-items: center; }
+.tk b { font-weight: 800; } .tk i { font-style: normal; color: var(--dim); }
+.chip { display: inline-block; min-width: 22px; text-align: center; font: 800 13px 'Barlow Condensed'; padding: 1px 5px; border-radius: 3px; }
+.W { background: var(--win); color: #04170e; } .L { background: var(--loss); color: #1d0607; } .D, .NR { background: #6b7a99; }
+main { padding: 26px 34px 40px; }
+.hero { position: relative; height: 230px; background: var(--slab); display: flex; align-items: center; gap: 34px; padding: 0 40px; clip-path: polygon(0 0, 100% 0, 96% 100%, 0 100%); overflow: hidden; }
+.hero::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 30%; background: var(--orange); clip-path: polygon(40% 0, 100% 0, 100% 100%, 0 100%); opacity: .95; }
+.hero::before { content: ""; position: absolute; right: 27.5%; top: 0; bottom: 0; width: 5%; background: var(--brown); clip-path: polygon(55% 0, 100% 0, 45% 100%, 0 100%); }
+.hero h1 { font: 128px/0.85 'Bebas Neue'; letter-spacing: .02em; }
+.hero .sub { font: 600 20px 'Barlow Condensed'; letter-spacing: .14em; color: var(--brown); margin-top: 10px; text-transform: uppercase; }
+.hero .side { position: absolute; right: 54px; z-index: 2; text-align: right; color: #2a0d07; font: 700 18px 'Barlow Condensed'; letter-spacing: .08em; text-transform: uppercase; line-height: 1.25; }
+.hero .side b { display: block; font: 46px/1 'Bebas Neue'; letter-spacing: .02em; }
+.row { display: grid; gap: 18px; margin-top: 22px; }
+.gfx { background: var(--slab); position: relative; }
+.gfx .tag { display: inline-block; background: var(--brown); color: var(--deep); font: 700 15px 'Barlow Condensed'; letter-spacing: .16em; text-transform: uppercase; padding: 5px 16px 5px 14px; clip-path: polygon(0 0, 100% 0, 92% 100%, 0 100%); }
+.gfx .body { padding: 14px 18px 16px; }
+.big { font: 76px/0.9 'Bebas Neue'; letter-spacing: .01em; }
+.meta { font: 600 16px 'Barlow Condensed'; letter-spacing: .06em; color: var(--dim); text-transform: uppercase; margin-top: 6px; }
+.meta b { color: #fff; } .up { color: var(--win); } .down { color: var(--loss); }
+.bug { display: grid; grid-template-columns: 1fr; }
+.bug .t { display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 14px; padding: 8px 18px; font: 44px/1 'Bebas Neue'; letter-spacing: .02em; }
+.bug .t + .t { border-top: 1px solid var(--line); }
+.bug .t .sc { font-size: 50px; } .bug .t small { font: 600 16px 'Barlow Condensed'; color: var(--dim); letter-spacing: .08em; margin-left: 10px; }
+.bug .res { background: var(--orange); color: #2a0d07; font: 700 19px 'Barlow Condensed'; letter-spacing: .1em; text-transform: uppercase; padding: 8px 18px; display: flex; justify-content: space-between; }
+.form { display: flex; gap: 8px; flex-wrap: wrap; }
+.form .chip { font-size: 20px; padding: 6px 0; width: 40px; border-radius: 4px; }
+.pl { display: grid; grid-template-columns: 64px 1fr; gap: 12px; align-items: center; }
+.pl .nm { font: 34px/1 'Bebas Neue'; letter-spacing: .02em; }
+.pl .st { font: 600 15px 'Barlow Condensed'; letter-spacing: .08em; color: var(--dim); text-transform: uppercase; }
+.num { font: 60px/0.9 'Bebas Neue'; color: var(--brown); }
+table.tv { width: 100%; border-collapse: collapse; font: 600 18px 'Barlow Condensed'; letter-spacing: .03em; }
+table.tv th { text-align: left; font: 700 14px 'Barlow Condensed'; letter-spacing: .14em; color: var(--brown); text-transform: uppercase; padding: 6px 10px; border-bottom: 2px solid var(--brown); }
+table.tv td { padding: 7px 10px; border-bottom: 1px solid var(--line); }
+table.tv td.n, table.tv th.n { text-align: right; font-variant-numeric: tabular-nums; }
+table.tv tr.me td { background: rgba(238,118,96,.18); color: #fff; }
+table.tv td .lg { vertical-align: middle; margin-right: 10px; }
+.how { font-weight: 500; color: var(--dim); font-size: 16px; }
+.pbar { display: grid; grid-template-columns: 170px 1fr 54px; align-items: center; gap: 12px; margin: 9px 0; font: 600 17px 'Barlow Condensed'; letter-spacing: .05em; text-transform: uppercase; }
+.pbar .tr { height: 16px; background: var(--deep); position: relative; }
+.pbar .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--orange); }
+.pbar .v { font: 30px 'Bebas Neue'; text-align: right; }
+.note { font: 500 14px Inter; color: var(--dim); margin-top: 8px; }
+.ch { width: 100%; }
+</style></head><body>
+<div class="top"><div class="brand">Stats Pack</div><nav class="tabs" id="tabs"></nav><div class="search">🔍&nbsp; Search players, teams, matches…</div></div>
+<div class="ticker" id="ticker"></div>
+<main id="main"></main>
+<script>
+const TABS = [["home", "My team"], ["player", "Players"], ["match", "Matches"], ["series", "Series"], ["leaders", "Leaders"], ["rankings", "Rankings"]];
+document.getElementById("tabs").innerHTML = TABS.map(([k, v]) => `<a class="${k === PAGE ? "on" : ""}">${v}</a>`).join("");
+document.getElementById("ticker").innerHTML = `<span class="lab">LATEST</span>` + R.slice(0, 8).map(r =>
+  `<span class="tk"><span class="chip ${r.outcome}">${r.outcome}</span><b>IND ${r.us}</b><i>v</i><b>${ab(r.opp)} ${r.them}</b><i>${FORMAT[r.section]} · ${day(r.date)}</i></span>`).join("");
+const M = document.getElementById("main");
+const tag = (t, body, style = "") => `<div class="gfx" style="${style}"><span class="tag">${t}</span><div class="body">${body}</div></div>`;
+const move = v => v > 0 ? `<span class="up">▲${f0(v)}</span>` : v < 0 ? `<span class="down">▼${f0(-v)}</span>` : "";
+
+const pages = {
+home() {
+  const odis = SERIES.filter(s => s.opp === "West Indies");
+  M.innerHTML = `
+  <section class="hero">${img(TEAM, 176)}<div><h1>India</h1><div class="sub">2026 season · ${R.length} matches · ${won} won · ${lost} lost</div></div>
+    <div class="side">Latest series<b>Beat West Indies</b>ODIs 3–0 · T20Is 3–2</div></section>
+  <div class="row" style="grid-template-columns: repeat(3, 1fr)">${["T20Is", "ODIs", "Tests"].map(s => { const b = banner[s];
+    return tag(s, `<div class="big">${b.record.won}–${b.record.lost}</div><div class="meta">Won–lost · <b>${pct(b.record.win_pct)}</b> won</div>
+      <div class="meta">Elo <b>${f0(b.elo)}</b> ${move(b.moved)} · <b>${ord(b.rank)}</b> of ${b.teams}</div>`); }).join("")}</div>
+  <div class="row" style="grid-template-columns: 1.6fr 1fr">
+    ${tag(`Latest result · ${FORMAT[R[0].section]} ${R[0].no} of ${R[0].of} · ${dayY(R[0].date)}`, `<div class="bug" style="margin:-4px -18px -16px">
+      <div class="t">${img(TEAM, 56)}<span>India</span><span class="sc">${R[0].us}</span></div>
+      <div class="t">${img(R[0].opp, 56)}<span>${R[0].opp}</span><span class="sc">${R[0].them}</span></div>
+      <div class="res"><span>${R[0].result}</span><span>Player of the match: ${R[0].pom}</span></div></div>`)}
+    ${tag("Form · last 10", `<div class="form">${R.slice(0, 10).map(r => `<span class="chip ${r.outcome}">${r.outcome}</span>`).join("")}</div>
+      <div class="meta" style="margin-top:14px">Last 10: <b>${R.slice(0, 10).filter(r => r.outcome === "W").length} won</b>, newest first</div>
+      <div class="meta">Series: ${SERIES.slice(0, 4).map(s => `<b>${ab(s.opp)}</b> ${FORMAT[s.section]}s ${seriesText(s)}`).join(" · ")}</div>`)}
+  </div>
+  <div class="row" style="grid-template-columns: repeat(4, 1fr)">${[
+    ["Most runs · T20Is", D.bat.T20Is[0].player, D.bat.T20Is[0].runs, `avg ${f1(D.bat.T20Is[0].average)} · SR ${f0(D.bat.T20Is[0].strike_rate)}`],
+    ["Most wickets · T20Is", D.bowl.T20Is[0].player, D.bowl.T20Is[0].wickets, `avg ${f1(D.bowl.T20Is[0].average)} · econ ${f2(D.bowl.T20Is[0].economy)}`],
+    ["Most runs · ODIs", D.bat.ODIs[0].player, D.bat.ODIs[0].runs, `avg ${f1(D.bat.ODIs[0].average)} · SR ${f0(D.bat.ODIs[0].strike_rate)}`],
+    ["Most wickets · ODIs", D.bowl.ODIs[0].player, D.bowl.ODIs[0].wickets, `avg ${f1(D.bowl.ODIs[0].average)} · best ${D.bowl.ODIs[0].best}`]].map(([t, p, n, s]) =>
+    tag(t, `<div class="pl">${img(TEAM, 56)}<div><div class="nm">${p}</div><div class="st">${s}</div></div></div><div class="num" style="margin-top:8px">${n}</div>`)).join("")}</div>`;
+},
+player() {
+  const o = SP.ODIs, rd = D.radar[STAR];
+  M.innerHTML = `
+  <section class="hero">${img(TEAM, 150)}<div><div class="sub" style="margin:0 0 6px">India · batter · ODIs 2026</div><h1 style="font-size:116px">${STAR}</h1></div>
+    <div class="side">Batting rating<b>${f0((D.ratings.ODIs.find(r => r.player === STAR) || {}).batting)}</b>2nd for India in ODIs</div></section>
+  <div class="row" style="grid-template-columns: repeat(5, 1fr)">${[["Runs", o.runs], ["Average", f1(o.average)], ["Strike rate", f1(o.strike_rate)], ["50s", o.fifties], ["Best", o.high_score_text]]
+    .map(([k, v]) => tag(k, `<div class="big">${v}</div>`)).join("")}</div>
+  <div class="row" style="grid-template-columns: 1.5fr 1fr">
+    ${tag("Every innings · ODIs 2026", `<div id="c1" class="ch" style="height:300px"></div><div class="note">Each bar is one innings, oldest first. Gold = 50 or more.</div>`)}
+    ${tag("How he compares · percentile among 67 ODI batters", Object.entries(rd).map(([k, v]) =>
+      `<div class="pbar"><span>${k}</span><div class="tr"><div class="fill" style="width:${v}%"></div></div><span class="v">${f0(v)}</span></div>`).join("") +
+      `<div class="note">99 = best in the ODIs this season; 50 = middle of the pack.</div>`)}
+  </div>
+  <div class="row" style="grid-template-columns: 1fr 1fr 1fr">
+    ${tag("Where his runs come from", `<div id="d1" style="height:250px"></div>`)}
+    ${tag("How he gets out", `<div id="d2" style="height:250px"></div>`)}
+    ${tag("Every format", `<table class="tv"><tr><th>Format</th><th class="n">Inns</th><th class="n">Runs</th><th class="n">Avg</th><th class="n">SR</th></tr>${Object.entries(SP).map(([k, v]) =>
+      `<tr><td>${k}</td><td class="n">${v.innings}</td><td class="n">${v.runs}</td><td class="n">${f1(v.average)}</td><td class="n">${f0(v.strike_rate)}</td></tr>`).join("")}</table>`)}
+  </div>`;
+  const sr = D.star_runs, B = {font: "Barlow Condensed", size: 16, centreFont: "64px Bebas Neue", subFont: "600 14px Barlow Condensed"};
+  donut("d1", [["Fours", sr.from4, "#ee7660"], ["Sixes", sr.from6, "#dab16f"], ["Running", sr.running, "#6f8fd6"]], String(sr.runs), "ODI RUNS", B);
+  donut("d2", Object.entries(sr.how).map(([k, v], i) => [cap(k), v, ["#ee7660", "#dab16f", "#6f8fd6", "#3fb27f", "#a9b6d3"][i]]), String(sr.outs), "DISMISSALS", B);
+  const inn = D.star_innings.filter(i => i.section === "ODIs");
+  chart("c1", {grid: {left: 40, right: 10, top: 20, bottom: 50}, xAxis: {type: "category", data: inn.map(i => `${ab(i.opp)}\n${day(i.date)}`),
+    axisLabel: {color: "#a9b6d3", fontFamily: "Barlow Condensed", fontSize: 14}, axisLine: {lineStyle: {color: "#2a4785"}}},
+    yAxis: {splitLine: {lineStyle: {color: "#203c78"}}, axisLabel: {color: "#a9b6d3"}},
+    series: [{type: "bar", barWidth: "62%", data: inn.map(i => ({value: i.runs, itemStyle: {color: i.runs >= 50 ? "#dab16f" : "#ee7660"}})),
+      label: {show: true, position: "top", color: "#fff", fontFamily: "Bebas Neue", fontSize: 22}}]});
+},
+match() {
+  const mt = D.match, [a, b] = mt.cards;
+  const bat = c => `<table class="tv"><tr><th>${c.team}</th><th></th><th class="n">R</th><th class="n">B</th><th class="n">4s</th><th class="n">6s</th></tr>${c.bat.filter(x => x.did_bat).map(x =>
+    `<tr class="${x.player === mt.pom ? "me" : ""}"><td>${x.player}</td><td class="how">${esc(howOut(x))}</td><td class="n">${x.runs}</td><td class="n">${x.balls}</td><td class="n">${x.fours}</td><td class="n">${x.sixes}</td></tr>`).join("")}</table>`;
+  M.innerHTML = `
+  <div class="gfx"><span class="tag">ODIs · match ${mt.no} of ${mt.of} · ${dayY(mt.date)}</span><div class="bug" style="grid-template-columns:1fr 1fr">
+    <div class="t">${img(a.team, 64)}<span>${a.team}</span><span class="sc">${scoreOf(a)}<small>${a.overs} OV</small></span></div>
+    <div class="t" style="border-top:0;border-left:1px solid var(--line)">${img(b.team, 64)}<span>${b.team}</span><span class="sc">${scoreOf(b)}<small>${b.overs} OV</small></span></div>
+    <div class="res" style="grid-column: 1 / -1"><span>${mt.result}</span><span>Player of the match: ${mt.pom}</span></div></div></div>
+  <div class="row" style="grid-template-columns: 1fr 1fr">${tag("Batting · " + a.team, bat(a))}${tag("Batting · " + b.team, bat(b))}</div>
+  <div class="row" style="grid-template-columns: 2fr 1fr 1fr">${tag("Partnerships · runs added for each wicket", `<div id="c1" class="ch" style="height:260px"></div>`)}
+    ${tag("How " + a.team + " fell", `<div id="d1" style="height:260px"></div>`)}${tag("How " + b.team + " fell", `<div id="d2" style="height:260px"></div>`)}</div>`;
+  const B = {font: "Barlow Condensed", size: 16, centreFont: "60px Bebas Neue", subFont: "600 14px Barlow Condensed"}, KC = {caught: "#ee7660", bowled: "#dab16f", lbw: "#6f8fd6", "run out": "#3fb27f", stumped: "#c78bd6"};
+  [[a, "d1"], [b, "d2"]].forEach(([c, el]) => { const k = wicketKinds(c);
+    donut(el, Object.entries(k).map(([n, v]) => [cap(n), v, KC[n] || "#a9b6d3"]), String(c.wickets), "WICKETS", B); });
+  const sa = stands(a), sb = stands(b);
+  chart("c1", {legend: {top: 0, textStyle: {color: "#f4f6fb", fontFamily: "Barlow Condensed", fontSize: 16}},
+    grid: {left: 40, right: 10, top: 34, bottom: 28}, xAxis: {type: "category", data: Array.from({length: 10}, (_, i) => ord(i + 1)),
+    axisLabel: {color: "#a9b6d3", fontFamily: "Barlow Condensed", fontSize: 14}}, yAxis: {splitLine: {lineStyle: {color: "#203c78"}}, axisLabel: {color: "#a9b6d3"}},
+    series: [[a, sa, "#6f8fd6"], [b, sb, "#ee7660"]].map(([c, s, col]) => ({name: c.team, type: "bar", data: s.map(x => x.runs), itemStyle: {color: col},
+      label: {show: true, position: "top", color: "#fff", fontFamily: "Bebas Neue", fontSize: 18}}))});
+},
+series() {
+  const S = D.series, ss = SERIES.find(s => s.section === "T20Is" && s.opp === "West Indies");
+  M.innerHTML = `
+  <section class="hero" style="height:190px">${img(TEAM, 120)}<div><div class="sub" style="margin:0 0 6px">T20I series · October 2026</div><h1 style="font-size:96px">India ${ss.w}–${ss.l} West Indies</h1></div>
+    <div class="side">Series<b>India win</b>5 matches</div></section>
+  <div class="row" style="grid-template-columns: repeat(5, 1fr)">${S.matches.map(r => tag(`T20I ${r.no} · ${day(r.date)}`,
+    `<div class="meta"><span class="chip ${r.outcome}">${r.outcome}</span></div><div class="big" style="font-size:46px;margin-top:6px">${r.us}</div><div class="meta">v ${r.them}</div><div class="meta" style="font-size:14px">${r.result}</div>`)).join("")}</div>
+  <div class="row" style="grid-template-columns: 1fr 1fr">
+    ${tag("Most runs in the series", `<table class="tv"><tr><th>Player</th><th class="n">Runs</th><th class="n">Inns</th><th class="n">HS</th><th class="n">SR</th></tr>${S.bat.slice(0, 6).map(x =>
+      `<tr class="${x.team === TEAM ? "me" : ""}"><td>${img(x.team, 26)}${x.player}</td><td class="n">${x.runs}</td><td class="n">${x.inns}</td><td class="n">${x.hs}</td><td class="n">${f0(x.runs / x.balls * 100)}</td></tr>`).join("")}</table>`)}
+    ${tag("Most wickets in the series", `<table class="tv"><tr><th>Player</th><th class="n">Wkts</th><th class="n">Runs</th><th class="n">Econ</th></tr>${S.bowl.slice(0, 6).map(x =>
+      `<tr class="${x.team === TEAM ? "me" : ""}"><td>${img(x.team, 26)}${x.player}</td><td class="n">${x.wickets}</td><td class="n">${x.runs}</td><td class="n">${f2(x.economy)}</td></tr>`).join("")}</table>`)}
+  </div>`;
+},
+leaders() {
+  const L = D.leaders.T20Is;
+  M.innerHTML = `
+  <section class="hero" style="height:150px"><div><div class="sub" style="margin:0 0 6px">T20Is · 2026 · every team</div><h1 style="font-size:96px">Leaders</h1></div></section>
+  <div class="row" style="grid-template-columns: 1fr 1fr">
+    ${tag("Most runs", `<div id="c1" class="ch" style="height:520px"></div>`)}
+    ${tag("Most wickets", `<div id="c2" class="ch" style="height:520px"></div>`)}</div>`;
+  const bars = (el, rows, key, col) => chart(el, {grid: {left: 150, right: 60, top: 6, bottom: 6},
+    xAxis: {show: false}, yAxis: {type: "category", inverse: true, data: rows.map(r => r.player), axisLine: {show: false}, axisTick: {show: false},
+      axisLabel: {color: "#f4f6fb", fontFamily: "Barlow Condensed", fontSize: 19, fontWeight: 600}},
+    series: [{type: "bar", barWidth: "64%", data: rows.map(r => ({value: r[key], itemStyle: {color: r.team === TEAM ? col : "#3a5aa0"}})),
+      label: {show: true, position: "right", color: "#fff", fontFamily: "Bebas Neue", fontSize: 26, formatter: p => `${p.value}  ${ab(rows[p.dataIndex].team)}`}}]});
+  bars("c1", L.bat.slice(0, 10), "runs", "#ee7660"); bars("c2", L.bowl.slice(0, 10), "wickets", "#dab16f");
+},
+rankings() {
+  const T = D.rankings.ODIs;
+  M.innerHTML = `
+  <section class="hero" style="height:150px"><div><div class="sub" style="margin:0 0 6px">ODIs · team ratings (Elo) · after every match</div><h1 style="font-size:96px">Rankings</h1></div></section>
+  <div class="row" style="grid-template-columns: 1fr 1.3fr">
+    ${tag("Team table", `<table class="tv"><tr><th class="n">#</th><th>Team</th><th class="n">Elo</th><th class="n">Played</th></tr>${T.teams.map(x =>
+      `<tr class="${x.team === TEAM ? "me" : ""}"><td class="n">${x.rank}</td><td>${img(x.team, 28)}${x.team}</td><td class="n">${f0(x.elo)}</td><td class="n">${x.played}</td></tr>`).join("")}</table>`)}
+    ${tag("The race · rank after every match day", `<div id="c1" class="ch" style="height:470px"></div>`)}</div>`;
+  const teams = ELO.teams;
+  chart("c1", {grid: {left: 16, right: 110, top: 16, bottom: 30}, xAxis: {type: "category", data: ELO.snaps.map(s => day(s.date)), axisLabel: {color: "#a9b6d3", fontFamily: "Barlow Condensed", fontSize: 13}},
+    yAxis: {inverse: true, min: 1, max: teams.length, interval: 1, splitLine: {show: false}, axisLabel: {show: false}},
+    series: teams.map(t => ({type: "line", name: t, smooth: .3, symbolSize: t === TEAM ? 9 : 0, data: ELO.snaps.map(s => s.rank[t]),
+      lineStyle: {width: t === TEAM ? 6 : 2, color: t === TEAM ? "#ee7660" : "#36559a"}, itemStyle: {color: t === TEAM ? "#ee7660" : "#36559a"}, z: t === TEAM ? 5 : 1,
+      endLabel: {show: true, color: t === TEAM ? "#fff" : "#a9b6d3", fontFamily: "Barlow Condensed", fontSize: t === TEAM ? 18 : 14, fontWeight: 700, formatter: () => ab(t)}}))});
+}};
+pages[PAGE]();
+</script></body></html>

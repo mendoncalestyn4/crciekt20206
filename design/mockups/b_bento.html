@@ -1,0 +1,220 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Bento</title>
+<link href="fonts.css" rel="stylesheet">
+<script src="echarts.min.js"></script><script src="data.js"></script><script src="lib.js"></script>
+<style>
+:root { --page:#0f2557; --tile:#162f68; --tile2:#1b3878; --edge:#24427f; --rail:#dab16f; --ink:#f3f6fc; --dim:#9fb0d6; --orange:#ee7660; --gold:#dab16f; --blue:#7aa2ff; --win:#45c08a; --loss:#ee6a6a; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--page); color: var(--ink); font-family: Inter, sans-serif; width: 1440px; display: flex; }
+.rail { width: 92px; min-height: 100vh; background: var(--rail); display: flex; flex-direction: column; align-items: center; padding: 18px 0; gap: 6px; align-self: stretch; }
+.rail .mark { width: 52px; height: 52px; border-radius: 16px; background: #0f2557; color: var(--gold); display: grid; place-items: center; font: 700 22px 'Space Grotesk'; margin-bottom: 14px; }
+.rail a { width: 74px; padding: 10px 0 8px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 4px; color: #3b2a10; font: 600 11px Inter; text-decoration: none; }
+.rail a svg { width: 24px; height: 24px; }
+.rail a.on { background: #0f2557; color: #fff; }
+.main { flex: 1; padding: 26px 30px 40px; }
+.head { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.head h1 { font: 700 34px 'Space Grotesk'; letter-spacing: -.01em; }
+.head .crumb { color: var(--dim); font-size: 14px; margin-top: 4px; }
+.pill { border-radius: 999px; background: var(--tile); border: 1px solid var(--edge); padding: 9px 16px; font-size: 13px; color: var(--dim); display: flex; gap: 10px; align-items: center; }
+.pill kbd { font: 600 11px Inter; border: 1px solid var(--edge); border-radius: 6px; padding: 1px 6px; color: var(--ink); }
+.chips { display: flex; gap: 8px; margin-left: auto; }
+.chips span { border-radius: 999px; padding: 8px 14px; font: 600 13px Inter; background: var(--tile); border: 1px solid var(--edge); color: var(--dim); }
+.chips span.on { background: var(--ink); color: var(--page); border-color: var(--ink); }
+.grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+.t { background: var(--tile); border: 1px solid var(--edge); border-radius: 24px; padding: 20px 22px; position: relative; overflow: hidden; }
+.t h3 { font: 600 12px Inter; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.t h3 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
+.n { font: 700 46px/1 'Space Grotesk'; letter-spacing: -.02em; }
+.n small { font: 500 15px Inter; color: var(--dim); letter-spacing: 0; margin-left: 6px; }
+.s { color: var(--dim); font-size: 13.5px; margin-top: 6px; line-height: 1.5; }
+.s b { color: var(--ink); }
+.up { color: var(--win); } .down { color: var(--loss); }
+.sq { display: flex; gap: 6px; }
+.sq span { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font: 700 11px Inter; color: #0b1b3d; }
+.W { background: var(--win); } .L { background: var(--loss); } .D, .NR { background: #8a97b5; }
+.lgimg { border-radius: 12px; }
+.row2 { display: flex; align-items: center; gap: 16px; }
+.mini { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: baseline; }
+.list { display: grid; gap: 10px; }
+.li { display: grid; grid-template-columns: 34px 1fr auto; gap: 12px; align-items: center; font-size: 14.5px; }
+.av { width: 34px; height: 34px; border-radius: 50%; background: var(--tile2); border: 1px solid var(--edge); display: grid; place-items: center; font: 700 12px 'Space Grotesk'; color: var(--gold); }
+.bar { height: 6px; border-radius: 3px; background: #0d214c; margin-top: 5px; overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 3px; background: var(--orange); }
+table.c { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
+table.c th { text-align: left; font: 600 11.5px Inter; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); padding: 6px 8px; }
+table.c td { padding: 9px 8px; border-top: 1px solid var(--edge); }
+table.c .r { text-align: right; font-variant-numeric: tabular-nums; }
+table.c tr.me td { background: rgba(238,118,96,.12); }
+table.c tr.me td:first-child { border-radius: 10px 0 0 10px; } table.c tr.me td:last-child { border-radius: 0 10px 10px 0; }
+.how { color: var(--dim); font-size: 12.5px; }
+.inl { display: inline-block; height: 6px; border-radius: 3px; background: var(--orange); vertical-align: middle; margin-left: 8px; }
+.tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font: 600 12px Inter; background: #0d214c; color: var(--dim); }
+</style></head><body>
+<nav class="rail" id="rail"></nav>
+<div class="main"><div class="head" id="head"></div><div class="grid" id="main"></div></div>
+<script>
+const ICON = {home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>', player: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
+  match: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M12 5v14M3 12h18"/>', series: '<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/>',
+  leaders: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 6h3a3 3 0 0 1-3 4M7 6H4a3 3 0 0 0 3 4"/>', rankings: '<path d="M3 17l6-6 4 4 8-8M21 7v5M21 7h-5"/>'};
+const NAV = [["home", "My team"], ["player", "Players"], ["match", "Matches"], ["series", "Series"], ["leaders", "Leaders"], ["rankings", "Rankings"]];
+document.getElementById("rail").innerHTML = `<div class="mark">SP</div>` + NAV.map(([k, v]) =>
+  `<a class="${k === PAGE ? "on" : ""}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>${v}</a>`).join("");
+const H = document.getElementById("head"), M = document.getElementById("main");
+const head = (title, crumb, chips = ["2026", "All formats"]) => H.innerHTML = `<div><h1>${title}</h1><div class="crumb">${crumb}</div></div>
+  <div class="chips">${chips.map((c, i) => `<span class="${i === 0 ? "on" : ""}">${c}</span>`).join("")}</div>
+  <div class="pill">🔍 Search anything <kbd>Ctrl K</kbd></div>`;
+const tile = (span, title, body, extra = "") => `<div class="t" style="grid-column: span ${span};${extra}"><h3><span class="dot"></span>${title}</h3>${body}</div>`;
+const initials = p => p.split(" ").map(x => x[0]).join("").slice(0, 2);
+const AX = {axisLabel: {color: "#9fb0d6", fontFamily: "Inter", fontSize: 11}, axisLine: {lineStyle: {color: "#24427f"}}, splitLine: {lineStyle: {color: "#203c78"}}};
+const TT = {backgroundColor: "#0f2557", borderColor: "#24427f", textStyle: {color: "#fff", fontFamily: "Inter"}};
+
+const pages = {
+home() {
+  head("Good evening, captain", "India · your team · 2026 season");
+  const fmts = ["T20Is", "ODIs", "Tests"];
+  M.innerHTML =
+    tile(4, "Season", `<div class="row2">${img(TEAM, 84, true, "lgimg")}<div><div class="n">${won}–${lost}</div><div class="s"><b>${R.length}</b> matches · won <b>${pct(won / R.length * 100)}</b></div></div></div>
+      <div id="ring" style="height:180px;margin-top:8px"></div>`, "grid-row: span 2") +
+    fmts.map(f => { const b = banner[f]; return tile(f === "Tests" ? 2 : 3, f, `<div class="n">${b.record.won}–${b.record.lost}</div>
+      <div class="s">Elo <b>${f0(b.elo)}</b> <span class="${b.moved >= 0 ? "up" : "down"}">${b.moved >= 0 ? "▲" : "▼"}${f0(Math.abs(b.moved))}</span> · <b>${ord(b.rank)}</b>/${b.teams}</div>
+      <div id="sp_${f}" style="height:54px;margin-top:6px"></div>`); }).join("") +
+    tile(5, `Latest · ${FORMAT[R[0].section]} ${R[0].no} of ${R[0].of}`, `<div class="mini" style="font-size:18px">
+        <span class="row2" style="gap:10px">${img(TEAM, 34)}<b>India</b></span><span class="n" style="font-size:30px">${R[0].us}</span>
+        <span class="row2" style="gap:10px">${img(R[0].opp, 34)}${R[0].opp}</span><span class="n" style="font-size:30px;color:var(--dim)">${R[0].them}</span></div>
+      <div class="s" style="margin-top:10px"><span class="tag" style="background:rgba(69,192,138,.16);color:var(--win)">● ${R[0].result}</span> · ${dayY(R[0].date)} · PoM <b>${R[0].pom}</b></div>`) +
+    tile(3, "Form", `<div class="sq">${R.slice(0, 10).reverse().map(r => `<span class="${r.outcome}">${r.outcome}</span>`).join("")}</div>
+      <div class="s" style="margin-top:12px">Oldest → newest · <b>${R.slice(0, 10).filter(r => r.outcome === "W").length}</b> of the last 10 won</div>`) +
+    tile(4, "Every match · 2026", `<div id="cal" style="height:150px"></div>`) +
+    tile(4, "Top run-scorers · T20Is", `<div class="list">${D.bat.T20Is.slice(0, 4).map(p => `<div class="li"><span class="av">${initials(p.player)}</span>
+      <div>${p.player}<div class="bar"><i style="width:${p.runs / D.bat.T20Is[0].runs * 100}%"></i></div></div><b>${p.runs}</b></div>`).join("")}</div>`) +
+    tile(4, "Top wicket-takers · T20Is", `<div class="list">${D.bowl.T20Is.slice(0, 4).map(p => `<div class="li"><span class="av">${initials(p.player)}</span>
+      <div>${p.player}<div class="bar"><i style="width:${p.wickets / D.bowl.T20Is[0].wickets * 100}%;background:var(--gold)"></i></div></div><b>${p.wickets}</b></div>`).join("")}</div>`) +
+    tile(4, "Series this season", `<div class="list">${SERIES.slice(0, 5).map(s => `<div class="li"><span>${img(s.opp, 30)}</span>
+      <div>${s.opp} <span class="how">· ${s.section} · ${s.when}</span></div><span class="tag" style="color:${s.w > s.l ? "var(--win)" : s.w < s.l ? "var(--loss)" : "var(--dim)"}">${seriesText(s)}</span></div>`).join("")}</div>`) +
+    tile(8, "Where India rank in the world · team rating (Elo)", `<div id="rk" style="height:250px"></div>`);
+  donut("ring", [["Won", won, "#45c08a"], ["Lost", lost, "#ee6a6a"]], pct(won / R.length * 100), "won", {labels: false, radius: ["70%", "92%"], round: 10, pad: 4,
+    centreFont: "700 30px Space Grotesk", subFont: "500 13px Inter"});
+  fmts.forEach(f => { const g = [...R].reverse().filter(r => r.section === f); let c = 0;
+    chart("sp_" + f, {grid: {left: 2, right: 2, top: 4, bottom: 4}, xAxis: {type: "category", show: false, data: g.map(r => r.date)}, yAxis: {show: false, scale: true},
+      series: [{type: "line", smooth: .4, symbol: "none", data: g.map(r => (c += r.outcome === "W" ? 1 : r.outcome === "L" ? -1 : 0)),
+        lineStyle: {width: 3, color: "#ee7660"}, areaStyle: {color: {type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{offset: 0, color: "rgba(238,118,96,.35)"}, {offset: 1, color: "rgba(238,118,96,0)"}]}}}]}); });
+  chart("rk", {grid: {left: 70, right: 30, top: 10, bottom: 30}, xAxis: {type: "value", min: 1, interval: 1, inverse: true, ...AX, axisLabel: {color: "#9fb0d6", formatter: v => ord(v)}},
+    yAxis: {type: "category", data: fmts, axisLine: {show: false}, axisTick: {show: false}, axisLabel: {color: "#e4ebfa", fontFamily: "Inter", fontWeight: 600, fontSize: 14}},
+    series: [{type: "bar", barWidth: 10, data: fmts.map(f => banner[f].teams), itemStyle: {color: "#0d214c", borderRadius: 5}, barGap: "-100%", silent: true},
+      {type: "scatter", symbolSize: 34, data: fmts.map(f => banner[f].rank), itemStyle: {color: "#ee7660", borderColor: "#fff", borderWidth: 2},
+        label: {show: true, color: "#fff", fontFamily: "Space Grotesk", fontWeight: 700, formatter: p => p.value}}]});
+  chart("cal", {visualMap: {show: false, type: "piecewise", pieces: [{value: 1, color: "#45c08a"}, {value: -1, color: "#ee6a6a"}]},
+    calendar: {range: ["2026-06-01", "2026-10-31"], cellSize: [17, 17], top: 22, left: 30, right: 6, itemStyle: {color: "#0d214c", borderColor: "#162f68", borderWidth: 3},
+      splitLine: {show: false}, dayLabel: {show: false}, monthLabel: {color: "#9fb0d6", fontFamily: "Inter", fontSize: 11}, yearLabel: {show: false}},
+    series: [{type: "heatmap", coordinateSystem: "calendar", data: R.map(r => [r.date, r.outcome === "W" ? 1 : -1])}]});
+},
+player() {
+  head(STAR, "Players · India · batter", ["ODIs", "Tests", "All formats"]);
+  const o = SP.ODIs, rt = (D.ratings.ODIs.find(r => r.player === STAR) || {}).batting, inn = D.star_innings.filter(i => i.section === "ODIs");
+  M.innerHTML =
+    tile(4, "Batting rating · ODIs", `<div class="row2">${img(TEAM, 64)}<div><div class="n">${f0(rt)}<small>/ 1000</small></div><div class="s">2nd for India · 500 = an average batter</div></div></div>
+      <div id="g" style="height:170px"></div>`, "grid-row: span 2") +
+    [["Runs", o.runs, `${o.innings} innings`], ["Average", f1(o.average), "runs per dismissal"], ["Strike rate", f1(o.strike_rate), "runs per 100 balls"], ["Best", o.high_score_text, `${o.fifties} fifties`]]
+      .map(([k, v, s]) => tile(2, k, `<div class="n">${v}</div><div class="s">${s}</div>`)).join("") +
+    tile(8, "Innings by innings", `<div id="c1" style="height:150px"></div>`) +
+    tile(5, "Player DNA · percentile v 67 ODI batters", `<div id="c2" style="height:300px"></div>`) +
+    tile(3, "Where the runs come from", `<div id="d1" style="height:300px"></div>`) +
+    tile(4, "How he gets out", `<div id="d2" style="height:300px"></div>`);
+  chart("g", {series: [{type: "gauge", startAngle: 200, endAngle: -20, min: 0, max: 1000, radius: "100%", center: ["50%", "62%"], progress: {show: true, width: 16, roundCap: true, itemStyle: {color: "#ee7660"}},
+    axisLine: {roundCap: true, lineStyle: {width: 16, color: [[1, "#0d214c"]]}}, axisTick: {show: false}, splitLine: {show: false}, axisLabel: {show: false}, pointer: {show: false},
+    detail: {offsetCenter: [0, "8%"], formatter: v => `${v}`, color: "#fff", font: "700 34px Space Grotesk"}, title: {show: false}, data: [{value: rt}]}]});
+  chart("c1", {grid: {left: 34, right: 10, top: 14, bottom: 26}, tooltip: {trigger: "axis", ...TT}, xAxis: {type: "category", data: inn.map(i => `${ab(i.opp)} ${day(i.date)}`), ...AX, splitLine: {show: false}},
+    yAxis: {...AX, max: 100}, series: [{type: "line", smooth: .35, data: inn.map(i => i.runs), symbolSize: 10, lineStyle: {width: 3, color: "#ee7660"}, itemStyle: {color: "#ee7660", borderColor: "#fff", borderWidth: 2},
+      areaStyle: {color: {type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{offset: 0, color: "rgba(238,118,96,.35)"}, {offset: 1, color: "rgba(238,118,96,0)"}]}},
+      markLine: {silent: true, symbol: "none", label: {color: "#dab16f", formatter: "50", fontFamily: "Inter", position: "insideStartTop"}, lineStyle: {color: "#dab16f", type: "dashed"}, data: [{yAxis: 50}]},
+      label: {show: true, position: "top", color: "#fff", fontFamily: "Space Grotesk", fontWeight: 700}}]});
+  const rd = D.radar[STAR], keys = Object.keys(rd);
+  chart("c2", {radar: {indicator: keys.map(k => ({name: k, max: 100})), radius: "66%", splitNumber: 4, axisName: {color: "#c9d5f2", fontFamily: "Inter", fontSize: 12},
+      splitLine: {lineStyle: {color: "#2a4785"}}, splitArea: {areaStyle: {color: ["#14306a", "#173572"]}}, axisLine: {lineStyle: {color: "#2a4785"}}},
+    legend: {bottom: 0, textStyle: {color: "#c9d5f2"}, data: [STAR, "S Gill"]},
+    series: [{type: "radar", data: [{name: STAR, value: keys.map(k => rd[k]), areaStyle: {color: "rgba(238,118,96,.35)"}, lineStyle: {color: "#ee7660", width: 2.5}, itemStyle: {color: "#ee7660"}},
+      {name: "S Gill", value: keys.map(k => D.radar["S Gill"][k]), areaStyle: {color: "rgba(122,162,255,.18)"}, lineStyle: {color: "#7aa2ff", width: 2, type: "dashed"}, itemStyle: {color: "#7aa2ff"}}]}]});
+  const sr = D.star_runs;
+  donut("d1", [["Fours", sr.from4, "#ee7660"], ["Sixes", sr.from6, "#dab16f"], ["Running", sr.running, "#7aa2ff"]], String(sr.runs), "runs", {radius: ["34%", "52%"], round: 8, pad: 3, centreFont: "700 26px Space Grotesk", subFont: "500 12px Inter"});
+  donut("d2", Object.entries(sr.how).map(([k, v], i) => [cap(k), v, ["#ee7660", "#dab16f", "#7aa2ff", "#45c08a"][i]]), String(sr.outs), "times out", {radius: ["40%", "60%"], round: 8, pad: 3, centreFont: "700 26px Space Grotesk", subFont: "500 12px Inter"});
+},
+match() {
+  const mt = D.match, [a, b] = mt.cards;
+  head(`${a.team} v ${b.team}`, `Matches · ODI ${mt.no} of ${mt.of} · ${dayY(mt.date)}`, ["Scorecard", "Partnerships", "Players"]);
+  const card = c => `<table class="c"><tr><th>Batter</th><th class="r">R</th><th class="r">B</th><th class="r">SR</th></tr>${c.bat.filter(x => x.did_bat).map(x =>
+    `<tr class="${x.player === mt.pom ? "me" : ""}"><td><b>${x.player}</b><div class="how">${esc(howOut(x))}</div></td><td class="r"><b>${x.runs}</b><span class="inl" style="width:${x.runs / 1.4}px"></span></td>
+     <td class="r">${x.balls}</td><td class="r">${f0(x.runs / Math.max(x.balls, 1) * 100)}</td></tr>`).join("")}</table>`;
+  M.innerHTML =
+    tile(12, "Result", `<div class="row2" style="justify-content:space-between">
+      <div class="row2">${img(a.team, 64)}<div><div style="font-size:20px;font-weight:700">${a.team}</div><div class="n">${scoreOf(a)}<small>${a.overs} ov</small></div></div></div>
+      <div style="text-align:center"><span class="tag" style="background:rgba(69,192,138,.16);color:var(--win);font-size:14px">● ${mt.result}</span><div class="s">Player of the match <b>${mt.pom}</b></div></div>
+      <div class="row2"><div style="text-align:right"><div style="font-size:20px;font-weight:700">${b.team}</div><div class="n">${scoreOf(b)}<small>${b.overs} ov</small></div></div>${img(b.team, 64)}</div></div>
+      <div id="race" style="height:90px;margin-top:10px"></div>`) +
+    tile(6, a.team + " batting", card(a)) + tile(6, b.team + " batting", card(b)) +
+    [[a, "w1"], [b, "w2"]].map(([c, el]) => tile(3, "How " + c.team + " fell", `<div id="${el}" style="height:210px"></div>`)).join("") +
+    tile(6, "Bowling · best figures", `<table class="c"><tr><th>Bowler</th><th class="r">O</th><th class="r">R</th><th class="r">W</th><th class="r">Econ</th></tr>${[...a.bowl.map(x => ({...x, t: b.team})), ...b.bowl.map(x => ({...x, t: a.team}))]
+      .sort((x, y) => y.wickets - x.wickets || x.runs - y.runs).slice(0, 6).map(x => `<tr class="${x.t === TEAM ? "me" : ""}"><td>${img(x.t, 20)} ${x.player}</td><td class="r">${Math.floor(x.balls / 6)}${x.balls % 6 ? "." + x.balls % 6 : ""}</td>
+      <td class="r">${x.runs}</td><td class="r"><b>${x.wickets}</b></td><td class="r">${f2(x.runs / x.balls * 6)}</td></tr>`).join("")}</table>`);
+  const pal = ["#7aa2ff", "#ee7660", "#dab16f", "#45c08a", "#c78bd6", "#5fd0e0", "#f2a65a", "#9fb0d6", "#e88bb0", "#b7d36b"];
+  const sa = stands(a), sb = stands(b), n = Math.max(sa.length, sb.length);
+  chart("race", {grid: {left: 110, right: 30, top: 0, bottom: 0}, xAxis: {show: false, max: Math.max(a.runs, b.runs)}, yAxis: {type: "category", data: [b.team, a.team], axisLine: {show: false}, axisTick: {show: false}, axisLabel: {color: "#c9d5f2", fontFamily: "Inter", fontWeight: 600}},
+    series: Array.from({length: n}, (_, i) => ({type: "bar", stack: "s", barWidth: 26, name: ord(i + 1) + " wkt", itemStyle: {color: pal[i % pal.length], borderColor: "#162f68", borderWidth: 2, borderRadius: 4},
+      label: {show: true, color: "#0b1b3d", fontWeight: 700, fontSize: 11, formatter: p => p.value >= 15 ? p.value : ""}, data: [sb[i] ? sb[i].runs : 0, sa[i] ? sa[i].runs : 0]}))});
+  const KC = {caught: "#ee7660", bowled: "#dab16f", lbw: "#7aa2ff", "run out": "#45c08a", stumped: "#c78bd6"};
+  [[a, "w1"], [b, "w2"]].forEach(([c, el]) => donut(el, Object.entries(wicketKinds(c)).map(([k, v]) => [cap(k), v, KC[k] || "#9fb0d6"]), String(c.wickets), "wickets",
+    {radius: ["42%", "62%"], round: 8, pad: 3, centreFont: "700 26px Space Grotesk", subFont: "500 12px Inter"}));
+},
+series() {
+  const S = D.series, ss = SERIES.find(s => s.section === "T20Is" && s.opp === "West Indies");
+  head(`India ${ss.w}–${ss.l} West Indies`, "Series · T20Is · October 2026", ["This series", "All series"]);
+  const runsBy = t => S.matches.reduce((n, r) => n + parseInt(t === TEAM ? r.us : r.them), 0);
+  M.innerHTML =
+    S.matches.map(r => tile(12 / 5 > 2 ? 2 : 2, `T20I ${r.no} · ${day(r.date)}`, `<div class="sq"><span class="${r.outcome}">${r.outcome}</span></div>
+      <div class="n" style="font-size:30px;margin-top:10px">${r.us}</div><div class="s">v ${r.them}</div><div class="s" style="font-size:12px">${r.result}</div>`)).join("") +
+    tile(2, "Series", `<div class="n">${ss.w}–${ss.l}</div><div class="s">India win the series</div>`) +
+    tile(6, "Series score after each match", `<div id="mom" style="height:220px"></div>`) +
+    tile(3, "Runs in the series", `<div id="d1" style="height:220px"></div>`) +
+    tile(3, "Sixes in the series", `<div id="d2" style="height:220px"></div>`) +
+    tile(6, "Most runs", `<table class="c"><tr><th>Player</th><th class="r">Runs</th><th class="r">HS</th><th class="r">SR</th></tr>${S.bat.slice(0, 6).map(x =>
+      `<tr class="${x.team === TEAM ? "me" : ""}"><td>${img(x.team, 20)} ${x.player}</td><td class="r"><b>${x.runs}</b><span class="inl" style="width:${x.runs / 3}px"></span></td><td class="r">${x.hs}</td><td class="r">${f0(x.runs / x.balls * 100)}</td></tr>`).join("")}</table>`) +
+    tile(6, "Most wickets", `<table class="c"><tr><th>Player</th><th class="r">Wkts</th><th class="r">Econ</th></tr>${S.bowl.slice(0, 6).map(x =>
+      `<tr class="${x.team === TEAM ? "me" : ""}"><td>${img(x.team, 20)} ${x.player}</td><td class="r"><b>${x.wickets}</b><span class="inl" style="width:${x.wickets * 9}px;background:var(--gold)"></span></td><td class="r">${f2(x.economy)}</td></tr>`).join("")}</table>`);
+  let w = 0, l = 0;
+  chart("mom", {grid: {left: 30, right: 16, top: 20, bottom: 26}, legend: {top: 0, right: 0, textStyle: {color: "#c9d5f2"}}, xAxis: {type: "category", data: S.matches.map(r => "T20I " + r.no), ...AX, splitLine: {show: false}},
+    yAxis: {...AX, minInterval: 1}, series: [["India", "#ee7660", r => r.outcome === "W"], ["West Indies", "#7aa2ff", r => r.outcome === "L"]].map(([n, col, f]) => {
+      let c = 0; return {name: n, type: "line", step: "end", symbolSize: 9, data: S.matches.map(r => (c += f(r) ? 1 : 0)), lineStyle: {width: 3, color: col}, itemStyle: {color: col}}; })});
+  const six = t => S.bat.filter(x => x.team === t).reduce((n, x) => n + x.sixes, 0);
+  donut("d1", [["India", runsBy(TEAM), "#ee7660"], ["West Indies", runsBy("WI"), "#7aa2ff"]], "", "", {radius: ["34%", "52%"], round: 8, pad: 3});
+  donut("d2", [["India", six(TEAM), "#ee7660"], ["West Indies", six("West Indies"), "#7aa2ff"]], "", "", {radius: ["34%", "52%"], round: 8, pad: 3});
+},
+leaders() {
+  head("Leaders", "T20Is · 2026 · every team", ["T20Is", "ODIs", "Tests"]);
+  const L = D.leaders.T20Is;
+  M.innerHTML = tile(7, "Runs v strike rate · bubble = innings · India in orange", `<div id="b" style="height:560px"></div>`, "grid-row: span 2") +
+    tile(5, "Most runs", `<div id="lp" style="height:240px"></div>`) + tile(5, "Most wickets", `<div id="lw" style="height:240px"></div>`);
+  chart("b", {grid: {left: 50, right: 60, top: 36, bottom: 44}, tooltip: {...TT, formatter: p => `${p.data[3]} (${p.data[4]})<br>${p.data[1]} runs · SR ${f0(p.data[0])}`},
+    xAxis: {name: "Strike rate", nameLocation: "middle", nameGap: 30, nameTextStyle: {color: "#9fb0d6"}, scale: true, ...AX}, yAxis: {name: "Runs", nameTextStyle: {color: "#9fb0d6"}, scale: true, ...AX},
+    series: [{type: "scatter", data: L.bat.map(p => [p.strike_rate, p.runs, p.innings, p.player, ab(p.team)]), symbolSize: d => 8 + d[2] * 3,
+      itemStyle: {color: p => p.data[4] === "IND" ? "rgba(238,118,96,.85)" : "rgba(122,162,255,.55)", borderColor: "#fff", borderWidth: 1},
+      label: {show: true, formatter: p => (p.data[4] === "IND" || p.data[1] >= 250 || p.data[0] >= 170) ? p.data[3] : "", position: "right", color: "#e4ebfa", fontSize: 11.5, fontFamily: "Inter"}, labelLayout: {hideOverlap: true, moveOverlap: "shiftY"}}]});
+  const lolli = (el, rows, key, col) => chart(el, {grid: {left: 96, right: 40, top: 4, bottom: 4}, xAxis: {show: false},
+    yAxis: {type: "category", inverse: true, data: rows.map(r => r.player), axisLine: {show: false}, axisTick: {show: false}, axisLabel: {color: "#e4ebfa", fontFamily: "Inter"}},
+    series: [{type: "bar", barWidth: 3, data: rows.map(r => r[key]), itemStyle: {color: "#2a4785"}},
+      {type: "scatter", symbolSize: 16, data: rows.map(r => ({value: r[key], itemStyle: {color: r.team === TEAM ? col : "#7aa2ff"}})), label: {show: true, position: "right", color: "#fff", fontFamily: "Space Grotesk", fontWeight: 700}}]});
+  lolli("lp", L.bat.slice(0, 8), "runs", "#ee7660"); lolli("lw", L.bowl.slice(0, 8), "wickets", "#dab16f");
+},
+rankings() {
+  head("Rankings", "ODIs · team rating after every match (Elo, start = 1500)", ["ODIs", "T20Is", "Tests"]);
+  const T = D.rankings.ODIs;
+  M.innerHTML = tile(5, "Team table", `<table class="c"><tr><th>#</th><th>Team</th><th class="r">Elo</th><th>This season</th></tr>${T.teams.map((x, i) =>
+      `<tr class="${x.team === TEAM ? "me" : ""}"><td>${x.rank}</td><td>${img(x.team, 22)} ${x.team}</td><td class="r"><b>${f0(x.elo)}</b></td><td><div id="s${i}" style="height:26px;width:130px"></div></td></tr>`).join("")}</table>`) +
+    tile(7, "Rating through the season", `<div id="c1" style="height:520px"></div>`);
+  T.teams.forEach((x, i) => chart("s" + i, {grid: {left: 0, right: 0, top: 2, bottom: 2}, xAxis: {type: "category", show: false}, yAxis: {show: false, scale: true},
+    series: [{type: "line", symbol: "none", step: "end", data: ELO.snaps.map(s => s.elo[x.team]), lineStyle: {width: 2, color: x.team === TEAM ? "#ee7660" : "#7aa2ff"}}]}));
+  chart("c1", {grid: {left: 44, right: 60, top: 10, bottom: 30}, tooltip: {trigger: "axis", ...TT}, xAxis: {type: "category", data: ELO.snaps.map(s => day(s.date)), ...AX, splitLine: {show: false}},
+    yAxis: {scale: true, ...AX}, series: ELO.teams.map(t => ({type: "line", name: t, step: "end", symbol: "none", data: ELO.snaps.map(s => s.elo[t]), z: t === TEAM ? 5 : 1,
+      lineStyle: {width: t === TEAM ? 4 : 1.5, color: t === TEAM ? "#ee7660" : "rgba(122,162,255,.45)"},
+      endLabel: {show: t === TEAM || ["England", "Australia", "Sri Lanka"].includes(t), color: t === TEAM ? "#fff" : "#9fb0d6", fontFamily: "Inter", fontWeight: 600, formatter: () => ab(t)}}))});
+}};
+pages[PAGE]();
+</script></body></html>
