@@ -122,6 +122,27 @@ There are nine clear sections instead of 22 pages in a long list. Every current 
 
 Every one of these must work on the new site before it replaces the old one.
 
+**Every bit of information, line by line: `design/INVENTORY.md`.** Made by `tools/inventory.py`, it lists everything the
+current site shows, in two ways:
+- **From the code:** every heading, label, option, help text, explanation, table column, chart text and message written in
+  `views/`, `ui/` and `app.py`, page by page and part by part. This includes what appears only for some choices, sections
+  or teams.
+- **From the live site:** every page opened on the test career, with what it actually shows: text, tiles, tables and
+  their columns, charts with their titles, axes and series, choices with their options, tabs, expanders, buttons and
+  downloads. The Player and Match pages are opened again with a player and a match picked, and Home with no team.
+- **Saved on your PC:** every file in `Documents\Cricket Captain Stats Pack`, everything inside a career file (your
+  scorecards and your data-check fixes), every setting saved with a career, and every preference.
+
+Today that is **4,474 lines**: 3,036 from the code, 1,409 from 27 live page visits (all of them opened with 0 errors)
+and 29 saved items. Run `python3 tools/inventory.py` to make it again.
+
+It is a **hard gate**:
+1. A page isn't finished until every line for it is ticked (shown on the new page in the new style) or marked with
+   where it moved and why, for example "now in the hover text".
+2. Nothing is dropped silently. Leaving anything out needs your yes, written next to the line.
+3. At the switch-over, the same crawl runs on the new site and the two lists are compared. Any line missing on the new
+   site stops the switch-over.
+
 **Matches coming in**
 - [ ] Folder watching about every 20 seconds. Only new or changed scorecards are read, and deleting old files never loses matches.
 - [ ] A "new matches added" message, and any files that couldn't be read are listed.
@@ -250,7 +271,7 @@ Each stage ends with the same steps:
 
 ## 9. How every page gets built (the same recipe each time)
 
-1. **List what the old page shows:** every number, table, chart and option, taken from the old page's code. This is the checklist for that page.
+1. **List what the old page shows:** that page's part of `design/INVENTORY.md` (every number, table, chart, option, help text and explanation, from the code and from the live page). This is the checklist for that page.
 2. **The server answers with exactly those numbers,** straight from the engine. The website never does its own cricket maths.
 3. **A parity test proves the numbers match.** For the same career, the new server's numbers must equal the old site's numbers, so nothing can change by accident.
 4. **Build the page** in your style, with charts from the chart kit. Pies and donuts are used where something is a share of a whole.
@@ -273,6 +294,7 @@ Each stage ends with the same steps:
 - **your 89 real scorecards.**
 
 **Before the switch-over**
+- **Nothing-lost check:** `tools/inventory.py` crawls the new site the same way it crawled the old one. Every line in `design/INVENTORY.md` must be found on the new site or marked with your yes.
 - **New-user test:** unzip on a clean machine, double-click, answer the first-start question, add a folder, and see a new match arrive by itself.
 - **Speed targets:** changing page in under half a second on a 500-match career, and first start in under 5 seconds.
 
