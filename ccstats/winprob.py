@@ -448,8 +448,14 @@ def match_report(career, match_id: str, line: pd.DataFrame | None = None) -> str
         a, b = r.home, r.away
         wa, wb_ = int((sm.winner == a).sum()), int((sm.winner == b).sum())
         if len(sm) > 1 or (pd.notna(r.series_length) and r.series_length > 1):
-            lead_ = (f"{a} lead the series {wa}–{wb_}" if wa > wb_ else f"{b} lead the series {wb_}–{wa}" if wb_ > wa
-                     else f"the series is level at {wa}–{wb_}")
+            ahead, up, down = (a, wa, wb_) if wa >= wb_ else (b, wb_, wa)
+            left = int(r.series_length) - len(sm) if pd.notna(r.series_length) else None
+            if left is not None and left <= 0:  # the last match: the series is over
+                lead_ = f"{ahead} win the series {up}–{down}" if up > down else f"the series is drawn {up}–{down}"
+            elif left is not None and up - down > left:  # can't be caught any more
+                lead_ = f"{ahead} take an unbeatable {up}–{down} lead"
+            else:
+                lead_ = f"{ahead} lead the series {up}–{down}" if up > down else f"the series is level at {up}–{down}"
             sents.append(lead_[0].upper() + lead_[1:] + ".")
     return " ".join(sents)
 

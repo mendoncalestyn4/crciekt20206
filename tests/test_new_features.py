@@ -495,6 +495,20 @@ def test_bars_follow_the_format(career):
 from ccstats import winprob as WP  # noqa: E402
 
 
+def test_match_report_says_who_won_the_series_after_the_last_match(season, career):
+    """After the last match the report says who won the series, not who leads it; a lead nobody can catch says so."""
+    def last_line(c, sid, no):
+        mid = c.matches[(c.matches.series_id == sid) & (c.matches.series_match_no == no)].match_id.iloc[0]
+        return WP.match_report(c, mid).split(". ")[-1]
+    assert last_line(career, "Test-7", 1) == "England lead the series 1–0."
+    assert last_line(career, "Test-7", 2) == "England take an unbeatable 2–0 lead."
+    assert last_line(career, "Test-7", 3) == "England win the series 3–0."
+    assert last_line(career, "ODI-9", 2) == "India take an unbeatable 2–0 lead."  # the third match isn't in the career
+    assert last_line(season, "ODI-1", 2) == "The series is level at 1–1."
+    assert last_line(season, "ODI-1", 3) == "New Zealand win the series 2–1."
+    assert last_line(season, "T20I-2", 3) == "New Zealand win the series 2–1."
+
+
 def test_win_chance_engine(season, career):
     ids = Scope(sections=[IPL]).match_ids(season.matches)
     st_ = WP.states(season, ids)
