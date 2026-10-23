@@ -227,6 +227,20 @@ table.tv tr.me td { background: rgba(238,118,96,.16); }
 .i4 .bar i { border-radius: 0; background: var(--led) !important; filter: drop-shadow(0 0 4px rgba(255,198,90,.6)); }
 .i4 .pbar .tr2 { border-radius: 2px; height: 16px; background: #13245a; }
 .i4 .pbar .fill { background: var(--led); box-shadow: 0 0 10px rgba(255,198,90,.5); }
+/* idea 4: bigger words, smaller numbers */
+.i4 .head .crumb { font-size: 20px; } .i4 .chips span { font-size: 19px; } .i4 .rail a { font-size: 17px; }
+.i4 .tl, .i4 .tr { font-size: 23px; }
+.i4 .s { font-size: 15.5px; } .i4 .note { font-size: 15px; } .i4 .how { font-size: 14px; }
+.i4 .deck { font-size: 17.5px; } .i4 .kick { font-size: 21px; } .i4 .tag { font-size: 14px; }
+.i4 table.c th, .i4 table.tv th { font-size: 19px; } .i4 .tn { font-size: 14px; }
+.i4 .pbar .k2 { font-size: 24px; } .i4 .l5t { font-size: 13.5px; }
+.i4 .hero .k { font-size: 25px; } .i4 .hero .side { font-size: 23px; } .i4 .hero .side b:not(.isname) { font-size: 44px; }
+.i4 .mrow .when, .i4 .mrow .res { font-size: 15px; }
+.i4 .msum .sub2 { font-size: 15px; } .i4 .resline { font-size: 42px; }
+.i4 .inn .band .which { font-size: 14px; } .i4 .inn .band .tot { font-size: 28px; } .i4 .inn .p .nmx { font-size: 26px; }
+.i4 .inn .p .v { font-size: 17px; } .i4 .inn .p .b { font-size: 14px; }
+.i4 .tk, .i4 .tk b { font-size: 21px; } .i4 .tk b span { font-size: 14px; } .i4 .ticker .lab { font-size: 22px; }
+.i4 .itabs button { font-size: 15.5px; } .i4 .tl2 { font-size: 34px; }
 </style></head><body>
 <nav class="rail" id="rail"></nav>
 <div class="main"><div class="head" id="head"></div><div class="grid" id="main"></div></div>
@@ -234,8 +248,9 @@ table.tv tr.me td { background: rgba(238,118,96,.16); }
 const IDEA = Q.get("idea") || "1";
 document.body.classList.add("i" + IDEA, ...(IDEA === "4" ? ["i2"] : []));   // idea 4 wears idea 2's look
 const SB = IDEA === "2" || IDEA === "4";   // idea 2's colours and fonts (idea 4 too); idea 4 takes its charts from idea 1
-const SC = 1, NUMF = "Space Grotesk", NUMW = 700;                      // numbers: Bento's font in every idea
-const AXF = "Inter", AXS = 11;
+const SC = IDEA === "4" ? .8 : 1, NUMF = "Space Grotesk", NUMW = 700;   // numbers: Bento's font in every idea (smaller in idea 4)
+const TS = IDEA === "4" ? 1.15 : 1, ts = px => Math.round(px * TS);     // words: bigger in idea 4
+const AXF = "Inter", AXS = ts(11);
 const LED = "#ffc65a", OR = "#ee7660", GOLD = "#dab16f", BLUE = "#7aa2ff", WIN = "#45c08a", LOSS = "#ee6a6a", OTHER = "#3a5aa0";
 const MINE = SB ? LED : OR;                                   // my team's colour in the charts
 const ICON = {home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>', squad: '<circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2 20c1-3.5 3.8-5.5 7-5.5s6 2 7 5.5M15 14.6c2.6-.3 5 1.2 6 4.4"/>',
@@ -250,7 +265,7 @@ const H = document.getElementById("head"), M = document.getElementById("main");
 
 // ------------------------------------------------------------------ building blocks
 const n = (v, px, style = "") => `<span class="nm" style="font-size:${Math.round(px * SC)}px;${style}">${v}</span>`;
-const pn = (p, px, style = "") => `<span class="pn" style="font-size:${px}px;${style}">${esc(p)}</span>`;
+const pn = (p, px, style = "") => `<span class="pn" style="font-size:${ts(px)}px;${style}">${esc(p)}</span>`;
 const wl = o => `<span class="wl ${o}">${o}</span>`;
 const head = (title, crumb, chips = ["2026", "All formats"]) => H.innerHTML = `<div><h1>${title}</h1><div class="crumb">${crumb}</div></div>
   <div class="chips">${chips.map((c, i) => `<span class="${i === 0 ? "on" : ""}">${c}</span>`).join("")}</div>
@@ -270,9 +285,9 @@ const figText = P => [P.bat ? `${P.bat.text} off ${P.bat.balls}` : "", P.bowl ? 
 const AX = {axisLabel: {color: "#9fb0d6", fontFamily: AXF, fontSize: AXS}, axisLine: {lineStyle: {color: "#24427f"}}, axisTick: {show: false}, splitLine: {lineStyle: {color: "#203c78"}}};
 const VAL = px => ({fontFamily: NUMF, fontWeight: NUMW, fontSize: Math.round(px * SC), color: SB ? LED : "#fff"});
 const TT = {backgroundColor: "#0f2557", borderColor: "#24427f", textStyle: {color: "#fff", fontFamily: "Inter"}};
-const DON = {font: "Inter", size: 13,
+const DON = {font: "Inter", size: ts(13),
   centreFont: `${NUMW} ${Math.round(54 * SC)}px ${NUMF}`, centreInk: SB ? LED : "#fff",
-  subFont: IDEA === "3" ? "500 12px Inter" : IDEA === "1" ? "600 14px Barlow Condensed" : "400 16px Bebas Neue", round: IDEA === "3" ? 8 : 0, pad: 3};
+  subFont: IDEA === "3" ? "500 12px Inter" : IDEA === "1" ? "600 14px Barlow Condensed" : `400 ${ts(16)}px Bebas Neue`, round: IDEA === "3" ? 8 : 0, pad: 3};
 
 // the Almanack summary: what the player of the match did, then the engine's match report
 function summary(mid, o = {}) {
@@ -296,11 +311,11 @@ function leaderBars(el, rows, key, col, o = {}) {
   const vals = rows.map(r => r[key]);
   return chart(el, {grid: {left: 6, right: (o.right || 96) + (SB ? 24 : 0), top: 4, bottom: 4, containLabel: true}, xAxis: {show: false, max: Math.max(...vals)},
     yAxis: {type: "category", inverse: true, data: rows.map(r => r.player), axisLine: {show: false}, axisTick: {show: false},
-      axisLabel: {color: "#f4f6fb", fontFamily: "Bebas Neue", fontSize: o.nameSize || 22, margin: 12}},
+      axisLabel: {color: "#f4f6fb", fontFamily: "Bebas Neue", fontSize: ts(o.nameSize || 22), margin: 12}},
     series: [{type: "bar", barWidth: "62%", data: rows.map(r => ({value: r[key], itemStyle: {color: r.team === TEAM ? col : OTHER,
         borderRadius: IDEA === "3" ? [0, 8, 8, 0] : 0, shadowBlur: SB && r.team === TEAM ? 10 : 0, shadowColor: "rgba(255,198,90,.5)"}})),
       label: {show: true, position: "right", ...VAL(o.valSize || 26), formatter: p => `${o.fmt ? o.fmt(p.value) : p.value}` + (o.noTeam ? "" : `  {t|${ab(rows[p.dataIndex].team)}}`),
-        rich: {t: {fontFamily: "Bebas Neue", fontSize: 19, color: "#9fb0d6"}}}}]});
+        rich: {t: {fontFamily: "Bebas Neue", fontSize: ts(19), color: "#9fb0d6"}}}}]});
 }
 // Broadcast's innings bars (Scoreboard's lit blocks in idea 2)
 function inningsBars(el, inn) {
@@ -351,7 +366,7 @@ home() {
       series: [{type: "line", smooth: IDEA === "3" ? .4 : 0, step: IDEA === "2" ? "end" : false, symbol: "none", data: g.map(r => (c += r.outcome === "W" ? 1 : r.outcome === "L" ? -1 : 0)),
         lineStyle: {width: 3, color: MINE}, areaStyle: {color: {type: "linear", x: 0, y: 0, x2: 0, y2: 1, colorStops: [{offset: 0, color: SB ? "rgba(255,198,90,.3)" : "rgba(238,118,96,.35)"}, {offset: 1, color: "rgba(0,0,0,0)"}]}}}]}); });
   chart("rk", {grid: {left: 70, right: 30, top: 10, bottom: 30}, xAxis: {type: "value", min: 1, interval: 1, inverse: true, ...AX, axisLabel: {...AX.axisLabel, formatter: v => ord(v)}},
-    yAxis: {type: "category", data: fmts, axisLine: {show: false}, axisTick: {show: false}, axisLabel: {color: "#e4ebfa", fontFamily: "Bebas Neue", fontSize: 22}},
+    yAxis: {type: "category", data: fmts, axisLine: {show: false}, axisTick: {show: false}, axisLabel: {color: "#e4ebfa", fontFamily: "Bebas Neue", fontSize: ts(22)}},
     series: [{type: "bar", barWidth: 10, data: fmts.map(f => banner[f].teams), itemStyle: {color: "#0d214c", borderRadius: 5}, barGap: "-100%", silent: true},
       {type: "scatter", symbolSize: 36, data: fmts.map(f => banner[f].rank), itemStyle: {color: MINE, borderColor: "#fff", borderWidth: 2},
         label: {show: true, ...VAL(17), color: SB ? "#1b1300" : "#fff", formatter: p => p.value}}]});
@@ -452,7 +467,7 @@ series() {
         <span>${pn(P.headline, 21)}<div class="how">${r.result}</div></span></div>`; }).join("")) +
     tile(6, "Most runs in the series", tvBat(S.bat.slice(0, 6), [["Runs", x => x.runs], ["Inns", x => x.inns], ["HS", x => x.hs], ["SR", x => f0(x.runs / x.balls * 100)]])) +
     tile(6, "Most wickets in the series", tvBat(S.bowl.slice(0, 6), [["Wkts", x => x.wickets], ["Runs", x => x.runs], ["Overs", x => overs(x.balls)], ["Econ", x => f2(x.economy)]]));
-  chart("mom", {grid: {left: 30, right: 16, top: 50, bottom: 30}, legend: {top: 0, right: 0, textStyle: {color: "#c9d5f2", fontFamily: "Bebas Neue", fontSize: 18}},
+  chart("mom", {grid: {left: 30, right: 16, top: 50, bottom: 30}, legend: {top: 0, right: 0, textStyle: {color: "#c9d5f2", fontFamily: "Bebas Neue", fontSize: ts(18)}},
     xAxis: {type: "category", data: S.matches.map(r => "T20I " + r.no), ...AX, splitLine: {show: false}}, yAxis: {...AX, minInterval: 1, axisLine: {show: false}},
     series: [["India", MINE, r => r.outcome === "W", "top"], ["West Indies", BLUE, r => r.outcome === "L", "bottom"]].map(([nm, col, f, at]) => {
       let c = 0; return {name: nm, type: "line", step: "end", symbolSize: 10, data: S.matches.map(r => (c += f(r) ? 1 : 0)), lineStyle: {width: 3, color: col}, itemStyle: {color: col},
@@ -464,7 +479,7 @@ leaders() {
   M.innerHTML = hero({h: 150, kicker: "T20Is · 2026 · every team", title: "Leaders", size: 96, side: ["Top of the list", L.bat[0].player, `${L.bat[0].runs} runs · ${ab(L.bat[0].team)}`], sideName: true}) +
     tile(6, "Most runs", `<div id="c1" style="height:520px"></div>`, {right: "runs · team"}) + tile(6, "Most wickets", `<div id="c2" style="height:520px"></div>`, {right: "wickets · team"}) +
     tile(6, "Most sixes", `<div id="c3" style="height:300px"></div>`) + tile(6, "Best average · 4+ innings", `<div id="c4" style="height:300px"></div>`) +
-    tile(6, "Best strike rate · 60+ balls", `<div id="c5" style="height:300px"></div>`, {right: "runs per 100 balls"}) + tile(6, "Best economy · 10+ overs", `<div id="c6" style="height:300px"></div>`, {right: "runs per over · lower is better"});
+    tile(6, "Best strike rate · 60+ balls", `<div id="c5" style="height:300px"></div>`, {right: "runs per 100 balls"}) + tile(6, "Best economy · 10+ overs", `<div id="c6" style="height:300px"></div>`, {right: "lower is better"});
   const W = SB ? LED : GOLD;
   leaderBars("c1", L.bat.slice(0, 10), "runs", MINE); leaderBars("c2", L.bowl.slice(0, 10), "wickets", W);
   leaderBars("c3", X.sixes.slice(0, 6), "sixes", MINE, {valSize: 24}); leaderBars("c4", X.average.slice(0, 6), "average", MINE, {valSize: 24, fmt: f1});
@@ -485,12 +500,12 @@ rankings() {
   chart("c1", {grid: {left: 44, right: 60, top: 10, bottom: 30}, tooltip: {trigger: "axis", ...TT}, xAxis: {type: "category", data: ELO.snaps.map(s => day(s.date)), ...AX, splitLine: {show: false}},
     yAxis: {scale: true, ...AX, axisLine: {show: false}}, series: ELO.teams.map(t => ({type: "line", name: t, step: "end", symbol: "none", data: ELO.snaps.map(s => s.elo[t]), z: t === TEAM ? 5 : 1,
       lineStyle: {width: t === TEAM ? 4 : 1.5, color: t === TEAM ? MINE : "rgba(122,162,255,.45)", shadowBlur: SB && t === TEAM ? 10 : 0, shadowColor: LED},
-      endLabel: {show: t === TEAM || t === T.teams[0].team, color: t === TEAM ? "#fff" : "#9fb0d6", fontFamily: "Bebas Neue", fontSize: 18, formatter: () => ab(t)}}))});
+      endLabel: {show: t === TEAM || t === T.teams[0].team, color: t === TEAM ? "#fff" : "#9fb0d6", fontFamily: "Bebas Neue", fontSize: ts(18), formatter: () => ab(t)}}))});
   chart("c2", {grid: {left: 16, right: 60, top: 10, bottom: 30}, xAxis: {type: "category", data: ELO.snaps.map(s => day(s.date)), ...AX, splitLine: {show: false}},
     yAxis: {inverse: true, min: 1, max: ELO.teams.length, interval: 1, splitLine: {show: false}, axisLabel: {show: false}},
     series: ELO.teams.map(t => ({type: "line", name: t, smooth: .3, symbolSize: t === TEAM ? 8 : 0, data: ELO.snaps.map(s => s.rank[t]),
       lineStyle: {width: t === TEAM ? 5 : 1.5, color: t === TEAM ? MINE : "#36559a"}, itemStyle: {color: t === TEAM ? MINE : "#36559a"}, z: t === TEAM ? 5 : 1,
-      endLabel: {show: true, color: t === TEAM ? "#fff" : "#9fb0d6", fontFamily: "Bebas Neue", fontSize: t === TEAM ? 18 : 14, formatter: () => ab(t)}}))});
+      endLabel: {show: true, color: t === TEAM ? "#fff" : "#9fb0d6", fontFamily: "Bebas Neue", fontSize: t === TEAM ? 18 : ts(14), formatter: () => ab(t)}}))});
   leaderBars("b1", T.bat.slice(0, 8), "batting", MINE, {valSize: 24}); leaderBars("b2", T.bowl.slice(0, 8), "bowling", SB ? LED : GOLD, {valSize: 24});
 },
 squad() {
