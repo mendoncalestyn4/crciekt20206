@@ -124,6 +124,19 @@ def test_the_picked_looks_go_to_the_right_logos(tmp_path):
     assert b.style(None) == "plain"
 
 
+def test_englands_navy_badge_shows_on_the_dark_pages(tmp_path):
+    """England's badge is navy, like the dark-blue pages: it gets the look you picked (a light tint of its own colours),
+    which draws it lighter than the page so it can be seen; drawn as it is, it would be as dark as the page."""
+    g = game_folder(tmp_path)
+    png(g / "editor" / "emblems" / "englandem.png", (18, 36, 96, 255))   # navy
+    b = LG.LogoBook(LG.find([g]))
+    assert b.style(b.team("England")) == LG.STYLES["England"] == "C"
+
+    def brightest(look):
+        return max(sum(px[:3]) / 3 for px in decode(LG.badge(b.team("England"), 48, look)).getdata() if px[3] > 128)
+    assert brightest("plain") < 70 < 150 < brightest(b.style(b.team("England")))
+
+
 def test_dark_parts_made_visible_and_inside_as_in_the_game(tmp_path):
     """C: navy writing on the page turns a light tint of its colour. inside: a gap cut into the logo shows white,
     as on the game's page, while the page round the logo stays dark."""

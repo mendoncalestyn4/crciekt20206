@@ -1,7 +1,7 @@
 # The new Stats Pack website: the plan
 
-**Status:** plan only. Nothing is built yet.
-**Waiting for:** your choice of page style and chart style (section 2).
+**Status:** style chosen (section 2). Stage 0 (foundations) is being built.
+**You said:** build it without waiting for answers; screenshots come at the end of each stage.
 **Branch:** `claude/cricket-captain-rebuild-c8v4dp`
 
 ---
@@ -39,24 +39,40 @@ The bold styles need full control, which only a website of our own gives. Those 
 
 ---
 
-## 2. Decisions waiting for you
+## 2. Decisions made
 
-1. **Page style:**
-   1. Broadcast
-   2. Bento
-   3. Almanack
-   4. Scoreboard
-   5. Game menu
-2. **Chart style:**
-   1. Circles
-   2. Scouting report
-   3. Pictograms
-   4. Flows and timelines
-   5. Grids
+The style is **idea 4** from the mock-ups (`design/mockups/mix.html?idea=4`). It's the reference for every page.
 
-   You can mix them. For example, Circles for shares, Scouting sliders for player profiles and Flows for seasons.
-3. **Changes from the mock-ups:** anything you want changed before we start.
-4. **Name:** the site stays "Stats Pack" unless you want a new name.
+1. **Base: Bento.** The sidebar rail and rounded tiles in a 12-column grid, in your team's colours (India: light-brown
+   rail on dark blue).
+2. **Look: Scoreboard (idea 2) exactly.**
+   - Tile titles in Bebas Neue, spaced, with the two-tone line on top of each tile.
+   - Gold numbers, glowing W/L lamps and the date chip in the header.
+   - No slanted TV banners, gold tabs or Broadcast fonts.
+3. **Charts: the ones on the pages you liked, no new chart types.**
+   - Broadcast's: the player page, the "Most runs / Most wickets in the series" tables and the leaderboard bars.
+   - From idea 1: solid innings bars, a bar for each percentile, a plain form line, solid bars in top-player lists, and
+     the "Latest" results strip.
+   - Donuts where something is a share of a whole.
+4. **Fonts.**
+   - Player and team names: Bebas Neue (Scoreboard).
+   - Numbers: Space Grotesk (Bento).
+   - Other text: Inter.
+5. **Sizes.**
+   - Words about 45% bigger than the first mock-ups, and numbers about 5% bigger.
+   - A little extra room between words in names.
+   - Nothing may go outside its tile, chart or the page. `design/mockups/check_fit.py` checks every page, and the
+     site itself shrinks a number, name or table just enough when it wouldn't fit.
+6. **Player of the match story.**
+   - Almanack's summary: a headline worked out from the scorecard, then the engine's match report.
+   - Shown on the site's own colours.
+7. **Match page.** It follows your TV photo:
+   - The match summary comes first: a band for each innings with the top batters and bowlers (three each in one-day
+     games, one each in a Test), the result, and the player of the match story.
+   - Then the scorecard, one innings at a time (bowling, then batting), with buttons to switch innings.
+8. **England's badge:** look B, "a light tint of its own colours" (`STYLES` in `ccstats/logos.py`). Its navy no
+   longer vanishes on dark blue.
+9. **Name:** the site stays "Stats Pack".
 
 ---
 
@@ -221,7 +237,8 @@ The logo work you approved moves over exactly as it is: the code that finds the 
 
 **Still missing:** Namibia and Herat show no logo, because `namibiaem.png` and `heratem.png` aren't in the game's emblems folder. Adding them to the game fixes it.
 
-**To decide with you in stage 0:** England's navy badge is hard to see on dark styles. We'll find a fix you like for your chosen style.
+**Decided:** England's navy badge gets look B (a light tint of its own colours), chosen from ten options. It's in
+`ccstats/logos.py` with a test, so the current site gets it too.
 
 ---
 
@@ -310,13 +327,13 @@ Each stage ends with the same steps:
 | Windows quirks (folder window, paths, antivirus, a port already in use) | Keep today's Windows folder window, run only on your own computer, try another port if one is busy, and do the new-user test |
 | Fonts or charts missing without internet | Everything is inside the zip |
 | A big career being slow | The server keeps each career ready in memory and only re-reads it when files change |
-| England's navy logo hard to see on dark styles | Solved in stage 0 for your chosen style, with your approval |
+| England's navy logo hard to see on dark styles | Solved: look B, as you picked |
 
 ---
 
 ## 12. What I need from you
 
-1. Your pick of page style and chart style, or a mix.
+1. ~~Your pick of page style and chart style.~~ Done: idea 4.
 2. A yes (or changes) at the end of each stage, from the screenshots.
 3. Optional: your latest scorecards zip near the end, for the final real-data test.
 

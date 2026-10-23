@@ -254,7 +254,7 @@ STYLES: dict[str, str] = {
     "Mumbai Indians": "line",
     **dict.fromkeys(("London Spirit", "Southern Brave", "Melbourne Renegades", "Tests", "ODI World Cup", "T20 World Cup",
                      "Bermuda", "Canada", "Denmark", "Hong Kong", "Nepal", "Papua New Guinea", "Scotland", "UAE",
-                     "Uganda"), "C"),
+                     "Uganda", "England"), "C"),   # England's navy badge vanishes on the dark blue: a light tint of its own colours
     **dict.fromkeys(("Champions Trophy", "Asia Cup", "Asia Cup (T20)"), "D"),
 }
 

@@ -1,5 +1,5 @@
 """More real numbers for the mixed-style mock-ups (Bento base + Broadcast + Almanack summary + Scoreboard fonts).
-Run after extract_data.py; adds to its data.json and rewrites site/data.js:  python3 extract_mix.py <folder of scorecards>
+Run after extract_data.py; adds to its data.json and rewrites site/data.js:  python3 extract_mix.py <folder of scorecards> [<game folder>]
 
 * pom: for every India match, the player of the match's figures and a headline about them (Almanack style),
   plus the engine's own one-line story and match report;
@@ -222,6 +222,17 @@ def scorecard(mid):
 test_id = next(r["id"] for r in D["results"] if r["section"] == "Tests")
 D["match_test"] = scorecard(test_id)
 print("test:", [(k["team"], k["runs"], k["wickets"], k["overs"]) for k in D["match_test"]["cards"]], D["match_test"]["result"])
+
+# ---- logos drawn in the looks the engine picks today (England: a light tint of its own colours)
+from ccstats import logos as LG  # noqa: E402
+GAME = sys.argv[2] if len(sys.argv) > 2 else ""   # the game's folder (with editor/emblems), optional
+if GAME:
+    book = LG.LogoBook(LG.find([pathlib.Path(GAME)]))
+    for t in D.get("logos", {}):
+        lp = book.team(t) or book.comp(t)
+        if lp is not None:
+            D["logos"][t] = {"plain": LG.badge(lp, 160, "plain"), "dark": LG.badge(lp, 160, book.style(lp))}
+    print("logos redrawn; England's look:", book.style(book.team("England")))
 
 (HERE / "data.json").write_text(json.dumps(D, indent=1, default=str))
 (HERE / "site" / "data.js").write_text("window.D = " + json.dumps(D, default=str) + ";\n")

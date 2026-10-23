@@ -227,23 +227,32 @@ table.tv tr.me td { background: rgba(238,118,96,.16); }
 .i4 .bar i { border-radius: 0; background: var(--led) !important; filter: drop-shadow(0 0 4px rgba(255,198,90,.6)); }
 .i4 .pbar .tr2 { border-radius: 2px; height: 16px; background: #13245a; }
 .i4 .pbar .fill { background: var(--led); box-shadow: 0 0 10px rgba(255,198,90,.5); }
-/* idea 4: much bigger words, bigger numbers */
-.i4 .rail { width: 116px; } .i4 .rail a { width: 100px; font-size: 20px; } .i4 .rail a svg { width: 28px; height: 28px; }
-.i4 .head h1 { font-size: 60px; } .i4 .head .crumb { font-size: 26px; } .i4 .chips span { font-size: 24px; padding: 8px 18px; } .i4 .pill { font-size: 16px; }
-.i4 .tl, .i4 .tr { font-size: 32px; }
+/* idea 4: bigger words (about 45% over the original), numbers a little bigger */
+.i4 .rail { width: 108px; } .i4 .rail a { width: 92px; font-size: 18.1px; } .i4 .rail a svg { width: 28px; height: 28px; }
+.i4 .head h1 { font-size: 54.4px; } .i4 .head .crumb { font-size: 23.6px; } .i4 .chips span { font-size: 21.7px; padding: 8px 18px; } .i4 .pill { font-size: 14.5px; }
+.i4 .tl, .i4 .tr { font-size: 29px; }
 .i4 .tt { flex-wrap: wrap; row-gap: 2px; } .i4 .tr { margin-left: auto; }   /* a long hint drops below the title */
-.i4 .s { font-size: 20px; } .i4 .note { font-size: 18.5px; } .i4 .how { font-size: 17px; }
-.i4 .deck { font-size: 21px; } .i4 .kick { font-size: 27px; } .i4 .tag { font-size: 18px; }
-.i4 table.c th, .i4 table.tv th { font-size: 25px; } .i4 .tn { font-size: 19px; }
-.i4 .pbar { grid-template-columns: 250px minmax(0, 1fr) 76px; } .i4 .pbar .k2 { font-size: 32px; } .i4 .l5t { font-size: 17px; }
-.i4 .hero .k { font-size: 32px; } .i4 .hero .side { font-size: 30px; } .i4 .hero .side b:not(.isname) { font-size: 62px; } .i4 .hero .side b.isname { font-size: 76px; }
-.i4 .mrow .when, .i4 .mrow .res { font-size: 20px; }
-.i4 .msum .ttl { font-size: 72px; } .i4 .msum .sub2 { font-size: 20px; } .i4 .resline { font-size: 54px; }
-.i4 .inn .band .which { font-size: 19px; } .i4 .inn .band .tot { font-size: 38px; } .i4 .inn .p .nmx { font-size: 34px; }
-.i4 .inn .p .v { font-size: 23px; } .i4 .inn .p .b { font-size: 18px; }
-.i4 .ticker { height: 66px; } .i4 .tk, .i4 .tk b { font-size: 27px; } .i4 .tk b span { font-size: 19px; } .i4 .ticker .lab { font-size: 28px; }
-.i4 .itabs button { font-size: 20px; } .i4 .tl2 { font-size: 44px; }
-.i4 .wl { width: 34px; height: 34px; font-size: 14px; } .i4 .av { width: 44px; height: 44px; font-size: 19px; }
+.i4 .s { font-size: 18.1px; } .i4 .note { font-size: 16.8px; } .i4 .how { font-size: 15.4px; }
+.i4 .deck { font-size: 19px; } .i4 .kick { font-size: 24.5px; } .i4 .tag { font-size: 16.3px; }
+.i4 table.c th, .i4 table.tv th { font-size: 19.9px; letter-spacing: .06em; padding: 6px 7px; } .i4 table.c td, .i4 table.tv td { padding: 9px 7px; } .i4 .tn { font-size: 17.2px; }
+.i4 .tl { white-space: normal; }   /* a long tile title wraps inside its tile */
+/* more room between words where there are lots of names */
+.i4 .pn, .i4 .inn .p .nmx, .i4 .inn .band .tm { letter-spacing: .045em; word-spacing: .08em; }
+.i4 .hero h2, .i4 .hl, .i4 .tk { word-spacing: .05em; }
+.i4 .list { gap: 13px; }
+.i4 .pn { white-space: nowrap; }   /* a name never breaks across lines (it shrinks to fit instead) */
+.i4 .mrow .pn { white-space: normal; }   /* match headlines still wrap */
+.i4 .head > div:first-child { flex: 1 1 auto; min-width: 0; } .i4 .head .chips, .i4 .head .clock, .i4 .head .pill { flex: none; white-space: nowrap; }
+.i4 .li .how { display: block !important; margin-top: 4px; } .i4 .li .how .lead { display: none; }   /* details on their own line under a name */
+.i4 .pbar { grid-template-columns: 250px minmax(0, 1fr) 76px; } .i4 .pbar .k2 { font-size: 29px; } .i4 .l5t { font-size: 15.4px; }
+.i4 .hero .k { font-size: 29px; } .i4 .hero .side { font-size: 27.2px; } .i4 .hero .side b:not(.isname) { font-size: 56.2px; } .i4 .hero .side b.isname { font-size: 68.9px; }
+.i4 .mrow .when, .i4 .mrow .res { font-size: 18.1px; }
+.i4 .msum .ttl { font-size: 65.2px; } .i4 .msum .sub2 { font-size: 18.1px; } .i4 .resline { font-size: 48.9px; }
+.i4 .inn .band .which { font-size: 17.2px; } .i4 .inn .band .tot { font-size: 34.4px; } .i4 .inn .p .nmx { font-size: 30.8px; }
+.i4 .inn .p .v { font-size: 20.8px; } .i4 .inn .p .b { font-size: 16.3px; }
+.i4 .ticker { height: 66px; } .i4 .tk, .i4 .tk b { font-size: 24.5px; } .i4 .tk b span { font-size: 17.2px; } .i4 .ticker .lab { font-size: 25.4px; }
+.i4 .itabs button { font-size: 18.1px; } .i4 .tl2 { font-size: 39.9px; }
+.i4 .wl { width: 29px; height: 29px; font-size: 12px; } .i4 .sq { gap: 5px; }   /* ten form lamps fit on one line */ .i4 .av { width: 44px; height: 44px; font-size: 17.2px; }
 </style></head><body>
 <nav class="rail" id="rail"></nav>
 <div class="main"><div class="head" id="head"></div><div class="grid" id="main"></div></div>
@@ -251,8 +260,8 @@ table.tv tr.me td { background: rgba(238,118,96,.16); }
 const IDEA = Q.get("idea") || "1";
 document.body.classList.add("i" + IDEA, ...(IDEA === "4" ? ["i2"] : []));   // idea 4 wears idea 2's look
 const SB = IDEA === "2" || IDEA === "4";   // idea 2's colours and fonts (idea 4 too); idea 4 takes its charts from idea 1
-const SC = IDEA === "4" ? 1.15 : 1, NUMF = "Space Grotesk", NUMW = 700;   // numbers: Bento's font in every idea (smaller in idea 4)
-const TS = IDEA === "4" ? 1.6 : 1, ts = px => Math.round(px * TS);     // words: bigger in idea 4
+const SC = IDEA === "4" ? 1.05 : 1, NUMF = "Space Grotesk", NUMW = 700;   // numbers: Bento's font in every idea (smaller in idea 4)
+const TS = IDEA === "4" ? 1.45 : 1, ts = px => Math.round(px * TS);     // words: bigger in idea 4
 const AXF = "Inter", AXS = ts(11);
 const LED = "#ffc65a", OR = "#ee7660", GOLD = "#dab16f", BLUE = "#7aa2ff", WIN = "#45c08a", LOSS = "#ee6a6a", OTHER = "#3a5aa0";
 const MINE = SB ? LED : OR;                                   // my team's colour in the charts
@@ -265,8 +274,62 @@ const ON = {match: "results"}[PAGE] || PAGE;
 document.getElementById("rail").innerHTML = `<div class="mark">SP</div>` + NAV.map(([k, v]) =>
   `<a class="${k === ON ? "on" : ""}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>${v}</a>`).join("");
 const H = document.getElementById("head"), M = document.getElementById("main");
-if (IDEA === "4") { const draw = chart;   // more room in every chart for the bigger words
-  chart = (el, opt) => { const d = document.getElementById(el); if (d && !d.dataset.grown) { d.style.height = Math.round(parseFloat(d.style.height) * 1.2) + "px"; d.dataset.grown = "1"; } return draw(el, opt); }; }
+if (IDEA === "4") { const draw = chart;   // bigger words: more room in every chart, and every label kept inside it
+  const wide = v => typeof v === "string" ? v.replace(/ /g, "\u2005") : v;   // a slightly wider gap between initial and surname
+  chart = (el, opt) => {
+    const d = document.getElementById(el);
+    if (d && !d.dataset.grown) { d.style.height = Math.round(parseFloat(d.style.height) * 1.2) + "px"; d.dataset.grown = "1"; }
+    const g = opt.grid;
+    if (g && !Array.isArray(g) && !g.containLabel)   // axis labels inside the chart; room on the right for line-end labels, on top for a legend
+      opt.grid = {...g, containLabel: true, right: ts(g.right ?? 10),
+        top: opt.legend || [opt.series].flat().some(x => x && x.endLabel) ? ts(g.top ?? 30) + 8 : g.top};
+    for (const ax of [opt.yAxis, opt.xAxis].flat().filter(Boolean)) {
+      if (ax.axisLabel && ax.axisLabel.fontFamily === "Bebas Neue" && !ax.axisLabel.formatter) ax.axisLabel = {...ax.axisLabel, formatter: wide};
+      if (ax.type === "category" && ax.show !== false && (ax.data || []).length <= 12 && ax.axisLabel)   // every label shows, none skipped
+        ax.axisLabel = {...ax.axisLabel, interval: 0, hideOverlap: false};
+    }
+    if (opt.calendar) opt.calendar = {...opt.calendar, top: ts(opt.calendar.top ?? 20) + 4};   // room for the month names
+    for (const sr of [opt.series].flat().filter(Boolean)) if (sr.type === "pie" && sr.label && sr.label.show !== false) {
+      const fs = Math.round((sr.label.fontSize || 13) * .9);
+      sr.label = {...sr.label, fontSize: fs, lineHeight: Math.round(fs * 1.25)};                // two-line labels don't overlap
+      if (Array.isArray(sr.radius)) sr.radius = sr.radius.map(x => typeof x === "string" && x.endsWith("%") ? (parseFloat(x) * .8) + "%" : x);
+      if (opt.title && opt.title.textStyle)   // the number in the middle shrinks with the hole, so its word stays inside the ring
+        opt.title = {...opt.title, itemGap: 0, textStyle: {...opt.title.textStyle, fontSize: Math.round(opt.title.textStyle.fontSize * .78)},
+                     subtextStyle: {...opt.title.subtextStyle, fontSize: Math.round((opt.title.subtextStyle.fontSize || 14) * .8)}};
+    }
+    return draw(el, opt);
+  };
+}
+// idea 4: run the fit pass after each frame until the layout stops moving (a shrink can move what follows it)
+function settle(done = () => {}, left = 3) {
+  keepInside();
+  requestAnimationFrame(() => { if (left > 1 && IDEA === "4") settle(done, left - 1); else done(); });
+}
+// idea 4: nothing may spill out of its tile
+function keepInside() {
+  if (IDEA !== "4") return;
+  document.querySelectorAll(".ticker").forEach(t => {   // the latest-results strip shows only the results that fit
+    const edge = t.getBoundingClientRect().right - 18;
+    [...t.querySelectorAll(".tk")].forEach(k => { if (k.getBoundingClientRect().right > edge) k.remove(); });
+  });
+  const room = t => { const cs = getComputedStyle(t), r = t.getBoundingClientRect(); return [r.left + parseFloat(cs.paddingLeft), r.right - parseFloat(cs.paddingRight)]; };
+  document.querySelectorAll(".t table").forEach(tb => {   // a table wider than its tile is scaled down to fit
+    const [l, r] = room(tb.closest(".t")), w = tb.getBoundingClientRect().width;
+    if (w > r - l + .5) tb.style.zoom = ((r - l) / w).toFixed(3);
+  });
+  const shrink = (el, avail) => { for (let i = 0; i < 4; i++) { const w = el.getBoundingClientRect().width; if (w <= avail + .5) break;
+    el.style.fontSize = (parseFloat(getComputedStyle(el).fontSize) * Math.max(.4, avail / w) * .98) + "px"; } };
+  document.querySelectorAll(".t .nm, .t .pn, .hero h2, .hero .side b").forEach(el => {   // a number or name past the tile's edge shrinks
+    const box = el.closest(".t, .hero"); if (!box || el.closest("table")) return;
+    shrink(el, room(box)[1] - el.getBoundingClientRect().left);
+  });
+  document.querySelectorAll(".t *, .hero *").forEach(el => {   // text wider than its own box (a grid cell, a title) shrinks
+    if (el.closest("svg")) return;   // charts keep their own labels inside (see the chart wrapper above)
+    const own = [...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim());
+    if (own && getComputedStyle(el).display !== "inline" && !el.closest("table") && el.scrollWidth > el.clientWidth + 1 && el.clientWidth > 0)
+      shrink(el, el.clientWidth);
+  });
+}
 
 // ------------------------------------------------------------------ building blocks
 const n = (v, px, style = "") => `<span class="nm" style="font-size:${Math.round(px * SC)}px;${style}">${v}</span>`;
@@ -284,6 +347,7 @@ const hero = o => (IDEA === "3" && !o.always) ? "" : `<section class="hero" styl
 const ticker = () => !(IDEA === "1" || IDEA === "4") ? "" : `<div class="ticker"><span class="lab">LATEST</span>${R.slice(0, 8).map(r =>
   `<span class="tk">${wl(r.outcome)}<b>${ab(TEAM)} <span>${r.us}</span></b><i>v</i><b>${ab(r.opp)} <span>${r.them}</span></b><i>${FORMAT[r.section]} · ${day(r.date)}</i></span>`).join("")}</div>`;
 const WORD = {2: "two", 3: "three"};
+const keepScores = t => IDEA === "4" ? t.replace(/(\d+[–-]\d+)/g, `<span style="white-space:nowrap">$1</span>`) : t;
 const initials = p => p.split(" ").map(x => x[0]).join("").slice(0, 2);
 const overs = b => `${Math.floor(b / 6)}${b % 6 ? "." + b % 6 : ""}`;
 const figText = P => [P.bat ? `${P.bat.text} off ${P.bat.balls}` : "", P.bowl ? `${P.bowl.text} in ${overs(P.bowl.balls)} overs` : ""].filter(Boolean).join(" · ");
@@ -298,7 +362,7 @@ const DON = {font: "Inter", size: ts(13),
 function summary(mid, o = {}) {
   const r = R.find(x => x.id === mid), P = D.pom[mid], light = IDEA === "3";
   return `<div class="kick">${o.kicker || `${FORMAT[r.section]} ${r.no} of ${r.of} · ${dayY(r.date)} · player of the match`}</div>
-    <div class="hl" style="font-size:${o.size || 46}px">${esc(P.headline)}</div>
+    <div class="hl" style="font-size:${o.size || 46}px">${keepScores(esc(P.headline))}</div>
     ${o.scores ? `<div class="row2" style="gap:26px;margin-bottom:12px">${[[TEAM, r.us], [r.opp, r.them]].map(([t, s]) =>
       `<span class="row2" style="gap:12px">${img(t, 50, !light)}${pn(t, 28)}${n(s, 32)}</span>`).join("")}
       <span class="tag" style="background:${r.outcome === "W" ? "rgba(69,192,138,.16)" : "rgba(238,106,106,.16)"};color:${r.outcome === "W" ? WIN : LOSS}">● ${r.result}</span></div>` : ""}
@@ -363,7 +427,7 @@ home() {
     tile(4, "Top wicket-takers · T20Is", `<div class="list">${D.bowl.T20Is.slice(0, 5).map(p => `<div class="li"><span class="av">${initials(p.player)}</span>
       <div>${pn(p.player, 22)}<div class="bar"><i style="width:${p.wickets / D.bowl.T20Is[0].wickets * 100}%;background:var(--gold)"></i></div></div>${n(p.wickets, 26)}</div>`).join("")}</div>`) +
     tile(5, "Series this season", `<div class="list">${SERIES.slice(0, 5).map(s => `<div class="li"><span>${img(s.opp, 48)}</span>
-      <div>${pn(s.opp, 22)} <span class="how" style="display:inline">· ${s.section} · ${s.when}</span></div><span class="tag" style="color:${s.w > s.l ? WIN : s.w < s.l ? LOSS : "var(--dim)"}">${seriesText(s)}</span></div>`).join("")}</div>`) +
+      <div>${pn(s.opp, 22)} <span class="how" style="display:inline">${IDEA === "4" ? `<span class="lead">· </span>` : "· "}${s.section} · ${s.when}</span></div><span class="tag" style="color:${s.w > s.l ? WIN : s.w < s.l ? LOSS : "var(--dim)"}">${seriesText(s)}</span></div>`).join("")}</div>`) +
     tile(7, "Where India rank in the world · team rating (Elo)", `<div id="rk" style="height:230px"></div>`);
   donut("ring", [["Won", won, WIN], ["Lost", lost, LOSS]], pct(won / R.length * 100), "won", {...DON, labels: false, radius: ["70%", "92%"], round: IDEA === "3" ? 10 : 0, pad: 4});
   fmts.filter(f => f !== "Tests").forEach(f => { const g = [...R].reverse().filter(r => r.section === f); let c = 0;
@@ -453,7 +517,7 @@ match() {
     if (kinds.length) donut("hf", kinds.map(([k, v]) => [cap(k), v, KC[k] || "#9fb0d6"]), String(c.wickets), "wickets", {...DON, radius: ["46%", "64%"], centreFont: `${NUMW} 36px ${NUMF}`});
     else document.getElementById("hf").innerHTML = `<div class="note" style="padding-top:100px;text-align:center">No wickets fell.</div>`;
   };
-  document.querySelectorAll(".itabs button").forEach(b => b.addEventListener("click", () => show(+b.dataset.i)));
+  document.querySelectorAll(".itabs button").forEach(b => b.addEventListener("click", () => { show(+b.dataset.i); settle(); }));
   show(Math.max(0, Math.min(cards.length - 1, (+Q.get("inn") || 1) - 1)));
 },
 series() {
@@ -461,7 +525,7 @@ series() {
   head("Series", `T20Is · India v West Indies · October 2026`, ["This series", "All series"]);
   let w = 0, l = 0;
   M.innerHTML = hero({logo: TEAM, px: 160, h: 200, kicker: "T20I series · October 2026", title: `India ${SS.w}–${SS.l} West Indies`, size: 96, side: ["Series", "India win", `${S.matches.length} matches`], sideName: true}) +
-    tile(8, "The series", `<div class="kick">T20I series · India v West Indies · ${S.matches.length} matches</div><div class="hl" style="font-size:52px">${esc(SS.headline)}</div><div class="deck">${esc(SS.deck)}</div>
+    tile(8, "The series", `<div class="kick">T20I series · India v West Indies · ${S.matches.length} matches</div><div class="hl" style="font-size:52px">${keepScores(esc(SS.headline))}</div><div class="deck">${esc(SS.deck)}</div>
       <div class="sq" style="margin-top:18px;gap:18px">${S.matches.map(r => `<span class="row2" style="gap:8px">${wl(r.outcome)}<span class="s" style="margin:0">T20I ${r.no} · ${day(r.date)}</span></span>`).join("")}</div>`) +
     tile(4, "Player of the series", `<div class="row2" style="gap:16px">${img(pos.team, 82)}<div>${pn(pos.player, 46)}<div class="s" style="margin-top:2px">${pos.team} · ${pos.matches} matches</div></div></div>
       <div class="rule"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div>${n(pos.runs, 64)}<div class="s">runs</div></div><div>${n(pos.wickets, 64)}<div class="s">wickets</div></div></div>`) +
@@ -469,7 +533,7 @@ series() {
     tile(7, "Match by match", S.matches.map(r => { const P = D.pom[r.id];
       return `<div class="mrow" style="grid-template-columns:64px 30px 196px minmax(0,1fr)"><span class="when">T20I ${r.no}<br>${day(r.date)}</span>${wl(r.outcome)}
         <span class="sc2">${n(r.us, 23)}<span class="s" style="margin:0">v</span>${n(r.them, 23, "opacity:.7")}</span>
-        <span>${pn(P.headline, 21)}<div class="how">${r.result}</div></span></div>`; }).join("")) +
+        <span>${pn(P.headline, IDEA === "4" ? 17 : 21)}<div class="how">${r.result}</div></span></div>`; }).join("")) +
     tile(6, "Most runs in the series", tvBat(S.bat.slice(0, 6), [["Runs", x => x.runs], ["Inns", x => x.inns], ["HS", x => x.hs], ["SR", x => f0(x.runs / x.balls * 100)]])) +
     tile(6, "Most wickets in the series", tvBat(S.bowl.slice(0, 6), [["Wkts", x => x.wickets], ["Runs", x => x.runs], ["Overs", x => overs(x.balls)], ["Econ", x => f2(x.economy)]]));
   chart("mom", {grid: {left: 30, right: 16, top: 50, bottom: 30}, legend: {top: 0, right: 0, textStyle: {color: "#c9d5f2", fontFamily: "Bebas Neue", fontSize: ts(18)}},
@@ -484,7 +548,7 @@ leaders() {
   M.innerHTML = hero({h: 150, kicker: "T20Is · 2026 · every team", title: "Leaders", size: 96, side: ["Top of the list", L.bat[0].player, `${L.bat[0].runs} runs · ${ab(L.bat[0].team)}`], sideName: true}) +
     tile(6, "Most runs", `<div id="c1" style="height:520px"></div>`, {right: "runs · team"}) + tile(6, "Most wickets", `<div id="c2" style="height:520px"></div>`, {right: "wickets · team"}) +
     tile(6, "Most sixes", `<div id="c3" style="height:300px"></div>`) + tile(6, "Best average · 4+ innings", `<div id="c4" style="height:300px"></div>`) +
-    tile(6, "Best strike rate · 60+ balls", `<div id="c5" style="height:300px"></div>`, {right: "runs per 100 balls"}) + tile(6, "Best economy · 10+ overs", `<div id="c6" style="height:300px"></div>`, {right: "lower is better"});
+    tile(6, "Best strike rate · 60+ balls", `<div id="c5" style="height:300px"></div>`, {right: "runs per 100 balls"}) + tile(6, "Best economy · 10+ overs", `<div id="c6" style="height:300px"></div>`, {right: IDEA === "4" ? "lower is better" : "runs per over · lower is better"});
   const W = SB ? LED : GOLD;
   leaderBars("c1", L.bat.slice(0, 10), "runs", MINE); leaderBars("c2", L.bowl.slice(0, 10), "wickets", W);
   leaderBars("c3", X.sixes.slice(0, 6), "sixes", MINE, {valSize: 24}); leaderBars("c4", X.average.slice(0, 6), "average", MINE, {valSize: 24, fmt: f1});
@@ -540,7 +604,7 @@ results() {
     SERIES.slice(0, 4).map(s => tile(12, `${s.opp} · ${s.section} · ${s.when}`, s.games.slice().reverse().map(r => { const P = D.pom[r.id];
       return `<div class="mrow"><span class="when">${FORMAT[r.section]} ${r.no || ""}<br>${day(r.date)}</span>${wl(r.outcome)}
         <span class="sc2">${img(TEAM, 40)}${n(r.us, 26)}<span class="s" style="margin:0 2px">v</span>${n(r.them, 26, "opacity:.7")}${img(r.opp, 40)}</span>
-        <span>${pn(P.headline || "", 22)}<div class="how">${esc(P.story || "")}</div></span>
+        <span>${pn(P.headline || "", IDEA === "4" ? 18 : 22)}<div class="how">${esc(P.story || "")}</div></span>
         <span class="res" style="color:${r.outcome === "W" ? WIN : r.outcome === "L" ? LOSS : "var(--dim)"}">${r.result}</span></div>`; }).join(""),
       {right: `<span style="color:${s.w > s.l ? WIN : s.w < s.l ? LOSS : "var(--dim)"}">${seriesText(s)}</span>`})).join("");
   chart("cal", {visualMap: {show: false, type: "piecewise", pieces: [{value: 1, color: WIN}, {value: -1, color: LOSS}]},
@@ -553,5 +617,5 @@ results() {
 }};
 const want = ["400 20px 'Bebas Neue'", "700 20px 'Space Grotesk'", "600 16px 'Barlow Condensed'", "700 16px 'Barlow Condensed'",
   "400 16px Inter", "600 16px Inter", "700 16px Inter", "400 16px 'Source Serif 4'"];
-Promise.all(want.map(f => document.fonts.load(f))).then(() => { pages[PAGE](); document.body.dataset.ready = "1"; });
+Promise.all(want.map(f => document.fonts.load(f))).then(() => { pages[PAGE](); settle(() => { document.body.dataset.ready = "1"; }); });
 </script></body></html>
