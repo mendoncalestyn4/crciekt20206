@@ -1,0 +1,291 @@
+"""The stats server: answers the new website's questions from the engine, sends the logos, tells the browser when new
+matches arrive, and serves the website itself (web/dist).
+
+Only your own computer can reach it: it listens on 127.0.0.1, answers only to the names 127.0.0.1 and localhost (so
+a web page elsewhere can't reach it by renaming itself), and changes are only accepted as JSON (which another site
+can't send without asking first)."""
+
+from __future__ import annotations
+
+import asyncio
+import contextlib
+import json
+import time
+from collections import deque
+from pathlib import Path
+
+import anyio
+from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from starlette.requests import Request
+from starlette.responses import FileResponse, HTMLResponse, JSONResponse, Response, StreamingResponse
+from starlette.routing import Mount, Route
+from starlette.staticfiles import StaticFiles
+
+from ccstats import logos as LG
+from ccstats import search as SR
+from ccstats.colours import TEAM_COLOURS
+from ccstats.local import CareerStore
+
+from . import styleguide
+from .site import Site
+
+WEB = Path(__file__).resolve().parent.parent / "web" / "dist"
+HOSTS = ["127.0.0.1", "localhost"]
+LOGO_SIZES = range(12, 241)   # pixels across; anything else is refused
+
+
+class Hub:
+    """What happened (new matches, files that couldn't be read, each check of the folders), for every open page. The
+    last few are kept, so a page that lost its connection for a moment catches up when it's back."""
+
+    def __init__(self, keep: int = 50):
+        self.last_id = 0
+        self.recent: deque[tuple[int, dict]] = deque(maxlen=keep)
+        self._queues: set[asyncio.Queue] = set()
+
+    def publish(self, event: dict) -> int:
+        self.last_id += 1
+        self.recent.append((self.last_id, event))
+        for q in list(self._queues):
+            q.put_nowait((self.last_id, event))
+        return self.last_id
+
+    def subscribe(self, after: int | None) -> asyncio.Queue:
+        q: asyncio.Queue = asyncio.Queue()
+        if after is not None:
+            for i, e in self.recent:
+                if i > after:
+                    q.put_nowait((i, e))
+        self._queues.add(q)
+        return q
+
+    def unsubscribe(self, q: asyncio.Queue) -> None:
+        self._queues.discard(q)
+
+
+def _json(data, status: int = 200) -> JSONResponse:
+    return JSONResponse(data, status_code=status, headers={"Cache-Control": "no-store"})
+
+
+def _error(message: str, status: int) -> JSONResponse:
+    return _json({"error": message}, status)
+
+
+async def _body(request: Request) -> dict:
+    if not request.headers.get("content-type", "").startswith("application/json"):
+        raise ValueError("send JSON")
+    data = await request.json()
+    if not isinstance(data, dict):
+        raise ValueError("send a JSON object")
+    return data
+
+
+def create_app(store: CareerStore | None = None, web: Path | None = None, watch_every: float = 20.0) -> Starlette:
+    """The server. `watch_every` seconds between checks of the watched folders (0: never, for tests)."""
+    site = Site(store)
+    hub = Hub()
+    web = Path(web) if web else WEB
+
+    # ------------------------------------------------------------------ careers and colours
+    async def health(request: Request):
+        return _json({"ok": True, "site": "Stats Pack", "careers": len(site.names())})
+
+    async def careers(request: Request):
+        names = await anyio.to_thread.run_sync(site.names)
+        return _json({"careers": names, "current": await anyio.to_thread.run_sync(site.current),
+                      "folders": await anyio.to_thread.run_sync(site.folders)})
+
+    async def choose_career(request: Request):
+        try:
+            name = str((await _body(request)).get("name", ""))
+        except ValueError as e:
+            return _error(str(e), 415)
+        try:
+            await anyio.to_thread.run_sync(site.select, name)
+        except KeyError:
+            return _error(f"There's no career called {name!r}.", 404)
+        return _json({"current": name})
+
+    def _career_info():
+        c = site.career()
+        if c is None:
+            return None
+        s = site.settings(c.name)
+        m = c.matches
+        order = m.sort_values(["date", "match_id"])
+        return {"name": c.name, "matches": int(len(m)),
+                "sections": list(dict.fromkeys(order.section[::-1])),   # the latest played first
+                "seasons": sorted(map(str, m.season.unique()), reverse=True),
+                "my_teams": site.my_teams(c), "my_teams_picked": site.my_teams(c, unplayed=True),
+                "folder": s.folder if s else "", "checked_at": site.checked_at or None,
+                "latest": order.date.iloc[-1].strftime("%Y-%m-%d") if len(order) else None}
+
+    async def career(request: Request):
+        info = await anyio.to_thread.run_sync(_career_info)
+        if info is None:
+            return _error("No career is open yet.", 404)
+        return _json(info)
+
+    async def theme_(request: Request):
+        nation = request.query_params.get("nation", "")
+        if nation and nation not in TEAM_COLOURS and nation != "none":
+            return _error(f"No colours for {nation!r}.", 404)
+        if nation == "none":
+            from .theme import tokens
+            return _json(tokens(None))
+        return _json(await anyio.to_thread.run_sync(site.theme, nation))
+
+    async def nations(request: Request):
+        return _json({"nations": sorted(TEAM_COLOURS)})
+
+    # ------------------------------------------------------------------ logos
+    def _logo(kind: str, name: str, size: int, dark: bool) -> bytes:
+        book = site.logos()
+        path = book.team(name) if kind == "team" else book.comp(name)
+        return LG.png(path, size, LG.look_on(book.style(path), dark)) if path is not None else b""
+
+    async def logo(request: Request):
+        kind, name = request.path_params["kind"], request.path_params["name"].removesuffix(".png")
+        try:
+            size = int(request.query_params.get("size", "48"))
+        except ValueError:
+            size = 0
+        if kind not in ("team", "comp") or size not in LOGO_SIZES:
+            return _error("Ask for a team or comp logo, 12 to 240 pixels.", 400)
+        page = request.query_params.get("page", "")
+        dark = (await anyio.to_thread.run_sync(site.theme))["dark"] if page not in ("dark", "light") else page == "dark"
+        data = await anyio.to_thread.run_sync(_logo, kind, name, size, dark)
+        if not data:
+            return Response(status_code=404, headers={"Cache-Control": "no-store"})
+        # a picture changed in the game shows at once: the browser asks again each time (it's quick, from memory)
+        return Response(data, media_type="image/png", headers={"Cache-Control": "no-cache"})
+
+    def _logo_names():
+        """Which names have a picture: every team in the career and every national side, every competition in the
+        career. The website shows a logo only for these, so it never asks for one that isn't there."""
+        from ccstats import fixtures as FX
+        c, book = site.career(), site.logos()
+        teams = set(FX.NATIONS)
+        comps: set = set()
+        if c is not None:
+            m = c.matches
+            teams |= set(m.home) | set(m.away)
+            comps |= set(m.section) | set(m.event) | set(m.competition)
+        return {"teams": sorted(t for t in teams if t and book.team(t) is not None),
+                "comps": sorted(x for x in comps if x and book.comp(x) is not None)}
+
+    async def logo_names(request: Request):
+        return _json(await anyio.to_thread.run_sync(_logo_names))
+
+    # ------------------------------------------------------------------ the style guide
+    def _styleguide():
+        c = site.career()
+        if c is None:
+            return None
+        return styleguide.build(c, site.my_teams(c))
+
+    async def styleguide_(request: Request):
+        data = await anyio.to_thread.run_sync(_styleguide)
+        if data is None:
+            return _error("No career is open yet.", 404)
+        return _json(data)
+
+    # ------------------------------------------------------------------ search (Ctrl K)
+    def _search():
+        c = site.career()
+        return None if c is None else SR.items(c)
+
+    async def search(request: Request):
+        items = await anyio.to_thread.run_sync(_search)
+        if items is None:
+            return _error("No career is open yet.", 404)
+        return _json({"items": items})
+
+    # ------------------------------------------------------------------ live news of new matches
+    async def events(request: Request):
+        try:
+            after = int(request.headers.get("last-event-id") or request.query_params.get("after") or "")
+        except ValueError:
+            after = None
+        q = hub.subscribe(after)
+
+        async def stream():
+            try:
+                yield "retry: 5000\n\n"
+                while True:
+                    try:
+                        i, e = await asyncio.wait_for(q.get(), timeout=15)
+                        yield f"id: {i}\ndata: {json.dumps(e)}\n\n"
+                    except asyncio.TimeoutError:
+                        yield ": still here\n\n"   # keeps the connection open
+            finally:
+                hub.unsubscribe(q)
+
+        return StreamingResponse(stream(), media_type="text/event-stream",
+                                 headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+
+    async def watch_loop():
+        while True:
+            try:
+                found = await anyio.to_thread.run_sync(site.sync)
+                for e in found:
+                    hub.publish(e)
+                hub.publish({"type": "checked", "at": time.time(), "folders": len(site.folders())})
+            except Exception:  # noqa: BLE001 - a check that fails is tried again next time
+                pass
+            await asyncio.sleep(watch_every)
+
+    @contextlib.asynccontextmanager
+    async def lifespan(app):
+        task = asyncio.create_task(watch_loop()) if watch_every else None
+        try:
+            yield
+        finally:
+            if task:
+                task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
+
+    # ------------------------------------------------------------------ the website
+    def _page_missing() -> HTMLResponse:
+        return HTMLResponse("<!doctype html><meta charset='utf-8'><title>Stats Pack</title><body style='font:16px "
+                            "sans-serif;padding:40px'><h1>The new site isn't built yet</h1><p>The folder web/dist is "
+                            "missing. Download the Stats Pack zip again, or build it with <code>npm run build</code> "
+                            "in the web folder.</p>", status_code=503)
+
+    async def page(request: Request):
+        """Any address that isn't a file is a page of the site: the website works out which (index.html)."""
+        rel = request.path_params.get("path", "")
+        if rel.startswith("api/"):
+            return _error("There's no such question.", 404)
+        if rel:
+            f = (web / rel).resolve()
+            if f.is_file() and f.is_relative_to(web.resolve()):
+                return FileResponse(f)
+        index = web / "index.html"
+        if not index.is_file():
+            return _page_missing()
+        return FileResponse(index, headers={"Cache-Control": "no-cache"})
+
+    routes = [
+        Route("/api/health", health),
+        Route("/api/careers", careers),
+        Route("/api/careers/current", choose_career, methods=["POST"]),
+        Route("/api/career", career),
+        Route("/api/theme", theme_),
+        Route("/api/nations", nations),
+        Route("/api/logos", logo_names),
+        Route("/api/logo/{kind}/{name:path}", logo),
+        Route("/api/styleguide", styleguide_),
+        Route("/api/search", search),
+        Route("/api/events", events),
+    ]
+    if (web / "assets").is_dir():   # the website's files, named after their contents: kept by the browser for good
+        routes.append(Mount("/assets", app=StaticFiles(directory=web / "assets")))
+    routes += [Route("/", page), Route("/{path:path}", page)]
+    app = Starlette(routes=routes, lifespan=lifespan,
+                    middleware=[Middleware(TrustedHostMiddleware, allowed_hosts=HOSTS)])
+    app.state.site, app.state.hub = site, hub
+    return app

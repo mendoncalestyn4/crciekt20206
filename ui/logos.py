@@ -25,38 +25,21 @@ def chosen_folder() -> str:
 
 
 def places() -> list[Path]:
-    """Where to look, in order: the folder you chose, the game's folder above each Scorecards folder you watch
-    (and the Scorecards folder), the Steam install folder, and a 'logos' folder in the Stats Pack's own folder."""
+    """Where to look, in order (see ccstats.logos.places): the folder you chose, the game's folder above each
+    Scorecards folder you watch, the Steam install folder, a 'logos' folder in the Stats Pack's own folder."""
     from ui import state
-    out: list[Path] = []
-    if chosen_folder():
-        out.append(Path(chosen_folder()))
+    folders = []
     try:
-        for name in state.career_names():
-            s = state.settings_of(name)
-            if s and s.folder:
-                out += [Path(s.folder).parent, Path(s.folder)]
+        folders = [s.folder for name in state.career_names() if (s := state.settings_of(name)) and s.folder]
     except Exception:  # noqa: BLE001
         pass
-    out += L.game_install_folders()
-    out.append(L.home_dir() / "logos")
-    return list(dict.fromkeys(out))
-
-
-def _stamp(found: dict) -> tuple:
-    stamp = []
-    for k in sorted(found):
-        try:
-            stamp.append((k, str(found[k]), Path(found[k]).stat().st_mtime_ns))
-        except OSError:
-            stamp.append((k, str(found[k]), 0))
-    return tuple(stamp)
+    return LG.places(chosen_folder(), folders, L.home_dir())
 
 
 def book() -> LG.LogoBook:
     """The pictures for this session's teams and competitions (looked for again when a file or folder changes)."""
     found = LG.find(places())
-    stamp = _stamp(found)
+    stamp = LG.stamp(found)
     cached = st.session_state.get("_logo_book")
     if cached is None or cached[0] != stamp:
         cached = (stamp, LG.LogoBook(found))
@@ -68,9 +51,8 @@ def look(path) -> str:
     """How this logo is drawn on the page: its look picked for the dark page, or on a light page (your national
     side's colours) as it is, apart from the white the game shows inside some (the looks that make dark parts show
     up on a dark page would only fade them on a light one)."""
-    s = book().style(path)
     from ui.theme import is_night
-    return s if is_night() or s in ("inside", "whole") else "plain"
+    return LG.look_on(book().style(path), is_night())
 
 
 def _img(path, size: int, title: str) -> str:

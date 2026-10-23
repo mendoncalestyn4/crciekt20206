@@ -17,7 +17,6 @@ the original (STYLES, below; see ccstats/logo_look.py); every other logo is show
 from __future__ import annotations
 
 import base64
-import io
 import re
 from functools import lru_cache
 from pathlib import Path
@@ -65,6 +64,38 @@ def _decode(raw: bytes) -> str:
         except UnicodeDecodeError:
             continue
     return raw.decode("utf-8", "replace")
+
+
+def places(chosen, scorecards_folders, home) -> list[Path]:
+    """Where to look for the editor files, in order: the folder you chose, the game's folder above each Scorecards
+    folder you watch (and the Scorecards folder), the Steam install folder, and a 'logos' folder in the Stats Pack's
+    own folder (home)."""
+    from .local import game_install_folders
+    out: list[Path] = [Path(chosen)] if chosen else []
+    for f in scorecards_folders:
+        if f:
+            out += [Path(f).parent, Path(f)]
+    out += game_install_folders()
+    out.append(Path(home) / "logos")
+    return list(dict.fromkeys(out))
+
+
+def stamp(found: dict) -> tuple:
+    """What was found and when each file last changed: the logos are matched again whenever this changes."""
+    out = []
+    for k in sorted(found):
+        try:
+            out.append((k, str(found[k]), Path(found[k]).stat().st_mtime_ns))
+        except OSError:
+            out.append((k, str(found[k]), 0))
+    return tuple(out)
+
+
+def look_on(style: str, dark: bool) -> str:
+    """How a logo with this look is drawn on a page: in its look on a dark page; on a light page as it is, apart from
+    the white the game shows inside some ('inside', 'whole'). The looks that make dark parts show up on a dark page
+    would only fade them on a light one."""
+    return style if dark or style in ("inside", "whole") else "plain"
 
 
 def find(places) -> dict:
@@ -283,6 +314,13 @@ def _badge(path: str, mtime: int, size: int, style: str) -> tuple[str, int]:
 def badge(path, size: int = 28, style: str = "plain") -> str:
     """A data URI for the logo at this path (the logo size pixels across), or '' if it can't be read."""
     return picture(path, size, style)[0]
+
+
+def png(path, size: int = 28, style: str = "plain") -> bytes:
+    """The logo at this path as a PNG file (drawn exactly as badge draws it, twice the size for sharp edges), or b''
+    if it can't be read. The new site's stats server sends these."""
+    uri = badge(path, size, style)
+    return base64.b64decode(uri.split(",", 1)[1]) if uri else b""
 
 
 def picture(path, size: int = 28, style: str = "plain") -> tuple[str, int]:

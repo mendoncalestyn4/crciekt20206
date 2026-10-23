@@ -4,23 +4,16 @@ from __future__ import annotations
 
 import streamlit as st
 
+from ccstats import search as SR
 from ccstats.loader import Career
 
 
+ICONS = {"player": "👤", "team": "👥", "section": "🏆", "match": "🏏"}
+
+
 def options(career: Career) -> dict[str, tuple[str, str]]:
-    """label -> (kind, value), in the order they show in the list."""
-    out: dict[str, tuple[str, str]] = {}
-    for p in sorted(set(career.batting.player) | set(career.bowling.player)):
-        out[f"👤 {p}"] = ("player", p)
-    m = career.matches
-    for t in sorted(set(m.home) | set(m.away)):
-        out[f"👥 {t}"] = ("team", t)
-    for s in sorted(m.section.unique()):
-        out[f"🏆 {s}"] = ("section", s)
-    for r in m.sort_values(["date", "match_id"], ascending=False).itertuples():
-        stage = f" · {r.stage}" if r.stage else ""
-        out[f"🏏 {r.date:%d %b %Y} · {r.home} v {r.away}{stage}"] = ("match", r.match_id)
-    return out
+    """label -> (kind, value), in the order they show in the list (see ccstats.search)."""
+    return {f"{ICONS[i['kind']]} {i['label']}": (i["kind"], i["value"]) for i in SR.items(career)}
 
 
 PAGES = {"player": "views/player.py", "team": "views/teams.py", "section": "views/stat_by_stat.py",

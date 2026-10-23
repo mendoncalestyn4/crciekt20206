@@ -1,6 +1,6 @@
 # The new Stats Pack website: the plan
 
-**Status:** style chosen (section 2). Stage 0 (foundations) is being built.
+**Status:** style chosen (section 2). Stage 0 (foundations) is built (section 13): screenshots sent for your approval.
 **You said:** build it without waiting for answers; screenshots come at the end of each stage.
 **Branch:** `claude/cricket-captain-rebuild-c8v4dp`
 
@@ -107,7 +107,10 @@ Your PC
 
 ### Old and new side by side
 
-While the new site is being built, the zip also has `Start old Stats Pack.bat`, so you can always use the current site. The old one is removed only when you're happy with the new one.
+While the new site is being built, `Start Stats Pack.bat` still starts the current site, and
+`Start new Stats Pack (preview).bat` starts the new one. Both read the same careers, so you can open either. At the
+switch-over (stage 5) the new site becomes `Start Stats Pack.bat` and the current one becomes `Start old Stats Pack.bat`,
+kept until you're happy with the new one.
 
 ---
 
@@ -339,6 +342,48 @@ Each stage ends with the same steps:
 
 ---
 
+## 13. Stage 0: what was built
+
+**In the engine** (shared by both sites, with tests):
+- `ccstats/colours.py`: the 31 national palettes and the night look (moved from `ui/theme.py`).
+- `ccstats/matchstory.py`: the player-of-the-match headline and the series story. Every headline in the tests was read
+  against its scorecard. A chase says exactly what was left ("13 balls", "more than 12 overs"), never rounded.
+- `ccstats/search.py`: everything the search box lists (the current site's search uses it too, unchanged).
+- `ccstats/logos.py`: where logos are looked for, and how one is drawn on a light or dark page (moved from `ui/logos.py`).
+
+**The stats server** (`server/`, `python -m server`):
+- careers kept in memory until their file changes, the one on screen, your teams;
+- your colours (`server/theme.py`): India's are the approved mock-up's exactly; any other dark page gets the same steps
+  from its own colour;
+- logos as pictures in the look for the page;
+- the style guide's numbers;
+- search;
+- the folder checked every 20 seconds, with new matches, records and unreadable files sent to every open page.
+
+**The website** (`web/`, built into `web/dist`, about 1.4 MB with its fonts and chart library):
+- **The shell:** the rail with the nine sections, the page head (title, where you are, choices, the date in your career,
+  search), Ctrl K search, live news of new matches, your colours.
+- **The chart kit**, every piece of the approved mock-up:
+  - leaderboard bars, innings bars, percentile bars, donuts, the season ring, the form line, the calendar;
+  - where the team ranks, the series score, partnerships, ratings through the season, every team's rank, margins;
+  - lamps, the last five innings, the TV table, the latest-results strip, top-five lists;
+  - the player of the match's card and story, the TV match summary, the scorecard, the squad table, match-by-match rows.
+- **The style guide** (Settings, or `/style-guide`): every piece drawn from your career.
+- **The other sections:** what each will hold and in which stage, so every link works.
+- **The fit rule:** checked on every page at 1280, 1366, 1440, 1600 and 1920 wide, in dark and light colours: 0 problems.
+
+**Choices made while building it (say if you want them changed):**
+- **The rail's fifth section is "Seasons":** "Competitions" is too long for the rail at the approved size. The page
+  itself is "Competitions and seasons".
+- **Light pages:** 30 of the 31 national sides have a light page. On a light page the gold numbers become a deep gold,
+  and the lamps and bars a shade darker, so they read on a light tile. Bright gold on white would be hard to read.
+- **Chart labels shrink to their room:** a chart in a narrow tile, or with many bars, makes its labels smaller rather
+  than letting them touch. A donut's ring gets smaller to keep its labels inside.
+- **Dates across seasons:** when a chart runs over more than one year, its dates carry the year ("11 Jun ’27").
+- **T20 scorecards:** the bowling table shows dot balls ("0s") where the game prints them instead of maidens.
+
+---
+
 ## Appendix: technical outline
 
 **Kept**
@@ -348,7 +393,11 @@ Each stage ends with the same steps:
 - `CareerStore`, `CareerSettings` and `Watcher` from `ccstats/local.py`, used as they are, with the same files on disk.
 
 **New: the server (`server/`)**
-- **Framework:** FastAPI with Uvicorn, on 127.0.0.1 only.
+- **Framework:** Starlette with Uvicorn, on 127.0.0.1 only. (FastAPI was the first idea; Starlette, which FastAPI is
+  built on, is enough here and adds nothing new to install: Streamlit already brings both. They're listed in
+  `requirements.txt` all the same, so the new site keeps working when Streamlit goes.)
+- **Only your computer:** it answers only to the names 127.0.0.1 and localhost, and takes changes only as JSON, so a
+  web page elsewhere can't reach it or change anything.
 - **Careers in memory:** each career is cached, keyed by its files' modified times.
 - **Watcher:** a background task runs the existing `Watcher` about every 20 seconds and pushes events (new matches, new records, unreadable files) to the browser over Server-Sent Events.
 - **Logos:** served as PNG images from `ccstats/logos.py` and `ccstats/logo_look.py`, cached by path, size and look.
@@ -368,8 +417,12 @@ Each stage ends with the same steps:
 - **Styling:** CSS variables for team colours and the chosen style. Fonts are bundled.
 - **Shipping:** the built files (`web/dist`) go into the zip, so your PC never needs Node.
 
-**Testing tools:** pytest for the engine and server (FastAPI TestClient), Vitest for website pieces, and Playwright (Chromium) for whole-site browser tests and screenshots. TypeScript runs in strict mode.
+**Testing tools:** pytest for the engine and server (a real server on a free port, asked over HTTP), and Playwright
+(Chromium) for whole-site browser tests and screenshots. TypeScript runs in strict mode. (Vitest comes in when the
+website has logic of its own worth testing apart from the pages.)
 
-**Launcher:** `Start Stats Pack.bat` starts the stats server, which opens the browser. During the transition, `Start old Stats Pack.bat` starts Streamlit.
+**Launcher:** `Start new Stats Pack (preview).bat` (the same set-up steps) runs `python -m server`, which picks a free
+port from 8601 and opens the browser. At the switch-over it becomes `Start Stats Pack.bat`, and `Start old Stats
+Pack.bat` starts Streamlit.
 
 **After the switch-over:** `app.py`, `views/` and `ui/` (the old site) and the Streamlit dependency are removed. Their tests become server and browser tests.

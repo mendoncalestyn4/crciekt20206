@@ -40,6 +40,13 @@ Double-click **`Start Stats Pack.bat`** in the folder you extracted.
 
 Tip: right-click `Start Stats Pack.bat` → **Send to → Desktop (create shortcut)** to start it from your desktop.
 
+### The new site (a preview)
+A completely new site, in the look you chose, is being built page by page (see `NEW_SITE_PLAN.md`). To have a look,
+double-click **`Start new Stats Pack (preview).bat`**: it opens on the same careers as the current site (add a
+career on the current site first). For now it has the new menu, search (Ctrl K), your team's colours, live news of
+new matches and a **style guide** with every chart drawn from your own career; the pages arrive stage by stage. The
+current site stays exactly as it is until the new one has everything.
+
 ### 5 · Connect your career
 On the **Home** page:
 1. Your Scorecards folder is usually found for you. If not, click **Browse…** and pick it.

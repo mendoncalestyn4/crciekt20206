@@ -133,7 +133,8 @@ def test_englands_navy_badge_shows_on_the_dark_pages(tmp_path):
     assert b.style(b.team("England")) == LG.STYLES["England"] == "C"
 
     def brightest(look):
-        return max(sum(px[:3]) / 3 for px in decode(LG.badge(b.team("England"), 48, look)).getdata() if px[3] > 128)
+        a = np.asarray(decode(LG.badge(b.team("England"), 48, look)).convert("RGBA"), float)
+        return a[..., :3].mean(axis=2)[a[..., 3] > 128].max()
     assert brightest("plain") < 70 < 150 < brightest(b.style(b.team("England")))
 
 
@@ -202,3 +203,34 @@ def test_a_name_two_teams_answer_to_means_the_team_the_scorecards_print_it_for(t
     (em / "delhiccem.png").unlink()
     b = LG.LogoBook(LG.find([g]))
     assert b.team("Delhi Capitals").name == "delhiem.png" and b.team("Delhi") is None
+
+
+def test_where_logos_are_looked_for_and_how_they_are_drawn_on_each_page(tmp_path):
+    """Shared by both sites: your folder first, then the game's folder above each Scorecards folder, the Scorecards
+    folder, Steam, and the Stats Pack's own 'logos' folder; no place twice. On a light page a logo is drawn as it is,
+    apart from the white inside some."""
+    from ccstats import local as L
+    sc = tmp_path / "Cricket Captain 2026" / "Scorecards"
+    got = LG.places(str(tmp_path / "mine"), [str(sc), "", str(sc)], tmp_path / "home")
+    assert got[:3] == [tmp_path / "mine", sc.parent, sc]
+    assert got[3:-1] == L.game_install_folders() and got[-1] == tmp_path / "home" / "logos"
+    assert LG.places("", [], tmp_path)[0] == L.game_install_folders()[0]
+    for style in ("plain", "inside", "whole", "line", "C", "D"):
+        assert LG.look_on(style, dark=True) == style
+        assert LG.look_on(style, dark=False) == (style if style in ("inside", "whole") else "plain")
+
+
+def test_a_logo_as_a_png_file_and_a_stamp_that_sees_changes(tmp_path):
+    g = game_folder(tmp_path)
+    found = LG.find([g])
+    b = LG.LogoBook(found)
+    data = LG.png(b.team("Sydney Thunder"), 40, "plain")
+    assert data[:8] == b"\x89PNG\r\n\x1a\n"
+    assert np.asarray(Image.open(io.BytesIO(data))).shape[0] == 2 * LG.picture(b.team("Sydney Thunder"), 40)[1]
+    assert LG.png(None, 40) == b"" and LG.png(tmp_path / "missing.png", 40) == b""
+    before = LG.stamp(found)
+    assert before == LG.stamp(LG.find([g]))
+    import os
+    t = found["emblem_list"].stat().st_mtime_ns + 5_000_000_000
+    os.utime(found["emblem_list"], ns=(t, t))
+    assert LG.stamp(found) != before   # a file edited in the game: the logos are matched again
