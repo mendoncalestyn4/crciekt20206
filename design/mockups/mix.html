@@ -227,20 +227,20 @@ table.tv tr.me td { background: rgba(238,118,96,.16); }
 .i4 .bar i { border-radius: 0; background: var(--led) !important; filter: drop-shadow(0 0 4px rgba(255,198,90,.6)); }
 .i4 .pbar .tr2 { border-radius: 2px; height: 16px; background: #13245a; }
 .i4 .pbar .fill { background: var(--led); box-shadow: 0 0 10px rgba(255,198,90,.5); }
-/* idea 4: bigger words, smaller numbers */
-.i4 .head .crumb { font-size: 20px; } .i4 .chips span { font-size: 19px; } .i4 .rail a { font-size: 17px; }
-.i4 .tl, .i4 .tr { font-size: 23px; }
-.i4 .s { font-size: 15.5px; } .i4 .note { font-size: 15px; } .i4 .how { font-size: 14px; }
-.i4 .deck { font-size: 17.5px; } .i4 .kick { font-size: 21px; } .i4 .tag { font-size: 14px; }
-.i4 table.c th, .i4 table.tv th { font-size: 19px; } .i4 .tn { font-size: 14px; }
-.i4 .pbar .k2 { font-size: 24px; } .i4 .l5t { font-size: 13.5px; }
-.i4 .hero .k { font-size: 25px; } .i4 .hero .side { font-size: 23px; } .i4 .hero .side b:not(.isname) { font-size: 44px; }
-.i4 .mrow .when, .i4 .mrow .res { font-size: 15px; }
-.i4 .msum .sub2 { font-size: 15px; } .i4 .resline { font-size: 42px; }
-.i4 .inn .band .which { font-size: 14px; } .i4 .inn .band .tot { font-size: 28px; } .i4 .inn .p .nmx { font-size: 26px; }
-.i4 .inn .p .v { font-size: 17px; } .i4 .inn .p .b { font-size: 14px; }
-.i4 .tk, .i4 .tk b { font-size: 21px; } .i4 .tk b span { font-size: 14px; } .i4 .ticker .lab { font-size: 22px; }
-.i4 .itabs button { font-size: 15.5px; } .i4 .tl2 { font-size: 34px; }
+/* idea 4: bigger words (and numbers a little smaller than the words grow) */
+.i4 .head .crumb { font-size: 22px; } .i4 .chips span { font-size: 21px; } .i4 .rail a { font-size: 17px; }
+.i4 .tl, .i4 .tr { font-size: 26px; }
+.i4 .s { font-size: 17px; } .i4 .note { font-size: 16.5px; } .i4 .how { font-size: 15.5px; }
+.i4 .deck { font-size: 19px; } .i4 .kick { font-size: 23px; } .i4 .tag { font-size: 15.5px; }
+.i4 table.c th, .i4 table.tv th { font-size: 21px; } .i4 .tn { font-size: 16px; }
+.i4 .pbar .k2 { font-size: 27px; } .i4 .l5t { font-size: 15px; }
+.i4 .hero .k { font-size: 28px; } .i4 .hero .side { font-size: 26px; } .i4 .hero .side b:not(.isname) { font-size: 52px; }
+.i4 .mrow .when, .i4 .mrow .res { font-size: 17px; }
+.i4 .msum .sub2 { font-size: 17px; } .i4 .resline { font-size: 46px; }
+.i4 .inn .band .which { font-size: 16px; } .i4 .inn .band .tot { font-size: 32px; } .i4 .inn .p .nmx { font-size: 29px; }
+.i4 .inn .p .v { font-size: 19px; } .i4 .inn .p .b { font-size: 15.5px; }
+.i4 .tk, .i4 .tk b { font-size: 23px; } .i4 .tk b span { font-size: 16px; } .i4 .ticker .lab { font-size: 24px; }
+.i4 .itabs button { font-size: 17px; } .i4 .tl2 { font-size: 38px; }
 </style></head><body>
 <nav class="rail" id="rail"></nav>
 <div class="main"><div class="head" id="head"></div><div class="grid" id="main"></div></div>
@@ -248,8 +248,8 @@ table.tv tr.me td { background: rgba(238,118,96,.16); }
 const IDEA = Q.get("idea") || "1";
 document.body.classList.add("i" + IDEA, ...(IDEA === "4" ? ["i2"] : []));   // idea 4 wears idea 2's look
 const SB = IDEA === "2" || IDEA === "4";   // idea 2's colours and fonts (idea 4 too); idea 4 takes its charts from idea 1
-const SC = IDEA === "4" ? .8 : 1, NUMF = "Space Grotesk", NUMW = 700;   // numbers: Bento's font in every idea (smaller in idea 4)
-const TS = IDEA === "4" ? 1.15 : 1, ts = px => Math.round(px * TS);     // words: bigger in idea 4
+const SC = IDEA === "4" ? .92 : 1, NUMF = "Space Grotesk", NUMW = 700;   // numbers: Bento's font in every idea (smaller in idea 4)
+const TS = IDEA === "4" ? 1.32 : 1, ts = px => Math.round(px * TS);     // words: bigger in idea 4
 const AXF = "Inter", AXS = ts(11);
 const LED = "#ffc65a", OR = "#ee7660", GOLD = "#dab16f", BLUE = "#7aa2ff", WIN = "#45c08a", LOSS = "#ee6a6a", OTHER = "#3a5aa0";
 const MINE = SB ? LED : OR;                                   // my team's colour in the charts
@@ -309,7 +309,7 @@ function pomCard(P) {
 // Broadcast's leaderboard bars: names on the left, the number and team on the right, my team highlighted
 function leaderBars(el, rows, key, col, o = {}) {
   const vals = rows.map(r => r[key]);
-  return chart(el, {grid: {left: 6, right: (o.right || 96) + (SB ? 24 : 0), top: 4, bottom: 4, containLabel: true}, xAxis: {show: false, max: Math.max(...vals)},
+  return chart(el, {grid: {left: 6, right: ts(o.right || 96) + (SB ? 24 : 0), top: 4, bottom: 4, containLabel: true}, xAxis: {show: false, max: Math.max(...vals)},
     yAxis: {type: "category", inverse: true, data: rows.map(r => r.player), axisLine: {show: false}, axisTick: {show: false},
       axisLabel: {color: "#f4f6fb", fontFamily: "Bebas Neue", fontSize: ts(o.nameSize || 22), margin: 12}},
     series: [{type: "bar", barWidth: "62%", data: rows.map(r => ({value: r[key], itemStyle: {color: r.team === TEAM ? col : OTHER,
