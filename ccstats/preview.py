@@ -197,12 +197,13 @@ def key_wicket(career, ids, team: str, min_innings: int = 5) -> pd.DataFrame:
 
 
 def weak_spot(career, ids, team: str) -> pd.DataFrame:
-    """Their average stand for each wicket against the competition's average for that wicket."""
+    """Their average stand for each wicket against the competition's average for that wicket (both counted the same
+    way: unbroken stands' runs in, over the stands that were broken; see partnerships.by_wicket)."""
     from . import partnerships as P
     s = P.stands(career, ids)
-    mine = s[s.team == team].groupby("wicket").runs.agg(["mean", "size"])
-    allw = s.groupby("wicket").runs.mean()
-    d = mine.join(allw.rename("all")).reset_index().rename(columns={"mean": "average", "size": "stands"})
+    mine = P.by_wicket(s[s.team == team])[["wicket", "average", "stands"]]
+    allw = P.by_wicket(s)[["wicket", "average"]].rename(columns={"average": "all"})
+    d = mine.merge(allw, on="wicket", how="left").dropna(subset=["average"]).reset_index(drop=True)
     d["vs"] = (d.average - d["all"]) / d["all"].replace(0, np.nan) * 100
     return d
 

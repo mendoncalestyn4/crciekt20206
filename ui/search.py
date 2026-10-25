@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+from ccstats import catalogue as CAT
 from ccstats import search as SR
 from ccstats.loader import Career
 
@@ -12,8 +13,10 @@ ICONS = {"player": "👤", "team": "👥", "section": "🏆", "match": "🏏"}
 
 
 def options(career: Career) -> dict[str, tuple[str, str]]:
-    """label -> (kind, value), in the order they show in the list (see ccstats.search)."""
-    return {f"{ICONS[i['kind']]} {i['label']}": (i["kind"], i["value"]) for i in SR.items(career)}
+    """label -> (kind, value), in the order they show in the list (see ccstats.search); a team that hasn't played yet
+    says so."""
+    return {f"{ICONS[i['kind']]} {i['label']}" + (" · no matches yet" if i["sub"].endswith("no matches yet") else ""):
+            (i["kind"], i["value"]) for i in SR.items(career)}
 
 
 PAGES = {"player": "views/player.py", "team": "views/teams.py", "section": "views/stat_by_stat.py",
@@ -30,7 +33,13 @@ def go_to(career: Career, kind: str, value: str) -> None:
     elif kind == "team":
         m = career.matches
         mine = m[(m.home == value) | (m.away == value)]
-        ss["tm_section"] = mine.section.value_counts().index[0]  # their most-played section
+        # their most-played section; a team that hasn't played opens on a competition here it belongs to
+        here = list(mine.section.value_counts().index) or [s for s in CAT.home_sections(value) if s in set(m.section)]
+        if not here:
+            ss["search_note"] = (f"{value} haven't played in this career yet, and none of their competitions is in it "
+                                 "yet: they show on every page once a scorecard has them.")
+            return
+        ss["tm_section"] = here[0]
         ss["tm_season"] = "All seasons"
         ss["tm_team"] = value
     elif kind == "section":

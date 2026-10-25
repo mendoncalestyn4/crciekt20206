@@ -163,11 +163,13 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         return Response(data, media_type="image/png", headers={"Cache-Control": "no-cache"})
 
     def _logo_names():
-        """Which names have a picture: every team in the career and every national side, every competition in the
-        career. The website shows a logo only for these, so it never asks for one that isn't there."""
+        """Which names have a picture: every team in the career and every team in the game (a side can be picked and
+        searched for before its first match), every competition in the career. The website shows a logo only for
+        these, so it never asks for one that isn't there."""
+        from ccstats import catalogue as CAT
         from ccstats import fixtures as FX
         c, book = site.career(), site.logos()
-        teams = set(FX.NATIONS)
+        teams = set(FX.NATIONS) | set(CAT.every_team())
         comps: set = set()
         if c is not None:
             m = c.matches

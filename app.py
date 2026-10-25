@@ -201,6 +201,9 @@ nav = st.navigation(pages, expanded=True)  # every page always listed
 goto = st.session_state.pop("search_goto", None)  # set by the search box
 if goto:
     st.switch_page(goto)
+note = st.session_state.pop("search_note", None)  # the search box: a team that hasn't played anywhere here yet
+if note:
+    st.toast(note, icon="ℹ️")
 try:  # Streamlit's tables, buttons and sidebar in your team's colours: they show from the next run, so one more
     if theme.apply_streamlit_colours() and not st.session_state.get("_colours_rerun"):  # (only once in a row)
         st.session_state["_colours_rerun"] = True

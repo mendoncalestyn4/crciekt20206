@@ -102,8 +102,11 @@ fmt_words = "games here" if len(sections) > 1 or pick != INTL else sections[0]
 
 # your team: any side in this competition (every format), yours first. Opponent: every side in it, and whoever is
 # next in your schedule even before they've played a game here
-group_teams = sorted(set(group.home) | set(group.away))
-yours = [t for t in mine_default if t in group_teams or (pick == INTL and t in FX.NATIONS)]
+group_teams = set(group.home) | set(group.away)
+for s_ in sections:  # and the sides that belong here but haven't played yet (a new save)
+    group_teams |= state.section_teams(career, s_)[1]
+group_teams = sorted(group_teams)
+yours = [t for t in state.my_teams(career, unplayed=True) if t in group_teams or (pick == INTL and t in FX.NATIONS)]
 mine_opts = ["—"] + yours + [t for t in group_teams if t not in yours]
 if st.session_state.get("op_mine") not in mine_opts:
     st.session_state["op_mine"] = yours[0] if yours else "—"

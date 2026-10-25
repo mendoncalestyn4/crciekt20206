@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from ccstats import catalogue as CAT
 from ccstats import competitions as C
 from ccstats import fixtures as FX
 from ccstats import local as L
@@ -58,6 +59,7 @@ def fresh_names():
     saved = {k: copy.deepcopy(getattr(C, k)) for k in ("KNOWN", "SHARED", "SHIPPED", "COUNTRIES", "DOMESTIC_TEAMS",
                                                          "WORLD_XI")}
     nations, read = set(FX.NATIONS), dict(L._names_read)
+    teams, before = dict(CAT._names), copy.deepcopy(CAT._before)
 
     def forget():
         for k, v in saved.items():
@@ -66,6 +68,10 @@ def fresh_names():
             target.update(copy.deepcopy(v))
         FX.NATIONS.clear()
         FX.NATIONS.update(nations)
+        CAT._names.clear()
+        CAT._names.update(teams)
+        CAT._before.clear()
+        CAT._before.update(copy.deepcopy(before))
         L._names_read.clear()
         L._names_read.update(read)
     yield forget

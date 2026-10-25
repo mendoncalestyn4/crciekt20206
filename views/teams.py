@@ -35,9 +35,11 @@ scope = Scope(sections=[section], seasons=[] if season == "All seasons" else [se
 ids = scope.match_ids(m)
 here = m[m.match_id.isin(ids)]
 base_kind = kind_of(here)  # t20 / one / multi: the bars for close games, good starts and so on
-teams = sorted(set(here.home) | set(here.away))
+# every side that has played here, and the ones that belong here but haven't played yet (a new save)
+teams, todo = state.section_teams(career, section, here)
 state.recall("tm_team", "team", teams)
-team = c3.selectbox("Team", teams, key="tm_team", on_change=state.remember("tm_team", "team"))
+team = c3.selectbox("Team", teams, key="tm_team", on_change=state.remember("tm_team", "team"),
+                    format_func=lambda t: t + (" (0 games)" if t in todo else ""))  # short: the box is narrow
 venue_label = c4.segmented_control("Venue", ["Overall", "Home", "Away"], default="Overall", required=True, key="tm_venue") or "Overall"
 venue = venue_label.lower().replace("overall", "all")
 # Home / Away: everything about this team counts only its games there (tids); the tables of every team and the
@@ -48,6 +50,20 @@ else:
     tids = pd.Index(here[((here.home == team) if venue == "home" else (here.away == team)) & ~here.neutral].match_id)
 scope_t = scope if venue == "all" else Scope(sections=[section], seasons=scope.seasons, team=team, venue=venue)
 
+if team in todo:  # in this competition, but no game in it yet
+    played_ = m[(m.home == team) | (m.away == team)].section.value_counts()
+    when_ = "" if season == "All seasons" else f" in {season}"
+    st.info(f"**{team} haven't played in {section}{when_} yet.** Their record here fills in after their first game"
+            + (". In this career they have played: " + ", ".join(f"{s} ({n})" for s, n in played_.items()) + "."
+               if len(played_) else "."))
+
+    def _to_section(s_):
+        return lambda: st.session_state.update(tm_section=s_, tm_season="All seasons", tm_team=team)
+    if len(played_):
+        bcols = st.columns(min(len(played_), 4) + 2)
+        for i_, s_ in enumerate(played_.index[:4]):
+            bcols[i_].button(f"Show {s_}", key=f"tm_to_{s_}", on_click=_to_section(s_))
+    st.stop()
 table = A.team_table(career, ids, venue)
 if team not in set(table.team):
     if venue != "all" and here.neutral.all():
@@ -179,16 +195,22 @@ with tab_over:
         with st.container(border=True):
             st.markdown("**Average partnership for each wicket**")
             pw = A.partnership_by_wicket(career, tm.match_id, team)
+            pw = pw[pw.average.notna()]  # a wicket whose stands were all unbroken has no average yet
+            best_txt = [f"{int(b)}{'*' if u else ''}" for b, u in zip(pw.best, pw.best_unbroken)]
             st.plotly_chart(bars([f"{ordinal(w)} wicket" for w in pw.wicket],
-                                 pw.average, "Average stand (runs)", 1, notes=[f"{n} stands · best {b}" for n, b in zip(pw.stands, pw.best)]),
+                                 pw.average, "Average stand (runs)", 1,
+                                 notes=[f"{n} stands · best {b}" for n, b in zip(pw.stands, best_txt)]),
                             width="stretch", config=CONFIG, key="tm_pship")
             if len(pw):
-                b_ = pw.sort_values("average", ascending=False).iloc[0]
-                n_ = int(b_.wicket)
-                chart_note(f"Their best stand is for the {ordinal(n_)} "
-                           f"wicket: {b_.average:.1f} runs on average over {int(b_.stands)} stands (best {int(b_.best)}). "
-                           f"The opening stand averages {pw.average.iloc[0]:.1f}.",
-                           "Shows which partnerships hold the innings together and where it tends to fall apart.")
+                i_ = pw.average.idxmax()
+                b_ = pw.loc[i_]
+                chart_note(f"Their best stand is for the {ordinal(int(b_.wicket))} "
+                           f"wicket: {b_.average:.1f} runs on average over {int(b_.stands)} stands (best "
+                           f"{best_txt[list(pw.index).index(i_)]})."
+                           + (f" The opening stand averages {pw.average.iloc[0]:.1f}." if int(pw.wicket.iloc[0]) == 1 else ""),
+                           "Shows which partnerships hold the innings together and where it tends to fall apart. An "
+                           "unbroken stand (*) counts its runs; the average is over the stands that were broken, as a "
+                           "batting average is over the times out.")
 
     left, right = st.columns(2, gap="medium")
     with left:

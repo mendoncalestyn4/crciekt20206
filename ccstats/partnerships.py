@@ -155,6 +155,21 @@ def _all_stands(career) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=STAND_COLUMNS)
 
 
+def by_wicket(s: pd.DataFrame) -> pd.DataFrame:
+    """Stands (from `stands`) summed up for each wicket, the way cricket counts them: an unbroken stand's runs count
+    and it can be the best (best_unbroken: shown with a *), and the average is the runs over the stands that were
+    broken, as a batting average is runs over dismissals (none broken yet: no average)."""
+    cols = ["wicket", "stands", "broken", "runs", "average", "best", "best_unbroken"]
+    if s.empty:
+        return pd.DataFrame(columns=cols)
+    s = s.sort_values(["runs", "unbroken"], ascending=[False, False])  # an unbroken stand first among equals
+    g = s.groupby("wicket")
+    d = pd.DataFrame({"stands": g.size(), "broken": g.unbroken.apply(lambda u: int((~u).sum())), "runs": g.runs.sum(),
+                      "best": g.runs.first(), "best_unbroken": g.unbroken.first()}).reset_index()
+    d["average"] = d.runs / d.broken.where(d.broken > 0)
+    return d[cols]
+
+
 def suffix(n: int) -> str:
     return "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
 

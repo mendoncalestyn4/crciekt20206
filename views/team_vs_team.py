@@ -32,7 +32,8 @@ state.recall("tv_season", "season", ["All seasons"] + seasons)
 season = r1[1].selectbox("Season", ["All seasons"] + seasons, key="tv_season", on_change=state.remember("tv_season", "season"))
 base_scope = Scope(sections=[section], seasons=[] if season == "All seasons" else [season])
 here = m[m.match_id.isin(base_scope.match_ids(m))]
-teams = sorted(set(here.home) | set(here.away))
+# every side that has played here, and the ones that belong here but haven't played yet (a new save)
+teams, todo = state.section_teams(career, section, here)
 if len(teams) < 2:
     st.info("This section needs at least two teams.")
     st.stop()
@@ -40,12 +41,18 @@ if len(teams) < 2:
 mine_here = [t for t in state.my_teams(career) if t in teams]
 if st.session_state.get("tv_a") not in teams:
     st.session_state["tv_a"] = mine_here[0] if mine_here else teams[0]
-a = r1[2].selectbox("Team A", teams, key="tv_a")
+
+
+def no_games_yet(t: str) -> str:
+    return t + (" (0 games)" if t in todo else "")  # short: the team boxes are narrow
+
+
+a = r1[2].selectbox("Team A", teams, key="tv_a", format_func=no_games_yet)
 others = [t for t in teams if t != a]
 if st.session_state.get("tv_b") not in others:
     met = pd.concat([here.away[here.home == a], here.home[here.away == a]]).value_counts()
-    st.session_state["tv_b"] = met.index[0] if len(met) else others[0]
-b = r1[3].selectbox("Team B", others, key="tv_b")
+    st.session_state["tv_b"] = met.index[0] if len(met) else next((t for t in others if t not in todo), others[0])
+b = r1[3].selectbox("Team B", others, key="tv_b", format_func=no_games_yet)
 
 meet_all = here[((here.home == a) & (here.away == b)) | ((here.home == b) & (here.away == a))]
 n_met = len(meet_all)
@@ -105,9 +112,12 @@ if len(ids_a) == 0 or len(ids_b) == 0:
                    "Choose ")
                 + "**Against anyone** to compare each team's own games.")
     else:
-        missing = [f"{t} haven't played{where_[v]} in {where_scope} yet"
-                   for t, ids_, v in ((a, ids_a, venue_a), (b, ids_b, venue_b)) if len(ids_) == 0]
-        st.info(". ".join(missing) + ". Choose another **Where**.")
+        missing = [(t, v) for t, ids_, v in ((a, ids_a, venue_a), (b, ids_b, venue_b)) if len(ids_) == 0]
+        never = [t for t, _ in missing if t in todo]  # no game here at all yet: another Where won't help
+        st.info(". ".join(f"**{t} haven't played{'' if t in never else where_[v]} in {where_scope} yet**"
+                          for t, v in missing)
+                + (". Their side fills in after their first game here" if never else "")
+                + (". Choose another **Where**." if len(never) < len(missing) else "."))
     st.stop()
 if not h2h:  # say plainly whose games these are: never a meeting that didn't happen
     side = {"all": ("all {t} games", "all {t} games"), "a_home": ("{t} home games", "{t} away games"),

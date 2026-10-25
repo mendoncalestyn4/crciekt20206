@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
+from ccstats import catalogue as CAT
 from ccstats import fixtures as FX
 from ccstats import planning as PLN
 from ccstats import seasonal as SN
@@ -42,6 +43,16 @@ mine_rows = tracked[tracked.team == team] if len(tracked) else tracked
 scheduled_any = any(r.get("team") == team for r in schedule)
 national = team in FX.NATIONS
 formats_here = ["Test", "ODI", "T20I"] if national else ["T20", "The Hundred", "List A", "First-class"]
+# the sides this team plays, before they've played (a new save): every nation for a nation; a franchise's league or a
+# county's (state's) fellow sides, then any nation for a tour game. A side that has played under another name (a
+# scorecard from before a rename) is listed by that name only
+rivals_ = {t for t in CAT.rivals(team) if t in all_teams or not (CAT.aliases(t) & set(all_teams))}
+extra_opps = [t for t in (sorted(FX.NATIONS) if national else sorted(rivals_) + sorted(FX.NATIONS))
+              if t not in team_opts and t != team]
+# the opponent boxes: a franchise's or a county's own competition first (played or not), then everyone else
+opp_list = [t for t in team_opts + extra_opps if t != team]
+if not national:
+    opp_list = sorted(rivals_) + [t for t in opp_list if t not in rivals_]
 latest = m.date.max()
 year_now = int(latest.year) if pd.notna(latest) else dt.date.today().year
 
@@ -142,7 +153,7 @@ def preview_any() -> None:
     todo_ = mine_rows[mine_rows.status.isin(["next", "to come"]) & (mine_rows.opponent.fillna("") != "")] \
         if len(mine_rows) else mine_rows
     sched_o = list(dict.fromkeys(todo_.opponent)) if len(todo_) else []
-    pool = set(all_teams) | (FX.NATIONS if national else set())
+    pool = set(all_teams) | (FX.NATIONS if national else rivals_)
     if national:
         pool &= FX.NATIONS
     rest = sorted(pool - set(sched_o) - {team})
@@ -472,7 +483,7 @@ def change_form(it: dict, k: str) -> None:
         st.markdown(f"**Change {esc(it['series'])}**")
         wrong = ""  # dates out of match order
         if it["kind"] == "series":
-            opps = [t for t in team_opts + [t for t in sorted(FX.NATIONS) if t not in all_teams] if t != team]
+            opps = list(opp_list)
             if national:
                 opps = [t for t in opps if t in FX.NATIONS]
             if it["opponent"] and it["opponent"] not in opps:
@@ -680,7 +691,8 @@ with t_edit:
             column_config={
                 "id": None,  # kept, not shown: it ties each row to its saved fixture
                 "series": st.column_config.TextColumn("Series", help="Matches with the same series name are one series"),
-                "opponent": st.column_config.SelectboxColumn("Opponent", options=[""] + [t for t in all_teams if t != team],
+                "opponent": st.column_config.SelectboxColumn("Opponent", options=[""] + [t for t in all_teams + extra_opps
+                                                                                           if t != team],
                                                              help="Leave empty for a tournament"),
                 "format": st.column_config.SelectboxColumn("Format", options=FX.FORMATS, required=True),
                 "no": st.column_config.NumberColumn("Match", min_value=0, max_value=20, step=1,
@@ -731,10 +743,11 @@ with t_add, safe_section("add matches"):
     if kind == "Series or match":
         with st.container(border=True):
             a1, a2 = st.columns(2)
-            opps = [t for t in team_opts + [t for t in sorted(FX.NATIONS) if t not in all_teams] if t != team]
+            opps = list(opp_list)
             if national:
                 opps = [t for t in opps if t in FX.NATIONS]
-            opp = a1.selectbox("Opponent", opps, key="fx_opp")
+            # one box per team: another team's box starts at the top of its own list (its own league first)
+            opp = a1.selectbox("Opponent", opps, key=f"fx_opp::{team}")
             ffmt = a2.segmented_control("Format", formats_here, default=formats_here[0], required=True, key="fx_fmt") or formats_here[0]
             b1, b2 = st.columns(2)
             n = b1.pills("How many matches", list(range(1, 8)), default=3, required=True, key="fx_n") or 1
@@ -806,7 +819,7 @@ with t_add, safe_section("add matches"):
                 st.session_state.pop("fx_parsed", None)
                 st.warning("Type at least one line first, like the examples above.")
             else:
-                rows_, errs_ = FX.parse_lines(txt, team, all_teams + sorted(FX.NATIONS - set(all_teams)))
+                rows_, errs_ = FX.parse_lines(txt, team, all_teams + [t for t in extra_opps if t not in all_teams])
                 st.session_state["fx_parsed"] = (rows_, errs_)
         parsed = st.session_state.get("fx_parsed")
         if parsed:

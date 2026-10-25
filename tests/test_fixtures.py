@@ -446,7 +446,7 @@ def test_page_shows_auto_added_and_knockouts(career):
 
 def test_page_add_series_with_the_pickers(career):
     at = page(career).run()
-    at.selectbox(key="fx_opp").select("England").run()
+    next(s for s in at.selectbox if s.key.startswith("fx_opp::")).select("England").run()
     at.button(key="fx_add_series").click().run()
     ok(at)
     saved = at.session_state[f"fixtures::{career.name}"]

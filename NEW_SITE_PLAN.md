@@ -279,9 +279,9 @@ Each stage ends with the same steps:
 | Stage | What gets built | About |
 |---|---|---|
 | **0. Foundations** | The server (careers, settings, folder watching); the website shell in your chosen style (menu, search bar, team colours, fonts); logos served exactly as approved, with the logo tests carried over; the chart kit (your chosen chart style as reusable pieces); the launcher and zip; the test set-up. **You see:** the shell, plus a "style guide" page with every chart piece drawn from your data. | 2–3 days |
-| **1. Core pages** | My team home, Player profile, Match (scorecard and report). Your national side and franchise together. New: a player's share of the team's runs and wickets, wicket by wicket in every innings (section 14) | 4–5 days |
-| **2. Teams and competitions** | Teams, Team vs team, Opponent preview, Team planner, Rivalries, Competitions, Season, Season review, Honours. New: who carries the team, your usual score at each wicket, collapses, the score to aim for against your next opponent, home or away (section 14) | 5–6 days |
-| **3. Leaders, records and insights** | Stat by stat, Records, Hall of fame, Rankings, Insights, Analytics, Player stories, Compare players. New: every team ranked by runs and wickets up to any date, best stand for each wicket, the score to aim for against every team, home and away (section 14) | 4–5 days |
+| **1. Core pages** | My team home, Player profile, Match (scorecard and report). Your national side and franchise together. New: a player's share of the team's runs and wickets, wicket by wicket in every innings, "plays like", how hard your players have worked lately (section 14) | 4–5 days |
+| **2. Teams and competitions** | Teams, Team vs team, Opponent preview, Team planner, Rivalries, Competitions, Season, Season review, Honours. New: who carries the team, your usual score at each wicket, collapses, the score to aim for against your next opponent, home or away, your season wrapped, the scouting shortlist, the replacement finder (section 14) | 5–6 days |
+| **3. Leaders, records and insights** | Stat by stat, Records, Hall of fame, Rankings, Insights, Analytics, Player stories, Compare players. New: every team ranked by runs and wickets up to any date, best stand for each wicket, the score to aim for against every team, home and away, fantasy points with a team of the week and of the season, the career quiz (section 14) | 4–5 days |
 | **4. Fixtures and tools** | Fixtures (all 8 tabs, the biggest page), careers and uploads, backups, Data check, the first-start question, live alerts | 4–5 days |
 | **5. Final checks and switch-over** | Full test runs, stress tests (including the three logo stress tests), a new-user install test from the zip, speed checks, and screenshots of every page and tab. Then the new site becomes `Start Stats Pack.bat`, the old site stays as a backup launcher, and the README is rewritten. | 3–4 days |
 
@@ -433,6 +433,75 @@ each format.
    for as much as the few games suggested did worse than it in all four, so it isn't used.
 5. **Tests:** draws mean no single target makes sense, so Tests show the first-innings totals that won, drew and lost
    against that team, home and away, instead.
+
+**Every team from the start (fixed on the current site, 25 October).** In a new save a team that hadn't played yet
+was in no list. Now the game's own list of teams (all 235, with each team's country) says which competitions each
+plays in. That covers the international formats (only the 12 Test sides in Tests), every franchise league (IPL, BBL,
+SA20, CPL, PSL, BPL, LPL, the Hundred) and the domestic competitions every side of a country plays: the County
+Championship, Blast and One-Day Cup; the Ranji, Vijay Hazare and Mushtaq Ali; the Shield and Marsh Cup; and the
+Plunket, Ford Trophy and Super Smash. These pages offer those teams from the start, marked "no games yet":
+- My team (any franchise or county can be picked before its first match, as a country could);
+- Team vs team, Teams, Opponent preview and the home page's next opponent;
+- Fixtures (a franchise's whole league, a county's fellow counties);
+- search.
+
+A page then says plainly that the team hasn't played there yet, and where it has. A County Championship division, a
+tour side, Afghanistan's sides and competitions only some sides play show their teams once they've played, because
+who is in them isn't certain. A team renamed in the game is listed by its new name, and its scorecards from before
+the rename aren't counted as a second team. The new site uses the same list.
+
+**The features above, checked (25 October).** For each one: is there a version on the current site already, does
+its logic hold on your career and the 477-match test career, and what the new site does better.
+
+| Feature | Already on the current site? | Logic check | New site |
+|---|---|---|---|
+| Your teams (national + franchise) | Yes, but only countries could be picked before their first match | Fixed: every team can (above) | Same list |
+| A player's share of the team | Partly: Stories, "who carries their team" (runs only, over all seasons, the innings they batted) | Correct for what it says | Runs and wickets, each format and year, of the whole team total |
+| Teams ranked by runs and wickets to a date | No (team tables rank by results) | – | New |
+| Wicket by wicket | Yes: Match page, with a par line | Correct; the par for a late wicket comes only from innings where it fell, which the new page's note will say | Climbing bars with the stand and who was in |
+| Usual score at each wicket | Yes: the Match page's par line | As above | Your team against the opponents, best and worst |
+| Collapses | Yes: Teams (4 or more wickets for 30 or fewer) | Correct (checked by hand); one per innings, the longest | Also big stands |
+| Best stand for each wicket | Records only as alerts, Teams as "best" | **Wrong on the Teams page**: stands still unbroken at the end weren't counted, so the best was wrong in 30 rows of your career and 91 of the test career (England's best 5th-wicket ODI stand showed 46; it was 91*). Fixed: unbroken stands count, the average is over the stands that were broken (as cricket counts them), and Opponent preview's weak spot counts the same way | Records by wicket |
+| Score to aim for | Partly: Insights, "is it enough against a good side?" (stronger and weaker half) | **Weak**: the halves went by raw win %, so one win in one game made a side "strong" (Ireland were a stronger Test side after one Test). Fixed: each side counts as if it had already won 2 and lost 2 | Every team, home and away (above) |
+| Our score v theirs, bat first or chase, stronger and weaker sides, home and away, streaks, match-winners | Tables of each on Teams, Insights and Opponent preview | Correct (bat first or chase, home and away, streaks, match-winners checked on both careers) | The six new charts, on the pages you pick |
+
+**New features (suggested 25 October; each one tried on your two careers first).** All of them are exact from what
+the scorecards record (no overs for wickets, no grounds, no toss).
+1. **Fantasy points** (stage 3, Leaders; team of the week on My team). Every player gets points from every match:
+   - batting: a point a run, +1 a four, +2 a six, +8 for a fifty or +16 for a hundred, −2 for a duck (top seven);
+     a strike-rate bonus or penalty in T20s (10 balls or more) and one-dayers (20 or more);
+   - bowling: 25 a wicket, +8 if bowled or lbw, a bonus for 3, 4 or 5 wickets, a point a dot ball in T20s (their
+     cards print dots), +4 a maiden in one-dayers (theirs print maidens), an economy bonus or penalty;
+   - fielding: 8 a catch (+4 for three), 12 a stumping, 6 a run out when the card names the fielder;
+   - 4 for playing.
+
+   Leaderboards per format and season, the best single matches, and the team of the week and of the season. Checked
+   by hand against the printed scorecards (A Sharma's 100* and 3/32 v West Indies: 250 points; four bowlers' bowled
+   and lbw bonuses taken from the printed dismissals). Two players with one name on opposite sides (C Green for New
+   South Wales and for Western Australia, in the same game) are kept apart. In your career, every format of 2026
+   together: A Singh 1,335, S Gill 1,260, A Sharma 1,173.
+2. **How hard your players have worked** (stage 1, My team; stage 2, Team planner). Overs bowled and matches played
+   in the last 14 and 30 days, for every player of all your teams together (India and Mumbai Indians share players),
+   against each one's usual 30 days, with a "heavy" flag before your next match. In the test career, J Bumrah bowled
+   66 overs in the 30 days to 6 June across the IPL and India's Tests, against his usual 26.
+3. **Plays like** (stage 1, Player profile; stage 2, the replacement finder in Team planner). The three players most
+   like one: average (3 dismissals at least), strike rate, share of runs in boundaries and where they bat, in the
+   same length of game. Checked: a player's three nearest bat within a place of him on average (0.3 to 0.8 places,
+   against 3.3 for any three players). Your career: H Brook (ODIs) plays like J Inglis, B Duckett and P Stirling.
+4. **Your season, wrapped** (stage 2, Seasons): the season told in slides you can save as a picture: record, top
+   run-scorer and wicket-taker, highest score, best bowling, biggest stand, longest winning run, biggest win, most
+   sixes. Your 2026: 22 matches, won 12, lost 10; S Gill 830 runs; A Singh 34 wickets; S Gill 163; K Yadav 5/28; Gill
+   and Jaiswal's 225 for the first wicket; won by 201 runs v Afghanistan.
+5. **Scouting shortlist** (stage 2, Team planner): the best players in your competition who don't play for you, by
+   role (top order, middle order, finisher, all-rounder, bowler), by match impact over the last two seasons, five
+   games at least: for the auction or a call-up. Test career, IPL for Mumbai Indians: H Singh and P Shaw at the top of
+   the order, D Jurel in the middle, N Sindhu as an all-rounder.
+6. **Career quiz** (stage 3, Player stories): questions made from your own career, with three wrong answers from the
+   same pool ("Who made 163 for India v West Indies on 3 Oct 2026?"). Your own team is never offered as the answer
+   to "against whom?".
+
+Tried and dropped: "on this day" (both careers cover about one game year, so it would be empty for a long time); a
+team "nemesis" list (the player page's nemesis and the opponent's key players already cover it).
 
 **The season calendar's year (decided):** April to March, with every competition in the year its season belongs to.
 The IPL starting on 29 March stays whole in that season's calendar (with a small "29 Mar" mark at the start), never

@@ -139,11 +139,21 @@ def set_my_teams(c: Career, teams: list[str]) -> None:
     st.session_state[f"my_teams::{c.name}"] = teams
 
 
+def section_teams(c: Career, section: str, here=None) -> tuple[list[str], set[str]]:
+    """Every side in a section (or in the part of it on screen, `here`), A to Z: those that have played there and
+    those that belong there but haven't played yet (a new save); and the set of those still to play."""
+    from ccstats import catalogue as CAT
+    m = c.matches
+    return CAT.section_teams(m[m.section == section], section, here)
+
+
 # --------------------------------------------------------------------------- "which teams do you play as?"
 def team_choices(c: Career) -> list[str]:
-    """Every team you could be playing as: the ones in this career and every national side."""
+    """Every team you could be playing as: the ones in this career and every team in the game (a franchise or a
+    county can be picked before its first match, as a country can)."""
+    from ccstats import catalogue as CAT
     from ccstats import fixtures as FX
-    return sorted(set(c.matches.home) | set(c.matches.away) | set(FX.NATIONS))
+    return sorted(set(c.matches.home) | set(c.matches.away) | set(FX.NATIONS) | set(CAT.every_team()))
 
 
 def nations() -> set[str]:

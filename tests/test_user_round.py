@@ -543,7 +543,7 @@ def test_add_and_change_a_series_with_a_date_for_every_match(career):
     import datetime as dt
     at = page("fixtures.py", career).run()
     ok(at)
-    next(s for s in at.main.selectbox if s.key == "fx_opp").set_value("Sri Lanka").run()
+    next(s for s in at.main.selectbox if s.key.startswith("fx_opp::")).set_value("Sri Lanka").run()
     next(s for s in at.main.segmented_control if s.key == "fx_fmt").set_value("ODI").run()
     next(t for t in at.main.toggle if t.key == "fx_know").set_value(True).run()
     ok(at)

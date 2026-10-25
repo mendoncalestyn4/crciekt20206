@@ -328,7 +328,9 @@ if "Batting" in tabs:
                                 2: "Shows how much home conditions help them.",
                                 3: "Shows whether they score against the good sides too, or fill their boots against the weak ones."}[i])
         with st.container(border=True):
-            st.markdown("**Stronger and weaker teams** · teams ranked by their win % in this section; the top half are the stronger teams. "
+            st.markdown("**Stronger and weaker teams** · teams ranked by their win % in this section (each counted as if "
+                        "it had already won 2 and lost 2, so one win in one game doesn't make a side strong); the top "
+                        "half are the stronger teams. "
                         f"Stronger half: {', '.join(sorted(t for t, v in strength.items() if v > np.median(list(strength.values())))) or '–'}.")
 
         pr = A.position_record(career, ids, player)

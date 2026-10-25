@@ -124,7 +124,8 @@ with tab_total:
         with safe_section("par by opponent"), st.container(border=True):
             pbs = I.par_by_strength(career, ids)
             st.markdown(f"**Is it enough against a good side?** · win % batting first by {what}, against the stronger "
-                        "and the weaker half of the teams (ranked by win % here)")
+                        "and the weaker half of the teams (ranked by win % here, each counted as if it had already won 2 "
+                        "and lost 2)")
             rows = [[r.band, f"{pct(r.stronger_pct)} ({r.stronger_n})" if r.stronger_n else "–",
                      f"{pct(r.weaker_pct)} ({r.weaker_n})" if r.weaker_n else "–"] for r in pbs.itertuples()]
             if rows:

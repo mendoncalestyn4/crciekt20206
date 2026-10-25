@@ -16,6 +16,7 @@ import time
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 
+from . import catalogue as CAT
 from . import competitions as C
 from . import fixtures as FX
 from . import names as NM
@@ -329,6 +330,7 @@ def use_game_names(scorecards: str | Path | None) -> bool:
     if not (comps or teams):
         return False
     C.learn_names(comps, teams)
+    CAT.learn(teams)
     FX.NATIONS.update(real for country, shipped, real in teams if country == "International"
                       and not (shipped.startswith("World XI") or real.startswith("World XI")))
     return True

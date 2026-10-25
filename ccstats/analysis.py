@@ -268,22 +268,11 @@ def opening_partnerships(career, ids, team: str) -> pd.DataFrame:
 
 
 def partnership_by_wicket(career, ids, team: str) -> pd.DataFrame:
-    """Average stand for each wicket (1st, 2nd, …) from the fall of wickets."""
-    rows = []
-    inn = career.innings[career.innings.match_id.isin(ids) & (career.innings.team == team)]
-    fow = career.fow.groupby(["match_id", "innings_no"])
-    for _, r in inn.iterrows():
-        try:
-            f = fow.get_group((r.match_id, r.innings_no)).sort_values("wicket")
-        except KeyError:
-            f = pd.DataFrame(columns=["wicket", "score"])
-        prev = 0
-        for w, s in zip(f.wicket, f.score):
-            rows.append(dict(wicket=int(w), runs=int(s - prev)))
-            prev = s
-    d = pd.DataFrame(rows, columns=["wicket", "runs"])
-    return d.groupby("wicket").runs.agg(["mean", "size", "max"]).reset_index().rename(
-        columns={"mean": "average", "size": "stands", "max": "best"})
+    """The team's stands for each wicket (1st, 2nd, …): how many, the average and the best, unbroken stands at the
+    end of an innings included (see partnerships.by_wicket)."""
+    from . import partnerships as P
+    s = P.stands(career, ids)
+    return P.by_wicket(s[s.team == team])
 
 
 def collapses(career, ids, team: str, wickets: int = 4, runs: int = 30) -> pd.DataFrame:
@@ -322,14 +311,18 @@ def batting_depth(career, ids, team: str) -> pd.DataFrame:
                          "share": (t / t.sum() * 100).values if t.sum() else 0})
 
 
+STRENGTH_PRIOR = 4  # games: every side starts as if it had won 2 and lost 2
+
+
 def team_strength(career, ids) -> dict[str, float]:
-    """Win % of every team in the selected matches (used to split opponents
-    into the stronger and weaker half)."""
+    """Win % of every team in the selected matches (used to split opponents into the stronger and weaker half),
+    pulled towards 50% as if each side had already won 2 and lost 2, so one win in one game doesn't make a side
+    strong: 1 from 1 is 60%, 9 from 12 is 69%."""
     m = career.matches[career.matches.match_id.isin(ids)]
     out = {}
     for team in set(m.home) | set(m.away):
         mine = m[(m.home == team) | (m.away == team)]
-        out[team] = float((mine.winner == team).mean() * 100) if len(mine) else 0.0
+        out[team] = float(((mine.winner == team).sum() + STRENGTH_PRIOR / 2) / (len(mine) + STRENGTH_PRIOR) * 100)
     return out
 
 
