@@ -209,7 +209,10 @@ def test_search_lists_what_the_current_site_lists(live, pc):
     from ui.search import ICONS, options
     items = live.json("/api/search")["items"]
     c = pc[0].load("My career")[0]
-    assert [f"{ICONS[i['kind']]} {i['label']}" for i in items] == list(options(c))
+    # (the current site's box adds "· no matches yet" to a team that hasn't played; the new site shows it as `sub`)
+    assert [f"{ICONS[i['kind']]} {i['label']}" + (" · no matches yet" if i["sub"].endswith("no matches yet") else "")
+            for i in items] == list(options(c))
+    assert {"kind": "team", "value": "Perth Scorchers", "label": "Perth Scorchers", "sub": "team · no matches yet"} in items
     assert [(i["kind"], i["value"]) for i in items] == list(options(c).values())
     matches = [i for i in items if i["kind"] == "match"]
     assert len(matches) == 20 and matches[0]["label"] == "18 Jan 2028 · Karnataka v Kerala CC · Final"
