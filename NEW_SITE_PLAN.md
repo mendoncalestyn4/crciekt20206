@@ -409,6 +409,10 @@ no over-by-over chart.
 3. **Collapses and big stands:** innings where several wickets fell for few runs, with your team's worst collapses
    (stage 2, Teams), and the best stand for each wicket (stage 3, Records).
 
+**The season calendar's year (decided):** April to March, with every competition in the year its season belongs to.
+The IPL starting on 29 March stays whole in that season's calendar (with a small "29 Mar" mark at the start), never
+split from the rest of its tournament, so its record matches its points table.
+
 **Chart changes waiting for your pick** (from the mock-ups sent on 24 October): every match by margin (one row per
 match, runs and wickets on their own tracks), the season calendar (April to March: timeline, month tiles, heatmap or
 year clock), donuts with their list beside them, the series score (ladder, race to win, tug of war), the new form
