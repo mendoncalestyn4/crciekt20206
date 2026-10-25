@@ -134,7 +134,11 @@ def test_new_matches_show_up_on_an_open_page(browser, site):
         for f in LATEST:   # the next two matches the game saves
             shutil.copy(f, folder / f.name)
         pg.wait_for_selector(".toast", timeout=20000)
-        assert "2 new matches added to My career" in pg.inner_text(".toasts")
+        # the folder is checked every half second here, so the two files can land in one check ("2 new matches") or
+        # in two ("1 new match" twice): either way the news adds up to the two matches
+        pg.wait_for_function("""() => [...(document.querySelector('.toasts')?.innerText || '')
+            .matchAll(/(\\d+) new match(?:es)? added to My career/g)].reduce((a, m) => a + Number(m[1]), 0) === 2""",
+                             timeout=20000)
         assert live.json("/api/career")["matches"] == before + 2
         pg.wait_for_function(f"document.querySelector('main').innerText.includes('{before + 2} matches')", timeout=10000)
         assert pg.locator(".rail .watch").count() == 1   # 'Watching' with the time of the last check
