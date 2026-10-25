@@ -279,9 +279,9 @@ Each stage ends with the same steps:
 | Stage | What gets built | About |
 |---|---|---|
 | **0. Foundations** | The server (careers, settings, folder watching); the website shell in your chosen style (menu, search bar, team colours, fonts); logos served exactly as approved, with the logo tests carried over; the chart kit (your chosen chart style as reusable pieces); the launcher and zip; the test set-up. **You see:** the shell, plus a "style guide" page with every chart piece drawn from your data. | 2–3 days |
-| **1. Core pages** | My team home, Player profile, Match (scorecard and report) | 4–5 days |
-| **2. Teams and competitions** | Teams, Team vs team, Opponent preview, Team planner, Rivalries, Competitions, Season, Season review, Honours | 5–6 days |
-| **3. Leaders, records and insights** | Stat by stat, Records, Hall of fame, Rankings, Insights, Analytics, Player stories, Compare players | 4–5 days |
+| **1. Core pages** | My team home, Player profile, Match (scorecard and report). Your national side and franchise together. New: a player's share of the team's runs and wickets, wicket by wicket in every innings (section 14) | 4–5 days |
+| **2. Teams and competitions** | Teams, Team vs team, Opponent preview, Team planner, Rivalries, Competitions, Season, Season review, Honours. New: who carries the team, your usual score at each wicket, collapses (section 14) | 5–6 days |
+| **3. Leaders, records and insights** | Stat by stat, Records, Hall of fame, Rankings, Insights, Analytics, Player stories, Compare players. New: every team ranked by runs and wickets up to any date, best stand for each wicket (section 14) | 4–5 days |
 | **4. Fixtures and tools** | Fixtures (all 8 tabs, the biggest page), careers and uploads, backups, Data check, the first-start question, live alerts | 4–5 days |
 | **5. Final checks and switch-over** | Full test runs, stress tests (including the three logo stress tests), a new-user install test from the zip, speed checks, and screenshots of every page and tab. Then the new site becomes `Start Stats Pack.bat`, the old site stays as a backup launcher, and the README is rewritten. | 3–4 days |
 
@@ -381,6 +381,38 @@ Each stage ends with the same steps:
   than letting them touch. A donut's ring gets smaller to keep its labels inside.
 - **Dates across seasons:** when a chart runs over more than one year, its dates carry the year ("11 Jun ’27").
 - **T20 scorecards:** the bowling table shows dot balls ("0s") where the game prints them instead of maidens.
+
+---
+
+## 14. Added since stage 0 (your requests)
+
+**Your teams.** Every national side works next to a franchise or domestic side you also play as (for example India
+and Mumbai Indians). Every page can switch between your teams; the colours always come from the national side.
+Checked for Australia, New Zealand, England and India, each with a franchise (stage 1).
+
+**A player's share of the team** (stage 1, Player profile; again in stage 2 on the team page as "who carries the
+team"). For each format and each year: how many of the team's runs the player made and how many of its wickets they
+took, with the share ("A Sharma: 419 of India's 1,980 T20I runs in 2026, 21%").
+
+**Teams ranked by runs and wickets** (stage 3, Leaders). Every team, most to least: runs scored and wickets taken,
+counted from the start of the career up to any date you pick on the calendar, for each format. Seasons (stage 2) gets
+a small "where your team ranks" tile from it.
+
+**Wickets and scores.** Only what the scorecards record exactly: the score at each wicket, the partnerships and who
+batted, the total overs. The game doesn't save the over in which a wicket fell, or the runs in each over, so there is
+no over-by-over chart.
+1. **Wicket by wicket** (stage 1, Match): every innings as a climbing bar per wicket, with the score at the fall, the
+   partnership and who was in ("2-171: Gill & Iyer added 156").
+2. **Your usual score at each wicket** (stage 2, Teams): across a format or a season, the team's typical score at the
+   fall of each wicket ("in ODIs India are usually 48/1, 97/2, 152/3…"), against the opponents', with the best and
+   the worst.
+3. **Collapses and big stands:** innings where several wickets fell for few runs, with your team's worst collapses
+   (stage 2, Teams), and the best stand for each wicket (stage 3, Records).
+
+**Chart changes waiting for your pick** (from the mock-ups sent on 24 October): every match by margin (one row per
+match, runs and wickets on their own tracks), the season calendar (April to March: timeline, month tiles, heatmap or
+year clock), donuts with their list beside them, the series score (ladder, race to win, tug of war), the new form
+line. Whatever you pick goes into the chart kit before stage 1's pages use it.
 
 ---
 
