@@ -127,7 +127,7 @@ There are nine clear sections instead of 22 pages in a long list. Every current 
 | **5. Competitions and seasons** | Points tables, title race and odds, knockout brackets, series, World Test Championship, season calendar, series tracker, season progress, season review and MVPs, honours board, trophy cabinets | Competitions, Season, Season review, Honours board |
 | **6. Fixtures** | Schedule, add matches, change or delete, series, calendar, WTC race, milestones, goals | Fixtures |
 | **7. Leaders and records** | Stat by stat leaders, records with timeline, hall of fame, rankings (player ratings, history, team Elo) | Stat by stat, Records, Hall of fame, Rankings |
-| **8. Insights** | Score chances, par by opponent, chase calculator, runs above expected, fair averages, what wins games, expected wins, match-winners, style maps, boom or bust, form, bat or bowl first | Insights, Analytics |
+| **8. Insights** | Score chances, par by opponent (every team, home and away), chase calculator, runs above expected, fair averages, what wins games, expected wins, match-winners, style maps, boom or bust, form, bat or bowl first | Insights, Analytics |
 | **9. Settings and tools** | Careers (switch, add a Scorecards folder, upload files or a zip or a career file, download a career file), your teams, logos folder, backups and restore, data check (merges, splits, catch credits) | Sidebar, Home set-up, Data check |
 
 **On every page:**
@@ -280,8 +280,8 @@ Each stage ends with the same steps:
 |---|---|---|
 | **0. Foundations** | The server (careers, settings, folder watching); the website shell in your chosen style (menu, search bar, team colours, fonts); logos served exactly as approved, with the logo tests carried over; the chart kit (your chosen chart style as reusable pieces); the launcher and zip; the test set-up. **You see:** the shell, plus a "style guide" page with every chart piece drawn from your data. | 2–3 days |
 | **1. Core pages** | My team home, Player profile, Match (scorecard and report). Your national side and franchise together. New: a player's share of the team's runs and wickets, wicket by wicket in every innings (section 14) | 4–5 days |
-| **2. Teams and competitions** | Teams, Team vs team, Opponent preview, Team planner, Rivalries, Competitions, Season, Season review, Honours. New: who carries the team, your usual score at each wicket, collapses (section 14) | 5–6 days |
-| **3. Leaders, records and insights** | Stat by stat, Records, Hall of fame, Rankings, Insights, Analytics, Player stories, Compare players. New: every team ranked by runs and wickets up to any date, best stand for each wicket (section 14) | 4–5 days |
+| **2. Teams and competitions** | Teams, Team vs team, Opponent preview, Team planner, Rivalries, Competitions, Season, Season review, Honours. New: who carries the team, your usual score at each wicket, collapses, the score to aim for against your next opponent, home or away (section 14) | 5–6 days |
+| **3. Leaders, records and insights** | Stat by stat, Records, Hall of fame, Rankings, Insights, Analytics, Player stories, Compare players. New: every team ranked by runs and wickets up to any date, best stand for each wicket, the score to aim for against every team, home and away (section 14) | 4–5 days |
 | **4. Fixtures and tools** | Fixtures (all 8 tabs, the biggest page), careers and uploads, backups, Data check, the first-start question, live alerts | 4–5 days |
 | **5. Final checks and switch-over** | Full test runs, stress tests (including the three logo stress tests), a new-user install test from the zip, speed checks, and screenshots of every page and tab. Then the new site becomes `Start Stats Pack.bat`, the old site stays as a backup launcher, and the README is rewritten. | 3–4 days |
 
@@ -408,6 +408,31 @@ no over-by-over chart.
    the worst.
 3. **Collapses and big stands:** innings where several wickets fell for few runs, with your team's worst collapses
    (stage 2, Teams), and the best stand for each wicket (stage 3, Records).
+
+**The score to aim for, against each team, home and away.** How many to make batting first to win, against that
+team, at home, away or on a neutral ground (going by the host country, as the scorecards don't name the ground), for
+each format.
+1. **Opponent preview** (stage 2): for your next match, the total that makes it 50/50 and the total that gives you a
+   70% chance ("v England, away, T20I: 175 for an even game, 194 for 70%"). Then, for when you bowl first, the score
+   they usually set against you there. Your real matches against them there, each total and result, sit underneath.
+   The My team "next up" tile shows the same line.
+2. **Insights** (stage 3): the full table, every team at home, away and neutral in each format. The current "is it
+   enough against a good side?" (the stronger and weaker half) stays as a second view, so nothing is lost.
+3. **How it's worked out:** your own games against one team are too few on their own (India have played England 5
+   times in T20Is, all in England), so it learns from every team's games in the format:
+   - the chance of winning against the total made batting first, from every finished game without rain, with how
+     fast it rises shared by all formats of the same length (T20Is with the IPL, the Blast and the Hundred);
+   - what playing at home is worth, in runs, from every team's home and away games; it starts near nothing and grows
+     only as the games show it (in your career so far: about 1 run in T20Is, 5 in ODIs);
+   - how well that team bats, and how well you bowl, in runs above or below the usual total, pulled towards usual
+     until there are enough games (5 games count half).
+4. **How sure it is:** every target says how many games it rests on, with a "few games, treat with care" note when
+   they are few. The page also shows how often it would have called your past games right (each game predicted
+   from all the others). Checked on 25 October on your career and the 477-match test career: it matched or beat
+   "the total alone" in all four checks (T20Is and ODIs in each). A version that let home and away and the teams count
+   for as much as the few games suggested did worse than it in all four, so it isn't used.
+5. **Tests:** draws mean no single target makes sense, so Tests show the first-innings totals that won, drew and lost
+   against that team, home and away, instead.
 
 **The season calendar's year (decided):** April to March, with every competition in the year its season belongs to.
 The IPL starting on 29 March stays whole in that season's calendar (with a small "29 Mar" mark at the start), never
