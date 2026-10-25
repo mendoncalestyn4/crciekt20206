@@ -414,7 +414,10 @@ The IPL starting on 29 March stays whole in that season's calendar (with a small
 split from the rest of its tournament, so its record matches its points table.
 
 **Chart changes picked:** donuts with their list beside them (no words on the ring); the season calendar as twelve
-month tiles, April to March (every match on its day, each month's record, the best month lit up).
+month tiles, April to March (every match on its day, each month's record, the best month lit up); the series score
+as a tug of war on the main pages (above the line you lead, below it they do) and as the scoreboard ladder (the series
+score after every match, the decider marked) in the analysis. The "every match by margin" chart is dropped (it only
+repeats each result); something more useful takes its place.
 
 **Chart changes waiting for your pick** (from the mock-ups sent on 24 October): every match by margin (one row per
 match, runs and wickets on their own tracks), the season calendar (April to March: timeline, month tiles, heatmap or
