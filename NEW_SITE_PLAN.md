@@ -514,6 +514,17 @@ scale, so a win looked like "90%"). The first four matches are dashed until ther
 says whether it's up, down or level on five matches before; a format with fewer than five matches shows its results
 and says when the line starts.
 
+**Match excitement (26 October).** The current site's 0–10 score is too flat: the tightest normal finish is worth
+only 3 to 4 points (a 1-wicket win is exactly 3.0), balls left in a chase count for nothing (West Indies' 3-wicket win
+off the last ball scored 1.7), and nothing in your career scores above 5.2. A fixed rating was tried on your matches:
+the finish worth up to 6 points (balls left count, no cliffs), drama up to 2 (a comeback under 25%, the lead really
+changing hands), stakes up to 1 (finals, semi-finals, series deciders) and big performances up to 1; with each match's
+rank and clearer reasons. Which version (as tried, or with ties never below 7) is still to be picked.
+- **Where (picked):** Matches (the best games list and the score on each match page, stage 1), Seasons · season review
+  (the season's best matches, and a "best game" slide in Season wrapped, stage 2), Leaders · records (the best games
+  ever, stage 3). Not on My team.
+- **The current site** keeps its score as it is; the new rating comes with those pages, stage by stage.
+
 **The series score (confirmed 26 October):** the tug of war on the main pages, the scoreboard ladder in the analysis,
 as decided above.
 
