@@ -372,7 +372,7 @@ Each stage ends with the same steps:
 - **The other sections:** what each will hold and in which stage, so every link works.
 - **The fit rule:** checked on every page at 1280, 1366, 1440, 1600 and 1920 wide, in dark and light colours: 0 problems.
 
-**Choices made while building it (say if you want them changed):**
+**Choices made while building it (all kept, 26 October):**
 - **The rail's fifth section is "Seasons":** "Competitions" is too long for the rail at the approved size. The page
   itself is "Competitions and seasons".
 - **Light pages:** 30 of the 31 national sides have a light page. On a light page the gold numbers become a deep gold,
@@ -508,8 +508,8 @@ scale, so a win looked like "90%"). The first four matches are dashed until ther
 says whether it's up, down or level on five matches before; a format with fewer than five matches shows its results
 and says when the line starts.
 
-**Still to confirm:** the series score: you wrote "series score a". Is that the scoreboard ladder everywhere, or as
-decided above (tug of war on the main pages, ladder in the analysis)?
+**The series score (confirmed 26 October):** the tug of war on the main pages, the scoreboard ladder in the analysis,
+as decided above.
 
 ---
 
