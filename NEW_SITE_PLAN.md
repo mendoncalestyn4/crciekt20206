@@ -519,7 +519,17 @@ only 3 to 4 points (a 1-wicket win is exactly 3.0), balls left in a chase count 
 off the last ball scored 1.7), and nothing in your career scores above 5.2. A fixed rating was tried on your matches:
 the finish worth up to 6 points (balls left count, no cliffs), drama up to 2 (a comeback under 25%, the lead really
 changing hands), stakes up to 1 (finals, semi-finals, series deciders) and big performances up to 1; with each match's
-rank and clearer reasons. Which version (as tried, or with ties never below 7) is still to be picked.
+rank and clearer reasons. You found it still too low for the closest games (England's 1-wicket Test win after
+trailing by 115 got 6.7), so it was reworked (27 October) and checked on your three-season save (1,544 matches):
+- **The finish, up to 7:** a tie 7, a tie and a super over 8; a 1-run, 1-wicket or last-ball win 7; otherwise smoothly
+  less. A draw with the last pair holding on, or the chasers just short, up to 7.
+- **A comeback, up to 2, read from the scorecard:** in the last innings, the runs still needed against what the wickets
+  left usually add (from the section's own partnerships); in a Test, a first-innings deficit turned round; or the
+  win-chance model's comeback, only where it rests on 8 matches or more.
+- **The stakes, up to 1:** a final or series decider 1; a semi-final, qualifier or eliminator 0.7; levelling a series 0.5.
+- **Big moments, up to ½:** a hundred, a big haul, both sides scoring big, a big chase.
+- England's 1-wicket Test is now 9.6, West Indies' last-ball T20I win 9.3; every 1-run and 1-wicket win is 7 or more;
+  New Zealand's 231-run win stays at 0.2. In `ccstats/excitement.py`, with its tests; the pages use it from stage 1.
 - **Where (picked):** Matches (the best games list and the score on each match page, stage 1), Seasons · season review
   (the season's best matches, and a "best game" slide in Season wrapped, stage 2), Leaders · records (the best games
   ever, stage 3). Not on My team.
