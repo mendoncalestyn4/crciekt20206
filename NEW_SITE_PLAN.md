@@ -483,7 +483,10 @@ the scorecards record (no overs for wickets, no grounds, no toss).
 2. **How hard your players have worked** (stage 1, My team; stage 2, Team planner). Overs bowled and matches played
    in the last 14 and 30 days, for every player of all your teams together (India and Mumbai Indians share players),
    against each one's usual 30 days, with a "heavy" flag before your next match. In the test career, J Bumrah bowled
-   66 overs in the 30 days to 6 June across the IPL and India's Tests, against his usual 26.
+   66 overs in the 30 days to 6 June across the IPL and India's Tests, against his usual 26. Only matches for your
+   own teams count: the scorecards give initials, so the "A Sharma" at Gujarat, Northamptonshire and Sunrisers in the
+   same month are other men; another side's overs count once Data check says it's the same player (found when the
+   mock-up first showed A Sharma playing for three sides in 30 days).
 3. **Plays like** (stage 1, Player profile; stage 2, the replacement finder in Team planner). The three players most
    like one: average (3 dismissals at least), strike rate, share of runs in boundaries and where they bat, in the
    same length of game. Checked: a player's three nearest bat within a place of him on average (0.3 to 0.8 places,
@@ -511,12 +514,28 @@ split from the rest of its tournament, so its record matches its points table.
 month tiles, April to March (every match on its day, each month's record, the best month lit up); the series score
 as a tug of war on the main pages (above the line you lead, below it they do) and as the scoreboard ladder (the series
 score after every match, the decider marked) in the analysis. The "every match by margin" chart is dropped (it only
-repeats each result); something more useful takes its place.
+repeats each result); six new charts take its place (below).
 
-**Chart changes waiting for your pick** (from the mock-ups sent on 24 October): every match by margin (one row per
-match, runs and wickets on their own tracks), the season calendar (April to March: timeline, month tiles, heatmap or
-year clock), donuts with their list beside them, the series score (ladder, race to win, tug of war), the new form
-line. Whatever you pick goes into the chart kit before stage 1's pages use it.
+**The six new charts, and where each goes (picked 26 October):**
+
+| Chart | Pages | Stages |
+|---|---|---|
+| 1. Our score v their score (both totals on one line, green won, red lost; a Test's innings each on its own line) | Matches, My team | 1 |
+| 2. Batting first v chasing (record each way, the score you usually set, totals defended, lost with, chased down, failed to chase) | Opponent preview, Team vs team, Insights | 2, 3 |
+| 3. Against stronger and weaker sides (by the ratings just before each match) | Teams, Leaders · rankings, Insights | 2, 3 |
+| 4. Home, away and neutral (then country by country, by the host country) | My team, Teams, Opponent preview | 1, 2 |
+| 5. Streaks (every match in order, the longest runs marked, the run you're on) | My team, Teams, Leaders · records | 1, 2, 3 |
+| 6. Match-winners (who won your wins, and what they did each time) | My team, Players, Seasons · season review | 1, 2 |
+
+**The form line, improved (26 October; waiting for your OK):** the line is the share of the last five matches won,
+on its own 0 to 100% scale, and the results sit under it as lamps (the first version stood win and loss bars on the %
+scale, so a win looked like "90%"). The first four matches are dashed until there are five to count (no more "high
+100%" after one win; best and worst count only full fives); each series is marked over its matches with its score; "now"
+says whether it's up, down or level on five matches before; a format with fewer than five matches shows its results
+and says when the line starts.
+
+**Still to confirm:** the series score: you wrote "series score a". Is that the scoreboard ladder everywhere, or as
+decided above (tug of war on the main pages, ladder in the analysis)?
 
 ---
 
