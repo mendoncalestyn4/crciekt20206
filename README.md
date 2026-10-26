@@ -214,6 +214,14 @@ stay where they are, and every scorecard is read again with the new version, so 
 | A box says "couldn't be shown" or "Something went wrong" | The rest of the site still works. Open **Details** in that box and send the text so it can be fixed. |
 | The browser didn't open | Open **http://localhost:8501** yourself (or the address shown in the black window). |
 
+## Ideas on hold
+
+- **Scouting shortlist** (suggested 25 October 2026, on hold: you have another plan for it). The best players in
+  your competition who don't play for you, by role (top order, middle order, finisher, all-rounder, bowler), ranked by
+  match impact a game over the last two seasons (5 games at least): for an auction or a call-up. Tried on the
+  477-match test career (IPL, for Mumbai Indians): H Singh and P Shaw at the top of the order, D Jurel in the middle,
+  N Sindhu as an all-rounder.
+
 ---
 
 For developers: `pip install -r requirements.txt`, then `streamlit run app.py`; tests with `python -m pytest`.

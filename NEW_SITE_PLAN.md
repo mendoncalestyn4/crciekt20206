@@ -279,9 +279,9 @@ Each stage ends with the same steps:
 | Stage | What gets built | About |
 |---|---|---|
 | **0. Foundations** | The server (careers, settings, folder watching); the website shell in your chosen style (menu, search bar, team colours, fonts); logos served exactly as approved, with the logo tests carried over; the chart kit (your chosen chart style as reusable pieces); the launcher and zip; the test set-up. **You see:** the shell, plus a "style guide" page with every chart piece drawn from your data. | 2–3 days |
-| **1. Core pages** | My team home, Player profile, Match (scorecard and report). Your national side and franchise together. New: a player's share of the team's runs and wickets, wicket by wicket in every innings, "plays like", how hard your players have worked lately (section 14) | 4–5 days |
-| **2. Teams and competitions** | Teams, Team vs team, Opponent preview, Team planner, Rivalries, Competitions, Season, Season review, Honours. New: who carries the team, your usual score at each wicket, collapses, the score to aim for against your next opponent, home or away, your season wrapped, the scouting shortlist, the replacement finder (section 14) | 5–6 days |
-| **3. Leaders, records and insights** | Stat by stat, Records, Hall of fame, Rankings, Insights, Analytics, Player stories, Compare players. New: every team ranked by runs and wickets up to any date, best stand for each wicket, the score to aim for against every team, home and away, fantasy points with a team of the week and of the season, the career quiz (section 14) | 4–5 days |
+| **1. Core pages** | My team home, Player profile, Match (scorecard and report). Your national side and franchise together. New: a player's share of the team's runs and wickets, wicket by wicket in every innings (section 14) | 4–5 days |
+| **2. Teams and competitions** | Teams, Team vs team, Opponent preview, Team planner, Rivalries, Competitions, Season, Season review, Honours. New: who carries the team, your usual score at each wicket, collapses, the score to aim for against your next opponent, home or away, your season wrapped (section 14) | 5–6 days |
+| **3. Leaders, records and insights** | Stat by stat, Records, Hall of fame, Rankings, Insights, Analytics, Player stories, Compare players. New: every team ranked by runs and wickets up to any date, best stand for each wicket, the score to aim for against every team, home and away, "plays like" on Compare players (section 14) | 4–5 days |
 | **4. Fixtures and tools** | Fixtures (all 8 tabs, the biggest page), careers and uploads, backups, Data check, the first-start question, live alerts | 4–5 days |
 | **5. Final checks and switch-over** | Full test runs, stress tests (including the three logo stress tests), a new-user install test from the zip, speed checks, and screenshots of every page and tab. Then the new site becomes `Start Stats Pack.bat`, the old site stays as a backup launcher, and the README is rewritten. | 3–4 days |
 
@@ -465,46 +465,20 @@ its logic hold on your career and the 477-match test career, and what the new si
 | Score to aim for | Partly: Insights, "is it enough against a good side?" (stronger and weaker half) | **Weak**: the halves went by raw win %, so one win in one game made a side "strong" (Ireland were a stronger Test side after one Test). Fixed: each side counts as if it had already won 2 and lost 2 | Every team, home and away (above) |
 | Our score v theirs, bat first or chase, stronger and weaker sides, home and away, streaks, match-winners | Tables of each on Teams, Insights and Opponent preview | Correct (bat first or chase, home and away, streaks, match-winners checked on both careers) | The six new charts, on the pages you pick |
 
-**New features (suggested 25 October; each one tried on your two careers first).** All of them are exact from what
-the scorecards record (no overs for wickets, no grounds, no toss).
-1. **Fantasy points** (stage 3, Leaders; team of the week on My team). Every player gets points from every match:
-   - batting: a point a run, +1 a four, +2 a six, +8 for a fifty or +16 for a hundred, −2 for a duck (top seven);
-     a strike-rate bonus or penalty in T20s (10 balls or more) and one-dayers (20 or more);
-   - bowling: 25 a wicket, +8 if bowled or lbw, a bonus for 3, 4 or 5 wickets, a point a dot ball in T20s (their
-     cards print dots), +4 a maiden in one-dayers (theirs print maidens), an economy bonus or penalty;
-   - fielding: 8 a catch (+4 for three), 12 a stumping, 6 a run out when the card names the fielder;
-   - 4 for playing.
+**New features (suggested 25 October, each tried on your two careers first; decided 26 October).** All exact from
+what the scorecards record (no overs for wickets, no grounds, no toss).
+1. **Plays like** (stage 3, Compare players): the three players most like the one you pick: average (3 dismissals at
+   least), strike rate, share of runs in fours and sixes and where they bat, in the same length of game, each with
+   how alike they are, to start a comparison from. Checked: a player's three nearest bat within a place of him on
+   average (0.3 to 0.8 places, against 3.3 for any three players). Your career: S Gill (ODIs) plays like P Nissanka
+   98%, Y Jaiswal 92%, T Head 90%.
+2. **Your season, wrapped** (stage 2, Seasons · season review): the season in nine slides you can save as a picture:
+   record, top run-scorer and wicket-taker, highest score, best bowling, biggest stand, longest winning run, biggest
+   win, player of the season. Your 2026: 22 matches, won 12, lost 10; S Gill 830 runs; A Singh 34 wickets; S Gill
+   163; K Yadav 5/28; Gill and Jaiswal's 225 for the first wicket; won by 201 runs v Afghanistan.
 
-   Leaderboards per format and season, the best single matches, and the team of the week and of the season. Checked
-   by hand against the printed scorecards (A Sharma's 100* and 3/32 v West Indies: 250 points; four bowlers' bowled
-   and lbw bonuses taken from the printed dismissals). Two players with one name on opposite sides (C Green for New
-   South Wales and for Western Australia, in the same game) are kept apart. In your career, every format of 2026
-   together: A Singh 1,335, S Gill 1,260, A Sharma 1,173.
-2. **How hard your players have worked** (stage 1, My team; stage 2, Team planner). Overs bowled and matches played
-   in the last 14 and 30 days, for every player of all your teams together (India and Mumbai Indians share players),
-   against each one's usual 30 days, with a "heavy" flag before your next match. In the test career, J Bumrah bowled
-   66 overs in the 30 days to 6 June across the IPL and India's Tests, against his usual 26. Only matches for your
-   own teams count: the scorecards give initials, so the "A Sharma" at Gujarat, Northamptonshire and Sunrisers in the
-   same month are other men; another side's overs count once Data check says it's the same player (found when the
-   mock-up first showed A Sharma playing for three sides in 30 days).
-3. **Plays like** (stage 1, Player profile; stage 2, the replacement finder in Team planner). The three players most
-   like one: average (3 dismissals at least), strike rate, share of runs in boundaries and where they bat, in the
-   same length of game. Checked: a player's three nearest bat within a place of him on average (0.3 to 0.8 places,
-   against 3.3 for any three players). Your career: H Brook (ODIs) plays like J Inglis, B Duckett and P Stirling.
-4. **Your season, wrapped** (stage 2, Seasons): the season told in slides you can save as a picture: record, top
-   run-scorer and wicket-taker, highest score, best bowling, biggest stand, longest winning run, biggest win, most
-   sixes. Your 2026: 22 matches, won 12, lost 10; S Gill 830 runs; A Singh 34 wickets; S Gill 163; K Yadav 5/28; Gill
-   and Jaiswal's 225 for the first wicket; won by 201 runs v Afghanistan.
-5. **Scouting shortlist** (stage 2, Team planner): the best players in your competition who don't play for you, by
-   role (top order, middle order, finisher, all-rounder, bowler), by match impact over the last two seasons, five
-   games at least: for the auction or a call-up. Test career, IPL for Mumbai Indians: H Singh and P Shaw at the top of
-   the order, D Jurel in the middle, N Sindhu as an all-rounder.
-6. **Career quiz** (stage 3, Player stories): questions made from your own career, with three wrong answers from the
-   same pool ("Who made 163 for India v West Indies on 3 Oct 2026?"). Your own team is never offered as the answer
-   to "against whom?".
-
-Tried and dropped: "on this day" (both careers cover about one game year, so it would be empty for a long time); a
-team "nemesis" list (the player page's nemesis and the opponent's key players already cover it).
+On hold: the scouting shortlist (you have another plan for it; it waits in the README under "Ideas on hold").
+Dropped: fantasy points, how hard your players have worked, the career quiz, "on this day", a team "nemesis" list.
 
 **The season calendar's year (decided):** April to March, with every competition in the year its season belongs to.
 The IPL starting on 29 March stays whole in that season's calendar (with a small "29 Mar" mark at the start), never
@@ -527,7 +501,7 @@ repeats each result); six new charts take its place (below).
 | 5. Streaks (every match in order, the longest runs marked, the run you're on) | My team, Teams, Leaders · records | 1, 2, 3 |
 | 6. Match-winners (who won your wins, and what they did each time) | My team, Players, Seasons · season review | 1, 2 |
 
-**The form line, improved (26 October; waiting for your OK):** the line is the share of the last five matches won,
+**The form line (final, 26 October):** the line is the share of the last five matches won,
 on its own 0 to 100% scale, and the results sit under it as lamps (the first version stood win and loss bars on the %
 scale, so a win looked like "90%"). The first four matches are dashed until there are five to count (no more "high
 100%" after one win; best and worst count only full fives); each series is marked over its matches with its score; "now"
