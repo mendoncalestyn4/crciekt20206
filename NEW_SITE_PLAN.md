@@ -363,11 +363,17 @@ Each stage ends with the same steps:
 **The website** (`web/`, built into `web/dist`, about 1.4 MB with its fonts and chart library):
 - **The shell:** the rail with the nine sections, the page head (title, where you are, choices, the date in your career,
   search), Ctrl K search, live news of new matches, your colours.
-- **The chart kit**, every piece of the approved mock-up:
-  - leaderboard bars, innings bars, percentile bars, donuts, the season ring, the form line, the calendar;
-  - where the team ranks, the series score, partnerships, ratings through the season, every team's rank, margins;
+- **The chart kit**, every piece of the approved mock-up, in the designs picked on 26 October (section 14):
+  - leaderboard bars, innings bars, percentile bars, rings with their list beside them, the season ring, the form
+    line (the share of the last five won, with the results as lamps under it), the season calendar (twelve month
+    tiles, April to March);
+  - where the team ranks, the series score (the tug of war, and the ladder for the analysis), partnerships, ratings
+    through the season, every team's rank;
+  - the six new charts: our score v theirs, batting first or chasing, against stronger and weaker sides, home, away
+    and neutral, runs of results, match-winners (the "every match by margin" chart is gone);
   - lamps, the last five innings, the TV table, the latest-results strip, top-five lists;
   - the player of the match's card and story, the TV match summary, the scorecard, the squad table, match-by-match rows.
+  The style guide shows each one, and next to the six new charts the pages and stages each goes to.
 - **The style guide** (Settings, or `/style-guide`): every piece drawn from your career.
 - **The other sections:** what each will hold and in which stage, so every link works.
 - **The fit rule:** checked on every page at 1280, 1366, 1440, 1600 and 1920 wide, in dark and light colours: 0 problems.

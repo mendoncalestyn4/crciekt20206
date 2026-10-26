@@ -1,11 +1,13 @@
 // The style guide: every piece of the chart kit, drawn from your own career (your team's latest section and season),
 // in your team's colours. Each piece says where it will be used. A piece the career can't fill yet says why.
 import { useQuery } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { get, type Result, type StyleGuide as Data } from "../api";
 import { Hero, Lamps, Logo, Missing, Name, Num, Sub, Tile } from "../kit/base";
 import { KeepScores, MatchRows, MatchSummary, PercentileBars, PomCard, Scorecard, SquadTable, Story, TopList, TvTable, Ticker } from "../kit/blocks";
-import { CalendarHeat, Donut, EloLines, InningsBars, LeaderBars, MarginBars, RankRace, RankTrack, Ring, Sparkline, StepLine } from "../kit/charts";
+import { EloLines, InningsBars, LeaderBars, RankRace, RankTrack, Ring, RingList, TugOfWar } from "../kit/charts";
+import { BatFirstSides, FormBig, FormCard, Goes, Ladder, MatchWinners, MonthTiles, ScoreRows, StrengthPanel, Streaks, VenueRecord } from "../kit/season";
 import { ab, cap, day, dayY, f0, f1, f2, fmtOf, ord, overs, plural } from "../format";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
@@ -15,6 +17,10 @@ const Part = ({ title, sub }: { title: string; sub: string }) => (
   <div style={{ gridColumn: "span 12", marginTop: 18 }}><div className="tl2">{title}</div><div className="note" style={{ marginTop: 2 }}>{sub}</div></div>
 );
 const Used = ({ on }: { on: string }) => <div className="note">Used on: {on}.</div>;
+/** A piece the plan places on several pages: the piece (8 columns, as on its mock-up) and where it goes beside it. */
+const Placed = ({ title, right, goes, children }: { title: string; right?: string; goes: [string, string][]; children: ReactNode }) => (
+  <><Tile span={8} title={title} right={right}>{children}</Tile><Tile span={4} title="Where it goes" style={{ alignSelf: "start" }}><Goes items={goes} /></Tile></>
+);
 
 export function StyleGuide() {
   const t = useTheme();
@@ -29,7 +35,8 @@ export function StyleGuide() {
   if (!team) return <><Head title="Style guide" crumb={d.career} /><div className="grid"><Tile span={12}><Missing why={miss.everything} /></Tile></div></>;
   const season = d.this_season ?? [], seq = season.map((r) => r.outcome);
   const won = seq.filter((o) => o === "W").length, lost = seq.filter((o) => o === "L").length;
-  const st = d.star, L = d.leaders, s = d.series, m = d.match, latest = d.results?.[0];
+  const st = d.star, L = d.leaders, s = d.series, m = d.match, latest = d.results?.[0], cal = d.calendar;
+  const lanes = cal ? [...cal.formats].reverse().map((f) => f.section).filter((x) => d.strength?.some((r) => r.section === x)) : [];
   const mineBat = (d.squad ?? []).filter((x) => x.runs > 0).sort((a, b) => b.runs - a.runs).slice(0, 5);
   const mineBowl = (d.squad ?? []).filter((x) => x.wickets > 0).sort((a, b) => b.wickets - a.wickets).slice(0, 5);
   const pal = [t.led, t.warm, t.cream, t.win];
@@ -58,15 +65,14 @@ export function StyleGuide() {
           {season.length ? <Ring won={won} lost={lost} other={season.length - won - lost} /> : <Missing why={miss.this_season} />}
           <Used on="My team" />
         </Tile>
-        <Tile span={4} title={`Form · every match of ${d.season}`}>
+        <Tile span={4} title={`Form · the last ten of ${d.season}`}>
           <Lamps seq={seq.slice(-10)} />
           <div className="s" style={{ marginTop: 10 }}>Oldest → newest · <b>{seq.slice(-10).filter((o) => o === "W").length}</b> of the last {Math.min(10, seq.length)} won</div>
-          {season.length ? <CalendarHeat results={season} /> : null}
           <Used on="My team, Matches" />
         </Tile>
         <Tile span={4} title={`Form line · ${fmtOf(d.section ?? "")}`}>
-          {seq.length ? <Sparkline seq={seq} height={110} /> : <Missing />}
-          <div className="note">Wins minus defeats, match by match, this season.</div><Used on="My team (one for each competition)" />
+          {season.length && d.form ? <FormCard results={season} form={d.form} /> : <Missing why={miss.form ?? miss.this_season} />}
+          <Used on="My team (one for each format)" />
         </Tile>
         <Tile span={4} title={`Top run-scorers · ${team}`}>
           {mineBat.length ? <TopList rows={mineBat} value="runs" /> : <Missing why={miss.squad} />}
@@ -74,6 +80,19 @@ export function StyleGuide() {
         <Tile span={4} title={`Top wicket-takers · ${team}`}>
           {mineBowl.length ? <TopList rows={mineBowl} value="wickets" gold /> : <Missing why={miss.squad} />}
         </Tile>
+
+        <Part title="The season" sub={`April to March, every format${cal ? ` (Apr ${cal.year} – Mar ${cal.year + 1})` : ""}: every match on its day, the form line, the runs of results.`} />
+        {cal ? <Tile span={12} title="The season · month by month" right={`${cal.results.length} matches`}>
+          <MonthTiles cal={cal} /><Used on="Seasons (the season calendar)" /></Tile>
+          : <Tile span={12} title="The season calendar"><Missing why={miss.calendar} /></Tile>}
+        {/* the big form line from five matches (before that, the card above says when it starts) */}
+        {season.length && d.form?.trend ? <Tile span={12} title={`Form · ${d.section} ${d.season} · every match`}
+          right={d.form.trend ? `now ${d.form.trend.now}%${d.form.trend.word && d.form.trend.prev != null ? ` · ${d.form.trend.word} from ${d.form.trend.prev}%` : ""}` : undefined}>
+          <FormBig results={season} form={d.form} />
+          <div className="note">The line is the share of the last five matches won, on its own scale; the results sit under it. The first five are dashed until there are five to count.</div>
+          <Used on="My team (one for each format)" /></Tile> : null}
+        {cal?.results.length ? <Tile span={12} title={`Runs of results · every format · ${cal.year}`}><Streaks cal={cal} />
+          <Used on="My team (the run you're on), Teams (every team's runs), Leaders · records (the longest ever)" /></Tile> : null}
 
         <Part title="Leaderboards" sub="Broadcast's bars: names on the left, the number and team on the right, your team lit up." />
         <Tile span={6} title="Most runs" right="runs · team">
@@ -107,10 +126,10 @@ export function StyleGuide() {
             <div className="note">Percentiles among {st.among} (3+ innings): 100 = the best, 50 = the middle of the pack.</div>
           </Tile>
           <Tile span={4} title="Where the runs come from">
-            <Donut items={[["Fours", st.from4, pal[0]!], ["Sixes", st.from6, pal[1]!], ["Running", st.running, pal[2]!]]} centre={String(st.runs)} sub={`${fmtOf(st.section)} runs`} height={324} />
+            <RingList items={[["Fours", st.from4, pal[0]!], ["Sixes", st.from6, pal[1]!], ["Running", st.running, pal[2]!]]} centre={String(st.runs)} sub={`${fmtOf(st.section)} runs`} />
           </Tile>
           <Tile span={4} title="How they get out">
-            {st.outs ? <Donut items={Object.entries(st.how_out).map(([k, v], i) => [cap(k), v, pal[i % 4]!])} centre={String(st.outs)} sub="dismissals" height={324} />
+            {st.outs ? <RingList items={Object.entries(st.how_out).sort((a, b) => b[1] - a[1]).map(([k, v], i) => [cap(k), v, pal[i % 4]!])} centre={String(st.outs)} sub="dismissals" />
               : <Missing why="Not out yet this season." />}
           </Tile>
           <Tile span={4} title="Every format">
@@ -159,8 +178,11 @@ export function StyleGuide() {
               {!s.story.complete && <div className="note">So far: the series isn't over yet.</div>}
             </> : <Missing />}
           </Tile>
-          <Tile span={5} title="Series score after each match"><StepLine matches={s.matches} team={team} opp={s.opp} /></Tile>
+          <Tile span={5} title="Series score · tug of war"><TugOfWar matches={s.matches} progress={s.progress} team={team} opp={s.opp} />
+            <div className="note">Above the line {team} lead, below it {s.opp} do.</div><Used on="Seasons, My team (the main pages)" /></Tile>
           <Tile span={7} title="Match by match"><MatchRows results={s.matches} team={team} compact /></Tile>
+          <Tile span={12} title="Series score · the ladder" right={s.decider ? "the decider marked" : undefined}><Ladder s={s} team={team} />
+            <Used on="Seasons · the series analysis" /></Tile>
           <Tile span={6} title="Most runs in the series">
             <TvTable rows={s.most_runs} mine={team} cols={[["Runs", (x) => x.runs], ["Inns", (x) => x.inns], ["HS", (x) => x.hs], ["SR", (x) => f0((x.runs / Math.max(x.balls, 1)) * 100)]]} />
           </Tile>
@@ -170,12 +192,29 @@ export function StyleGuide() {
           <div style={{ gridColumn: "span 12" }}><Used on="Seasons (series), My team" /></div>
         </> : <Tile span={12} title="The series pieces"><Missing why={miss.series} /></Tile>}
 
-        <Part title="Rankings and results" sub="Team ratings (Elo) through the season, every team's rank, every match by its margin." />
+        <Part title="How the team wins" sub="Our score against theirs, batting first or chasing, against stronger and weaker sides, home and away, and who wins the matches." />
+        {season.length ? <Placed title={`Our score v theirs · ${d.section} ${d.season}`} right="newest first"
+          goes={[["Matches · stage 1", "Under the list of results: the season at a glance."], ["My team · stage 1", "A small one for your latest format."]]}>
+          <ScoreRows results={[...season].reverse()} scores={d.scores} />
+          <div className="note">Your total (gold) and theirs (blue), joined in green when you won and red when you lost. A Test shows each innings on its own line.</div></Placed> : null}
+        {d.bat_first ? <Placed title={`Batting first or chasing · ${d.section} ${d.season}`}
+          goes={[["Opponent preview · stage 2", "Before your next match: your record and theirs each way."], ["Team vs team · stage 2", "Both sides each way."], ["Insights · stage 3", "Bat or bowl first, for every team."]]}>
+          <BatFirstSides bf={d.bat_first} /><div className="note">Games shortened by rain are left out of the totals.</div></Placed>
+          : <Tile span={12} title="Batting first or chasing"><Missing why={miss.bat_first} /></Tile>}
+        {d.strength?.length ? <Placed title={`Against stronger and weaker sides · ${cal?.year ?? d.season}`}
+          goes={[["Teams · stage 2", "With the team's other analyses."], ["Leaders · rankings · stage 3", "Next to the team ratings it comes from."], ["Insights · stage 3", "Every team: who beats the strong and who only beats the weak."]]}>
+          <StrengthPanel rows={d.strength} lanes={lanes} /><div className="note">Each match placed by how the two sides were rated (Elo) just before it, in its format.</div></Placed> : null}
+        {d.venues && cal?.results.length ? <Placed title={`Home, away and neutral · ${cal.year}`}
+          goes={[["My team · stage 1", "Home and away this season."], ["Teams · stage 2", "Beside the home record (\"fortress\")."], ["Opponent preview · stage 2", "Your record in the country of your next match."]]}>
+          <VenueRecord v={d.venues} team={team} /><div className="note">The scorecards don't name the ground, so it goes by the home side{d.venues.nation ? "'s country" : ""}.</div></Placed> : null}
+        {d.winners?.players.length ? <Placed title={`Match-winners · ${d.winners.wins} wins in ${cal?.year ?? d.season}`}
+          goes={[["My team · stage 1", "With your stars: who wins you matches."], ["Players · stage 1", "On each player: the matches they won for you."], ["Seasons · season review · stage 2", "The season's match-winners, next to the MVPs."]]}>
+          <MatchWinners w={d.winners} /></Placed> : null}
+
+        <Part title="Rankings and results" sub="Team ratings (Elo) through the season and every team's rank." />
         {d.banner?.some((b) => b.rank) ? <Tile span={7} title={`Where ${team} rank · team rating (Elo)`}><RankTrack banner={d.banner} /></Tile> : null}
-        {season.length ? <Tile span={d.banner?.some((b) => b.rank) ? 5 : 12} title={`Every match by margin · ${d.season}`}>
-          <MarginBars results={[...season].reverse()} /><div className="note">Above the line are wins, below are defeats; the height is the margin (runs, or wickets × 10 for chases). Newest on the right.</div></Tile> : null}
         {d.elo ? <>
-          <Tile span={5} title="Team table" rows={2}>
+          <Tile span={5} title="Team table" rows={d.banner?.some((b) => b.rank) ? 2 : undefined}>
             <table className="c"><thead><tr><th className="r">#</th><th>Team</th><th className="r">Elo</th><th className="r">Played</th></tr></thead>
               <tbody>{d.elo.table.map((x) => (
                 <tr key={x.team} className={x.team === team ? "me" : ""}><td className="r"><span className="tn dimn">{x.rank}</span></td>
@@ -183,7 +222,7 @@ export function StyleGuide() {
                   <td className="r"><span className="tn">{f0(x.elo)}</span></td><td className="r"><span className="tn dimn">{x.played}</span></td></tr>))}</tbody></table>
           </Tile>
           <Tile span={7} title={`Rating through the season · ${d.section}`}><EloLines elo={d.elo} team={team} /></Tile>
-          <Tile span={7} title="Every team's rank after each match day"><RankRace elo={d.elo} team={team} /></Tile>
+          <Tile span={12} title="Every team's rank after each match day"><RankRace elo={d.elo} team={team} /></Tile>
         </> : <Tile span={12} title="Ratings"><Missing why={miss.elo} /></Tile>}
         {d.ratings && (d.ratings.bat.length || d.ratings.bowl.length) ? <>
           <Tile span={6} title={`Best batters · ${fmtOf(d.section ?? "")} rating (out of 1000)`}>

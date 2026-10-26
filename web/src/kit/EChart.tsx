@@ -2,15 +2,15 @@
 // (the mock-up's chart wrapper): axis labels kept inside the chart, room on the right for line-end labels and on top
 // for a legend, every label of a short category axis shown, two-line pie labels that don't overlap, and the number
 // in a donut's hole shrunk with the hole.
-import { BarChart, HeatmapChart, LineChart, PieChart, ScatterChart } from "echarts/charts";
-import { CalendarComponent, GridComponent, LegendComponent, TitleComponent, TooltipComponent, VisualMapComponent } from "echarts/components";
+import { BarChart, LineChart, PieChart, ScatterChart } from "echarts/charts";
+import { GridComponent, LegendComponent, MarkAreaComponent, MarkLineComponent, MarkPointComponent, TitleComponent, TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";
 import { SVGRenderer } from "echarts/renderers";
 import { useEffect, useRef, useState } from "react";
 import { ts } from "./look";
 
-echarts.use([BarChart, LineChart, PieChart, ScatterChart, HeatmapChart, GridComponent, TooltipComponent, LegendComponent,
-  TitleComponent, CalendarComponent, VisualMapComponent, SVGRenderer]);
+echarts.use([BarChart, LineChart, PieChart, ScatterChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent,
+  MarkAreaComponent, MarkLineComponent, MarkPointComponent, SVGRenderer]);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Option = Record<string, any>;
@@ -50,7 +50,6 @@ export function adapt(input: Option, width = 0, height = 0): Option {
     });
     opt[key] = Array.isArray(opt[key]) ? axes : axes[0];
   }
-  if (opt.calendar) opt.calendar = { ...opt.calendar, top: ts(opt.calendar.top ?? 20) + 4 };
   opt.series = series.map((sr) => {
     if (sr.type === "bar" && slot && sr.label?.show && sr.label.position === "top") {   // a number on each bar: no wider than its bar's slot
       const chars = Math.max(...(sr.data ?? []).map((d: unknown) => String((d as Option)?.value ?? d).length), 1) + 1;

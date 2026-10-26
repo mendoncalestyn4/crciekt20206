@@ -5,7 +5,7 @@ import type { Card, Match, Pom, Result, SquadRow } from "../api";
 import { ab, cap, day, dayY, f0, f1, f2, fmtOf, initials, ord, overs, score } from "../format";
 import { useTheme } from "../theme";
 import { Lamp, Logo, Missing, Name, Num, Tile } from "./base";
-import { Donut, PartnershipBars } from "./charts";
+import { PartnershipBars, RingList } from "./charts";
 import { ts } from "./look";
 
 /** Scores like 2–1 never break across lines. */
@@ -196,7 +196,7 @@ export function Scorecard({ m }: { m: Match }) {
         </Tile>
         <Tile span={4} title={`How ${c.team} fell`}>
           {Object.keys(kinds).length
-            ? <Donut items={Object.entries(kinds).map(([k, v]) => [cap(k), v, KC[k] ?? t.dim])} centre={String(c.wickets)} sub="wickets" height={324} radius={["46%", "64%"]} centrePx={36} />
+            ? <RingList items={Object.entries(kinds).sort((a, b) => b[1] - a[1]).map(([k, v]) => [cap(k), v, KC[k] ?? t.dim])} centre={String(c.wickets)} sub="wickets" />
             : <div className="note" style={{ paddingTop: 100, textAlign: "center" }}>No wickets fell.</div>}
         </Tile>
       </div>

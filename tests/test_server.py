@@ -9,6 +9,7 @@ import time
 import urllib.request
 
 import numpy as np
+import pandas as pd
 import pytest
 from PIL import Image
 
@@ -118,6 +119,66 @@ def test_the_style_guide_numbers(live):
     assert st["among"] == "ODIs batters, every season" and set(st["percentiles"]) >= {"Runs", "Average"}
     assert [r["runs"] for r in d["leaders"]["runs"][:3]] == [128, 127, 106]
     assert d["banner"][0]["record"]["won"] == 2 and d["banner"][0]["rank"] == 1
+
+
+def test_the_style_guide_numbers_for_the_new_charts(live):
+    """The decided designs' numbers, checked against the two World Cup scorecards: England chased 319 against New
+    Zealand (won by 2 wickets) and 296 against South Africa (by 1 wicket), both on neutral grounds."""
+    d = live.json("/api/styleguide")
+    nz, sa = d["this_season"]
+    assert (nz["margin_wickets"], nz["batted_first"], nz["venue"], nz["host"]) == (2, False, "neutral", "")
+    assert nz["ours"] == [dict(runs=321, wkts=8, all_out=False, declared=False)] and nz["theirs"][0]["runs"] == 319
+    assert sa["margin_wickets"] == 1 and sa["pom"] == "B Fortuin" and sa["pom_team"] == "South Africa"
+    # the form line: two matches, so nothing to count yet (the line starts after five)
+    assert d["form"]["pct"] == [100, 100] and d["form"]["trend"] is None and d["form"]["best"] is None
+    assert d["scores"] == dict(avg_made=311, avg_conceded=308, played=2, won=2, lost=0, drawn=0, other=0)
+    bf = d["bat_first"]
+    assert bf["first"]["played"] == 0 and bf["chase"] == dict(played=2, won=2, lost=0) and not bf["multi"]
+    assert bf["highest_chased"]["score"] == 319 and bf["highest_chased"]["opp"] == "New Zealand"
+    assert bf["lowest_defended"] is None and bf["avg_set"] is None
+    # the season, April to March: the World Cup in June 2027 is the whole 2027 season so far
+    cal = d["calendar"]
+    assert (cal["year"], cal["start"], cal["end"]) == (2027, "2027-04-01", "2028-03-31")
+    assert [r["opp"] for r in cal["results"]] == ["New Zealand", "South Africa"]
+    june = cal["months"][2]
+    assert (june["month"], june["played"], june["won"], june["names"]) == (6, 2, 2, ["ODI World Cup"]) and cal["best"] == 2
+    assert sum(m["played"] for m in cal["months"]) == 2 and cal["formats"] == [dict(section="ODIs", kind="one")]
+    assert cal["streaks"] == [dict(o="W", start=0, end=1)]
+    v = d["venues"]
+    assert v["neutral"]["won"] == 2 and v["home"]["played"] == v["away"]["played"] == 0 and v["nation"]
+    assert [(h["host"], h["venue"], h["outcomes"]) for h in v["hosts"]] == [("", "neutral", ["W", "W"])]
+    assert [(x["opp"], x["gap"], x["outcome"]) for x in d["strength"]] == [("New Zealand", 20, "W"), ("South Africa", -1, "W")]
+    w = d["winners"]   # H Brook won one; South Africa's B Fortuin was player of the match in the other
+    assert [(p["player"], len(p["matches"])) for p in w["players"]] == [("H Brook", 1)] and (w["wins"], w["others"]) == (2, 1)
+    s = d["series"]
+    assert s["progress"] == [dict(won=1, lost=0)] and not s["decider"]
+
+
+def test_the_form_line_and_runs_of_results():
+    from server.styleguide import form, runs_of
+    rs = [dict(outcome=o, series=s, opp="X") for o, s in zip("WWLWLLWDWW", ["a"] * 3 + ["b"] * 4 + [""] * 3)]
+    f = form(rs)
+    # the share of the last five won, wins and defeats only (the draw is left out of its five)
+    assert f["pct"] == [100, 100, 67, 75, 60, 40, 40, 50, 50, 75]
+    assert (f["best"], f["worst"]) == (9, 5)          # the best and worst full five, the first time each was reached
+    assert f["trend"] == dict(now=75, prev=60, word="up")
+    assert [(g["series"], g["start"], g["end"], g["won"], g["lost"]) for g in f["groups"]] == [("a", 0, 2, 2, 1), ("b", 3, 6, 2, 2)]
+    assert form(rs[:3])["trend"] is None and form([])["pct"] == []
+    assert runs_of(list("WWLDD")) == [dict(o="W", start=0, end=1), dict(o="L", start=2, end=2), dict(o="D", start=3, end=4)]
+
+
+def test_a_tournament_starting_in_late_march_stays_in_its_season(pc):
+    """The IPL can start on 29 March: a competition belongs whole to the season most of it is played in, so its first
+    game shows in April's tile (and counts there), never in the season before."""
+    from server.styleguide import calendar
+    c = pc[0].load("My career")[0]
+    m = c.matches
+    wc = m[(m.event == "ODI World Cup") & (m.season == "2027")].sort_values("date")
+    first = wc.match_id.iloc[0]
+    c.matches.loc[c.matches.match_id == first, "date"] = pd.Timestamp("2027-03-30")
+    cal = calendar(c, "England")
+    assert cal["year"] == 2027 and [r["id"] for r in cal["months"][0]["extra"]] == [first]
+    assert cal["months"][0]["played"] == 1 and cal["months"][2]["played"] == 1 and len(cal["results"]) == 2
 
 
 def test_the_website_and_its_pages(live):

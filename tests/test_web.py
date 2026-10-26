@@ -92,8 +92,15 @@ def test_the_style_guide_draws_every_piece_from_the_career(browser, site):
         text = pg.inner_text("main")
         for piece in ("MOST RUNS", "MOST WICKETS", "EVERY INNINGS", "HOW THEY COMPARE", "WHERE THE RUNS COME FROM",
                       "MATCH SUMMARY", "SCORECARD", "PARTNERSHIPS", "THE SERIES", "MOST RUNS IN THE SERIES", "TEAM TABLE",
-                      "EVERY PLAYER"):
+                      "EVERY PLAYER", "THE SEASON · MONTH BY MONTH", "RUNS OF RESULTS", "SERIES SCORE · TUG OF WAR",
+                      "SERIES SCORE · THE LADDER", "OUR SCORE V THEIRS", "BATTING FIRST OR CHASING",
+                      "AGAINST STRONGER AND WEAKER SIDES", "HOME, AWAY AND NEUTRAL", "MATCH-WINNERS", "WHERE IT GOES"):
             assert piece in text.upper(), piece
+        for gone in ("EVERY MATCH BY MARGIN", "SERIES SCORE AFTER EACH MATCH"):   # dropped and replaced (plan, section 14)
+            assert gone not in text.upper(), gone
+        # the calendar: twelve months, April to March; the rings have their lists beside them
+        assert pg.locator(".mt").count() == 12 and pg.locator(".mt-h .pn").first.inner_text().upper() == "APR"
+        assert pg.locator(".dl-row").count() >= 4
         assert pg.locator("svg").count() >= 15            # the charts are drawn
         assert pg.locator("img.lg").count() > 10          # with the teams' logos
         # the innings switch shows the other innings' scorecard

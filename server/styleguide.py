@@ -15,8 +15,11 @@ import pandas as pd
 from ccstats import matchstory as MS
 from ccstats import myteam as MT
 from ccstats import partnerships as PT
+from ccstats import teamplay as TP
+from ccstats.colours import nation_of
 from ccstats.rankings import player_ratings, team_elo
-from ccstats.stats import Scope, player_tables
+from ccstats.records import by_played
+from ccstats.stats import KIND, Scope, player_tables
 from ccstats.winprob import match_report
 
 FORMAT_WORD = {"T20Is": "T20I", "ODIs": "ODI", "Tests": "Test"}
@@ -72,21 +75,41 @@ def score_of(career, match_id: str, team: str) -> str:
                       for i in inn.itertuples())
 
 
+def _innings(g: pd.DataFrame | None, team: str) -> list[dict]:
+    """One side's innings of a match, in order: runs, wickets, all out, declared."""
+    if g is None:
+        return []
+    return [dict(runs=int(i.runs), wkts=int(i.wickets), all_out=bool(i.all_out), declared=bool(i.declared))
+            for i in g[g.team == team].itertuples()]
+
+
 def results(career, team: str, ids=None) -> list[dict]:
-    """The team's matches, newest first: score both sides, the result from the team's side, the headline."""
+    """The team's matches, newest first: score both sides, the result from the team's side, the headline; and for the
+    charts, the margin, every innings of both sides, who batted first, where it was played (home, away or neutral,
+    and the host) and the player of the match."""
     m = career.matches
     g = m[(m.home == team) | (m.away == team)]
     if ids is not None:
         g = g[g.match_id.isin(ids)]
+    inns = {k: x for k, x in career.innings[career.innings.match_id.isin(g.match_id)].sort_values("innings_no")
+            .groupby("match_id")}
     out = []
     for r in g.sort_values(["date", "match_id"]).itertuples():
         opp = r.away if r.home == team else r.home
         outcome = ("W" if r.winner == team else "L" if r.winner == opp else
                    "NR" if r.result_type == "no result" else "T" if r.result_type == "tie" else "D")
-        out.append(dict(id=r.match_id, date=clean(r.date), section=r.section, opp=opp, outcome=outcome, result=r.result,
-                        us=score_of(career, r.match_id, team), them=score_of(career, r.match_id, opp),
+        inn = inns.get(r.match_id)
+        first = inn.team.iloc[0] if inn is not None and len(inn) else (r.batted_first or "")
+        pom = r.player_of_match or ""
+        out.append(dict(id=r.match_id, date=clean(r.date), section=r.section, event=r.event, opp=opp, outcome=outcome,
+                        result=r.result, us=score_of(career, r.match_id, team), them=score_of(career, r.match_id, opp),
                         no=clean(r.series_match_no), of=clean(r.series_length), series=r.series_id,
-                        headline=MS.pom_headline(career, r.match_id)))
+                        headline=MS.pom_headline(career, r.match_id),
+                        margin_runs=clean(r.margin_runs), margin_wickets=clean(r.margin_wickets),
+                        innings_win=bool(r.innings_win), rain=bool(r.rain), batted_first=first == team,
+                        venue="neutral" if r.neutral else ("home" if r.home == team else "away"),
+                        host="" if r.neutral else r.home, ours=_innings(inn, team), theirs=_innings(inn, opp),
+                        pom=pom, pom_team=MS.team_of(career, r.match_id, pom) if pom else ""))
     return out[::-1]
 
 
@@ -217,10 +240,199 @@ def series(career, team: str) -> dict:
     sw = w.groupby(["player", "team"]).agg(wickets=("wickets", "sum"), runs=("runs", "sum"),
                                            balls=("balls", "sum")).reset_index()
     sw = sw.assign(economy=sw.runs / sw.balls * 6).sort_values(["wickets", "runs"], ascending=[False, True])
+    played = in_played_order(career, results(career, team, ids))
+    won = lost = 0
+    progress = []
+    for r in played:   # the series score after each match
+        won, lost = won + (r["outcome"] == "W"), lost + (r["outcome"] == "L")
+        progress.append(dict(won=won, lost=lost))
+    last = played[-1]
+    before = progress[-2] if len(progress) > 1 else None
+    decider = bool(before and before["won"] == before["lost"] and last["of"] and last["no"] == last["of"])
     return dict(id=sid, section=g.section.iloc[-1], opp=story["opponent"], story=story,
-                matches=results(career, team, ids)[::-1],
+                matches=played, progress=progress, decider=decider,
                 most_runs=rows(sb.head(6), ["player", "team", "runs", "balls", "inns", "outs", "hs"]),
                 most_wickets=rows(sw.head(6), ["player", "team", "wickets", "runs", "balls", "economy"]))
+
+
+def season_start(d) -> int:
+    """The year a season starts in: April 2026 to March 2027 is the 2026 season (as on the current site's calendar)."""
+    d = pd.Timestamp(d)
+    return d.year if d.month >= 4 else d.year - 1
+
+
+def in_played_order(career, rs: list[dict]) -> list[dict]:
+    """Result rows in the order the matches were played (the game can save scorecards dated out of order)."""
+    order = by_played(career, pd.DataFrame({"match_id": [r["id"] for r in rs]})).match_id
+    by_id = {r["id"]: r for r in rs}
+    return [by_id[i] for i in order]
+
+
+def runs_of(outcomes: list[str]) -> list[dict]:
+    """The same result in a row: [{o, start, end}], start and end the first and last match of each run."""
+    out: list[dict] = []
+    for i, o in enumerate(outcomes):
+        if out and out[-1]["o"] == o:
+            out[-1]["end"] = i
+        else:
+            out.append(dict(o=o, start=i, end=i))
+    return out
+
+
+def _record(rs: list[dict]) -> dict:
+    o = [r["outcome"] for r in rs]
+    return dict(played=len(o), won=o.count("W"), lost=o.count("L"), drawn=o.count("D"),
+                other=len(o) - o.count("W") - o.count("L") - o.count("D"))
+
+
+FORM_GAMES = 5   # the form line: the share of the last five matches won
+
+
+def form(rs: list[dict], n: int = FORM_GAMES) -> dict:
+    """The form line for matches in played order: after each match, the share of the last n won (wins and defeats
+    only; None when none of them had a result), the first n-1 still building up; the best and worst full five, how
+    it's going now against five matches before, and each series over its matches with its score."""
+    pct: list[int | None] = []
+    for i in range(len(rs)):
+        last = [r["outcome"] for r in rs[max(0, i - n + 1): i + 1] if r["outcome"] in ("W", "L")]
+        pct.append(round(last.count("W") / len(last) * 100) if last else None)
+    full = [i for i in range(n - 1, len(rs)) if pct[i] is not None]
+    best = max(full, key=lambda i: (pct[i], -i)) if full else None    # the first time it was this high
+    worst = min(full, key=lambda i: (pct[i], i)) if full else None
+    trend = None
+    now = len(rs) - 1
+    if now >= n - 1 and pct[now] is not None:
+        prev = pct[now - n] if now - n >= n - 1 else None
+        word = "" if prev is None else "up" if pct[now] > prev else "down" if pct[now] < prev else "level"
+        trend = dict(now=pct[now], prev=prev, word=word)
+    groups: list[dict] = []
+    for i, r in enumerate(rs):
+        if not r["series"]:
+            continue
+        if groups and groups[-1]["series"] == r["series"] and groups[-1]["end"] == i - 1:
+            groups[-1]["end"] = i
+        else:
+            groups.append(dict(series=r["series"], opp=r["opp"], start=i, end=i))
+    for g in groups:
+        o = [x["outcome"] for x in rs[g["start"]: g["end"] + 1]]
+        g.update(won=o.count("W"), lost=o.count("L"))
+    return dict(n=n, pct=pct, best=best, worst=worst, trend=trend, groups=groups)
+
+
+def calendar(career, team: str) -> dict:
+    """The team's season, April to March (the season of its latest match): every match in played order, each month's
+    record (the best month marked), the formats (longest game first, for the colour under each match) and the runs
+    of results through the season.
+
+    A series or a tournament belongs whole to the season most of it is played in, so the IPL starting on 29 March
+    stays with the rest of its season: its March games are counted in April's tile and listed at its top (and any
+    played after the end of March, in March's)."""
+    rs = results(career, team)
+    if not rs:
+        raise ValueError("The team hasn't played yet.")
+    label = career.matches.set_index("match_id").season
+    key = {r["id"]: ("series", r["series"]) if r["series"] else ("event", r["event"], label.get(r["id"], "")) for r in rs}
+    dates: dict[tuple, list[str]] = {}
+    for r in rs:
+        dates.setdefault(key[r["id"]], []).append(r["date"])
+    year_of = {k: season_start(sorted(d)[len(d) // 2]) for k, d in dates.items()}   # where most of it is played
+    latest = in_played_order(career, rs)[-1]
+    y = year_of[key[latest["id"]]]
+    start, end = f"{y}-04-01", f"{y + 1}-03-31"
+    rs = in_played_order(career, [r for r in rs if year_of[key[r["id"]]] == y])
+    months = []
+    for k in range(12):
+        yy, mm = (y, 4 + k) if k < 9 else (y + 1, k - 8)
+        x = [r for r in rs if r["date"].startswith(f"{yy}-{mm:02d}")]
+        extra = [r for r in rs if (k == 0 and r["date"] < start) or (k == 11 and r["date"] > end)]
+        x = extra + x if k == 0 else x + extra
+        names = list(dict.fromkeys(f"v {r['opp']}" if r["series"] else r["event"] for r in x))
+        months.append(dict(year=yy, month=mm, **_record(x), names=names, extra=extra))
+    busy = [i for i, mo in enumerate(months) if mo["played"]]
+    best = max(busy, key=lambda i: (months[i]["won"] - months[i]["lost"] + months[i]["played"] / 100, -i)) if busy else None
+    fm = career.matches.set_index("match_id").format
+    count: dict[str, int] = {}
+    kind: dict[str, str] = {}
+    for r in rs:
+        count[r["section"]] = count.get(r["section"], 0) + 1
+        kind[r["section"]] = KIND.get(fm.get(r["id"], ""), "t20")
+    order = {"multi": 0, "one": 1, "t20": 2}
+    formats = [dict(section=s, kind=kind[s]) for s in sorted(count, key=lambda s: (order[kind[s]], -count[s], s))]
+    return dict(year=y, start=start, end=end, results=rs, months=months, best=best, formats=formats,
+                streaks=runs_of([r["outcome"] for r in rs]))
+
+
+def venues(rs: list[dict], team: str) -> dict:
+    """The record at home, away and on neutral grounds, then host by host (the scorecards don't name the ground, so
+    it goes by the home side: for a national side, the country)."""
+    out = {k: _record([r for r in rs if r["venue"] == k]) for k in ("home", "away", "neutral")}
+    hosts: dict[str, list[dict]] = {}
+    for r in rs:
+        hosts.setdefault("" if r["venue"] == "neutral" else r["host"], []).append(r)
+    out["hosts"] = sorted(([dict(host=h, venue="neutral" if not h else "home" if h == team else "away",
+                                 outcomes=[r["outcome"] for r in x], **_record(x)) for h, x in hosts.items()]),
+                          key=lambda h: (-h["played"], h["venue"] != "home", h["host"]))
+    out["nation"] = nation_of([team]) == team
+    return out
+
+
+def strength(career, team: str, rs: list[dict]) -> list[dict]:
+    """Every match with both sides' rating (Elo) just before it, in its section: gap = theirs minus ours."""
+    out = []
+    hist = {sec: team_elo(career, sec)[1].set_index(["match_id", "team"]).before for sec in {r["section"] for r in rs}}
+    for r in rs:
+        h = hist[r["section"]]
+        me, them = h.get((r["id"], team)), h.get((r["id"], r["opp"]))
+        if me is None or them is None:   # no result: not rated
+            continue
+        out.append(dict(id=r["id"], date=r["date"], section=r["section"], opp=r["opp"], outcome=r["outcome"],
+                        me=round(me), them=round(them), gap=round(them - me)))
+    return out
+
+
+def bat_first(career, team: str, ids) -> dict:
+    """Batting first or chasing in these matches: the record each way; in a one-innings game also the score usually
+    set, the lowest total defended, the highest lost with, the highest chased down and the lowest not chased (games
+    shortened by rain left out of the totals)."""
+    g = TP.games(career, ids)
+    t = g[g.team == team]
+    if t.empty:
+        raise ValueError("No matches for the team here yet.")
+    res = career.matches.set_index("match_id").result
+    first, chase = t[t.batted_first], t[~t.batted_first]
+    rec = lambda x: dict(played=len(x), won=int((x.outcome == "W").sum()), lost=int((x.outcome == "L").sum()))  # noqa: E731
+    out = dict(first=rec(first), chase=rec(chase), multi=TP.is_multi(t))
+    if not out["multi"]:
+        def pick(x, outcome, high):
+            x = x[(x.outcome == outcome) & x.first_score.notna()]
+            if x.empty:
+                return None
+            r = x.loc[x.first_score.idxmax() if high else x.first_score.idxmin()]
+            return dict(score=int(r.first_score), opp=r.opponent, date=clean(r.date), result=res[r.match_id])
+        set_ = first.first_score.dropna()
+        out.update(avg_set=round(float(set_.mean())) if len(set_) else None,
+                   lowest_defended=pick(first, "W", False), highest_lost=pick(first, "L", True),
+                   highest_chased=pick(chase, "W", True), lowest_missed=pick(chase, "L", False))
+    return out
+
+
+def scores(rs: list[dict]) -> dict:
+    """Our score and theirs: the average first innings each way (one-innings games, rain left out), won and lost."""
+    one = [r for r in rs if r["ours"] and r["theirs"] and not r["rain"] and len(r["ours"]) == 1]
+    avg = lambda k: round(sum(r[k][0]["runs"] for r in one) / len(one)) if one else None  # noqa: E731
+    return dict(avg_made=avg("ours"), avg_conceded=avg("theirs"), **_record(rs))
+
+
+def match_winners(rs: list[dict], team: str) -> dict:
+    """Who won the team's matches: its players of the match in its wins, most first, with each match."""
+    by: dict[str, list[dict]] = {}
+    for r in rs:
+        if r["outcome"] == "W" and r["pom"] and r["pom_team"] == team:
+            by.setdefault(r["pom"], []).append(dict(id=r["id"], date=r["date"], section=r["section"], opp=r["opp"],
+                                                    headline=r["headline"]))
+    wins = sum(r["outcome"] == "W" for r in rs)
+    return dict(players=[dict(player=p, matches=x) for p, x in sorted(by.items(), key=lambda kv: (-len(kv[1]), kv[0]))],
+                wins=wins, others=wins - sum(len(x) for x in by.values()))
 
 
 def ratings(career, section: str) -> dict:
@@ -259,7 +471,15 @@ def build(career, mine: list[str]) -> dict:
                                   rank=b["rank"], teams=b["teams"], record=dict(b["record"]))
                              for b in MT.banner(career, team)])
     piece("results", lambda: results(career, team)[:12])
-    piece("this_season", lambda: results(career, team, ids)[::-1])   # this season in this section, oldest first
+    piece("this_season", lambda: in_played_order(career, results(career, team, ids)))   # this season here, oldest first
+    piece("form", lambda: form(out["this_season"] or []))
+    piece("scores", lambda: scores(out["this_season"] or []))
+    piece("bat_first", lambda: bat_first(career, team, ids))
+    piece("calendar", lambda: calendar(career, team))   # the whole season, every format: April to March
+    season_rs = (out["calendar"] or {}).get("results", [])
+    piece("venues", lambda: venues(season_rs, team))
+    piece("strength", lambda: strength(career, team, season_rs))
+    piece("winners", lambda: match_winners(season_rs, team))
     piece("leaders", lambda: leaders(career, ids))
     piece("star", lambda: star(career, team, section, season))
     piece("match", lambda: scorecard(career, results(career, team)[0]["id"]))
