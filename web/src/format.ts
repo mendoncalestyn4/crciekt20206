@@ -43,4 +43,21 @@ export const score = (runs: number, wickets: number, allOut: boolean, declared =
   `${runs}${allOut ? "" : "/" + wickets}${declared ? "d" : ""}`;
 /** the format word for a section: 'ODIs' -> 'ODI' */
 export const FORMAT: Record<string, string> = { T20Is: "T20I", ODIs: "ODI", Tests: "Test" };
-export const fmtOf = (section: string) => FORMAT[section] ?? section;
+// a competition's short name, for labels in a small space (the full name stays in titles)
+const SHORT: Record<string, string> = {
+  "Indian Premier League": "IPL", "Big Bash League": "BBL", "The Hundred": "Hundred", "T20 Blast": "Blast",
+  "One-Day Cup": "ODC", "Marsh One-Day Cup": "Marsh", "Sheffield Shield": "Shield", "Ranji Trophy": "Ranji",
+  "Vijay Hazare Trophy": "VHT", "Syed Mushtaq Ali Trophy": "SMAT", "Super Smash": "Smash", "Plunket Shield": "Plunket",
+  "Ford Trophy": "Ford", "First-class": "FC",
+};
+/** the format word for a section ('ODIs' -> 'ODI'), or a competition's short name ('County Championship · Division 1'
+ *  -> 'CC D1', 'Pakistan Super League' -> 'PSL') */
+export const fmtOf = (section: string) => {
+  if (FORMAT[section]) return FORMAT[section];
+  if (SHORT[section]) return SHORT[section];
+  const div = /^County Championship · Division (\d)$/.exec(section);
+  if (div) return `CC D${div[1]}`;
+  if (section.length <= 7) return section;
+  const words = section.split(/\s+/).filter((w) => /^[A-Z0-9]/.test(w) && w !== "The");
+  return words.length > 1 ? words.map((w) => w[0]).join("") : section;
+};

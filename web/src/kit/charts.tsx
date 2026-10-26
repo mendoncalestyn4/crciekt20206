@@ -50,7 +50,8 @@ export function InningsBars({ innings, height = 360 }: { innings: { date: string
       tooltip: { ...L.TT, formatter: (p: { dataIndex: number }) => { const i = innings[p.dataIndex]; return i ? `${i.runs}${i.out ? "" : "*"} v ${i.opp}, ${day(i.date)}` : ""; } },
       xAxis: { type: "category", data: innings.map((i) => `${ab(i.opp)}\n${when(i.date)}`), ...L.AX, splitLine: { show: false } },
       yAxis: { ...L.AX, axisLine: { show: false }, max },
-      series: [{ type: "bar", barWidth: "60%", data: innings.map((i) => ({ value: i.runs, itemStyle: { color: col(i.runs), borderRadius: 0 } })),
+      series: [{ type: "bar", barWidth: "60%", data: innings.map((i) => ({ value: i.runs, itemStyle: { color: col(i.runs), borderRadius: 0 },
+          ...(innings.length > 16 ? { label: { show: i.runs >= 50 } } : {}) })),
         label: { show: true, position: "top", ...L.VAL(24), formatter: (p: { value: number; dataIndex: number }) => p.value + (innings[p.dataIndex]?.out ? "" : "*") } }],
     };
   }, [t, innings]);
@@ -93,8 +94,10 @@ export function RankTrack({ banner, height = 276 }: { banner: Banner[]; height?:
     const L = look(t), rows = banner.filter((b) => b.rank != null);
     return {
       grid: { left: 70, right: 30, top: 10, bottom: 30 },
-      xAxis: { type: "value", min: 1, interval: 1, inverse: true, ...L.AX, axisLabel: { ...L.AX.axisLabel, formatter: (v: number) => ord(v) } },
-      yAxis: { type: "category", data: rows.map((b) => b.section), axisLine: { show: false }, axisTick: { show: false },
+      // every place up to 12 teams; with more, every 2nd (or 3rd...) place, so the labels never touch
+      xAxis: { type: "value", min: 1, interval: Math.max(1, Math.ceil(Math.max(...rows.map((b) => b.teams), 1) / 12)), inverse: true, ...L.AX,
+        axisLabel: { ...L.AX.axisLabel, formatter: (v: number) => ord(v) } },
+      yAxis: { type: "category", data: rows.map((b) => (b.section.length > 12 ? fmtOf(b.section) : b.section)), axisLine: { show: false }, axisTick: { show: false },
         axisLabel: { color: t.ink, fontFamily: "Bebas Neue", fontSize: ts(22) } },
       series: [
         { type: "bar", barWidth: 10, data: rows.map((b) => b.teams), itemStyle: { color: t.track, borderRadius: 5 }, barGap: "-100%", silent: true },
@@ -146,13 +149,14 @@ export function RankRace({ elo, team, height = 360 }: { elo: Elo; team: string |
   const option = useMemo<Option>(() => {
     const L = look(t), when = dayer(elo.snaps.map((s) => s.date));
     return {
-      grid: { left: 16, right: 60, top: 10, bottom: 30 },
+      grid: { left: 40, right: 60, top: 10, bottom: 30 },   // the first date is centred on the first match day
       xAxis: { type: "category", data: elo.snaps.map((s) => when(s.date)), ...L.AX, splitLine: { show: false } },
       yAxis: { inverse: true, min: 1, max: Math.max(elo.teams.length, 2), interval: 1, splitLine: { show: false }, axisLabel: { show: false } },
       series: elo.teams.map((x) => ({ type: "line", name: x, smooth: 0.3, symbolSize: x === team ? 8 : 0, data: elo.snaps.map((s) => s.rank[x]),
         lineStyle: { width: x === team ? 5 : 1.5, color: x === team ? L.MINE : t.other }, itemStyle: { color: x === team ? L.MINE : t.other },
         z: x === team ? 5 : 1,
-        endLabel: { show: true, color: x === team ? t.ink : t.dim, fontFamily: "Bebas Neue", fontSize: x === team ? 18 : ts(14), formatter: () => ab(x) } })),
+        endLabel: { show: elo.teams.length <= 12 || x === team || x === elo.table[0]?.team || x === elo.table[elo.table.length - 1]?.team,
+          color: x === team ? t.ink : t.dim, fontFamily: "Bebas Neue", fontSize: x === team ? 18 : ts(14), formatter: () => ab(x) } })),
     };
   }, [t, elo, team]);
   return <EChart option={option} height={height} label="Every team's rank after each match day" />;
@@ -296,7 +300,9 @@ export function StrengthDots({ rows, lanes, height = 360 }: { rows: Strength[]; 
   const [box, w] = useWidth();
   const option = useMemo<Option>(() => {
     const L = look(t), G = { left: 70, right: 30, top: 14, bottom: 56 };
-    const gapMax = Math.ceil(Math.max(...rows.map((x) => Math.abs(x.gap)), 10) / 20) * 20;
+    const widest = Math.max(...rows.map((x) => Math.abs(x.gap)), 10);
+    const step = [20, 25, 50, 100, 200, 250, 500].find((k) => (2 * Math.ceil(widest / k) * k) / k <= 10) ?? 1000;
+    const gapMax = Math.ceil(widest / step) * step;
     const xs = (Math.max(w, 300) - G.left - G.right) / (2 * gapMax), ys = (height - G.top - G.bottom) / Math.max(lanes.length, 1);
     const placed: { x: number; y: number }[] = [], spots = [0, 0.21, -0.21, 0.42, -0.42];
     const dist = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot((a.x - b.x) * xs, (a.y - b.y) * ys);
@@ -311,7 +317,7 @@ export function StrengthDots({ rows, lanes, height = 360 }: { rows: Strength[]; 
     return {
       grid: G,
       tooltip: { ...L.TT, formatter: (p: { data: { name: string; gap: number } }) => `${p.data.name}: rated ${p.data.gap > 0 ? `${p.data.gap} above you` : p.data.gap < 0 ? `${-p.data.gap} below you` : "level"}` },
-      xAxis: { type: "value", ...L.AX, min: -gapMax, max: gapMax, interval: 20, name: "← rated below you   ·   their rating minus yours   ·   rated above you →",
+      xAxis: { type: "value", ...L.AX, min: -gapMax, max: gapMax, interval: step, name: "← rated below you   ·   their rating minus yours   ·   above you →",
         nameLocation: "middle", nameGap: 34, nameTextStyle: { color: t.dim, fontFamily: "Inter", fontSize: 13 }, splitLine: { lineStyle: { color: t.split } } },
       // the dots sit on a value axis; the format names come from a category axis whose rows line up with it
       yAxis: [{ type: "value", min: -0.5, max: lanes.length - 0.5, show: false },

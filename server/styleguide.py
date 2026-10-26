@@ -83,14 +83,37 @@ def _innings(g: pd.DataFrame | None, team: str) -> list[dict]:
             for i in g[g.team == team].itertuples()]
 
 
+def _score(g: pd.DataFrame | None, team: str) -> str:
+    """score_of from a match's innings already in hand."""
+    if g is None:
+        return ""
+    return " & ".join(f"{int(i.runs)}" + ("" if i.all_out else f"/{int(i.wickets)}") + ("d" if i.declared else "")
+                      for i in g[g.team == team].itertuples())
+
+
 def results(career, team: str, ids=None) -> list[dict]:
     """The team's matches, newest first: score both sides, the result from the team's side, the headline; and for the
     charts, the margin, every innings of both sides, who batted first, where it was played (home, away or neutral,
-    and the host) and the player of the match."""
+    and the host) and the player of the match. Worked out once for each team of a career and kept with it (the
+    headlines take a while over a few hundred matches); `ids` picks some of them."""
+    key = (team, id(career.matches), len(career.matches))
+    kept = getattr(career, "_sg_results", None)
+    if kept is None or kept.get("key") != key:
+        kept = {"key": key, "rows": _results(career, team)}
+        try:
+            career._sg_results = kept
+        except AttributeError:
+            pass
+    rows = kept["rows"]
+    if ids is None:
+        return list(rows)
+    wanted = set(ids)
+    return [r for r in rows if r["id"] in wanted]
+
+
+def _results(career, team: str) -> list[dict]:
     m = career.matches
     g = m[(m.home == team) | (m.away == team)]
-    if ids is not None:
-        g = g[g.match_id.isin(ids)]
     inns = {k: x for k, x in career.innings[career.innings.match_id.isin(g.match_id)].sort_values("innings_no")
             .groupby("match_id")}
     out = []
@@ -102,7 +125,7 @@ def results(career, team: str, ids=None) -> list[dict]:
         first = inn.team.iloc[0] if inn is not None and len(inn) else (r.batted_first or "")
         pom = r.player_of_match or ""
         out.append(dict(id=r.match_id, date=clean(r.date), section=r.section, event=r.event, opp=opp, outcome=outcome,
-                        result=r.result, us=score_of(career, r.match_id, team), them=score_of(career, r.match_id, opp),
+                        result=r.result, us=_score(inn, team), them=_score(inn, opp),
                         no=clean(r.series_match_no), of=clean(r.series_length), series=r.series_id,
                         headline=MS.pom_headline(career, r.match_id),
                         margin_runs=clean(r.margin_runs), margin_wickets=clean(r.margin_wickets),

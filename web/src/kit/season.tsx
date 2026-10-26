@@ -45,7 +45,7 @@ export function MonthTiles({ cal }: { cal: Calendar }) {
               {Array.from({ length: first }, (_, k) => <span key={`e${k}`} />)}
               {Array.from({ length: days }, (_, d) => {
                 const r = cal.results.find((x) => x.date === `${prefix}${String(d + 1).padStart(2, "0")}`);
-                return r ? <span key={d} className={`m ${r.outcome}`} style={{ ["--fmt" as string]: col[r.section] }} title={`${day(r.date)} v ${r.opp}: ${r.result}`}>{ab(r.opp)}</span>
+                return r ? <span key={d} className={`m ${r.outcome} ${ab(r.opp).length > 3 ? "long" : ""}`} style={{ ["--fmt" as string]: col[r.section] }} title={`${day(r.date)} v ${r.opp}: ${r.result}`}>{ab(r.opp)}</span>
                   : <span key={d}>{d + 1}</span>;
               })}</div>
             <div className="mt-note">{mo.names.join(" · ")}</div>
@@ -147,7 +147,7 @@ export function Streaks({ cal }: { cal: Calendar }) {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  const cols = Math.max(1, Math.min(rs.length, Math.floor((w + 6) / 46) || rs.length));
+  const cols = Math.max(1, Math.min(rs.length, Math.floor((w + 6) / 52) || rs.length));   // a cell at least 46px wide
   useLayoutEffect(() => {   // each bracket spans exactly its matches' lamps, a piece on each line they're on
     const el = strip.current;
     if (!el || !w) return;

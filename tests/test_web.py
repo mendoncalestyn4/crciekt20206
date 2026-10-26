@@ -113,6 +113,29 @@ def test_the_style_guide_draws_every_piece_from_the_career(browser, site):
         pg.close()
 
 
+@pytest.fixture(scope="module")
+def domestic_site(tmp_path_factory):
+    """The stats server with every test scorecard, played as Karnataka (the Ranji Trophy and the Vijay Hazare Trophy)."""
+    store, folder, _ = make_pc(tmp_path_factory.mktemp("pc_domestic"), team="Karnataka", files=FIXTURES)
+    s = Live(create_app(store, web=WEB, watch_every=0))
+    yield s, folder
+    s.stop()
+
+
+@pytest.mark.parametrize("width", [1280, 1920])
+def test_a_domestic_side_gets_short_competition_names_and_fits(browser, domestic_site, width):
+    """Found with a three-season save: a county or state side's long competition names ran into each other in the
+    runs-of-results strip and squeezed its charts. Where there's little room a competition has its short name."""
+    pg, said = open_page(browser, domestic_site, "/style-guide", width)
+    try:
+        assert said == [] and fit_problems(pg) == []
+        strip = pg.inner_text(".strip")
+        assert "Ranji" in strip and "Ranji Trophy" not in strip
+        assert pg.locator(".mt").count() == 12
+    finally:
+        pg.close()
+
+
 def test_search_finds_a_player_and_opens_their_page(browser, site):
     pg, _ = open_page(browser, site, "/")
     try:

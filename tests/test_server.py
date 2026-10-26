@@ -154,6 +154,18 @@ def test_the_style_guide_numbers_for_the_new_charts(live):
     assert s["progress"] == [dict(won=1, lost=0)] and not s["decider"]
 
 
+def test_the_team_s_matches_are_worked_out_once_for_a_career(pc):
+    """The style guide asks for the team's matches several times; they're worked out once for the career on screen
+    (the headlines take a while over a few hundred matches), and any of them picked out in the same order."""
+    from server.styleguide import results
+    c = pc[0].load("My career")[0]
+    every = results(c, "England")
+    assert results(c, "England") == every and c._sg_results["key"][0] == "England"
+    some = [r["id"] for r in every[::3]]
+    assert [r["id"] for r in results(c, "England", some)] == some          # newest first, as the whole list
+    assert results(c, "India") != every and c._sg_results["key"][0] == "India"   # another team is worked out afresh
+
+
 def test_the_form_line_and_runs_of_results():
     from server.styleguide import form, runs_of
     rs = [dict(outcome=o, series=s, opp="X") for o, s in zip("WWLWLLWDWW", ["a"] * 3 + ["b"] * 4 + [""] * 3)]

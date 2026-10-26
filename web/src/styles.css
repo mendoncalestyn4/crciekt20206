@@ -256,6 +256,7 @@ ul.dots { margin: 10px 0 0 22px; font: 400 18px/1.7 Inter; color: var(--soft); }
   min-width: 0; overflow: hidden; }
 .mt-d span.dn { height: 18px; }
 .mt-d span.m { color: #0b1b3d; font: 700 12px Inter; }
+.mt-d span.m.long { font-size: 10px; letter-spacing: -.02em; }
 .mt-d span.W { background: var(--win); } .mt-d span.L { background: var(--loss); } .mt-d span.D, .mt-d span.NR, .mt-d span.T { background: var(--grey); }
 .mt-d span.m::after { content: ""; position: absolute; left: 5px; right: 5px; bottom: 3px; height: 3px; border-radius: 2px; background: var(--fmt); }
 .mt-x { display: flex; gap: 10px; flex-wrap: wrap; margin: -2px 0 8px; font: 600 12px Inter; color: var(--dim); }
@@ -334,7 +335,7 @@ ul.dots { margin: 10px 0 0 22px; font: 400 18px/1.7 Inter; color: var(--soft); }
 .cty .r { font: 700 19px 'Space Grotesk'; color: var(--led); text-align: right; }
 .cty .r small { font: 500 13px Inter; color: var(--dim); margin-left: 6px; }
 /* runs of results: every match in a strip, brackets over the longest runs */
-.strip { display: grid; column-gap: 6px; row-gap: 62px; position: relative; padding-top: 58px; margin-top: 22px; }
+.strip { display: grid; column-gap: 6px; row-gap: 80px; position: relative; padding-top: 58px; margin-top: 22px; }   /* room for a bracket over each line */
 .strip .cellx { min-width: 0; text-align: center; }
 .strip .cellx .wl { width: 30px; height: 30px; }
 .strip .cellx small { display: block; font: 600 11px Inter; color: var(--dim); margin-top: 4px; white-space: nowrap; }

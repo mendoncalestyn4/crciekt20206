@@ -36,10 +36,10 @@ export function adapt(input: Option, width = 0, height = 0): Option {
       const ax = { ...a };
       if (ax.axisLabel && ax.axisLabel.fontFamily === "Bebas Neue" && !ax.axisLabel.formatter) ax.axisLabel = { ...ax.axisLabel, formatter: wide };
       const n = (ax.data ?? []).length;
+      if (key === "xAxis" && ax.type === "category" && ax.show !== false && width && n) slot = (width * 0.86) / n;   // each bar's room
       if (ax.type === "category" && ax.show !== false && n <= 12 && ax.axisLabel) {
         let fs: number = ax.axisLabel.fontSize ?? 12, every = true;
         if (key === "xAxis" && width && n) {   // every label shown, shrunk to fit its slot; if it still can't, ECharts skips some
-          slot = (width * 0.86) / n;
           const longest = Math.max(...(ax.data as unknown[]).map((d) => Math.max(...String(d).split("\n").map((l) => l.length))), 1);
           if (longest * fs * 0.6 > slot - 4) fs = Math.max(10, Math.floor((slot - 4) / (longest * 0.6)));
           every = longest * fs * 0.6 <= slot - 2;
