@@ -87,7 +87,7 @@ export function StyleGuide() {
           : <Tile span={12} title="The season calendar"><Missing why={miss.calendar} /></Tile>}
         {/* the big form line from five matches (before that, the card above says when it starts) */}
         {season.length && d.form?.trend ? <Tile span={12} title={`Form · ${d.section} ${d.season} · every match`}
-          right={d.form.trend ? `now ${d.form.trend.now}%${d.form.trend.word && d.form.trend.prev != null ? ` · ${d.form.trend.word} from ${d.form.trend.prev}%` : ""}` : undefined}>
+          right={d.form.trend.now != null ? `now ${d.form.trend.now}%${d.form.trend.word && d.form.trend.prev != null ? ` · ${d.form.trend.word} from ${d.form.trend.prev}%` : ""}` : "last five: no result"}>
           <FormBig results={season} form={d.form} />
           <div className="note">The line is the share of the last five matches won, on its own scale; the results sit under it. The first five are dashed until there are five to count.</div>
           <Used on="My team (one for each format)" /></Tile> : null}

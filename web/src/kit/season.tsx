@@ -67,7 +67,7 @@ export function FormCard({ results, form }: { results: Result[]; form: Form }) {
       <div className="head2"><Num v={`${w}–${l}`} px={46} /><span className="oldnew">{plural(results.length, "match", "matches")}</span></div>
       {tr ? <>
         <div style={{ marginTop: 8 }}><FormLine results={results} form={form} /></div>
-        <div className="trend">Last five: <b>{tr.now}%</b> won{tr.word && tr.prev != null ? ` · ${tr.word}${tr.word === "level" ? " with" : " from"} ${tr.prev}% five games before` : ""}</div>
+        <div className="trend">{tr.now == null ? "Last five: no wins or defeats (all drawn or no result)" : <>Last five: <b>{tr.now}%</b> won{tr.word && tr.prev != null ? ` · ${tr.word}${tr.word === "level" ? " with" : " from"} ${tr.prev}% five games before` : ""}</>}</div>
       </> : <>
         <div className="sq" style={{ margin: "16px 0 10px" }}>{results.map((r) => <Lamp key={r.id} o={r.outcome} />)}</div>
         <div className="trend">{plural(results.length, "match", "matches")}: the line starts after {form.n}.</div>

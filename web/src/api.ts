@@ -53,7 +53,7 @@ export type Result = {
 export type Record_ = { played: number; won: number; lost: number; drawn: number; other: number };
 /** The form line (server/styleguide.py form()): the share of the last n won after each match, and so on. */
 export type Form = { n: number; pct: (number | null)[]; best: number | null; worst: number | null;
-  trend: { now: number; prev: number | null; word: "" | "up" | "down" | "level" } | null;
+  trend: { now: number | null; prev: number | null; word: "" | "up" | "down" | "level" } | null;
   groups: { series: string; opp: string; start: number; end: number; won: number; lost: number }[] };
 export type Run = { o: Outcome; start: number; end: number };
 export type Calendar = { year: number; start: string; end: string; results: Result[]; best: number | null;

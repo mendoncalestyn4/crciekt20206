@@ -301,9 +301,10 @@ def form(rs: list[dict], n: int = FORM_GAMES) -> dict:
     worst = min(full, key=lambda i: (pct[i], i)) if full else None
     trend = None
     now = len(rs) - 1
-    if now >= n - 1 and pct[now] is not None:
+    if now >= n - 1:   # now None: none of the last five had a result (five draws in Tests)
         prev = pct[now - n] if now - n >= n - 1 else None
-        word = "" if prev is None else "up" if pct[now] > prev else "down" if pct[now] < prev else "level"
+        word = ("" if prev is None or pct[now] is None else
+                "up" if pct[now] > prev else "down" if pct[now] < prev else "level")
         trend = dict(now=pct[now], prev=prev, word=word)
     groups: list[dict] = []
     for i, r in enumerate(rs):

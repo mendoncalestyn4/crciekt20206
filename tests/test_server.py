@@ -164,6 +164,9 @@ def test_the_form_line_and_runs_of_results():
     assert f["trend"] == dict(now=75, prev=60, word="up")
     assert [(g["series"], g["start"], g["end"], g["won"], g["lost"]) for g in f["groups"]] == [("a", 0, 2, 2, 1), ("b", 3, 6, 2, 2)]
     assert form(rs[:3])["trend"] is None and form([])["pct"] == []
+    # five draws in a row (Tests): the line has started, but the last five had no result to count
+    tests = form([dict(outcome=o, series="", opp="X") for o in "WLWDDDDD"])
+    assert tests["pct"][-1] is None and tests["trend"] == dict(now=None, prev=None, word="")
     assert runs_of(list("WWLDD")) == [dict(o="W", start=0, end=1), dict(o="L", start=2, end=2), dict(o="D", start=3, end=4)]
 
 
