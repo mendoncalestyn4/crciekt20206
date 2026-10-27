@@ -1,7 +1,10 @@
 # The new Stats Pack website: the plan
 
-**Status:** style chosen (section 2). Stage 0 (foundations) is built (section 13): screenshots sent for your approval.
+**Status:** stage 0 approved (27 October); stage 1 (core pages) under way.
 **You said:** build it without waiting for answers; screenshots come at the end of each stage.
+**27 October:** you've stopped using the current site, so it gets no more work (it stays as it is until the
+switch-over). The zip comes once the whole new site is done. Screenshots of other teams' colours go in a set of their
+own. In your three-season save you play as India and Mumbai Indians.
 **Branch:** `claude/cricket-captain-rebuild-c8v4dp`
 
 ---
