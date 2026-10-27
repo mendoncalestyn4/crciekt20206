@@ -120,7 +120,22 @@ def _figures(r) -> str:
 
 
 def series_marks(career, ids=None) -> pd.DataFrame:
-    """Every player's mark out of 10 in every series or tournament (all teams), ranked within his side's series."""
+    """Every player's mark out of 10 in every series or tournament (all teams), ranked within his side's series.
+    For the whole career it's kept with the career until its matches change (a few seconds on a big one)."""
+    if ids is None:
+        stamp = (id(career.matches), len(career.matches))
+        kept = getattr(career, "_series_marks", None)
+        if kept is None or kept[0] != stamp:
+            kept = (stamp, _series_marks(career, None))
+            try:
+                career._series_marks = kept
+            except AttributeError:
+                pass
+        return kept[1]
+    return _series_marks(career, ids)
+
+
+def _series_marks(career, ids) -> pd.DataFrame:
     m = career.matches if ids is None else career.matches[career.matches.match_id.isin(ids)]
     if m.empty:
         return pd.DataFrame(columns=COLUMNS)

@@ -367,7 +367,7 @@ def _latest_side(career, team: str, target: str) -> tuple[str, set]:
 
 
 def _marks(career) -> pd.DataFrame:
-    return _memo(career, "marks", lambda: series_marks(career))
+    return series_marks(career)   # kept with the career
 
 
 def struggling(career, team: str, target: str, at: int = 0) -> list[dict]:
@@ -450,7 +450,7 @@ def picks_for(career, team: str, target: str, player: str, role: str, top: int =
             continue
         out.append(dict(player=p, role=c.role, gain=g, clears=g >= BAR, keeper=bool(c.keeper), spinner=bool(c.spinner),
                         country=c.country, capped=bool(c.capped) if pd.notna(c.capped) else False,
-                        unsure=bool(c.unsure) if pd.notna(c.unsure) else False, **lines(c, kind)))
+                        unsure=bool(c.unsure) if pd.notna(c.unsure) else False, **lines(c, kind, job)))
     out.sort(key=lambda x: x["gain"], reverse=True)
     return out[:top]
 
@@ -470,19 +470,20 @@ def replacements(career, team: str, target: str, top: int = 3, at: int = 0) -> l
             verdict = f"Keep {f['player']} for now: no one is 10% better yet (closest: {picks[0]['player']})"
         else:
             verdict = f"Keep {f['player']} for now: no one in the same role has played enough domestic cricket"
-        out.append(dict(**f, keeper=bool(me.keeper), own=lines(me, kind), picks=picks, verdict=verdict))
+        out.append(dict(**f, keeper=bool(me.keeper), own=lines(me, kind, _job(f["role"])), picks=picks, verdict=verdict))
     return out
 
 
-def lines(r, kind: str) -> dict:
-    """The numbers in words: settled (and converted) as compared, and as they are."""
+def lines(r, kind: str, job: str = "both") -> dict:
+    """The numbers in words: settled (and converted) as compared, and as they are; only the job compared ("bat",
+    "bowl" or "both"), so a bowler's few innings don't show up as a batting average."""
     out = dict(bat="", bowl="", raw_bat="", raw_bowl="")
-    if r.bat_inns > 0:
+    if r.bat_inns > 0 and job != "bowl":
         out["bat"] = f"average {r.avg:.1f}" + (f", strike rate {r.sr:.0f}" if kind != "multi" else "")
         raw = f" at {r.raw_avg:.1f}" if np.isfinite(r.raw_avg) else " (never out)"
         out["raw_bat"] = f"{int(r.bat_runs)} runs in {int(r.bat_inns)} innings{raw}" + (
             f", strike rate {r.raw_sr:.0f}" if kind != "multi" and np.isfinite(r.raw_sr) else "")
-    if r.bowl_balls > 0:
+    if r.bowl_balls > 0 and job != "bat":
         out["bowl"] = f"bowling average {r.bowl_avg:.1f}" + (f", economy {r.econ:.2f}" if kind != "multi" else "")
         raw = f" at {r.raw_bowl_avg:.1f}" if np.isfinite(r.raw_bowl_avg) else f" for {int(r.bowl_runs)}"
         out["raw_bowl"] = f"{int(r.bowl_wickets)} wkts{raw}" + (
@@ -527,7 +528,7 @@ def shortlist(career, team: str, target: str, per_role: int = 5) -> dict:
                 if weakest is not None else np.nan
             picks.append(dict(player=p, gain=g, clears=bool(np.isfinite(g) and g >= BAR), capped=bool(r.capped),
                               unsure=bool(r.unsure), how=r.how, spinner=bool(r.spinner), country=r.country,
-                              **lines(r, kind)))
+                              **lines(r, kind, job)))
         out[name] = dict(picks=picks, weakest=weakest.name if weakest is not None else "",
-                         yours=[dict(player=p, **lines(r, kind)) for p, r in o.iterrows()])
+                         yours=[dict(player=p, **lines(r, kind, job)) for p, r in o.iterrows()])
     return out

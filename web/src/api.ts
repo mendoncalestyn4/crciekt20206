@@ -145,3 +145,41 @@ export type MatchPage = {
   top_scores: { player: string; team: string; score: string; balls: number }[];
   best_bowling: { player: string; team: string; figures: string; overs: string }[];
 };
+
+// ------------------------------------------------------------------ My team (server/myteam.py)
+export type MarkRow = { player: string; mark: number; rank: number; of: number; games: number; line: string; best: string; best_match: string };
+export type Pick = { player: string; role: string; gain: number; clears: boolean; keeper: boolean; spinner: boolean; country: string;
+  capped: boolean; unsure: boolean; bat: string; bowl: string; raw_bat: string; raw_bowl: string };
+export type Advice = { player: string; role: string; why: string; verdict: string; own: { bat: string; bowl: string; raw_bat: string; raw_bowl: string }; picks: Pick[] };
+export type ReportCard = { series: string; label: string; format: string; section: string; start: string; end: string; players: MarkRow[];
+  earlier: { label: string; series: string; format: string; top: { player: string; mark: number }[] }[]; advice: Advice[] };
+export type BannerTile = Banner & { position: [string, string, number, number] | null };
+export type SeriesItem = { key: string; opp: string; event: string; section: string; start: string; end: string; won: number; lost: number;
+  other: number; played: number; tournament: boolean };
+export type SectionBlock = {
+  section: string; season: string; missing: Record<string, string>;
+  so_far: { last5: Outcome[]; line: string; card: { subject: string; grade: string; why: string }[] } | null;
+  squad: (SquadRow & { recent: boolean })[] | null;
+  stars: { bat: { player: string; runs: number; average: number | null; form: string }[]; bowl: { player: string; wickets: number; economy: number | null }[] } | null;
+  alerts: string[] | null; headlines: string[] | null; milestones: { player: string; chasing: string; needs: string }[] | null;
+  how_you_win: { first: { pct: string; won: number; decided: number }; second: { word: string; pct: string; won: number; decided: number }; extra: string } | null;
+  rivals: { rows: { opponent: string; played: number; record: string; win_pct: string; favourite: boolean; bogey: boolean }[];
+    next: { team: string; note: string }[] } | null;
+  trophies: { section: string; season: string; how: string; runners_up: string }[] | null;
+  records: { what: string; detail: string }[] | null;
+};
+export type MyTeam = {
+  teams: string[]; team: string; mine: boolean; missing: Record<string, string>; sections?: string[]; section?: string;
+  banner?: { tiles: BannerTile[]; caption: string } | null; ticker?: Result[] | null;
+  latest?: { result: Result; kicker: string; name: string; report: string } | null;
+  after?: { opponent: string; date: string; lines: { k: string; text: string; up: boolean | null }[]; news: string[];
+    form: { player: string; arrow: string; text: string }[]; match_id: string } | null;
+  next_up?: { played: number; total: number; next: { what: string; venue: string; when: string; opponent: string;
+    chance: { win: number; draw: number | null; lose: number } | null } | null; under_way: string[] } | null;
+  report?: ReportCard | null; season?: Calendar | null; forms?: { section: string; results: Result[]; form: Form }[] | null;
+  series?: SeriesItem[] | null; venues?: Venues | null; winners?: Winners | null; scores?: Scores | null;
+  history?: { season: string; section: string; played: number; won: number; lost: number; drawn: number; tied: number;
+    no_result: number; win_pct: number | null; finish: string }[] | null;
+  notes?: { id: string; date: string; home: string; away: string; note: string }[] | null;
+  block?: SectionBlock | null;
+};

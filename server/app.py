@@ -28,7 +28,8 @@ from ccstats import search as SR
 from ccstats.colours import TEAM_COLOURS
 from ccstats.local import CareerStore
 
-from . import matchpage, styleguide
+from . import matchpage, myteam, styleguide
+from .cache import kept
 from .site import Site
 
 WEB = Path(__file__).resolve().parent.parent / "web" / "dist"
@@ -248,6 +249,31 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             return _error("No career is open yet.", 404)
         return _json({"note": saved, "saved": bool(saved)})
 
+    # ------------------------------------------------------------------ My team
+    def _myteam(c, team: str, section: str):
+        mine = site.my_teams(c)
+        order = myteam.teams_by_latest(c, mine)
+        if team and team not in order and team not in set(c.matches.home) | set(c.matches.away):
+            raise KeyError(team)
+        team = team or (order[0] if order else styleguide.pick_team(c, []) or "")
+        if not team:
+            return dict(teams=[], team="", mine=False, missing={"everything": "This career has no matches yet."})
+        s = site.settings(c.name)
+        notes, sched = site.notes(c), list(s.fixtures) if s else []
+        # the whole page is kept with the career (and your notes and schedule as they are): a second look, or the
+        # warm-up's answer, comes at once
+        sig = json.dumps([sorted(notes.items()), sched, mine], sort_keys=True, default=str)
+        data = kept(c, ("myteam", team, section, sig), lambda: myteam.page(c, team, section, mine, notes, sched))
+        return {**data, "mine": team in mine}
+
+    async def myteam_(request: Request):
+        q = request.query_params
+        try:
+            data = await _with_career(lambda c: _myteam(c, q.get("team", ""), q.get("section", "")))()
+        except KeyError:
+            return _error("That team hasn't played in this career.", 404)
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
     # ------------------------------------------------------------------ search (Ctrl K)
     def _search():
         c = site.career()
@@ -282,12 +308,33 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         return StreamingResponse(stream(), media_type="text/event-stream",
                                  headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
 
+    def warm():
+        """Work out the slow sums before anyone asks (your teams' pages, every match's excitement rating), so a big
+        career's pages open at once. They're kept with the career until its matches change."""
+        c = site.career()
+        if c is None:
+            return
+        for team in myteam.teams_by_latest(c, site.my_teams(c)):
+            try:
+                _myteam(c, team, "")
+            except Exception:  # noqa: BLE001 - warming up is only a head start
+                pass
+        for sec in sorted(c.matches.section.unique()):
+            try:
+                matchpage.ratings(c, sec)
+            except Exception:  # noqa: BLE001
+                pass
+
     async def watch_loop():
+        first = True
         while True:
             try:
                 found = await anyio.to_thread.run_sync(site.sync)
                 for e in found:
                     hub.publish(e)
+                if first or any(e.get("type") == "matches" for e in found):
+                    first = False
+                    asyncio.get_running_loop().run_in_executor(None, warm)
                 hub.publish({"type": "checked", "at": time.time(), "folders": len(site.folders())})
             except Exception:  # noqa: BLE001 - a check that fails is tried again next time
                 pass
@@ -336,6 +383,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/logo/{kind}/{name:path}", logo),
         Route("/api/styleguide", styleguide_),
         Route("/api/search", search),
+        Route("/api/myteam", myteam_),
         Route("/api/matches", matches_),
         Route("/api/matches/best", best_),
         Route("/api/match/{mid}", match_),

@@ -210,13 +210,13 @@ export function Scorecard({ m }: { m: Match }) {
 }
 
 /** Every player this season, with the last five innings and a form arrow. */
-export function SquadTable({ rows, mark }: { rows: SquadRow[]; mark?: string }) {
+export function SquadTable({ rows, mark, dim }: { rows: SquadRow[]; mark?: string; dim?: Set<string> }) {
   const t = useTheme();
   return (
     <table className="tv"><thead><tr><th>Player</th><th className="r">Games</th><th className="r">Runs</th><th className="r">Avg</th><th className="r">SR</th>
       <th className="r">Wkts</th><th className="r">Econ</th><th>Last 5 innings · runs, oldest first</th><th className="r">Form</th></tr></thead>
       <tbody>{rows.map((x) => (
-        <tr key={x.player} className={x.player === mark ? "me" : ""}><td><Name p={x.player} px={23} /></td>
+        <tr key={x.player} className={x.player === mark ? "me" : dim?.has(x.player) ? "dim" : ""}><td><Name p={x.player} px={23} /></td>
           <td className="r"><span className="tn dimn">{x.games}</span></td><td className="r"><span className="tn">{x.runs}</span></td>
           <td className="r"><span className="tn dimn">{f1(x.average)}</span></td><td className="r"><span className="tn dimn">{f0(x.strike_rate)}</span></td>
           <td className="r"><span className="tn">{x.wickets || "–"}</span></td><td className="r"><span className="tn dimn">{f2(x.economy)}</span></td>
