@@ -5,6 +5,8 @@
 **27 October:** you've stopped using the current site, so it gets no more work (it stays as it is until the
 switch-over). The zip comes once the whole new site is done. Screenshots of other teams' colours go in a set of their
 own. In your three-season save you play as India and Mumbai Indians.
+**27 October, stage 1 choices:** My team opens on whichever of your teams played last (a switch at the top changes
+it). Adding and changing fixtures stays in stage 4; until then "Next up" reads the fixtures you've already entered.
 **Branch:** `claude/cricket-captain-rebuild-c8v4dp`
 
 ---
@@ -38,7 +40,7 @@ The bold styles need full control, which only a website of our own gives. Those 
 - **Logos:** exactly as you approved them, team by team.
 - **Checks:** zero errors, with deep checks before anything is shown to you.
 - **Approvals:** screenshots for your approval at the end of every stage. Nothing replaces the current site until you say so.
-- **Old site:** the current site keeps working the whole time.
+- **Old site:** the current site keeps working, as it is (no more work on it), until the switch-over.
 
 ---
 
@@ -314,12 +316,16 @@ Each stage ends with the same steps:
 **Data it's tested on**
 - the 940 generated scorecards;
 - the 477-match test career;
-- **your 89 real scorecards.**
+- **your 89 real scorecards;**
+- **your three-season save** (1,544 matches, 15 competitions), which is also the speed test for big careers.
 
 **Before the switch-over**
 - **Nothing-lost check:** `tools/inventory.py` crawls the new site the same way it crawled the old one. Every line in `design/INVENTORY.md` must be found on the new site or marked with your yes.
 - **New-user test:** unzip on a clean machine, double-click, answer the first-start question, add a folder, and see a new match arrive by itself.
 - **Speed targets:** changing page in under half a second on a 500-match career, and first start in under 5 seconds.
+- **Big careers:** the slow sums (every match's excitement rating, the ratings, the records) are worked out once in
+  the background when a career is opened or new matches arrive, and kept on disk, so a page on your 1,544-match save
+  opens in under a second once that's done.
 
 ---
 
@@ -397,7 +403,8 @@ Each stage ends with the same steps:
 
 **Your teams.** Every national side works next to a franchise or domestic side you also play as (for example India
 and Mumbai Indians). Every page can switch between your teams; the colours always come from the national side.
-Checked for Australia, New Zealand, England and India, each with a franchise (stage 1).
+**Every feature works for every team in every competition:** national sides, franchises and domestic sides alike
+(27 October). Each stage is checked with every team that has matches in the test careers, not just your own.
 
 **A player's share of the team** (stage 1, Player profile; again in stage 2 on the team page as "who carries the
 team"). For each format and each year: how many of the team's runs the player made and how many of its wickets they
