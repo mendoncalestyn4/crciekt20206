@@ -162,17 +162,21 @@ export function Scorecard({ m }: { m: Match }) {
   c.bat.filter((x) => x.out).forEach((x) => { kinds[x.how_out] = (kinds[x.how_out] ?? 0) + 1; });
   const KC: Record<string, string> = { caught: t.led, bowled: t.warm, lbw: t.cream, "run out": t.win, stumped: t.grey };
   const dots = c.bowl.every((x) => x.maidens == null) && c.bowl.some((x) => x.dots != null);
-  const label = (k: number) => (isTest(m) ? `${m.cards[k]?.team} ${ORD[(n[k] ?? 1) - 1]} innings` : `${ORD[(n[k] ?? 1) - 1]} innings · ${m.cards[k]?.team}`);
+  const label = (k: number) => (isTest(m) ? `${m.cards[k]?.team} ${ORD[(n[k] ?? 1) - 1]} innings${m.cards[k]?.followed_on ? " (f/o)" : ""}` : `${ORD[(n[k] ?? 1) - 1]} innings · ${m.cards[k]?.team}`);
+  const balls = Boolean(c.counted_in_balls);   // The Hundred counts balls, not overs
+  const dnb = c.bat.filter((x) => !x.did_bat).map((x) => x.player);
+  let prev = 0;
+  const falls = c.fow.map((w) => { const s = `${w.wicket}-${w.score} (+${w.score - prev})`; prev = w.score; return s; });
   return (
     <>
       <div className="itabs"><span className="tl2">Scorecard</span>{m.cards.map((x, k) => (
         <button key={x.innings_no} className={k === i ? "on" : ""} onClick={() => setI(k)}>{label(k)} {sc_(x)}</button>))}</div>
       <div className="grid" style={{ gridColumn: "span 12" }}>
         <Tile span={5} title={`Bowling · ${opp}`}>
-          <table className="c"><thead><tr><th>Bowler</th><th className="r">O</th><th className="r" title={dots ? "Dot balls" : "Maidens"}>{dots ? "0s" : "M"}</th><th className="r">R</th><th className="r">W</th><th className="r">Econ</th></tr></thead>
+          <table className="c"><thead><tr><th>Bowler</th><th className="r">{balls ? "B" : "O"}</th><th className="r" title={dots ? "Dot balls" : "Maidens"}>{dots ? "0s" : "M"}</th><th className="r">R</th><th className="r">W</th><th className="r">Econ</th></tr></thead>
             <tbody>{c.bowl.map((x) => (
               <tr key={x.player} className={x === best ? "me" : ""}><td><span className="cell"><Logo team={opp} size={34} /><Name p={x.player} px={21} /></span></td>
-                <td className="r"><span className="tn dimn">{overs(x.balls)}</span></td><td className="r"><span className="tn dimn">{(dots ? x.dots : x.maidens) ?? "–"}</span></td>
+                <td className="r"><span className="tn dimn">{balls ? x.balls : overs(x.balls)}</span></td><td className="r"><span className="tn dimn">{(dots ? x.dots : x.maidens) ?? "–"}</span></td>
                 <td className="r"><span className="tn dimn">{x.runs}</span></td><td className="r"><span className="tn">{x.wickets}</span></td>
                 <td className="r"><span className="tn dimn">{x.balls ? f2((x.runs / x.balls) * 6) : "–"}</span></td></tr>))}</tbody></table>
           <div className="note">Highlighted: the best figures in this innings.{dots ? " 0s: dot balls (a T20 card has no maidens)." : ""}</div>
@@ -185,9 +189,10 @@ export function Scorecard({ m }: { m: Match }) {
                 <td className="r"><span className="tn">{x.runs}{x.out ? "" : "*"}</span><span className="inl" style={{ width: x.runs / 1.6 }} /></td>
                 <td className="r"><span className="tn dimn">{x.balls}</span></td><td className="r"><span className="tn dimn">{x.fours}</span></td>
                 <td className="r"><span className="tn dimn">{x.sixes}</span></td><td className="r"><span className="tn dimn">{f0((x.runs / Math.max(x.balls, 1)) * 100)}</span></td></tr>))}
-              <tr><td><span className="pn" style={{ fontSize: ts(21) }}>Total</span><div className="how">{c.overs} overs · extras {c.extras}</div></td>
+              <tr><td><span className="pn" style={{ fontSize: ts(21) }}>Total</span><div className="how">{c.length ?? `${c.overs} overs`} · {c.extras_text ?? `extras ${c.extras}`}</div></td>
                 <td className="r" colSpan={5}><Num v={sc_(c)} px={34} /></td></tr></tbody></table>
-          <div className="note">Fall: {c.fow.map((w) => `${w.wicket}-${w.score}`).join(", ") || "none"}
+          {dnb.length > 0 && <div className="note">Did not bat: {dnb.join(", ")}</div>}
+          <div className="note">Fall of wickets (the stand in brackets): {falls.join(", ") || "none"}
             {c.bat.some((x) => x.player === m.pom?.player) ? " · highlighted: the player of the match" : ""}</div>
         </Tile>
         <Tile span={8} title="Partnerships · runs added for each wicket">

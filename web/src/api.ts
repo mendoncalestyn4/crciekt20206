@@ -72,7 +72,10 @@ export type BatRow = { player: string; position: number; did_bat: boolean; how_o
   balls: number; fours: number; sixes: number; out: boolean };
 export type BowlRow = { player: string; balls: number; maidens: number | null; runs: number; wickets: number; dots: number | null };
 export type Card = { innings_no: number; team: string; runs: number; wickets: number; balls: number; overs: string;
-  all_out: boolean; declared: boolean; extras: number; bat: BatRow[]; bowl: BowlRow[]; fow: { wicket: number; score: number }[] };
+  all_out: boolean; declared: boolean; extras: number; bat: BatRow[]; bowl: BowlRow[]; fow: { wicket: number; score: number }[];
+  // on the Matches page: as the scorecard prints it
+  team_innings?: number; length?: string; total_text?: string; extras_text?: string; followed_on?: boolean;
+  counted_in_balls?: boolean; how_fell?: Record<string, number> };
 export type Figures = {
   bat: { runs: number; balls: number; fours: number; sixes: number; innings: number; notout: boolean; text: string } | null;
   bowl: { wickets: number; runs: number; balls: number; text: string } | null;
@@ -121,3 +124,24 @@ export type StyleGuide = {
 export type Live = { type: "matches"; career: string; added: number; records: string[] }
   | { type: "failed"; career: string; files: { file: string; reason: string }[] }
   | { type: "checked"; at: number; folders: number };
+
+// ------------------------------------------------------------------ Matches (server/matchpage.py)
+export type FinderItem = { id: string; label: string; date: string; home: string; away: string; section: string; name: string; result: string };
+export type Finder = { section: string; team: string; sections: string[]; teams: string[]; matches: FinderItem[] };
+export type BestGame = { id: string; rating: number; rank: number; of: number; home: string; away: string; date: string;
+  section: string; name: string; result: string; why: string; finish: number; comeback: number; stakes: number; show: number };
+export type BestGames = { section: string; team: string; rows: BestGame[] };
+export type Excitement = { rating: number; rank: number; of: number; why: string; finish: number; comeback: number; stakes: number; show: number };
+export type WinPoint = { label: string; W: number | null; D: number | null; L: number | null; note: string };
+export type WinChance = { none?: string; team1: string; team2: string; multi: boolean; starts: number[]; points: WinPoint[]; shows: string; for_: string };
+export type WicketStep = { wicket: number; score: number; start: number; stand: number; unbroken: boolean; batters: string[] };
+export type Wickets = { innings: { innings_no: number; team: string; total: string; all_out: boolean; label: string; steps: WicketStep[] }[];
+  par: { wicket: number; par: number; innings: number }[] | null; section: string; shows: string; for_: string };
+export type MatchPage = {
+  id: string; kicker: string; name: string; series: string; date: string; section: string; event: string; stage: string;
+  home: string; away: string; home_score: string; away_score: string; result: string; player_of_match: string; rain: string;
+  source: string; note: string; match: Match; report: string; excitement: Excitement | null; win: WinChance | null; wickets: Wickets;
+  sides: { team: string; best: { player: string; figures: string }[]; worst: { player: string; figures: string }[] }[];
+  top_scores: { player: string; team: string; score: string; balls: number }[];
+  best_bowling: { player: string; team: string; figures: string; overs: string }[];
+};

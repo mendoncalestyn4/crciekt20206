@@ -9,9 +9,6 @@ export const PLANS: Record<string, { stage: string; crumb: string; items: string
     items: ["Career card in every format, batting, bowling, fielding", "Danger zones, conversion, match impact, rank over time",
       "Milestones, badges, firsts, quirks, compare seasons", "Compare players side by side, player stories"],
     from: "Players, Compare players, Player stories" },
-  "/matches": { stage: "Stage 1", crumb: "Find a match, the match summary, the scorecard",
-    items: ["The TV-style match summary with the player of the match story", "The scorecard one innings at a time (bowling, then batting)",
-      "Match report, best and worst, partnerships, how the wickets fell, your match notes"], from: "Matches" },
   "/teams": { stage: "Stage 2", crumb: "Team record, team v team, opponent preview, planner, rivalries",
     items: ["Every team analysis: ratings, best XI, squad changes, chasing, close games, targets, comebacks, fortress",
       "Team v team, opponent preview, team planner, rivalries"], from: "Teams, Team vs team, Opponent preview, Team planner, Rivalries" },
@@ -30,7 +27,7 @@ export const PLANS: Record<string, { stage: string; crumb: string; items: string
     from: "Insights, Analytics" },
 };
 
-const PICKED: Record<string, string> = { "/players": "player", "/matches": "match", "/teams": "team", "/leaders": "competition" };
+const PICKED: Record<string, string> = { "/players": "player", "/teams": "team", "/leaders": "competition" };
 
 export function Section({ path }: { path: string }) {
   const plan = PLANS[path]!;

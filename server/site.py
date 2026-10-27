@@ -111,6 +111,27 @@ class Site:
         teams = set(career.matches.home) | set(career.matches.away)
         return [t for t in picked if unplayed or t in teams]
 
+    def notes(self, career: Career | None = None) -> dict:
+        """Your notes on matches, by scorecard file name (saved with the career on this PC)."""
+        career = career if career is not None else self.career()
+        s = self.settings(career.name) if career is not None else None
+        return dict(s.notes) if s is not None else {}
+
+    def set_note(self, source: str, text: str) -> str:
+        """Save (or, empty, remove) your note on a match; the current site reads the same file."""
+        name = self.current()
+        if not name:
+            raise KeyError("no career")
+        with self._lock:
+            _, s = self.store.load_settings(name, fresh=True)
+            text = text.strip()
+            if text:
+                s.notes[source] = text
+            else:
+                s.notes.pop(source, None)
+            self.store.save_settings(s)
+        return text
+
     def theme(self, nation: str | None = "") -> dict:
         """The colours: a nation's when one is asked for (a preview), else your first national side's."""
         if nation:

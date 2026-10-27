@@ -210,6 +210,27 @@ def lowest_for_winner(line: pd.DataFrame) -> tuple[float, str] | None:
     return float(ch.iloc[i]), line.label.iloc[i]
 
 
+def line_points(line: pd.DataFrame, result: str = "", multi: bool = True) -> pd.DataFrame:
+    """The points a win-chance chart draws: the line as worked out, where a spot no earlier game reached keeps the
+    point before it (its note says so), and, once the match is over, a last point at the result (100% for the
+    winner; a tie in one-day cricket is 50% for each side, a single line)."""
+    d = line[["label", "W", "D", "L", "T", "n"]].copy().reset_index(drop=True)
+    blank = d.W.isna()
+    d["note"] = [f"from {int(n)} similar game{'s' if int(n) != 1 else ''}" for n in d.n.fillna(0)]
+    d.loc[blank, "note"] = "no earlier game reached this spot: kept from the point before"
+    d[["W", "D", "L", "T"]] = d[["W", "D", "L", "T"]].ffill()
+    d.loc[blank & d.W.isna(), "note"] = "no earlier game reached this spot"
+    d[["W", "D", "L", "T"]] = d[["W", "D", "L", "T"]].bfill()
+    out = line.attrs.get("outcome")
+    if out in ("W", "D", "L", "T") and len(d):
+        end = {k: 100.0 if k == out else 0.0 for k in "WDLT"}
+        if out == "T" and not multi:
+            end = dict(W=50.0, D=0.0, L=50.0, T=0.0)
+        d = pd.concat([d, pd.DataFrame([dict(label=f"Result: {result}" if result else "Result", n=np.nan,
+                                            note="the result", **end)])], ignore_index=True)
+    return d
+
+
 # --------------------------------------------------------------------------- #
 # 108 · chase calculator
 # --------------------------------------------------------------------------- #

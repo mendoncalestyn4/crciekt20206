@@ -78,6 +78,13 @@ def test_a_comeback_from_the_scorecard():
     # nine that add 225); 218/9 needing 3 is the last pair, the finish itself
     assert 1 / (1 + (11 / 75) ** 3) > 1 / (1 + (71 / 225) ** 3) > 0.95
     assert c == 1.0 and w == "a comeback (B were 210/7 needing 11)"
+    # their best moment was the start: said as such, not as "0/0"
+    easy = pd.DataFrame(dict(innings_no=4, wicket=range(1, 11), score=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]))
+    test2 = innings(("A", 300, 10, 0), ("B", 380, 10, 0), ("A", 180, 10, 0), ("B", 100, 10, 0))   # B needed 101
+    c, w = X.comeback(match(margin_runs=0, winner="A"), test2, easy, "multi", exp)
+    # the start, 101 needed with ten wickets that usually add 250, is their best moment (just ahead of 10/1 needing 91)
+    assert c == pytest.approx((1 / (1 + (101 / 250) ** 3) - 0.65) / 0.30)
+    assert w == "a comeback (B needed only 101 with all ten wickets left)"
     # a game shortened by rain: no chase to read
     assert X.comeback(match(margin_wickets=2, format="ODI", rain=True), inn, fow, "one", exp) == (0.0, "")
 

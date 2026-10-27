@@ -6,6 +6,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { Home } from "./pages/Home";
+import { MatchesHome, MatchView } from "./pages/Matches";
 import { NotFound, PLANS, Section } from "./pages/Sections";
 import { Settings } from "./pages/Settings";
 import { StyleGuide } from "./pages/StyleGuide";
@@ -30,6 +31,8 @@ createRoot(document.getElementById("root")!).render(
               <Route key={p} path={p} element={<Section path={p} />} />,
               <Route key={`${p}/pick`} path={`${p}/:pick`} element={<Section path={p} />} />,
             ])}
+            <Route path="/matches" element={<MatchesHome />} />
+            <Route path="/matches/:pick" element={<MatchView />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/style-guide" element={<StyleGuide />} />
             <Route path="*" element={<NotFound />} />

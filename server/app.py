@@ -28,7 +28,7 @@ from ccstats import search as SR
 from ccstats.colours import TEAM_COLOURS
 from ccstats.local import CareerStore
 
-from . import styleguide
+from . import matchpage, styleguide
 from .site import Site
 
 WEB = Path(__file__).resolve().parent.parent / "web" / "dist"
@@ -194,6 +194,60 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             return _error("No career is open yet.", 404)
         return _json(data)
 
+    # ------------------------------------------------------------------ Matches
+    def _with_career(fn):
+        """Run fn(career) in a worker thread; None (404) when no career is open."""
+        async def run():
+            def go():
+                c = site.career()
+                return None if c is None else fn(c)
+            return await anyio.to_thread.run_sync(go)
+        return run
+
+    async def matches_(request: Request):
+        q = request.query_params
+        data = await _with_career(lambda c: matchpage.finder(c, q.get("section", ""), q.get("team", ""),
+                                                             site.my_teams(c)))()
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
+    async def best_(request: Request):
+        q = request.query_params
+        data = await _with_career(lambda c: matchpage.best_games(c, q.get("section", "All sections"), q.get("team", "")))()
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
+    async def match_(request: Request):
+        mid = request.path_params["mid"]
+        try:
+            data = await _with_career(lambda c: matchpage.page(c, mid, site.my_teams(c), site.notes(c)))()
+        except KeyError:
+            return _error("There's no such match in this career.", 404)
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
+    async def note_(request: Request):
+        try:
+            body = await _body(request)
+        except ValueError as e:
+            return _error(str(e), 415)
+        mid, text = str(body.get("match", "")), str(body.get("text", ""))
+        if len(text) > 5000:
+            return _error("A note can be up to 5,000 characters.", 400)
+
+        def go():
+            c = site.career()
+            if c is None:
+                return None
+            hit = c.matches[c.matches.match_id == mid]
+            if hit.empty:
+                raise KeyError(mid)
+            return site.set_note(hit.source.iloc[0], text)
+        try:
+            saved = await anyio.to_thread.run_sync(go)
+        except KeyError:
+            return _error("There's no such match in this career.", 404)
+        if saved is None:
+            return _error("No career is open yet.", 404)
+        return _json({"note": saved, "saved": bool(saved)})
+
     # ------------------------------------------------------------------ search (Ctrl K)
     def _search():
         c = site.career()
@@ -282,6 +336,10 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/logo/{kind}/{name:path}", logo),
         Route("/api/styleguide", styleguide_),
         Route("/api/search", search),
+        Route("/api/matches", matches_),
+        Route("/api/matches/best", best_),
+        Route("/api/match/{mid}", match_),
+        Route("/api/notes", note_, methods=["POST"]),
         Route("/api/events", events),
     ]
     if (web / "assets").is_dir():   # the website's files, named after their contents: kept by the browser for good

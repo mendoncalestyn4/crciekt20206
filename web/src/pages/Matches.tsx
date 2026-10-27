@@ -1,0 +1,157 @@
+// Matches: find a match (by competition, team, or typing), the best games, and one match in full: the summary with
+// the player of the match, the report and its excitement rating, the win chance through the match, your side's best
+// and worst, your notes, the scorecard one innings at a time, and every innings wicket by wicket.
+import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router";
+import { get, type BestGames, type Finder, type MatchPage } from "../api";
+import { Explain, Logo, Missing, Name, Tile } from "../kit/base";
+import { MatchSummary, Scorecard } from "../kit/blocks";
+import { BestTable, ExcitementPanel, NoteBox, WicketClimb, WinChanceChart } from "../kit/match";
+import { useReady } from "../ready";
+import { Head, useShell } from "../shell/Shell";
+
+const PAGE = 15;   // matches listed at first, and how many more each "Show more" adds
+
+export function MatchesHome() {
+  const { nation } = useShell();
+  const keep = nation ? `?nation=${encodeURIComponent(nation)}` : "";
+  const [params, setParams] = useSearchParams();
+  const section = params.get("section") ?? "", team = params.get("team") ?? "";
+  const [typed, setTyped] = useState("");
+  const [shown, setShown] = useState(PAGE);
+  const f = useQuery({ queryKey: ["finder", section, team], queryFn: () =>
+    get<Finder>(`/api/matches?section=${encodeURIComponent(section)}&team=${encodeURIComponent(team)}`) });
+  const sec = f.data?.section ?? "";
+  const best = useQuery({ queryKey: ["best", sec, team], enabled: Boolean(sec), queryFn: () =>
+    get<BestGames>(`/api/matches/best?section=${encodeURIComponent(sec)}&team=${encodeURIComponent(team)}`) });
+  useReady(Boolean((f.data && best.data) || f.error || best.error), `${sec}|${team}`);
+  const set = (k: string, v: string) => {
+    const p = new URLSearchParams(params);
+    if (v) p.set(k, v); else p.delete(k);
+    if (k === "section") p.delete("team");
+    setParams(p);
+  };
+  const words = typed.toLowerCase().split(/\s+/).filter(Boolean);
+  const hits = useMemo(() => (f.data?.matches ?? []).filter((m) => words.every((w) => m.label.toLowerCase().includes(w))),
+    [f.data, typed]);   // eslint-disable-line react-hooks/exhaustive-deps
+  if (f.error) return <><Head title="Matches" crumb="Find a match" /><div className="grid"><Tile span={12}><Missing why={String(f.error)} /></Tile></div></>;
+  if (!f.data) return <><Head title="Matches" crumb="Find a match" /><div className="empty">Finding your matches…</div></>;
+  const d = f.data, all = d.section === "All sections";
+  return (
+    <>
+      <Head title="Matches" crumb="Find a match" />
+      <div className="grid">
+        <Tile span={12} title="Find a match" right={`${d.matches.length.toLocaleString("en-GB")} to choose from, newest first`}>
+          <div className="plain">Narrow the list by competition or team, then type to search: a team, a date, a stage like "Final", or a result.</div>
+          <div className="field">
+            <label htmlFor="mt-sec">Competition</label>
+            <select id="mt-sec" className="pick" value={d.section} onChange={(e) => set("section", e.target.value)}>
+              {d.sections.map((s) => <option key={s}>{s}</option>)}</select>
+            <label htmlFor="mt-team">Team</label>
+            <select id="mt-team" className="pick" value={d.team} onChange={(e) => set("team", e.target.value === "All teams" ? "" : e.target.value)}>
+              {d.teams.map((s) => <option key={s}>{s}</option>)}</select>
+            <input className="typed" value={typed} onChange={(e) => { setTyped(e.target.value); setShown(PAGE); }} placeholder="Type to search, e.g. 'Final' or 'Kent'" aria-label="Search the matches" />
+          </div>
+          <div className="mlist">{hits.slice(0, shown).map((m) => (
+            <Link key={m.id} to={`/matches/${m.id}${keep}`} className="mli">
+              <span className="when">{m.label.split(" · ")[0]}</span>
+              <span className="cell"><Logo team={m.home} size={30} /><Name p={`${m.home} v ${m.away}`} px={21} /><Logo team={m.away} size={30} /></span>
+              <span className="how">{m.name}</span><span className="res">{m.result}</span></Link>))}
+            {!hits.length && <div className="empty">No match fits "{typed}".</div>}</div>
+          {hits.length > shown && <div className="field"><button className="btn quiet" onClick={() => setShown(shown + 30)}>Show 30 more</button>
+            <span className="note" style={{ marginTop: 0 }}>Showing the newest {shown} of {hits.length.toLocaleString("en-GB")}; type to narrow the list.</span></div>}
+        </Tile>
+        <Tile span={12} title={`Best games · ${all ? "every competition" : d.section}${d.team !== "All teams" ? ` · ${d.team}` : ""}`} right="rated 0–10 for excitement">
+          {best.data ? (best.data.rows.length ? <BestTable rows={best.data.rows} showSection={all} keep={keep} /> : <Missing why="No matches here yet." />)
+            : <div className="empty">Rating every match…</div>}
+          <div className="note">Out of 10: the finish up to 7 (a tie, a 1-run, 1-wicket or last-ball win is 7, a super over 8, and a draw
+            with the last pair holding on up to 7), a comeback up to 2 (read from the scorecard: the runs still needed against what the
+            wickets left usually add), the stakes up to 1 (a final or series decider; a semi-final 0.7; levelling a series 0.5), and big
+            moments up to ½ (a hundred, a big haul, both sides scoring big, a big chase). Ranked within each competition.</div>
+        </Tile>
+      </div>
+    </>
+  );
+}
+
+const TABS = ["Summary", "Scorecard", "Wicket by wicket"];
+const VIEWS = ["summary", "scorecard", "wickets"];
+
+export function MatchView() {
+  const { pick = "" } = useParams();
+  const { nation, career } = useShell();
+  const keep = nation ? `?nation=${encodeURIComponent(nation)}` : "";
+  const [params, setParams] = useSearchParams();   // the view is in the address, so a link or a refresh keeps it
+  const tab = Math.max(0, VIEWS.indexOf(params.get("view") ?? "summary"));
+  const setTab = (i: number) => { const p = new URLSearchParams(params); if (i) p.set("view", VIEWS[i]!); else p.delete("view"); setParams(p); };
+  const q = useQuery({ queryKey: ["match", pick], queryFn: () => get<MatchPage>(`/api/match/${encodeURIComponent(pick)}`), retry: false });
+  useReady(Boolean(q.data || q.error), `${pick}|${tab}`);
+  if (q.error) return <><Head title="Matches" crumb="No such match" /><div className="grid"><Tile span={12}><Missing why={String(q.error)} />
+    <Link className="btn quiet" to={`/matches${keep}`}>Find a match</Link></Tile></div></>;
+  if (!q.data) return <><Head title="Matches" crumb="Opening the match…" /><div className="empty">Working out the match…</div></>;
+  const d = q.data;
+  const m = { ...d.match, pom: d.match.pom ? { ...d.match.pom, report: d.report } : null };
+  return (
+    <>
+      <Head title="Matches" crumb={d.kicker} chips={TABS} on={tab} onChip={setTab} />
+      <div className="back"><Link to={`/matches?section=${encodeURIComponent(d.section)}${nation ? `&nation=${encodeURIComponent(nation)}` : ""}`}>← Every {d.section} match</Link></div>
+      <div className="grid">
+        {tab === 0 && <>
+          <Tile span={12}><MatchSummary m={m} /></Tile>
+          {d.rain && <Tile span={12} title="🌧️ Rain"><div className="plain">{d.rain}</div></Tile>}
+          <Tile span={7} title="Match report · excitement" right="out of 10">
+            {d.excitement ? <ExcitementPanel ex={d.excitement} section={d.section} /> : <Missing why="Too few matches in this competition to rate yet." />}
+            {!d.match.pom && <div className="deck" style={{ marginTop: 12 }}>{d.report}</div>}
+          </Tile>
+          <Tile span={5} title="📝 Your notes on this match"><NoteBox mid={d.id} note={d.note} /></Tile>
+          {d.win && <Tile span={12} title="Win chance through the match" right={d.win.none ? undefined : `${d.win.multi ? "won / drawn / lost" : "chance"} for ${d.win.team1}`}>
+            {d.win.none ? <Missing why={d.win.none} /> : <>
+              <WinChanceChart win={d.win} mine={career?.my_teams ?? []} />
+              <div className="note">At the start of each innings and after every wicket ({d.win.team1} batted first); dotted lines: a new innings. The last point is the result.</div>
+              <Explain shows={d.win.shows} for_={d.win.for_} /></>}
+          </Tile>}
+          <Tile span={6} title="Top scores">
+            <table className="c"><thead><tr><th>Batter</th><th className="r">Score</th><th className="r">Balls</th></tr></thead>
+              <tbody>{d.top_scores.map((r) => (
+                <tr key={r.player + r.team}><td><span className="cell"><Logo team={r.team} size={30} /><Name p={r.player} px={21} /></span></td>
+                  <td className="r"><span className="tn">{r.score}</span></td><td className="r"><span className="tn dimn">{r.balls}</span></td></tr>))}</tbody></table>
+          </Tile>
+          <Tile span={6} title="Best bowling">
+            <table className="c"><thead><tr><th>Bowler</th><th className="r">Figures</th><th className="r">Overs</th></tr></thead>
+              <tbody>{d.best_bowling.map((r) => (
+                <tr key={r.player + r.team}><td><span className="cell"><Logo team={r.team} size={30} /><Name p={r.player} px={21} /></span></td>
+                  <td className="r"><span className="tn">{r.figures}</span></td><td className="r"><span className="tn dimn">{r.overs}</span></td></tr>))}</tbody></table>
+          </Tile>
+          {d.sides.map((s) => (
+            <Tile span={d.sides.length === 1 ? 12 : 6} key={s.team} title={`⭐ ${s.team}: best and worst in this match`}>
+              <div className="bw"><div><div className="k3">Best</div>{s.best.map((b, i) => (
+                <div className="bwr" key={b.player}><span>{["🥇", "🥈", "🥉"][i]}</span><Link to={`/players/${encodeURIComponent(b.player)}${keep}`}><Name p={b.player} px={22} /></Link><span className="how">{b.figures}</span></div>))}</div>
+                <div><div className="k3">Did least</div>{s.worst.length ? s.worst.map((b) => (
+                  <div className="bwr" key={b.player}><span>🔻</span><Link to={`/players/${encodeURIComponent(b.player)}${keep}`}><Name p={b.player} px={22} /></Link><span className="how">{b.figures}</span></div>))
+                  : <div className="note">Everyone who batted or bowled chipped in.</div>}</div></div>
+              <div className="note">By match impact (as on the player pages): runs, with a strike-rate part in white-ball cricket; wickets worth the
+                competition's runs per wicket, with an economy part; a little for catches. Did least: of those who batted in the top seven or bowled.</div>
+            </Tile>))}
+        </>}
+        {tab === 1 && <Scorecard m={m} />}
+        {tab === 2 && <>
+          {d.wickets.innings.map((inn) => (
+            <Tile span={6} key={inn.innings_no} title={`${inn.label} · wicket by wicket`}>
+              {inn.steps.length ? <WicketClimb inn={inn} par={d.wickets.par} /> : <Missing why="No wickets fell and no stand to show." />}
+            </Tile>))}
+          <Tile span={12} title="How to read it">
+            <div className="plain">Each bar is one wicket: it climbs from the score when that stand began to the score when the wicket fell, so its
+              height is the stand. A row of short bars is a collapse; one tall bar is a big stand that rebuilt the innings. Gold: still together
+              at the end. Green: a stand of 50 or more.</div>
+            {d.wickets.par ? <div className="plain">Grey dashed line: par, the usual score when each wicket falls in {d.wickets.section}. Above it is
+              ahead of the game, below it behind. A late wicket's par comes only from the innings that got that far, so it stops where too
+              few do.</div> : <div className="plain">No par line yet: too few {d.wickets.section} matches to say what's usual.</div>}
+            <div className="plain">The scorecard gives the score at each wicket but not the over, so this shows wickets, not overs.</div>
+            {d.wickets.shows && <Explain shows={d.wickets.shows} for_={d.wickets.for_} />}
+          </Tile>
+        </>}
+      </div>
+    </>
+  );
+}

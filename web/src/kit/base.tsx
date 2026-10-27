@@ -74,3 +74,10 @@ export function Logo({ team, comp, size }: { team?: string; comp?: string; size:
 export function Missing({ why }: { why?: string }) {
   return <div className="empty">{why ?? "Not enough matches for this yet."}</div>;
 }
+
+/** Under a chart: what it shows (with its numbers) and what it's for, as on the current site. */
+export function Explain({ shows, for_ }: { shows: ReactNode; for_: ReactNode }) {
+  return (
+    <div className="explain"><div><b>What it shows:</b> {shows}</div><div><b>What it's for:</b> {for_}</div></div>
+  );
+}

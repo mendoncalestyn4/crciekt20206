@@ -132,7 +132,8 @@ def comeback(r, inn: pd.DataFrame, fow: pd.DataFrame, kind: str, expected: dict[
                         high, at = ch, (down, score)
             fb = min(1.0, max(0.0, (high - 0.65) / 0.30))
             if at and fb > best:
-                best, words = fb, f"{chaser} were {at[1]}/{at[0]} needing {target - at[1]}"
+                best, words = fb, (f"{chaser} needed only {target} with all ten wickets left" if at == (0, 0) else
+                                   f"{chaser} were {at[1]}/{at[0]} needing {target - at[1]}")
     if kind == "multi" and r.winner and len(inn) >= 3:
         first = inn[inn.innings_no <= 2]
         if len(first) == 2 and first.team.nunique() == 2:
