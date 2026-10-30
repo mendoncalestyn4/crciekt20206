@@ -21,7 +21,7 @@ FIT = (Path(__file__).parent / "fit_rules.js").read_text()
 # a Chromium already on this machine (the cloud machines keep one under /opt/pw-browsers, its folder named by version)
 CHROME = next((str(p) for p in [Path("/opt/pw-browsers/chromium"), *sorted(Path("/opt/pw-browsers").glob("chromium-*/chrome-linux*/chrome"))]
                if p.exists()), None) if Path("/opt/pw-browsers").is_dir() else None
-PAGES = ["/", "/style-guide", "/settings", "/players", "/players/J Bethell", "/matches", "/teams", "/seasons", "/fixtures",
+PAGES = ["/", "/inbox", "/style-guide", "/settings", "/players", "/players/J Bethell", "/matches", "/teams", "/seasons", "/fixtures",
          "/leaders", "/insights", "/no-such-page"]
 
 
@@ -69,7 +69,7 @@ def test_every_page_opens_cleanly_and_fits(browser, site, path):
     try:
         assert said == [], said
         assert fit_problems(pg) == []
-        assert pg.locator("nav.rail a.nav").count() == 9
+        assert pg.locator("nav.rail a.nav").count() == 10   # with the Inbox
         broken = pg.evaluate("[...document.images].filter(i => i.complete && i.naturalWidth === 0 && i.style.display !== 'none').length")
         assert broken == 0
     finally:
