@@ -18,7 +18,9 @@ sync_api = pytest.importorskip("playwright.sync_api")
 
 WEB = Path(__file__).parent.parent / "web" / "dist"
 FIT = (Path(__file__).parent / "fit_rules.js").read_text()
-CHROME = next((p for p in ("/opt/pw-browsers/chromium-1194/chrome-linux/chrome",) if os.path.exists(p)), None)
+# a Chromium already on this machine (the cloud machines keep one under /opt/pw-browsers, its folder named by version)
+CHROME = next((str(p) for p in [Path("/opt/pw-browsers/chromium"), *sorted(Path("/opt/pw-browsers").glob("chromium-*/chrome-linux*/chrome"))]
+               if p.exists()), None) if Path("/opt/pw-browsers").is_dir() else None
 PAGES = ["/", "/style-guide", "/settings", "/players", "/players/J Bethell", "/matches", "/teams", "/seasons", "/fixtures",
          "/leaders", "/insights", "/no-such-page"]
 
@@ -161,6 +163,8 @@ def test_new_matches_show_up_on_an_open_page(browser, site):
     pg, said = open_page(browser, site, "/")
     try:
         before = live.json("/api/career")["matches"]
+        asked: list[str] = []   # the page's questions to the server from now on
+        pg.on("request", lambda r: asked.append(r.url) if "/api/myteam" in r.url else None)
         for f in LATEST:   # the next two matches the game saves
             shutil.copy(f, folder / f.name)
         pg.wait_for_selector(".toast", timeout=20000)
@@ -170,7 +174,13 @@ def test_new_matches_show_up_on_an_open_page(browser, site):
             .matchAll(/(\\d+) new match(?:es)? added to My career/g)].reduce((a, m) => a + Number(m[1]), 0) === 2""",
                              timeout=20000)
         assert live.json("/api/career")["matches"] == before + 2
-        pg.wait_for_function(f"document.querySelector('main').innerText.includes('{before + 2} matches')", timeout=10000)
+        # the open page asks again for its numbers (My team: the two new games aren't India's, so they're the same)
+        for _ in range(100):
+            if asked:
+                break
+            pg.wait_for_timeout(100)
+        assert asked, "the open page didn't ask for its numbers again after the news"
+        pg.wait_for_selector("body[data-ready]", timeout=20000)
         assert pg.locator(".rail .watch").count() == 1   # 'Watching' with the time of the last check
         assert said == []
     finally:
