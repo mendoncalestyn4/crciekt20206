@@ -5,10 +5,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
 import { get, type MyTeam as Data, type Result } from "../api";
-import { Lamps, Logo, Missing, Name, Num, Tile } from "../kit/base";
+import { Lamps, Logo, Missing, Name, Num, PName, Tile } from "../kit/base";
 import { SquadTable, Story, Ticker, TopList } from "../kit/blocks";
 import { RankTrack, Ring } from "../kit/charts";
+import { DepthRow, Msg } from "../kit/fm";
 import { AdviceList, AfterLines, Grades, MarksTable, NextUp } from "../kit/myteam";
+import { useInbox } from "./Inbox";
 import { FormCard, MatchWinners, ScoreRows, Streaks, VenueRecord } from "../kit/season";
 import { dayY, f0, f1, f2, fmtOf, ord } from "../format";
 import { useReady } from "../ready";
@@ -23,6 +25,7 @@ export function MyTeam() {
   const team = params.get("team") ?? "", section = params.get("section") ?? "";
   const q = useQuery({ queryKey: ["myteam", team, section, career?.name], enabled: Boolean(career),
     queryFn: () => get<Data>(`/api/myteam?team=${encodeURIComponent(team)}&section=${encodeURIComponent(section)}`), retry: false });
+  const box = useInbox();
   useReady(Boolean(q.data || q.error || noCareer), `${team}|${section}`);
   const set = (k: string, v: string) => { const p = new URLSearchParams(params); if (v) p.set(k, v); else p.delete(k); if (k === "team") p.delete("section"); setParams(p); };
   if (noCareer) return <><Head title={greeting()} crumb="No career open yet" /><div className="grid"><Tile span={12} title="No career yet">
@@ -32,6 +35,7 @@ export function MyTeam() {
   const d = q.data, miss = d.missing;
   if (miss.everything) return <><Head title={greeting()} crumb={d.team || "My team"} /><div className="grid"><Tile span={12}><Missing why={miss.everything} /></Tile></div></>;
   const cal = d.season, rs: Result[] = cal?.results ?? [];
+  const news = (box.q.data?.messages ?? []).filter((m) => m.team === d.team && !m.read);
   const won = rs.filter((r) => r.outcome === "W").length, lost = rs.filter((r) => r.outcome === "L").length;
   const label = cal ? `${cal.year}–${String(cal.year + 1).slice(2)} season` : "";
   const b = d.block, tiles = d.banner?.tiles ?? [];
@@ -72,6 +76,10 @@ export function MyTeam() {
         <Tile span={6} title="Next up">{d.next_up ? <NextUp n={d.next_up} />
           : <div className="plain">No schedule for {d.team} yet. Your next match and series chances show here once there's one (Fixtures, stage 4; the current site has it now).</div>}</Tile>
 
+        {news.length > 0 && <Tile span={12} title={`📬 Inbox · ${news.length} new for ${d.team}`} right={<Link className="lk" to={`/inbox${keep}`}>Open the inbox →</Link>}>
+          <div className="inbox">{news.slice(0, 3).map((m) => <Msg key={m.id} m={m} keep={keep} onOpen={() => box.read([m.id])} onRemove={() => box.remove([m.id])} />)}</div>
+          {news.length > 3 && <div className="note">and {news.length - 3} more in the inbox.</div>}</Tile>}
+
         {d.report ? <>
           <Tile span={8} title={`After the series · marks out of 10`} right={d.report.label}>
             <MarksTable r={d.report} keep={keep} />
@@ -85,7 +93,7 @@ export function MyTeam() {
               : <div className="plain">Nobody is struggling: no one has had two poor series running (4 or less in both) or three (4 or less on average). One bad series alone doesn't count.</div>}
             <div className="note">Candidates come from {d.team}'s own competitions of the same kind, their numbers converted to this level (never easier
               than 25% in first-class cricket, 15% in white-ball), and must beat your player by 10%. Settled: a few dismissals (or wickets) at the
-              usual level are added to everyone's record, so seven good innings don't count for as much as thirty. <Link to={`/players/scouting${keep}`}>Scouting →</Link></div>
+              usual level are added to everyone's record, so seven good innings don't count for as much as thirty.</div>
           </Tile>
           {d.report.earlier.length > 0 && <Tile span={12} title="Earlier series · the top three">
             <div className="earlier">{d.report.earlier.map((e) => (
@@ -126,9 +134,9 @@ export function MyTeam() {
           </Tile>
           <Tile span={6} title="Your stars this season" right="▲▼ form over the last 3 innings">
             {b.stars && (b.stars.bat.length || b.stars.bowl.length) ? <table className="c"><tbody>
-              {b.stars.bat.map((r) => <tr key={`b${r.player}`}><td><Name p={r.player} px={22} /></td><td className="r"><span className="tn">{r.runs}</span> runs</td>
+              {b.stars.bat.map((r) => <tr key={`b${r.player}`}><td><PName p={r.player} px={22} /></td><td className="r"><span className="tn">{r.runs}</span> runs</td>
                 <td className="r"><span className="tn dimn">avg {f1(r.average)}</span></td><td className="r">{r.form}</td></tr>)}
-              {b.stars.bowl.map((r) => <tr key={`w${r.player}`}><td><Name p={r.player} px={22} /></td><td className="r"><span className="tn">{r.wickets}</span> wkts</td>
+              {b.stars.bowl.map((r) => <tr key={`w${r.player}`}><td><PName p={r.player} px={22} /></td><td className="r"><span className="tn">{r.wickets}</span> wkts</td>
                 <td className="r"><span className="tn dimn">econ {f2(r.economy)}</span></td><td /></tr>)}</tbody></table> : <Missing why="No games yet." />}
             {b.alerts && b.alerts.length > 0 && <><div className="k3" style={{ marginTop: 14 }}>Worth a look</div>{b.alerts.map((a) => <div className="plain" key={a}>{a}</div>)}</>}
           </Tile>
@@ -142,10 +150,25 @@ export function MyTeam() {
               <SquadTable rows={sq} dim={new Set(sq.filter((x) => !x.recent).map((x) => x.player))} />
               <div className="note">Greyed out: not in the last 3 games.</div></Tile>
           </>}
+          {d.depth && d.depth.section === b.section && <Tile span={12} title={`Squad depth · ${b.section}`} right="who starts, who's next, who's waiting in domestic cricket">
+            <div className="depth">{d.depth.roles.filter((r) => r.starters.length || r.backups.length || r.waiting.length).map((r) => (
+              <div className="drole" key={r.role}><div className="k3">{r.role}</div>
+                {r.starters.map((p) => <DepthRow key={p.player} p={p} />)}
+                {r.backups.length > 0 && <div className="dsub">Backups</div>}
+                {r.backups.map((p) => <DepthRow key={p.player} p={p} />)}
+                {r.waiting.length > 0 && <div className="dsub">Waiting in domestic cricket</div>}
+                {r.waiting.map((w) => (
+                  <div className={`dwait ${w.clears ? "ok" : ""}`} key={w.player}><PName p={w.player} px={19} />
+                    <span className="gain">{w.gain == null ? "" : `${w.gain >= 0 ? "+" : ""}${Math.round(w.gain * 100)}%`}</span>
+                    <div className="how">{w.side} · {w.raw_bat || w.raw_bowl}</div></div>))}
+              </div>))}</div>
+            <div className="note">Starters: who played in the latest series here. The number is their rating out of 20 here (the average of their attributes; – means
+              not enough cricket here yet); the small marks are their last three series, newest first. Waiting: the best eligible domestic players, and how much
+              better than your weakest in the role they are after the conversion (green: 10% or more).</div></Tile>}
           <Tile span={6} title={`📰 ${d.team} headlines`}>{b.headlines?.length ? <ul className="dots">{b.headlines.map((h) => <li key={h}>{h}</li>)}</ul>
             : <div className="note">Nothing big in your recent games.</div>}</Tile>
           <Tile span={6} title="Milestones and records in sight">{b.milestones?.length ? <table className="c"><tbody>{b.milestones.map((r) => (
-            <tr key={r.player + r.chasing}><td><Name p={r.player} px={22} /></td><td><span className="why">{r.chasing}</span></td><td className="r"><span className="tn">{r.needs}</span></td></tr>))}</tbody></table>
+            <tr key={r.player + r.chasing}><td><PName p={r.player} px={22} /></td><td><span className="why">{r.chasing}</span></td><td className="r"><span className="tn">{r.needs}</span></td></tr>))}</tbody></table>
             : <div className="note">Nobody close to a milestone or a record right now.</div>}</Tile>
           <Tile span={6} title="Rivals at a glance" right="most-played opponents here">
             {b.rivals?.rows.length ? <table className="c"><thead><tr><th>Opponent</th><th className="r">Played</th><th className="r">Record</th><th className="r">Win %</th></tr></thead>

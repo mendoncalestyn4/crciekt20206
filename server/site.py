@@ -132,6 +132,27 @@ class Site:
             self.store.save_settings(s)
         return text
 
+    def inbox_state(self, career: Career | None = None) -> dict:
+        """Which inbox messages you have read and removed: {"read": set, "removed": set}."""
+        career = career if career is not None else self.career()
+        s = self.settings(career.name) if career is not None else None
+        box = dict(s.inbox) if s is not None else {}
+        return {"read": set(box.get("read", [])), "removed": set(box.get("removed", []))}
+
+    def set_inbox(self, read: list[str], removed: list[str]) -> dict:
+        """Mark messages read and remove messages (added to what's there); saved with the career on this PC."""
+        name = self.current()
+        if not name:
+            raise KeyError("no career")
+        with self._lock:
+            _, s = self.store.load_settings(name, fresh=True)
+            box = dict(s.inbox or {})
+            for key, ids in (("read", read), ("removed", removed)):
+                box[key] = sorted(set(box.get(key, [])) | {str(i) for i in ids})[-5000:]
+            s.inbox = box
+            self.store.save_settings(s)
+        return {"read": set(box["read"]), "removed": set(box["removed"])}
+
     def theme(self, nation: str | None = "") -> dict:
         """The colours: a nation's when one is asked for (a preview), else your first national side's."""
         if nation:

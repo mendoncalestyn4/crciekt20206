@@ -172,3 +172,23 @@ def test_a_tournament_in_the_inbox_counts_only_the_team_s_games():
     assert len(msgs) == 1
     assert msgs[0]["title"].endswith(": 1 won, 1 lost") and not msgs[0]["title"].startswith("Series")
     assert msgs[0]["match"] == "g3"   # A's last game, not the tournament's
+
+
+def test_the_inbox_reads_and_removes_and_remembers(live):
+    """Messages have ids; marking one read and removing another is saved with the career (a fresh look still knows)."""
+    box = live.json("/api/inbox")
+    assert box["messages"] and box["unread"] == len(box["messages"])
+    a, b = box["messages"][0]["id"], box["messages"][1]["id"]
+    st, _, body = live.post("/api/inbox", {"read": [a], "remove": [b]})
+    assert st == 200
+    after = json.loads(body)
+    ids = {m["id"]: m for m in after["messages"]}
+    assert ids[a]["read"] and b not in ids and after["unread"] == box["unread"] - 2
+    again = live.json("/api/inbox")                       # read again from the saved settings
+    assert {m["id"] for m in again["messages"]} == set(ids) and again["unread"] == after["unread"]
+    assert live.post("/api/inbox", {"read": "everything"})[0] == 400
+
+
+def test_my_team_has_its_squad_depth(live):
+    d = live.json("/api/myteam")
+    assert d["missing"] == {} and d["depth"]["section"] == d["block"]["section"]

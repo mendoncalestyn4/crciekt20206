@@ -23,6 +23,7 @@ from starlette.responses import FileResponse, HTMLResponse, JSONResponse, Respon
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
+from ccstats import depth as DP
 from ccstats import logos as LG
 from ccstats import search as SR
 from ccstats.colours import TEAM_COLOURS
@@ -290,6 +291,34 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             return _error(f"{name or 'That player'} hasn't batted or bowled in this career.", 404)
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
+    # ------------------------------------------------------------------ Inbox
+    def _inbox(c) -> dict:
+        """Your teams' messages, newest first, without the ones you removed, each marked read or not."""
+        teams = myteam.teams_by_latest(c, site.my_teams(c)) or [t for t in [styleguide.pick_team(c, [])] if t]
+        state = site.inbox_state(c)
+        msgs = []
+        for t in teams:
+            msgs += kept(c, ("inbox", t), lambda: DP.inbox(c, t))
+        msgs = [dict(m, read=m["id"] in state["read"]) for m in msgs if m["id"] not in state["removed"]]
+        msgs.sort(key=lambda m: m["date"], reverse=True)   # stable: within a day, each team's own order
+        return dict(teams=teams, messages=styleguide.clean(msgs), unread=sum(not m["read"] for m in msgs))
+
+    async def inbox_(request: Request):
+        if request.method == "POST":
+            try:
+                body = await _body(request)
+            except ValueError as e:
+                return _error(str(e), 415)
+            read, remove = body.get("read", []), body.get("remove", [])
+            if not isinstance(read, list) or not isinstance(remove, list) or len(read) + len(remove) > 2000:
+                return _error("Send the message ids to mark read or remove, as lists.", 400)
+            try:
+                await anyio.to_thread.run_sync(lambda: site.set_inbox([str(x) for x in read], [str(x) for x in remove]))
+            except KeyError:
+                return _error("No career is open yet.", 404)
+        data = await _with_career(_inbox)()
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
     # ------------------------------------------------------------------ Demo of ideas waiting for approval
     async def demo_(request: Request):
         q = request.query_params
@@ -351,6 +380,10 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                 matchpage.ratings(c, sec)
             except Exception:  # noqa: BLE001
                 pass
+        try:
+            _inbox(c)
+        except Exception:  # noqa: BLE001
+            pass
         # the Players pages: the list of everyone, and each of your teams' competitions (their top run-scorer's page
         # works out the pieces every page there shares)
         try:
@@ -433,6 +466,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/match/{mid}", match_),
         Route("/api/notes", note_, methods=["POST"]),
         Route("/api/demo", demo_),
+        Route("/api/inbox", inbox_, methods=["GET", "POST"]),
         Route("/api/players", players_),
         Route("/api/player", player_),
         Route("/api/events", events),

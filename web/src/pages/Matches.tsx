@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { get, type BestGames, type Finder, type MatchPage } from "../api";
-import { Explain, Logo, Missing, Name, Tile } from "../kit/base";
+import { Explain, Logo, Missing, Name, PName, Tile } from "../kit/base";
 import { MatchSummary, Scorecard } from "../kit/blocks";
 import { BestTable, ExcitementPanel, NoteBox, WicketClimb, WinChanceChart } from "../kit/match";
 import { useReady } from "../ready";
@@ -114,21 +114,21 @@ export function MatchView() {
           <Tile span={6} title="Top scores">
             <table className="c"><thead><tr><th>Batter</th><th className="r">Score</th><th className="r">Balls</th></tr></thead>
               <tbody>{d.top_scores.map((r) => (
-                <tr key={r.player + r.team}><td><span className="cell"><Logo team={r.team} size={30} /><Name p={r.player} px={21} /></span></td>
+                <tr key={r.player + r.team}><td><span className="cell"><Logo team={r.team} size={30} /><PName p={r.player} px={21} /></span></td>
                   <td className="r"><span className="tn">{r.score}</span></td><td className="r"><span className="tn dimn">{r.balls}</span></td></tr>))}</tbody></table>
           </Tile>
           <Tile span={6} title="Best bowling">
             <table className="c"><thead><tr><th>Bowler</th><th className="r">Figures</th><th className="r">Overs</th></tr></thead>
               <tbody>{d.best_bowling.map((r) => (
-                <tr key={r.player + r.team}><td><span className="cell"><Logo team={r.team} size={30} /><Name p={r.player} px={21} /></span></td>
+                <tr key={r.player + r.team}><td><span className="cell"><Logo team={r.team} size={30} /><PName p={r.player} px={21} /></span></td>
                   <td className="r"><span className="tn">{r.figures}</span></td><td className="r"><span className="tn dimn">{r.overs}</span></td></tr>))}</tbody></table>
           </Tile>
           {d.sides.map((s) => (
             <Tile span={d.sides.length === 1 ? 12 : 6} key={s.team} title={`⭐ ${s.team}: best and worst in this match`}>
               <div className="bw"><div><div className="k3">Best</div>{s.best.map((b, i) => (
-                <div className="bwr" key={b.player}><span>{["🥇", "🥈", "🥉"][i]}</span><Link to={`/players/${encodeURIComponent(b.player)}${keep}`}><Name p={b.player} px={22} /></Link><span className="how">{b.figures}</span></div>))}</div>
+                <div className="bwr" key={b.player}><span>{["🥇", "🥈", "🥉"][i]}</span><PName p={b.player} px={22} /><span className="how">{b.figures}</span></div>))}</div>
                 <div><div className="k3">Did least</div>{s.worst.length ? s.worst.map((b) => (
-                  <div className="bwr" key={b.player}><span>🔻</span><Link to={`/players/${encodeURIComponent(b.player)}${keep}`}><Name p={b.player} px={22} /></Link><span className="how">{b.figures}</span></div>))
+                  <div className="bwr" key={b.player}><span>🔻</span><PName p={b.player} px={22} /><span className="how">{b.figures}</span></div>))
                   : <div className="note">Everyone who batted or bowled chipped in.</div>}</div></div>
               <div className="note">By match impact (as on the player pages): runs, with a strike-rate part in white-ball cricket; wickets worth the
                 competition's runs per wicket, with an economy part; a little for catches. Did least: of those who batted in the top seven or bowled.</div>

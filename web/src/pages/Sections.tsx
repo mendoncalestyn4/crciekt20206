@@ -5,10 +5,6 @@ import { useReady } from "../ready";
 import { Head, SECTIONS } from "../shell/Shell";
 
 export const PLANS: Record<string, { stage: string; crumb: string; items: string[]; from: string }> = {
-  "/players": { stage: "Stage 1 (profile), stage 3 (compare, stories)", crumb: "Player profiles, compare players, player stories",
-    items: ["Career card in every format, batting, bowling, fielding", "Danger zones, conversion, match impact, rank over time",
-      "Milestones, badges, firsts, quirks, compare seasons", "Compare players side by side, player stories"],
-    from: "Players, Compare players, Player stories" },
   "/teams": { stage: "Stage 2", crumb: "Team record, team v team, opponent preview, planner, rivalries",
     items: ["Every team analysis: ratings, best XI, squad changes, chasing, close games, targets, comebacks, fortress",
       "Team v team, opponent preview, team planner, rivalries"], from: "Teams, Team vs team, Opponent preview, Team planner, Rivalries" },
@@ -27,7 +23,7 @@ export const PLANS: Record<string, { stage: string; crumb: string; items: string
     from: "Insights, Analytics" },
 };
 
-const PICKED: Record<string, string> = { "/players": "player", "/teams": "team", "/leaders": "competition" };
+const PICKED: Record<string, string> = { "/teams": "team", "/leaders": "competition" };
 
 export function Section({ path }: { path: string }) {
   const plan = PLANS[path]!;

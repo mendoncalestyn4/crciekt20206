@@ -455,3 +455,25 @@ table.tv tr.dim td { opacity: .45; }
 .msg .how { margin-top: 2px; }
 .msg .md { font: 500 13.5px/1.5 Inter; color: var(--dim); text-align: right; }
 .msg.fresh { background: color-mix(in srgb, var(--led) 6%, transparent); border-radius: 8px; }
+
+/* ------------------------------------------------------------------ the player menu (any player's name) */
+.pmenu, [data-player] { cursor: pointer; }
+.pmenu:hover, .pmenu:focus-visible, [data-player]:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; outline: none; }
+.pm-pop { position: fixed; z-index: 60; background: var(--tile); border: 1px solid var(--edge); border-radius: 14px; padding: 6px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, .45); }
+.pm-pop .pm-t { font: 400 22px 'Bebas Neue'; letter-spacing: .06em; color: var(--led); padding: 6px 12px 4px; }
+.pm-pop a { display: block; padding: 9px 12px; border-radius: 9px; font: 600 15.5px Inter; color: var(--ink); text-decoration: none; }
+.pm-pop a:hover, .pm-pop a:focus-visible { background: var(--tile2); outline: none; }
+.attrs.one { grid-template-columns: 1fr; max-width: 520px; }
+.msg { position: relative; cursor: default; }
+.msg.read { opacity: .5; background: color-mix(in srgb, #000 30%, transparent); border-radius: 8px; }
+.msg.read .msgt { font-weight: 500; }
+.msg .dotnew { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--led); margin-right: 8px; vertical-align: 2px; }
+.msg .msgx { position: absolute; top: 6px; right: 4px; width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--edge);
+  background: transparent; color: var(--dim); cursor: pointer; font: 600 13px Inter; line-height: 1; }
+.msg .msgx:hover { color: var(--ink); background: var(--tile2); }
+.msg:has(.msgx) { grid-template-columns: 34px minmax(0, 1fr) 120px 30px; }
+.msg:has(.msgx) .msgx { position: static; }
+.rail a.nav { position: relative; }
+.rail a.nav .badge { position: absolute; top: 4px; right: 14px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px;
+  background: var(--led); color: var(--led-ink, #0b1b3d); font: 700 12.5px/22px Inter; text-align: center; }

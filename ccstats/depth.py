@@ -12,6 +12,8 @@ milestones in sight.
 
 from __future__ import annotations
 
+import hashlib
+
 import numpy as np
 import pandas as pd
 
@@ -151,4 +153,7 @@ def inbox(career, team: str, series: int = 8) -> list[dict]:
                              body=f"{r.next:,} {r.what} in {section}: {r.needed:,} to go."))
     rank = {"result": 0, "struggling": 1, "knocking": 2, "milestone": 3}
     msgs.sort(key=lambda x: (x["date"], -rank[x["kind"]]), reverse=True)
+    for x in msgs:   # the same message keeps its id from one look to the next, so read and removed ones stay so
+        x["team"] = team
+        x["id"] = hashlib.sha1(f"{team}|{x['date']}|{x['kind']}|{x['title']}".encode()).hexdigest()[:12]
     return msgs

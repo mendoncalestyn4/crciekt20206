@@ -15,6 +15,13 @@ export function Name({ p, px, style }: { p: string; px: number; style?: CSSPrope
   return <span className="pn" style={{ fontSize: ts(px), ...style }}>{p}</span>;
 }
 
+/** A player's name: tapping it opens the player menu (their page, batting, bowling, story; shell/PlayerMenu.tsx).
+ *  `label`: what to show when it isn't just the name ("★ S Gill"). */
+export function PName({ p, px, style, label }: { p: string; px: number; style?: CSSProperties; label?: string }) {
+  return <span className="pn pmenu" data-player={p} role="button" tabIndex={0} title={`${p}: player page, batting, bowling, story`}
+    style={{ fontSize: ts(px), ...style }}>{label ?? p}</span>;
+}
+
 /** A won / lost / drawn lamp. */
 export function Lamp({ o }: { o: Outcome }) {
   return <span className={`wl ${o}`}>{o}</span>;

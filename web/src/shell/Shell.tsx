@@ -3,15 +3,17 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useSearchParams } from "react-router";
-import { ApiError, get, type CareerInfo, type Live, type Theme } from "../api";
+import { ApiError, get, type CareerInfo, type InboxPage, type Live, type Theme } from "../api";
 import { ab, dayY } from "../format";
 import { refit } from "../fit";
 import { ThemeProvider } from "../theme";
 import { Finder } from "./Finder";
+import { PlayerMenu } from "./PlayerMenu";
 
 const I = (d: ReactNode) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">{d}</svg>;
 export const SECTIONS: { to: string; label: string; icon: ReactNode }[] = [
   { to: "/", label: "My team", icon: I(<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />) },
+  { to: "/inbox", label: "Inbox", icon: I(<><path d="M3 13l3-8h12l3 8v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" /><path d="M3 13h5l1.5 3h5L16 13h5" /></>) },
   { to: "/players", label: "Players", icon: I(<><circle cx="12" cy="8" r="4" /><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" /></>) },
   { to: "/matches", label: "Matches", icon: I(<><rect x="3" y="5" width="18" height="14" rx="3" /><path d="M12 5v14M3 12h18" /></>) },
   { to: "/teams", label: "Teams", icon: I(<><circle cx="9" cy="8" r="3.5" /><circle cx="17" cy="9" r="2.5" /><path d="M2 20c1-3.5 3.8-5.5 7-5.5s6 2 7 5.5M15 14.6c2.6-.3 5 1.2 6 4.4" /></>) },
@@ -56,6 +58,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const theme = useQuery({ queryKey: ["theme", nation], queryFn: () => get<Theme>(`/api/theme${nation ? `?nation=${encodeURIComponent(nation)}` : ""}`) });
   const career = useQuery({ queryKey: ["career"], queryFn: () => get<CareerInfo>("/api/career"), retry: (n, e) => !(e instanceof ApiError && e.status === 404) && n < 2 });
   const logos = useQuery({ queryKey: ["logos"], queryFn: () => get<{ teams: string[]; comps: string[] }>("/api/logos") });
+  // the unread count on the Inbox in the rail (asked again when new matches arrive, like every page's numbers)
+  const inbox = useQuery({ queryKey: ["inbox"], queryFn: () => get<InboxPage>("/api/inbox"), enabled: Boolean(career.data), retry: false });
   const [finder, setFinder] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [watch, setWatch] = useState<{ at: number; folders: number } | null>(null);
@@ -115,12 +119,13 @@ export function Shell({ children }: { children: ReactNode }) {
           {SECTIONS.map((s) => (
             <NavLink key={s.to} to={`${s.to}${keep}`} end={s.to === "/"}
               className={({ isActive }) => `nav ${isActive || (s.to === "/settings" && loc.pathname === "/style-guide") ? "on" : ""}`}>
-              {s.icon}{s.label}</NavLink>))}
+              {s.icon}{s.label}{s.to === "/inbox" && (inbox.data?.unread ?? 0) > 0 && <b className="badge">{inbox.data!.unread > 99 ? "99+" : inbox.data!.unread}</b>}</NavLink>))}
           {watch && watch.folders > 0 && <div className="watch" title={`Watching ${watch.folders} Scorecards folder${watch.folders > 1 ? "s" : ""}; new matches are added by themselves`}>
             <i />Watching<br />{new Date(watch.at * 1000).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</div>}
         </div></nav>
         <main className="main">{children}</main>
         {finder && <Finder close={() => setFinder(false)} keep={keep} />}
+        <PlayerMenu keep={keep} />
         {toasts.length > 0 && <div className="toasts">{toasts.map((x) => (
           <div key={x.id} className={`toast ${x.kind}`}><div><b>{x.title}</b>{x.text}</div>
             <button onClick={() => setToasts((ts) => ts.filter((y) => y.id !== x.id))} aria-label="Close">✕</button></div>))}</div>}

@@ -5,7 +5,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { BatFirst, Brief, Calendar, Form, Innings, Outcome, Result, Run, Scores, Series, Strength, Venues, Winners } from "../api";
 import { ab, day, fmtOf, ord, plural } from "../format";
 import { useTheme } from "../theme";
-import { Lamp, Logo, Name, Num } from "./base";
+import { Lamp, Logo, Name, Num, PName } from "./base";
 import { FormLine, StrengthDots } from "./charts";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -308,7 +308,7 @@ export function MatchWinners({ w }: { w: Winners }) {
   const most = w.players[0]?.matches.length ?? 1;
   return <>{w.players.map(({ player, matches }) => (
     <div className="mw" key={player}><span className="n">{matches.length}<small>{matches.length > 1 ? "wins" : "win"}</small></span>
-      <div><Name p={player} px={22} /><div className="bar" style={{ marginTop: 8 }}><i style={{ width: `${(matches.length / most) * 100}%` }} /></div></div>
+      <div><PName p={player} px={22} /><div className="bar" style={{ marginTop: 8 }}><i style={{ width: `${(matches.length / most) * 100}%` }} /></div></div>
       <div className="hls">{matches.map((x) => <span key={x.id}><b>{fmtOf(x.section)} v {ab(x.opp)} · {day(x.date)}</b>{x.headline}</span>)}</div></div>))}
     {w.others > 0 && <div className="note">{plural(w.others, "other win")}: the player of the match was on the other side, or none was named.</div>}</>;
 }

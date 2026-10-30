@@ -4,7 +4,7 @@ import { Link } from "react-router";
 import type { Advice, MyTeam, ReportCard } from "../api";
 import { dayY, pct } from "../format";
 import { useTheme } from "../theme";
-import { Name } from "./base";
+import { Name, PName } from "./base";
 
 /** A mark out of 10 as a badge: green 8 and up, gold 5 to 7, red 4 and under. */
 export function Mark({ v, big }: { v: number; big?: boolean }) {
@@ -19,7 +19,7 @@ export function MarksTable({ r, keep }: { r: ReportCard; keep: string }) {
     <table className="c marks"><thead><tr><th className="r">#</th><th>Player</th><th className="r">Mark</th><th>In the series</th><th>Best match</th></tr></thead>
       <tbody>{r.players.map((p) => (
         <tr key={p.player}><td className="r"><span className="tn dimn">{p.rank}</span></td>
-          <td><Link to={`/players/${encodeURIComponent(p.player)}${keep}`} className="plink"><Name p={p.player} px={22} /></Link>
+          <td><PName p={p.player} px={22} />
             <div className="how">{p.games} match{p.games === 1 ? "" : "es"}</div></td>
           <td className="r"><Mark v={p.mark} /></td>
           <td><span className="why">{p.line}</span></td>
@@ -28,16 +28,16 @@ export function MarksTable({ r, keep }: { r: ReportCard; keep: string }) {
 }
 
 /** Struggling players and who to bring in: the verdict, why, and the best candidates with their numbers. */
-export function AdviceList({ items, keep }: { items: Advice[]; keep: string }) {
+export function AdviceList({ items }: { items: Advice[]; keep?: string }) {
   return <>{items.map((a) => (
     <div className="adv" key={a.player}>
       <div className="verdict2">{a.verdict}</div>
-      <div className="how">{a.player} ({a.role.toLowerCase()}): {a.why}.</div>
+      <div className="how"><span data-player={a.player}>{a.player}</span> ({a.role.toLowerCase()}): {a.why}.</div>
       {(a.own.bat || a.own.bowl) && <div className="how">Their numbers here, last two seasons (settled): {[a.own.bat, a.own.bowl].filter(Boolean).join(" · ")}.</div>}
       {a.picks.map((p, i) => (
         <div className={`pickx ${p.clears ? "ok" : ""}`} key={p.player}>
           <span className="n">{i + 1}</span>
-          <div><Link to={`/players/${encodeURIComponent(p.player)}${keep}`} className="plink"><Name p={p.player} px={22} /></Link>
+          <div><PName p={p.player} px={22} />
             <span className="tagx">{p.role}{p.capped ? " · capped" : ""}{p.spinner ? " · spin" : ""}{p.unsure ? " · country a guess" : ""}</span>
             <div className="how">At this level: {[p.bat, p.bowl].filter(Boolean).join(" · ")}</div>
             <div className="how">Domestic, last two seasons, as it is{p.side ? ` (now at ${p.side})` : ""}: {[p.raw_bat, p.raw_bowl].filter(Boolean).join(" · ")}</div></div>
@@ -53,7 +53,7 @@ export function AfterLines({ a, keep }: { a: NonNullable<MyTeam["after"]>; keep:
         <div className="fact" key={l.k}><span>{l.k}</span><b style={l.up == null ? undefined : { color: l.up ? t.win : t.loss }}>{l.text}</b></div>))}</div>
       {a.form.map((f) => (
         <div className="frm" key={f.player}><span style={{ color: f.arrow === "▲" ? t.win : f.arrow === "▼" ? t.loss : t.dim }}>{f.arrow}</span>
-          <Link to={`/players/${encodeURIComponent(f.player)}${keep}`} className="plink"><Name p={f.player} px={21} /></Link><span className="how">{f.text}</span></div>))}
+          <PName p={f.player} px={21} /><span className="how">{f.text}</span></div>))}
       {a.news.map((n) => <div className="how" key={n} style={{ marginTop: 6 }}>{n}</div>)}
       <div className="note">v {a.opponent}, {dayY(a.date)} · <Link to={`/matches/${a.match_id}${keep}`}>the scorecard</Link>. Rating: Elo before and after this game.
         Table: league position before and after. ▲ a big game for the player (well above their season average before it, or a haul); ▼ a low

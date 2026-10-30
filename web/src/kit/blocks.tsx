@@ -4,7 +4,7 @@ import { Fragment, useState, type ReactNode } from "react";
 import type { Card, Match, Pom, Result, SquadRow } from "../api";
 import { ab, cap, day, dayY, f0, f1, f2, fmtOf, initials, ord, overs, score } from "../format";
 import { useTheme } from "../theme";
-import { Lamp, Logo, Missing, Name, Num, Tile } from "./base";
+import { Lamp, Logo, Missing, Name, Num, PName, Tile } from "./base";
 import { PartnershipBars, RingList } from "./charts";
 import { ts } from "./look";
 
@@ -37,7 +37,7 @@ export function TvTable<R extends { player: string; team: string }>({ rows, cols
     <table className="tv"><thead><tr><th>Player</th>{cols.map(([h]) => <th key={h} className="r">{h}</th>)}</tr></thead>
       <tbody>{rows.map((x) => (
         <tr key={x.player + x.team} className={x.team === mine ? "me" : ""}>
-          <td><span className="cell"><Logo team={x.team} size={40} /><Name p={x.player} px={23} /></span></td>
+          <td><span className="cell"><Logo team={x.team} size={40} /><PName p={x.player} px={23} /></span></td>
           {cols.map(([h, f], i) => <td key={h} className="r"><span className={`tn ${i ? "dimn" : ""}`}>{f(x)}</span></td>)}
         </tr>))}</tbody>
     </table>
@@ -59,7 +59,7 @@ export function TopList({ rows, value, gold }: { rows: ({ player: string } & Rec
   return (
     <div className="list">{rows.map((p) => (
       <div className="li" key={String(p.player)}><span className="av">{initials(String(p.player))}</span>
-        <div><Name p={String(p.player)} px={22} /><div className="bar"><i style={{ width: `${(Number(p[value] ?? 0) / top) * 100}%`,
+        <div><PName p={String(p.player)} px={22} /><div className="bar"><i style={{ width: `${(Number(p[value] ?? 0) / top) * 100}%`,
           ...(gold ? { background: "var(--gold)" } : {}) }} /></div></div>
         <Num v={Number(p[value] ?? 0)} px={26} /></div>))}</div>
   );
@@ -71,7 +71,7 @@ export function PomCard({ pom }: { pom: Pom }) {
   return (
     <>
       <div className="row2" style={{ gap: 16 }}><Logo team={pom.team} size={82} />
-        <div><Name p={pom.player} px={46} /><div className="s" style={{ marginTop: 2 }}>{pom.team}</div></div></div>
+        <div><PName p={pom.player} px={46} /><div className="s" style={{ marginTop: 2 }}>{pom.team}</div></div></div>
       {b && <><div className="rule" /><div className="fig"><Num v={b.text} px={64} />
         <span className="s">runs off <b>{b.balls}</b> balls<br /><b>{b.fours}</b> {b.fours === 1 ? "four" : "fours"} · <b>{b.sixes}</b> {b.sixes === 1 ? "six" : "sixes"} · SR <b>{f0((b.runs / Math.max(b.balls, 1)) * 100)}</b></span></div></>}
       {w && <><div className="rule" /><div className="fig"><Num v={w.text} px={64} />
@@ -131,8 +131,8 @@ export function MatchSummary({ m }: { m: Match }) {
               <span className="which">{ORD[(n[i] ?? 1) - 1]} innings</span><span className="tot">{sc_(c)}<small>{c.overs} ov</small></span></div>
             <div className="ppl">{Array.from({ length: top }, (_, k) => (
               <Fragment key={k}>
-                <div className="p">{bt[k] && <><span className="nmx">{bt[k].player}</span><span className="v">{bt[k].runs}{bt[k].out ? "" : "*"}</span><span className="b">{bt[k].balls}</span></>}</div>
-                <div className="p">{bw[k] && <><span className="nmx">{bw[k].player}</span><span className="v">{bw[k].wickets}-{bw[k].runs}</span><span className="b">{overs(bw[k].balls)}</span></>}</div>
+                <div className="p">{bt[k] && <><span className="nmx" data-player={bt[k].player}>{bt[k].player}</span><span className="v">{bt[k].runs}{bt[k].out ? "" : "*"}</span><span className="b">{bt[k].balls}</span></>}</div>
+                <div className="p">{bw[k] && <><span className="nmx" data-player={bw[k].player}>{bw[k].player}</span><span className="v">{bw[k].wickets}-{bw[k].runs}</span><span className="b">{overs(bw[k].balls)}</span></>}</div>
               </Fragment>))}</div>
           </div>); })}
         <div className="resline">{m.result}</div>
@@ -185,7 +185,7 @@ export function Scorecard({ m }: { m: Match }) {
           <table className="c"><thead><tr><th>Batter</th><th className="r">R</th><th className="r">B</th><th className="r">4s</th><th className="r">6s</th><th className="r">SR</th></tr></thead>
             <tbody>{c.bat.filter((x) => x.did_bat).map((x) => (
               <tr key={x.player} className={x.player === m.pom?.player ? "me" : ""}>
-                <td><Name p={x.player} px={21} /><div className="how">{x.out ? x.dismissal || x.how_out : "not out"}</div></td>
+                <td><PName p={x.player} px={21} /><div className="how">{x.out ? x.dismissal || x.how_out : "not out"}</div></td>
                 <td className="r"><span className="tn">{x.runs}{x.out ? "" : "*"}</span><span className="inl" style={{ width: x.runs / 1.6 }} /></td>
                 <td className="r"><span className="tn dimn">{x.balls}</span></td><td className="r"><span className="tn dimn">{x.fours}</span></td>
                 <td className="r"><span className="tn dimn">{x.sixes}</span></td><td className="r"><span className="tn dimn">{f0((x.runs / Math.max(x.balls, 1)) * 100)}</span></td></tr>))}
@@ -216,7 +216,7 @@ export function SquadTable({ rows, mark, dim }: { rows: SquadRow[]; mark?: strin
     <table className="tv"><thead><tr><th>Player</th><th className="r">Games</th><th className="r">Runs</th><th className="r">Avg</th><th className="r">SR</th>
       <th className="r">Wkts</th><th className="r">Econ</th><th>Last 5 innings · runs, oldest first</th><th className="r">Form</th></tr></thead>
       <tbody>{rows.map((x) => (
-        <tr key={x.player} className={x.player === mark ? "me" : dim?.has(x.player) ? "dim" : ""}><td><Name p={x.player} px={23} /></td>
+        <tr key={x.player} className={x.player === mark ? "me" : dim?.has(x.player) ? "dim" : ""}><td><PName p={x.player} px={23} /></td>
           <td className="r"><span className="tn dimn">{x.games}</span></td><td className="r"><span className="tn">{x.runs}</span></td>
           <td className="r"><span className="tn dimn">{f1(x.average)}</span></td><td className="r"><span className="tn dimn">{f0(x.strike_rate)}</span></td>
           <td className="r"><span className="tn">{x.wickets || "–"}</span></td><td className="r"><span className="tn dimn">{f2(x.economy)}</span></td>

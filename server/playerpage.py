@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 
 from ccstats import analysis as A
+from ccstats import attributes as AT
 from ccstats import extras as E
 from ccstats import marks as MK
 from ccstats import players as PL
@@ -227,6 +228,8 @@ def page(career, player: str, section: str = "", season: str = "") -> dict:
     f = fld_t[fld_t.player == player]
     out["fielding"] = SG.clean(dict(matches=f.matches.iloc[0], catches=f.catches.iloc[0], stumpings=f.stumpings.iloc[0])) if len(f) else None
     piece("story", lambda: _story(career, player, section, season, ids, kind, my_matches))
+    # attributes and the scout report: for the competition (every season of it), not one season
+    piece("profile", lambda: kept(career, ("profile", section, player), lambda: AT.profile(career, section, player)))
     return out
 
 
@@ -356,22 +359,7 @@ def _batting(career, player, section, season, ids, inns, bat_t, kind) -> dict:
     med = np.median(list(strength.values())) if strength else 0
     out["splits"] = dict(overall=avg, rows=splits,
                          stronger=", ".join(sorted(t for t, v in strength.items() if v > med)) or "–")
-    pr = A.position_record(career, ids, player)
-    if len(pr):
-        best = pr[pr.innings >= 3].assign(edge=lambda d: d.average - d.section_average).dropna(subset=["edge"])
-        if len(best) > 1:
-            top = best.sort_values("edge", ascending=False).iloc[0]
-            e = (top.average - top.section_average) / top.section_average * 100 if top.section_average else 0
-            shows = (f"Best position: {top.group}, where they average {fmt(top.average)} against {fmt(top.section_average)} "
-                     f"for the average batter there ({e:+.0f}%, at least 3 innings).")
-        else:
-            shows = "They have batted in only one position with 3+ innings so far."
-        out["positions"] = dict(rows=[dict(label=r.group, me=SG.clean(r.average), all=SG.clean(r.section_average),
-                                           note=f"{r.innings} innings, {r.runs} runs, strike rate {fmt(r.strike_rate)}")
-                                      for r in pr.itertuples()],
-                                shows=shows, for_="Tells you where to bat them: gold is them, grey the average batter in that position.")
-    else:
-        out["positions"] = None
+    out["positions"] = _positions(career, ids, inns)
     out["came_in"] = _came_in(inns, kind, avg)
     cs = A.consistency(inns, kind)
     out["consistency"] = dict(bar=cs["bar"], past_bar_pct=cs["past_bar_pct"], single_figures_pct=cs["single_figures_pct"],
@@ -393,6 +381,54 @@ def _batting(career, player, section, season, ids, inns, bat_t, kind) -> dict:
                           + " (teams they have batted against at least twice)",
                           for_="Shows which opponents they like and which ones keep them quiet.")
     return out
+
+
+BEST_FROM = 3   # innings at a position before it can be called their best
+
+
+def _positions(career, ids, inns) -> dict | None:
+    """Every position they have batted at on its own (no. 3, no. 4, no. 5...): innings, runs, average, strike rate,
+    50s and 100s, and the average batter at that position here; their best is the position where they beat that
+    average batter by the most, from 3 innings there (an opener's average and a no. 7's aren't the same thing)."""
+    if inns.empty:
+        return None
+    b = career.batting[career.batting.match_id.isin(ids) & career.batting.did_bat]
+    pool = b.groupby("position").agg(runs=("runs", "sum"), outs=("out", "sum"))
+    pool_avg = pool.runs / pool.outs.replace(0, np.nan)
+    rows = []
+    for pos, g in inns.groupby("position"):
+        outs = int(g.out.sum())
+        avg = g.runs.sum() / outs if outs else np.nan
+        rows.append(dict(position=int(pos), innings=len(g), runs=int(g.runs.sum()), not_outs=len(g) - outs,
+                         average=avg, strike_rate=g.runs.sum() / g.balls.sum() * 100 if g.balls.sum() else np.nan,
+                         fifties=int(((g.runs >= 50) & (g.runs < 100)).sum()), hundreds=int((g.runs >= 100).sum()),
+                         high=f"{int(g.runs.max())}{'' if g.loc[g.runs.idxmax(), 'out'] else '*'}",
+                         all_average=float(pool_avg.get(pos, np.nan))))
+    t = pd.DataFrame(rows).sort_values("position")
+    t["edge"] = (t.average - t.all_average) / t.all_average * 100
+    ok = t[(t.innings >= BEST_FROM) & t.edge.notna()]
+    if len(ok) > 1:
+        top = ok.sort_values("edge", ascending=False).iloc[0]
+        shows = (f"Best at no. {top.position}: {top.runs} runs in {top.innings} innings at {fmt(top.average)}, "
+                 f"{top.edge:+.0f}% on the average no. {top.position} here ({fmt(top.all_average)}). "
+                 + " · ".join(f"no. {r.position}: {fmt(r.average)} ({r.edge:+.0f}%)" for r in ok.sort_values("position").itertuples()
+                              if r.position != top.position) + ".")
+    elif len(ok) == 1:
+        top = ok.iloc[0]
+        shows = (f"Has batted {BEST_FROM}+ times only at no. {top.position}: {top.runs} runs at {fmt(top.average)} "
+                 f"({top.edge:+.0f}% on the average no. {top.position} here). Too few innings anywhere else to compare.")
+    else:
+        shows = f"No position with {BEST_FROM} innings yet, so no best one to name."
+    best = int(ok.sort_values("edge", ascending=False).iloc[0].position) if len(ok) > 1 else None   # as the scout report
+    return dict(rows=[dict(label=f"No. {r.position}", me=SG.clean(r.average), all=SG.clean(r.all_average), key=r.position == best,
+                           note=f"{r.innings} innings, {r.runs} runs, strike rate {fmt(r.strike_rate)}") for r in t.itertuples()],
+                table=[dict(position=r.position, innings=r.innings, runs=r.runs, not_outs=r.not_outs, average=SG.clean(r.average),
+                            strike_rate=SG.clean(r.strike_rate), fifties=r.fifties, hundreds=r.hundreds, high=r.high,
+                            all_average=SG.clean(r.all_average), edge=SG.clean(r.edge), best=r.position == best)
+                       for r in t.itertuples()],
+                best=best, shows=shows,
+                for_="Tells you where to bat them: each position against the average batter there (gold is them, grey the "
+                     "average batter at that position); ★ is their best, from 3 innings there.")
 
 
 def _danger(career, ids, player) -> dict | None:

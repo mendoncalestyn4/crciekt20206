@@ -41,8 +41,6 @@ MIN_WICKETS = 3          # wickets needed before "Top-order hunter" is rated at 
 
 BAT = ["Run-scoring", "Tempo", "Boundary hitting", "Consistency", "Big scores", "Against the best"]
 BOWL = ["Wicket-taking", "Control", "Pressure", "Top-order hunter", "Match-winning spells", "Against the best"]
-WHERE = {"Openers (1-2)": "when opening", "No. 3": "at number 3", "4 and 5": "at 4 or 5", "6 and 7": "at 6 or 7",
-         "8 to 11": "at 8 or lower"}
 
 
 def _memo(career, key, make):
@@ -256,16 +254,61 @@ def scout_report(career, section: str, name: str) -> dict:
     notes = []
     ids = career.matches[career.matches.section == section].match_id
     if "bat" in jobs and (main == "bat" or who == "all-rounder"):
-        from .analysis import nemesis, position_record
+        from .analysis import nemesis
         n = nemesis(career, ids, name)
         if len(n) and n.dismissals.iloc[0] >= 3:
             notes.append(f"Has fallen to {n.bowler.iloc[0]} {int(n.dismissals.iloc[0])} times: keep them apart.")
-        pr = position_record(career, ids, name)
-        pr = pr[pr.innings >= 3].assign(edge=lambda d: d.average - d.section_average).dropna(subset=["edge"])
-        if len(pr) > 1:
-            top = pr.sort_values("edge", ascending=False).iloc[0]
-            notes.append(f"Best {WHERE.get(top.group, top.group)}: average {top.average:.1f} there in "
-                         f"{top.innings:.0f} innings, against {top.section_average:.1f} for the average batter there.")
+        bp = best_position(career, ids, name)
+        if bp:
+            notes.append(f"Best at no. {bp['position']}: average {bp['average']:.1f} there in {bp['innings']} innings, "
+                         f"against {bp['all_average']:.1f} for the average no. {bp['position']} here.")
     return dict(verdict=verdict + ".", role=role, overall=round(ov, 1), main=main,
                 strengths=[s for _, s in sorted(strengths, reverse=True)[:3]],
                 weaknesses=[s for _, s in sorted(weaknesses, reverse=True)[:2]], notes=notes[:2], none="")
+
+
+BEST_FROM = 3   # innings at a position before it can be called their best
+
+
+def position_table(career, ids, name: str) -> pd.DataFrame:
+    """Every position the player has batted at on its own: position, innings, runs, outs, average, and the average
+    batter's average at that position in these matches, with the player's edge on them (%)."""
+    b = career.batting[career.batting.match_id.isin(ids) & career.batting.did_bat]
+    pool = b.groupby("position").agg(runs=("runs", "sum"), outs=("out", "sum"))
+    me = b[b.player == name].groupby("position").agg(innings=("runs", "size"), runs=("runs", "sum"), outs=("out", "sum"))
+    if me.empty:
+        return pd.DataFrame(columns=["position", "innings", "runs", "outs", "average", "all_average", "edge"])
+    me["average"] = me.runs / me.outs.replace(0, np.nan)
+    me["all_average"] = (pool.runs / pool.outs.replace(0, np.nan)).reindex(me.index)
+    me["edge"] = (me.average - me.all_average) / me.all_average * 100
+    return me.reset_index()
+
+
+def best_position(career, ids, name: str) -> dict | None:
+    """Their best position, when they have batted 3 or more times in two positions or more: the one where they beat
+    the average batter at that position by the most (an opener's average and a no. 7's aren't the same thing)."""
+    t = position_table(career, ids, name)
+    ok = t[(t.innings >= BEST_FROM) & t.edge.notna()]
+    if len(ok) < 2:
+        return None
+    r = ok.sort_values("edge", ascending=False).iloc[0]
+    return dict(position=int(r.position), innings=int(r.innings), runs=int(r.runs), average=float(r.average),
+                all_average=float(r.all_average), edge=float(r.edge))
+
+
+def profile(career, section: str, name: str) -> dict:
+    """What the Player page shows for one competition: the attributes, the scout report, and which jobs to show. A
+    bowler's batting isn't laid out as a batter's (ranked against the specialist batters it's all 1s and 2s, which
+    says nothing): one line instead. An all-rounder shows both; a batter who bowls a bit, the bowling in one line."""
+    a = player(career, section, name)
+    r = scout_report(career, section, name)
+    if r.get("none"):
+        return dict(attributes=a, report=r, show=[], other="")
+    show = ["bat", "bowl"] if r.get("main") and "all-rounder" in r["verdict"] else [r["main"]]
+    other = ""
+    for job in ("bat", "bowl"):
+        if job not in show and a[job]:
+            word = "Batting" if job == "bat" else "Bowling"
+            other = (f"{word}: {a[job + '_overall']} out of 20 here, ranked against the specialist "
+                     f"{'batters' if job == 'bat' else 'bowlers'}: not what they're picked for.")
+    return dict(attributes=a, report=r, show=show, other=other)

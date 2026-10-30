@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 
 from ccstats import catalogue as CAT
+from ccstats import depth as DP
 from ccstats import extras as E
 from ccstats import fixtures as FX
 from ccstats import marks as MK
@@ -324,4 +325,6 @@ def page(career, team: str, section: str, mine: list[str], notes: dict, sched: l
         return [dict(id=r.match_id, date=r.date, home=r.home, away=r.away, note=notes[r.source]) for r in g.head(10).itertuples()]
     piece("notes", my_notes)
     piece("block", lambda: section_block(career, team, section, notes, sched))
+    # squad depth in the competition picked below (who starts, the backups, who's waiting in domestic cricket)
+    piece("depth", lambda: kept(career, ("depth", team, section), lambda: DP.squad_depth(career, team, section)))
     return out

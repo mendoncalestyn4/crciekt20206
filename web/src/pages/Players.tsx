@@ -6,10 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { get, type PlayerPage, type PlayersLanding, type Split } from "../api";
-import { Explain, Hero, Logo, Missing, Name, Num, Sub, Tile } from "../kit/base";
+import { Explain, Hero, Logo, Missing, Name, Num, PName, Sub, Tile } from "../kit/base";
 import { PercentileBars } from "../kit/blocks";
 import { RingList } from "../kit/charts";
 import { Mark } from "../kit/myteam";
+import { AttrGrid, ScoutText } from "../kit/fm";
 import { FormBars, Funnel, ImpactBars, PairedBars, RankLines, RecordTable, SplitBars } from "../kit/player";
 import { cap, dayY, f0, f1, f2, fmtOf, plural } from "../format";
 import { useReady } from "../ready";
@@ -40,8 +41,7 @@ export function PlayersHome() {
         <Tile span={12} title="Find a player" right={`${d.players.length.toLocaleString("en-GB")} who have batted or bowled`}>
           <div className="field"><input className="typed" autoFocus value={typed} onChange={(e) => setTyped(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && hits[0]) go(`/players/${encodeURIComponent(hits[0].player)}${keep}`); }}
-            placeholder="Type a name or a team, e.g. S Gill" aria-label="Find a player" />
-            <Link className="btn quiet" to={`/players/scouting${keep}`} style={{ textDecoration: "none" }}>Scouting →</Link></div>
+            placeholder="Type a name or a team, e.g. S Gill" aria-label="Find a player" /></div>
           {typed && <div className="plist">{hits.slice(0, SHOWN).map((p) => (
             <Link key={p.player} className="pli" to={`/players/${encodeURIComponent(p.player)}${keep}`}>
               <Logo team={p.team} size={30} /><Name p={p.player} px={22} />
@@ -54,7 +54,7 @@ export function PlayersHome() {
           <Tile key={s.team + s.section} span={6} title={`${s.team} · ${s.section} ${s.season}`} right={`${s.players.length} played`}>
             <table className="c"><thead><tr><th>Player</th><th className="r">Games</th><th className="r">Runs</th><th className="r">Avg</th><th className="r">Wkts</th><th className="r">Econ</th></tr></thead>
               <tbody>{s.players.slice(0, 14).map((p) => (
-                <tr key={p.player}><td><Link to={`/players/${encodeURIComponent(p.player)}${keep}`} className="plink"><Name p={p.player} px={21} /></Link></td>
+                <tr key={p.player}><td><PName p={p.player} px={21} /></td>
                   <td className="r"><span className="tn dimn">{p.games}</span></td><td className="r"><span className="tn">{p.runs}</span></td>
                   <td className="r"><span className="tn dimn">{f1(p.average)}</span></td><td className="r"><span className="tn">{p.wickets || "–"}</span></td>
                   <td className="r"><span className="tn dimn">{f2(p.economy)}</span></td></tr>))}</tbody></table>
@@ -160,6 +160,11 @@ export function PlayerView() {
             <button key={x} className={x === tab ? "on" : ""} onClick={() => set("view", x === d.tabs[0] ? "" : x.toLowerCase())}>{x}</button>))}</div>
         </div>
 
+        {d.profile && <Tile span={7} title={`Attributes in ${d.section}`} right="out of 20 · against everyone there">
+          <AttrGrid a={d.profile.attributes} show={d.profile.show} other={d.profile.other} section={d.section} /></Tile>}
+        {d.profile && <Tile span={5} title="Scout report" right={d.profile.report.role ?? ""}><ScoutText r={d.profile.report} />
+          {d.season !== "All seasons" && <div className="note">Over every season of {d.section}, not just {d.season}.</div>}</Tile>}
+
         {tab === "Batting" && b && <>
           <KP items={[["Innings", b.kpis.innings], ["Runs", b.kpis.runs.toLocaleString("en-GB")], ["Average", f2(b.kpis.average)], ["Strike rate", f1(b.kpis.strike_rate)],
             ["High score", b.kpis.high_score], ["100s / 50s", `${b.kpis.hundreds} / ${b.kpis.fifties}`]]} />
@@ -185,8 +190,19 @@ export function PlayerView() {
           {b.splits.rows.map((s) => <Box key={s.title} title={s.title!}><Sp s={s} overall={b.splits.overall} /></Box>)}
           <Tile span={12}><div className="plain">Stronger and weaker teams: teams ranked by their win % here (each counted as if it had already won 2 and lost 2,
             so one win in one game doesn't make a side strong); the top half are the stronger teams. Stronger half: <b>{b.splits.stronger}</b>.</div></Tile>
-          {b.positions && <Box span={12} title="Average at each batting position" right="against the average batter there">
-            <PairedBars rows={b.positions.rows} me={d.player} /><Explain shows={b.positions.shows} for_={b.positions.for_} /></Box>}
+          {b.positions && <Box span={12} title="At each batting position" right={b.positions.best ? `best at no. ${b.positions.best}` : "against the average batter there"}>
+            <PairedBars rows={b.positions.rows} me={d.player} />
+            <table className="c" style={{ marginTop: 10 }}><thead><tr><th>Position</th><th className="r">Inns</th><th className="r">Runs</th><th className="r">NO</th>
+              <th className="r">HS</th><th className="r">Avg</th><th className="r">SR</th><th className="r">50s</th><th className="r">100s</th><th className="r">Average batter there</th><th className="r">They are</th></tr></thead>
+              <tbody>{b.positions.table.map((r) => (
+                <tr key={r.position} className={r.best ? "me" : ""}><td><Name p={`${r.best ? "★ " : ""}No. ${r.position}`} px={19} /></td>
+                  <td className="r"><span className="tn dimn">{r.innings}</span></td><td className="r"><span className="tn">{r.runs}</span></td>
+                  <td className="r"><span className="tn dimn">{r.not_outs}</span></td><td className="r"><span className="tn dimn">{r.high}</span></td>
+                  <td className="r"><span className="tn">{f1(r.average)}</span></td><td className="r"><span className="tn dimn">{f1(r.strike_rate)}</span></td>
+                  <td className="r"><span className="tn dimn">{r.fifties}</span></td><td className="r"><span className="tn dimn">{r.hundreds}</span></td>
+                  <td className="r"><span className="tn dimn">{f1(r.all_average)}</span></td>
+                  <td className="r"><span className="tn">{r.edge == null ? "–" : `${r.edge >= 0 ? "+" : ""}${Math.round(r.edge)}%`}</span></td></tr>))}</tbody></table>
+            <Explain shows={b.positions.shows} for_={b.positions.for_} /></Box>}
           <Box title="Average by the situation they walked into"><Sp s={b.came_in} overall={b.splits.overall} /></Box>
           <Box title="Best rescue innings" right={`came in 3+ down for ${b.came_in.press} or fewer`}>{b.came_in.rescue.length ? <table className="c"><thead><tr><th>Came in at</th><th className="r">Score</th><th className="r">Balls</th><th>Against</th><th>Date</th></tr></thead>
             <tbody>{b.came_in.rescue.map((r, i) => <tr key={i}><td><span className="tn">{r.at}</span></td><td className="r"><span className="tn">{r.score}</span></td><td className="r"><span className="tn dimn">{r.balls}</span></td>

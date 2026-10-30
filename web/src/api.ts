@@ -182,6 +182,7 @@ export type MyTeam = {
     no_result: number; win_pct: number | null; finish: string }[] | null;
   notes?: { id: string; date: string; home: string; away: string; note: string }[] | null;
   block?: SectionBlock | null;
+  depth?: Depth | null;
 };
 
 // ------------------------------------------------------------------ Players (server/playerpage.py)
@@ -207,7 +208,9 @@ export type Batting = {
   funnel: { rows: { mark: number; pct: number | null; all_pct: number | null; highlight: boolean }[]; extra: string; shows: string; for_: string } | null;
   season_table: RecordTableT;
   splits: { overall: number | null; stronger: string; rows: Split[] };
-  positions: { rows: Pair[]; shows: string; for_: string } | null;
+  positions: { rows: Pair[]; best: number | null; shows: string; for_: string;
+    table: { position: number; innings: number; runs: number; not_outs: number; average: number | null; strike_rate: number | null;
+      fifties: number; hundreds: number; high: string; all_average: number | null; edge: number | null; best: boolean }[] } | null;
   came_in: Split & { press: number; rescue: { at: string; score: string; balls: number; against: string; date: string }[] };
   consistency: { bar: number; past_bar_pct: number | null; single_figures_pct: number | null; golden_ducks: number; conversion_pct: number | null };
   nemesis: Split | null; streaks: { streak: string; longest: number; current: number }[];
@@ -248,6 +251,7 @@ export type PlayerPage = {
   role: { role: string; tags: string[]; usual_position: number } | null;
   tabs: string[]; batting: Batting | null; bowling: Bowling | null; fielding: { matches: number; catches: number; stumpings: number } | null;
   story: Story | null;
+  profile?: { attributes: Attributes; report: ScoutReport; show: ("bat" | "bowl")[]; other: string } | null;
 };
 
 // ------------------------------------------------------------------ Demo of ideas 2, 3, 5 and 7 (server/demo.py)
@@ -260,5 +264,7 @@ export type Depth = { section: string; series: string; roles: { role: string; us
   waiting: { player: string; side: string; gain: number | null; clears: boolean; bat: string; bowl: string; raw_bat: string; raw_bowl: string }[] }[] };
 export type InboxMsg = { date: string; kind: "result" | "struggling" | "knocking" | "milestone"; title: string; body: string; section: string;
   series: string; player: string; match: string };
+export type InboxItem = InboxMsg & { id: string; team: string; read: boolean };
+export type InboxPage = { teams: string[]; messages: InboxItem[]; unread: number };
 export type DemoPage = { team: string; mine: boolean; section: string; sections: string[]; report: ReportCard | null; missing: Record<string, string>;
   depth: Depth | null; inbox: InboxMsg[] | null; players: { player: string; attributes: Attributes; report: ScoutReport }[] | null };
