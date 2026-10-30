@@ -40,12 +40,18 @@ def test_who_belongs_to_which_country():
         section="Indian Premier League", fmt="T20", level="Franchise", country="India")
     one(b, "c9", "2026-06-01", "Kent", "Essex", "T", "Essex", section="County Championship · Division 1",
         fmt="First-class", level="Domestic", country="England")
+    # capped by Canada, but plays in the Ranji Trophy (no overseas players): two players with one name, so India's too
+    one(b, "k1", "2026-01-09", "Canada", "USA", "U", "Canada", section="T20Is", fmt="T20")
+    one(b, "r9", "2026-11-09", "Mumbai", "Delhi", "U", "Delhi", section="Ranji Trophy", fmt="First-class",
+        level="Domestic", country="India")
     c = SC.countries(b.career()).set_index("player")
-    assert c.loc["P"].tolist() == ["India", True, "played for India", False]
-    assert c.loc["Q"].tolist() == ["UAE", True, "played for UAE", True]
-    assert c.loc["R"].tolist() == ["India", False, "domestic cricket", True]
-    assert c.loc["S"].tolist() == ["India", False, "going by the league", True]
-    assert c.loc["T"].tolist() == ["England", False, "domestic cricket", False]
+    assert c.loc["P"].tolist() == ["India", True, "played for India", False, ""]
+    assert c.loc["Q"].tolist() == ["UAE", True, "played for UAE", True, ""]
+    assert c.loc["R"].tolist() == ["India", False, "domestic cricket", True, ""]
+    assert c.loc["S"].tolist() == ["India", False, "going by the league", True, ""]
+    assert c.loc["T"].tolist() == ["England", False, "domestic cricket", False, ""]
+    assert c.loc["U"].tolist() == ["Canada", True, "played for Canada; also plays domestic cricket in India, which "
+                                   "takes no overseas players (likely two players with one name)", True, "India"]
 
 
 def test_a_measured_gap_is_pulled_to_the_minimum_and_never_below_it():
@@ -95,8 +101,8 @@ def test_settled_numbers_pull_a_short_record_towards_the_usual():
 def test_who_is_struggling(monkeypatch):
     rows = []
     plan = {  # player: marks in s1 (oldest) .. s3 (latest), games in s3
-        "Poor3": ([4, 3, 5], 3), "OneBad": ([7, 7, 2], 2), "OneBadOneGame": ([7, 7, 1], 1),
-        "Mixed": ([3, 6, 4], 3), "Tail": ([1, 1, 1], 3), "Fine": ([6, 7, 8], 3)}
+        "Poor3": ([4, 3, 5], 3), "Poor2": ([7, 4, 3], 3), "OneBad": ([7, 7, 1], 3), "Mixed": ([3, 6, 4], 3),
+        "Tail": ([1, 1, 1], 3), "Fine": ([6, 7, 8], 3)}
     for p, (marks, games) in plan.items():
         for k, mk in enumerate(marks):
             rows.append(dict(series=f"s{k + 1}", team="India", player=p, mark=mk, games=games if k == 2 else 3,
@@ -107,14 +113,15 @@ def test_who_is_struggling(monkeypatch):
     c = b.career()
     monkeypatch.setattr(SC, "_marks", lambda career: pd.DataFrame(rows))
     roles = pd.DataFrame(dict(role=["Opener", "Bowler", "Middle order", "Opener", "Tail", "Opener"]),
-                         index=["Poor3", "OneBad", "OneBadOneGame", "Mixed", "Tail", "Fine"])
+                         index=["Poor3", "Poor2", "OneBad", "Mixed", "Tail", "Fine"])
     monkeypatch.setattr(SC, "own_numbers", lambda career, team, target: roles)
     flagged = {f["player"]: f for f in SC.struggling(c, "India", "Tests")}
-    assert set(flagged) == {"Poor3", "OneBad"}
+    # one bad series (even 1/10) is not enough; a 5 between two poor ones breaks the run of two, not the three
+    assert set(flagged) == {"Poor3", "Poor2"}
     assert flagged["Poor3"]["why"] == "poor for three series running: 5/10, 3/10, 4/10 (latest first)"
-    assert flagged["OneBad"]["why"].startswith("a very poor series: 2/10")
-    # as of the series before: nobody (Poor3 had only two series then; OneBad was fine)
-    assert SC.struggling(c, "India", "Tests", at=1) == []
+    assert flagged["Poor2"]["why"] == "poor for two series running: 3/10, 4/10 (latest first)"
+    # as of the series before: Poor3 had two poor ones running (3, 4); Mixed had 6 then 3
+    assert {f["player"] for f in SC.struggling(c, "India", "Tests", at=1)} == {"Poor3"}
 
 
 @pytest.fixture(scope="module")
@@ -160,3 +167,18 @@ def test_candidates_are_eligible_and_not_in_the_side(fixtures_career):
                 # converted numbers are never better than the same numbers as they were (settled the same way)
                 gap = {f: SC.conversion(c, target, f) for f in SC.feeders(c, team, target)}
                 assert all(g["bat"] >= SC.MIN_GAP_INTERNATIONAL[SC.sections(c).kind[target]] for g in gap.values())
+
+
+def test_a_candidate_says_where_they_play_now(fixtures_career):
+    """Each pick carries the side they last played for and in which competition (read by name: a pandas row's
+    .where is a method, which once turned every competition into a blank)."""
+    c = fixtures_career
+    for target in SC.sections(c).index:
+        teams = set(c.matches[c.matches.section == target].home)
+        for team in sorted(teams)[:2]:
+            pool = SC.candidates(c, team, target)
+            if len(pool):
+                who = SC._who(pool.iloc[0])
+                assert who["side"] and who["where"] in set(c.matches.section)
+                return
+    pytest.skip("no candidates in the test scorecards")

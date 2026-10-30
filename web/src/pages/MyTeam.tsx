@@ -75,14 +75,14 @@ export function MyTeam() {
         {d.report ? <>
           <Tile span={8} title={`After the series · marks out of 10`} right={d.report.label}>
             <MarksTable r={d.report} keep={keep} />
-            <div className="note">Each match is measured against the match itself: a batter's runs as a share of his side's runs and of the average side's,
-              a bowler's wickets as a share of the wickets his side took, speed and economy in white-ball cricket, a quarter of a wicket a catch. A
+            <div className="note">Each match is measured against the match itself: a batter's runs as a share of their side's runs and of the average side's,
+              a bowler's wickets as a share of the wickets their side took, speed and economy in white-ball cricket, a quarter of a wicket a catch. A
               lone hundred counts for about twice one of three. The mark is where that series ranks among every player's series in {d.report.format === d.report.section ? d.report.section : `${d.report.format}s`} in
               this career: 5–6 usual, 8 the best one in seven, 10 the best one in forty. Batters are marked against batters, bowlers against bowlers.</div>
           </Tile>
           <Tile span={4} title="Who to bring in" right={d.report.advice.length ? undefined : "nobody struggling"}>
             {d.report.advice.length ? <AdviceList items={d.report.advice} keep={keep} />
-              : <div className="plain">Nobody in this series is struggling: no one had a very poor series (2 or less over two games) or three poor ones running (4 or less).</div>}
+              : <div className="plain">Nobody is struggling: no one has had two poor series running (4 or less in both) or three (4 or less on average). One bad series alone doesn't count.</div>}
             <div className="note">Candidates come from {d.team}'s own competitions of the same kind, their numbers converted to this level (never easier
               than 25% in first-class cricket, 15% in white-ball), and must beat your player by 10%. Settled: a few dismissals (or wickets) at the
               usual level are added to everyone's record, so seven good innings don't count for as much as thirty. <Link to={`/players/scouting${keep}`}>Scouting →</Link></div>

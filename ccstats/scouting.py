@@ -41,6 +41,7 @@ MIN_GAP_UP = 0.10        # any other step up a level
 MIN_GAP_PACE = 0.10      # strike rate and economy
 PULL = 10                # players' worth of the minimum added to every measured gap
 BAR = 0.10               # how much better a replacement must be
+POOR = 4                 # a poor series: a mark of 4 or less (5-6 is usual)
 SEASONS = 2
 NO_OVERSEAS_FIRST = ("England",)   # domestic cricket here takes overseas players, so it counts last
 ENOUGH = {"multi": dict(inns=8, balls=600), "one": dict(inns=5, balls=180), "t20": dict(inns=5, balls=90)}
@@ -85,15 +86,25 @@ def _countries(career) -> pd.DataFrame:
         nat = g[g.level == "International"].sort_values("games", ascending=False)
         dom = g[g.level == "Domestic"].sort_values("games", ascending=False)
         fr = g[g.level == "Franchise"].sort_values("games", ascending=False)
+        # domestic cricket that takes no overseas players, in another country than the one that capped the name: the
+        # name is two players (an Indian S Sharma in the Ranji Trophy and a Canadian one in T20Is), so the domestic
+        # one is that country's too
+        closed = dom[~dom.country.isin(NO_OVERSEAS_FIRST)]
         if len(nat):
-            out.append((p, nat.country.iloc[0], True, f"played for {nat.country.iloc[0]}", len(nat) > 1))
+            cap = nat.country.iloc[0]
+            also = closed[closed.country != cap]
+            if len(also):
+                out.append((p, cap, True, f"played for {cap}; also plays domestic cricket in {also.country.iloc[0]}, "
+                            f"which takes no overseas players (likely two players with one name)", True,
+                            also.country.iloc[0]))
+            else:
+                out.append((p, cap, True, f"played for {cap}", len(nat) > 1, ""))
         elif len(dom):
-            home = dom[~dom.country.isin(NO_OVERSEAS_FIRST)]
-            pick = home if len(home) else dom
-            out.append((p, pick.country.iloc[0], False, "domestic cricket", len(dom) > 1))
+            pick = closed if len(closed) else dom
+            out.append((p, pick.country.iloc[0], False, "domestic cricket", len(dom) > 1, ""))
         elif len(fr):
-            out.append((p, fr.country.iloc[0], False, "going by the league", True))
-    return pd.DataFrame(out, columns=["player", "country", "capped", "how", "unsure"])
+            out.append((p, fr.country.iloc[0], False, "going by the league", True, ""))
+    return pd.DataFrame(out, columns=["player", "country", "capped", "how", "unsure", "also"])
 
 
 # --------------------------------------------------------------------------- which competitions feed which
@@ -294,11 +305,21 @@ def _converted(career, team: str, target: str) -> pd.DataFrame:
     d["keeper"] = d.index.isin(_keepers(career))
     d["spinner"] = d.index.isin(_spinners(career))
     d = d.join(countries(career).set_index("player"), how="left")
+    d = d.join(_last_side(career, pd.Index(ids_all)), how="left")
     enough = ENOUGH[kind]
     d["enough_bat"] = d.bat_inns >= enough["inns"]
     d["enough_bowl"] = d.bowl_balls >= enough["balls"]
     d.attrs["base"] = base
     return d
+
+
+def _last_side(career, ids) -> pd.DataFrame:
+    """The team each player last played for in these matches, and in which competition."""
+    m = career.matches[career.matches.match_id.isin(ids)]
+    pos = {mid: i for i, mid in enumerate(by_played(career, m).match_id)}
+    b = career.batting[career.batting.match_id.isin(ids)][["match_id", "team", "player"]].drop_duplicates()
+    b = b.assign(at=b.match_id.map(pos), where=b.match_id.map(m.set_index("match_id").section)).sort_values("at")
+    return b.groupby("player")[["team", "where"]].last().rename(columns={"team": "side"})
 
 
 def own_numbers(career, team: str, target: str) -> pd.DataFrame:
@@ -372,8 +393,9 @@ def _marks(career) -> pd.DataFrame:
 
 def struggling(career, team: str, target: str, at: int = 0) -> list[dict]:
     """Your players in a series in this competition (`at`: 0 the latest, 1 the one before...) who are struggling at
-    their main job: a very poor series (a mark of 2 or less over 2 games or more), or poor over his last three series
-    (4 or less on average, and never better than 5). A tail-ender who doesn't bowl isn't judged on his batting."""
+    their main job: poor for two series running (4 or less in both), or over their last three (4 or less on average,
+    and never better than 5). One bad series alone is not enough: everyone has one. A tail-ender who doesn't bowl
+    isn't judged on their batting."""
     s = _marks(career)
     m = career.matches[career.matches.section == target]
     s = s[(s.team == team) & s.series.isin(set(series_key(m)))]
@@ -393,10 +415,10 @@ def struggling(career, team: str, target: str, at: int = 0) -> list[dict]:
         his = s[(s.player == r.player) & s.series.isin(before)]
         his = his.set_index("series").reindex([x for x in mine if x in set(his.series)])
         marks = [int(x) for x in his.mark[:3]]
-        if r.mark and r.mark <= 2 and r.games >= 2:
-            why = f"a very poor series: {r.mark}/10 ({r.line})"
-        elif len(marks) == 3 and np.mean(marks) <= 4 and max(marks) <= 5:
+        if len(marks) == 3 and np.mean(marks) <= POOR and max(marks) <= POOR + 1:
             why = f"poor for three series running: {', '.join(f'{x}/10' for x in marks)} (latest first)"
+        elif len(marks) >= 2 and max(marks[:2]) <= POOR:
+            why = f"poor for two series running: {', '.join(f'{x}/10' for x in marks[:2])} (latest first)"
         else:
             continue
         out.append(dict(player=r.player, mark=int(r.mark), marks=marks, why=why, line=r.line, series=now,
@@ -404,15 +426,29 @@ def struggling(career, team: str, target: str, at: int = 0) -> list[dict]:
     return out
 
 
+def taken(career, team: str, target: str) -> set:
+    """In a franchise league, the players who played for another side in its latest season: they're under contract
+    there, so they can't come in (your own squad's players can)."""
+    s = sections(career)
+    if target not in s.index or s.level[target] != "Franchise":
+        return set()
+    m = career.matches[career.matches.section == target]
+    latest = by_played(career, m).season.iloc[-1]
+    b = career.batting[career.batting.match_id.isin(m[m.season == latest].match_id)]
+    return set(b[b.team != team].player) - set(b[b.team == team].player)
+
+
 def candidates(career, team: str, target: str) -> pd.DataFrame:
     """Who can come in: the feeder competitions' players who are eligible (a national side: its own country's
-    players) and aren't in your side's latest series."""
+    players; a franchise: anyone not under contract at another side in the league), and aren't in your side's latest
+    series."""
     pool = converted(career, team, target)
     if pool.empty:
         return pool
     _, in_side = _latest_side(career, team, target)
     if sections(career).level[target] == "International":
-        pool = pool[pool.country == team]
+        pool = pool[(pool.country == team) | (pool.also == team)]
+    pool = pool[~pool.index.isin(taken(career, team, target))]
     return pool[~pool.index.isin(in_side)]
 
 
@@ -449,8 +485,7 @@ def picks_for(career, team: str, target: str, player: str, role: str, top: int =
         if not np.isfinite(g):
             continue
         out.append(dict(player=p, role=c.role, gain=g, clears=g >= BAR, keeper=bool(c.keeper), spinner=bool(c.spinner),
-                        country=c.country, capped=bool(c.capped) if pd.notna(c.capped) else False,
-                        unsure=bool(c.unsure) if pd.notna(c.unsure) else False, **lines(c, kind, job)))
+                        **_who(c), **lines(c, kind, job)))
     out.sort(key=lambda x: x["gain"], reverse=True)
     return out[:top]
 
@@ -491,14 +526,38 @@ def lines(r, kind: str, job: str = "both") -> dict:
     return out
 
 
+def _who(r) -> dict:
+    """Where a candidate comes from: country (and how that was decided), capped or not, their latest side."""
+    def flag(v):
+        return bool(v) if pd.notna(v) else False
+
+    def text(v):
+        return v if isinstance(v, str) else ""
+    # by name, not as attributes: a row's .where is pandas' own where()
+    return dict(country=text(r["country"]), capped=flag(r["capped"]), unsure=flag(r["unsure"]), how=text(r["how"]),
+                also=text(r["also"]), side=text(r["side"]), where=text(r["where"]))
+
+
+def index(d, job: str, kind: str):
+    """How good at the job in one number, higher better, from the settled numbers: the average (times the runs a ball
+    in white-ball cricket); one over the bowling average (times the balls a run); an all-rounder's both, multiplied
+    and square-rooted. The gain against a fixed player rises with it."""
+    white = kind != "multi"
+    bat = d.avg * (d.sr / 100 if white else 1)
+    bowl = 1 / (d.bowl_avg * (d.econ / 6 if white else 1))
+    return bat if job == "bat" else bowl if job == "bowl" else np.sqrt(bat * bowl)
+
+
 GROUPS = {"Openers": ({"Opener"}, "bat", False), "Top and middle order": ({"Top order", "Middle order"}, "bat", False),
           "Wicketkeepers": (BATTING_ROLES, "bat", True), "All-rounders": ({"All-rounder"}, "both", False),
           "Bowlers": ({"Bowler"}, "bowl", False)}
+ROLE_OF_JOB = {"bat": "Opener", "bowl": "Bowler", "both": "All-rounder"}   # any role with that job
 
 
 def shortlist(career, team: str, target: str, per_role: int = 5) -> dict:
-    """The scouting tab: for each role, the best eligible players not in your side now (settled, converted numbers),
-    your own players in that role to compare, and whether each clears the bar against the weakest of them."""
+    """The scouting tab: for each kind of player, the best eligible ones not in your side now (settled, converted
+    numbers, with enough cricket behind them), your own players of that kind in the latest series to compare, and
+    whether each clears the bar against the weakest of them."""
     pool = candidates(career, team, target)
     if pool.empty:
         return {}
@@ -511,24 +570,15 @@ def shortlist(career, team: str, target: str, per_role: int = 5) -> dict:
         c = pool[pool.role.isin(roles) & (pool.keeper if keepers else True)]
         o = own[own.role.isin(roles) & (own.keeper if keepers else True)]
         c = c[[_enough(r, job) for r in c.itertuples()]] if len(c) else c
-        if job == "bat":
-            score = c.avg * (c.sr / 100 if kind != "multi" else 1)
-            mine = o.avg * (o.sr / 100 if kind != "multi" else 1)
-        elif job == "bowl":
-            score = -(c.bowl_avg * (c.econ if kind != "multi" else 1))
-            mine = -(o.bowl_avg * (o.econ if kind != "multi" else 1))
-        else:
-            score = (c.avg.rank(pct=True) + (-c.bowl_avg).rank(pct=True)) if len(c) else c.avg
-            mine = None
-        c = c.assign(_score=score).sort_values("_score", ascending=False).head(per_role)
-        weakest = o.loc[mine.idxmin()] if mine is not None and len(o) and mine.notna().any() else None
+        c = c.assign(_score=index(c, job, kind)).sort_values("_score", ascending=False).head(per_role)
+        o = o.assign(_score=index(o, job, kind)).sort_values("_score", ascending=False)
+        scored = o[o._score.notna()]
+        weakest = scored.iloc[-1] if len(scored) else None
         picks = []
         for p, r in c.iterrows():
-            g = _gain_for(r, weakest, "All-rounder" if job == "both" else ("Bowler" if job == "bowl" else "Opener"), kind) \
-                if weakest is not None else np.nan
-            picks.append(dict(player=p, gain=g, clears=bool(np.isfinite(g) and g >= BAR), capped=bool(r.capped),
-                              unsure=bool(r.unsure), how=r.how, spinner=bool(r.spinner), country=r.country,
-                              **lines(r, kind, job)))
-        out[name] = dict(picks=picks, weakest=weakest.name if weakest is not None else "",
-                         yours=[dict(player=p, **lines(r, kind, job)) for p, r in o.iterrows()])
+            g = _gain_for(r, weakest, ROLE_OF_JOB[job], kind) if weakest is not None else np.nan
+            picks.append(dict(player=p, gain=g if np.isfinite(g) else None, clears=bool(np.isfinite(g) and g >= BAR),
+                              keeper=bool(r.keeper), spinner=bool(r.spinner), role=r.role, **_who(r), **lines(r, kind, job)))
+        out[name] = dict(job=job, picks=picks, weakest=weakest.name if weakest is not None else "",
+                         yours=[dict(player=p, role=r.role, **lines(r, kind, job)) for p, r in o.iterrows()])
     return out

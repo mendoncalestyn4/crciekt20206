@@ -407,7 +407,7 @@ a.plink { color: var(--ink); text-decoration: none; } a.plink:hover { text-decor
 .pickx.ok .n { color: var(--win); }
 .pickx .gain { font: 700 20px 'Space Grotesk'; color: var(--dim); white-space: nowrap; }
 .pickx.ok .gain { color: var(--win); }
-.tagx { font: 600 13px Inter; color: var(--dim); margin-left: 8px; letter-spacing: .02em; }
+.tagx { display: block; font: 600 13px Inter; color: var(--dim); margin-top: 3px; letter-spacing: .02em; }
 .facts .fact span { font: 400 19px 'Bebas Neue'; letter-spacing: .1em; color: var(--dim); }
 .frm { display: grid; grid-template-columns: 20px auto minmax(0, 1fr); gap: 8px; align-items: baseline; padding: 5px 0; }
 .frm .how { margin: 0; }

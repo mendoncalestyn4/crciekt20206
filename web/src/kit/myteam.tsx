@@ -33,14 +33,14 @@ export function AdviceList({ items, keep }: { items: Advice[]; keep: string }) {
     <div className="adv" key={a.player}>
       <div className="verdict2">{a.verdict}</div>
       <div className="how">{a.player} ({a.role.toLowerCase()}): {a.why}.</div>
-      {(a.own.bat || a.own.bowl) && <div className="how">His numbers here, last two seasons (settled): {[a.own.bat, a.own.bowl].filter(Boolean).join(" · ")}.</div>}
+      {(a.own.bat || a.own.bowl) && <div className="how">Their numbers here, last two seasons (settled): {[a.own.bat, a.own.bowl].filter(Boolean).join(" · ")}.</div>}
       {a.picks.map((p, i) => (
         <div className={`pickx ${p.clears ? "ok" : ""}`} key={p.player}>
           <span className="n">{i + 1}</span>
           <div><Link to={`/players/${encodeURIComponent(p.player)}${keep}`} className="plink"><Name p={p.player} px={22} /></Link>
             <span className="tagx">{p.role}{p.capped ? " · capped" : ""}{p.spinner ? " · spin" : ""}{p.unsure ? " · country a guess" : ""}</span>
             <div className="how">At this level: {[p.bat, p.bowl].filter(Boolean).join(" · ")}</div>
-            <div className="how">Domestic, as it is: {[p.raw_bat, p.raw_bowl].filter(Boolean).join(" · ")}</div></div>
+            <div className="how">Domestic, last two seasons, as it is{p.side ? ` (now at ${p.side})` : ""}: {[p.raw_bat, p.raw_bowl].filter(Boolean).join(" · ")}</div></div>
           <span className="gain">{p.gain >= 0 ? "+" : ""}{Math.round(p.gain * 100)}%</span></div>))}
     </div>))}</>;
 }

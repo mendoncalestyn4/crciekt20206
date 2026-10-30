@@ -149,7 +149,7 @@ export type MatchPage = {
 // ------------------------------------------------------------------ My team (server/myteam.py)
 export type MarkRow = { player: string; mark: number; rank: number; of: number; games: number; line: string; best: string; best_match: string };
 export type Pick = { player: string; role: string; gain: number; clears: boolean; keeper: boolean; spinner: boolean; country: string;
-  capped: boolean; unsure: boolean; bat: string; bowl: string; raw_bat: string; raw_bowl: string };
+  capped: boolean; unsure: boolean; how: string; also: string; side: string; where: string; bat: string; bowl: string; raw_bat: string; raw_bowl: string };
 export type Advice = { player: string; role: string; why: string; verdict: string; own: { bat: string; bowl: string; raw_bat: string; raw_bowl: string }; picks: Pick[] };
 export type ReportCard = { series: string; label: string; format: string; section: string; start: string; end: string; players: MarkRow[];
   earlier: { label: string; series: string; format: string; top: { player: string; mark: number }[] }[]; advice: Advice[] };
@@ -182,4 +182,70 @@ export type MyTeam = {
     no_result: number; win_pct: number | null; finish: string }[] | null;
   notes?: { id: string; date: string; home: string; away: string; note: string }[] | null;
   block?: SectionBlock | null;
+};
+
+// ------------------------------------------------------------------ Players (server/playerpage.py)
+/** One bar of a split (a season, home or away...), with what the tooltip adds. */
+export type Bar = { label: string; value: number | null; note?: string };
+/** The player against everyone here, for one band or position; `key`: the band that matters most in this format. */
+export type Pair = { label: string; me: number | null; all: number | null; note?: string; key?: boolean };
+export type Split = { title?: string; rows: Bar[]; shows: string; for_: string };
+export type FormT = { values: number[]; rolling: (number | null)[]; labels: string[]; window: number; overall: number | null; shows: string; for_: string };
+/** The standard batting or bowling table: `first` is "section" or "season", every other column a number as printed. */
+export type RecordTableT = { cols: string[]; first: string; help: Record<string, string>; rows: Record<string, string | number | null>[] };
+export type PlayersLanding = {
+  players: { player: string; team: string; teams: string[]; matches: number; sections: string[] }[];
+  squads: { team: string; section: string; season: string;
+    players: { player: string; games: number; runs: number; average: number | null; wickets: number; economy: number | null }[] }[];
+};
+export type Batting = {
+  kpis: { innings: number; runs: number; average: number | null; strike_rate: number | null; high_score: string; hundreds: number; fifties: number };
+  form: FormT; compare: { pool: number; values: Record<string, number> } | null;
+  runs_from: { fours: number; sixes: number; running: number; n4: number; n6: number };
+  seasons: Split; how_out: Split | null;
+  danger: { key: string; rows: Pair[]; shows: string; for_: string } | null;
+  funnel: { rows: { mark: number; pct: number | null; all_pct: number | null; highlight: boolean }[]; extra: string; shows: string; for_: string } | null;
+  season_table: RecordTableT;
+  splits: { overall: number | null; stronger: string; rows: Split[] };
+  positions: { rows: Pair[]; shows: string; for_: string } | null;
+  came_in: Split & { press: number; rescue: { at: string; score: string; balls: number; against: string; date: string }[] };
+  consistency: { bar: number; past_bar_pct: number | null; single_figures_pct: number | null; golden_ducks: number; conversion_pct: number | null };
+  nemesis: Split | null; streaks: { streak: string; longest: number; current: number }[];
+  chasing: { won_innings: number; won_average: number | null; lost_innings: number; lost_average: number | null; not_out_in_wins: number } | null;
+  against: Split;
+};
+export type Bowling = {
+  kpis: { wickets: number; average: number | null; economy: number | null; strike_rate: number | null; best: string; hauls: number };
+  form: FormT; seasons: Split; how_wickets: Split | null;
+  match_pattern: { none?: string; first: string; second: string; both: string; best: string; shows?: string; for_?: string } | null;
+  with_without: { rows: { label: string; spells: number; wickets: number; economy: string; maidens: string }[]; shows?: string; for_?: string };
+  season_table: RecordTableT; quality: Split | null; bunnies: Split | null; streaks: { streak: string; longest: number; current: number }[];
+  splits: { overall: number | null; rows: Split[] };
+};
+export type Story = {
+  impact: { rows: { label: string; value: number; won: boolean; note: string }[]; shows: string; for_: string } | null;
+  rank: { rows: { season: string; runs_rank: number | null; runs_of: number | null; wickets_rank: number | null; wickets_of: number | null }[]; shows: string; for_: string } | null;
+  milestones: { unit: string; rows: { milestone: string; took: string; fastest: string; date: string }[] };
+  badges: { badge: string; detail: string; id: string; date: string }[];
+  firsts: { date: string; what: string; detail: string; id: string; against: string }[];
+  fires: { rows: { label: string; times: number; when: string; other: string }[]; none: string };
+  quirks: string[];
+  compare: { seasons: string[]; per: Record<string, Record<string, { v: number | null; text: string; better: "high" | "low" | null }>> } | null;
+};
+export type PlayerPage = {
+  player: string; teams: string[]; keeper: boolean; matches: number; missing: Record<string, string>;
+  card: { matches: number; sections: number; runs: number; best_score: string; wickets: number; best_bowling: string; badges: number;
+    last10: number[]; badge_list: { badge: string; detail: string; times: number }[] } | null;
+  bat_table: RecordTableT | null; bowl_table: RecordTableT | null;
+  formats: { rows: { section: string; matches: number; runs: number; average: number | null; bat_vs: number | null; strike_rate: number | null;
+    sr_vs: number | null; wickets: number; bowl_average: number | null; bowl_vs: number | null; best: boolean }[]; shows: string; for_: string } | null;
+  share: { section: string; season: string; team: string; matches: number; team_matches: number; runs: number; team_runs: number;
+    run_share: number | null; wickets: number; team_wickets: number; wicket_share: number | null }[] | null;
+  won: { id: string; section: string; opp: string; date: string; headline: string }[] | null;
+  marks: { series: string; team: string; label: string; mark: number; rank: number; of: number; line: string; best: string; best_match: string }[] | null;
+  journey: { first: string; last: string; team: string; section: string; season: string; matches: number; runs: number; wickets: number }[] | null;
+  section: string; season: string; sections: string[]; seasons: string[];
+  role: { role: string; tags: string[]; usual_position: number } | null;
+  tabs: string[]; batting: Batting | null; bowling: Bowling | null; fielding: { matches: number; catches: number; stumpings: number } | null;
+  story: Story | null;
 };
