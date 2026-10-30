@@ -186,19 +186,40 @@ const score = (i: Innings | undefined) => (i ? `${i.runs}${i.all_out ? "" : `/${
  *  and red when it lost; the summary over it. Newest first. */
 export function ScoreRows({ results, scores, narrow }: { results: Result[]; scores?: Scores | null; narrow?: boolean }) {
   const t = useTheme();
+  // the track's width, so the scale leaves room for the longest score beside the dots at both ends ("521/4d" on a
+  // narrow tile used to run past it)
+  const box = useRef<HTMLDivElement>(null);
+  const [tw, setTw] = useState(0);
+  useLayoutEffect(() => {   // measured again when the rows change (none on the first render while the page loads)
+    const el = box.current?.querySelector(".db-trk");
+    if (!el) return;
+    setTw(el.clientWidth);
+    const ro = new ResizeObserver(() => setTw(el.clientWidth));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [results]);
   const lines = results.flatMap((r) => Array.from({ length: Math.max(r.ours.length, r.theirs.length) }, (_, k) => ({ r, o: r.ours[k], th: r.theirs[k], k, n: Math.max(r.ours.length, r.theirs.length) })));
   const vals = lines.flatMap((l) => [l.o?.runs, l.th?.runs]).filter((v): v is number => v != null);
   if (!vals.length) return null;
-  const pad = Math.max(25, (Math.max(...vals) - Math.min(...vals)) * (narrow ? 0.6 : 0.2));   // room for the numbers at both ends
-  const lo = Math.max(0, Math.floor((Math.min(...vals) - pad) / 25) * 25), hi = Math.ceil((Math.max(...vals) + pad) / 25) * 25;
+  const longest = Math.max(...lines.flatMap((l) => [score(l.o).length, score(l.th).length]));
+  const need = 18 + longest * 10.5;                      // px from a dot to the far end of its label (17px Space Grotesk)
+  const track = tw || 300;
+  const frac = Math.min(0.4, need / track);
+  const mn = Math.min(...vals), mx = Math.max(...vals), span = Math.max(mx - mn, 1) / (1 - 2 * frac);
+  const lo = Math.max(0, Math.floor((mn - frac * span) / 25) * 25), hi = Math.ceil((mx + frac * span) / 25) * 25;
   const x = (v: number) => ((v - lo) / (hi - lo)) * 100;
   const cols = narrow ? { gridTemplateColumns: "62px 92px minmax(0, 1fr)" } : undefined;
-  const lab = (pos: number, other: number | null, ours: boolean, text: string, colour: string) =>
-    other == null || pos < other || (pos === other && ours)
+  const lab = (pos: number, other: number | null, ours: boolean, text: string, colour: string) => {
+    let left = other == null || pos < other || (pos === other && ours);   // the lower score's label on its left
+    // the scale keeps room at both ends, except below 0: a lone low score with no room before it goes after its dot,
+    // when the other score's dot and label are far enough away to leave room for both
+    if (left && (pos / 100) * track < need && (other == null || ((other - pos) / 100) * track > 2 * need)) left = false;
+    return left
       ? <span className="v" style={{ right: `calc(${100 - pos}% + 14px)`, color: colour }}>{text}</span>
       : <span className="v" style={{ left: `calc(${pos}% + 14px)`, color: colour }}>{text}</span>;
+  };
   return (
-    <>
+    <div ref={box}>
       {scores && <div className="db-sum">{scores.avg_made != null && <div>Average made<b style={{ color: t.led }}>{scores.avg_made}</b></div>}
         {scores.avg_conceded != null && <div>Average conceded<b style={{ color: t.blue }}>{scores.avg_conceded}</b></div>}
         <div>Won<b style={{ color: t.win }}>{scores.won}</b></div><div>Lost<b style={{ color: t.loss }}>{scores.lost}</b></div></div>}
@@ -217,7 +238,7 @@ export function ScoreRows({ results, scores, narrow }: { results: Result[]; scor
           </div>);
       })}
       <div className="db-axis" style={cols}><span /><span /><div><span>{lo}</span><span>{Math.round((lo + hi) / 2)}</span><span>{hi}</span></div></div>
-    </>
+    </div>
   );
 }
 

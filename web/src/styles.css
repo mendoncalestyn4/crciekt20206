@@ -306,6 +306,7 @@ ul.dots { margin: 10px 0 0 22px; font: 400 18px/1.7 Inter; color: var(--soft); }
 .db-when b { display: block; color: var(--ink); }
 .db-who { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .db-who .wl { width: 24px; height: 24px; font-size: 11px; }
+.db-who .pn { white-space: normal; min-width: 0; }   /* "Garden Route Badgers" wraps in its column */
 .db-trk { position: relative; height: 30px; }
 .db-trk .ln { position: absolute; top: 14px; height: 3px; }
 .db-trk .dot { position: absolute; top: 7px; width: 17px; height: 17px; border-radius: 50%; margin-left: -8px; border: 2px solid var(--tile); }
