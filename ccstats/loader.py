@@ -368,6 +368,26 @@ def find_leftovers(parsed: dict[str, Match], saved: dict[str, float], fixes: Fix
 # --------------------------------------------------------------------------- #
 
 
+def divisions_of(games: list[tuple]) -> list[str]:
+    """The division of each game, from (competition, season, stage, team1, team2): its stage when that's a division
+    ("Division 1"); for any other game of a league with divisions (a final, a play-off: the scorecard says "f" or
+    "p.o."), the division both teams played in that season, so a division's final is in that division's table and
+    records. '' when there's none, or the two teams played in different divisions."""
+    member: dict[tuple, set] = {}
+    for comp, season, stage, t1, t2 in games:
+        if stage.startswith("Division"):
+            for t in (t1, t2):
+                member.setdefault((comp, season, t), set()).add(stage)
+    out = []
+    for comp, season, stage, t1, t2 in games:
+        if stage.startswith("Division"):
+            out.append(stage)
+            continue
+        a, b = member.get((comp, season, t1), set()), member.get((comp, season, t2), set())
+        out.append(next(iter(a)) if len(a) == 1 and a == b else "")
+    return out
+
+
 def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
     parsed = sorted(parsed, key=lambda m: (m.date, m.source))
     cls = [classify(m) for m in parsed]
@@ -392,6 +412,8 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
     # are tour games and World XI games, which come with the tours.
     seasons = [str(m.date.year) if (c.level == INTERNATIONAL and c.format in INTERNATIONAL_SECTION)
                or c.level in (EXHIBITION, TOUR) else s for s, c, m in zip(seasons, cls, parsed)]
+    divisions = divisions_of([(c.competition, seasons[i], stages[i], m.team1, m.team2)
+                              for i, (c, m) in enumerate(zip(cls, parsed))])
 
     M, I, B, W, F, FOW, P = [], [], [], [], [], [], []
     for i, (m, c) in enumerate(zip(parsed, cls)):
@@ -407,7 +429,8 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
         winner = m.winner if result_type == "win" else ""
         M.append(dict(
             match_id=m.match_id, date=pd.Timestamp(m.date), season=seasons[i], competition=c.competition,
-            section=section_of(c.competition, stages[i], c.format, c.level), event=event_of(c.competition, stages[i]),
+            section=section_of(c.competition, divisions[i] or stages[i], c.format, c.level),
+            event=event_of(c.competition, divisions[i] or stages[i]),
             format=c.format, level=c.level, country=c.country, stage=stages[i], knockout=c.knockout,
             neutral=c.neutral, recognised=c.recognised, title=m.title, series_id=series[i],
             series_match_no=m.series_match_no, series_length=m.series_length,

@@ -106,3 +106,20 @@ def test_every_competition_is_its_own_section(career):
         "Indian Premier League": 8, "ODI World Cup": 4, "ODIs (bilateral series)": 7, "Ranji Trophy": 5,
         "T20 Blast": 10, "T20 World Cup": 1, "T20Is (bilateral series)": 3, "Tests (bilateral series)": 6,
         "The Hundred": 4, "Vijay Hazare Trophy": 3}
+
+
+def test_a_division_s_final_is_in_that_division():
+    """A league with divisions: its final and play-offs (the scorecard says "f", "p.o.") go into the division both
+    teams played in that season; a game between divisions, or of teams without one, stays out of both."""
+    from ccstats.loader import divisions_of
+    g = [("Cup", "2032", "Division 1", "A", "B"), ("Cup", "2032", "Division 1", "C", "D"),
+         ("Cup", "2032", "Division 2", "E", "F"), ("Cup", "2032", "Final", "A", "C"),
+         ("Cup", "2032", "Eliminator", "E", "F"), ("Cup", "2032", "Play-off", "A", "E"),
+         ("Cup", "2031", "Final", "A", "C"), ("Other", "2032", "Final", "A", "C")]
+    assert divisions_of(g) == ["Division 1", "Division 1", "Division 2", "Division 1", "Division 2", "", "", ""]
+
+
+def test_a_division_final_is_a_knockout():
+    """"D2 Final" (CSA One-Day Cup) is a knockout: out of the points table, under its own name."""
+    from ccstats.competitions import STAGES
+    assert STAGES["d2 final"] == ("D2 Final", True) and STAGES["d1 final"] == ("D1 Final", True)

@@ -203,6 +203,9 @@ STAGES = {
     "quarter final": ("Quarter-final", True),
     "semi-final": ("Semi-final", True), "semi final": ("Semi-final", True),
     "final": ("Final", True),
+    # a division's own finals (the CSA One-Day Cup titles two games "D2 Final" in one season): knockouts, kept out of
+    # the points table, under the game's own name (only a single "Final" makes a champion)
+    "d1 final": ("D1 Final", True), "d2 final": ("D2 Final", True),
     "qualifier 1": ("Qualifier 1", True), "qualifier 2": ("Qualifier 2", True),
     "eliminator": ("Eliminator", True),
     # The Hundred's eliminator (2nd v 3rd) is titled "Preliminary-Final" by the game
