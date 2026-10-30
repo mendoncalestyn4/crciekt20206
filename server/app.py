@@ -28,7 +28,7 @@ from ccstats import search as SR
 from ccstats.colours import TEAM_COLOURS
 from ccstats.local import CareerStore
 
-from . import demo, matchpage, myteam, styleguide
+from . import demo, matchpage, myteam, playerpage, styleguide
 from .cache import kept
 from .site import Site
 
@@ -274,6 +274,22 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             return _error("That team hasn't played in this career.", 404)
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
+    # ------------------------------------------------------------------ Players
+    async def players_(request: Request):
+        data = await _with_career(lambda c: kept(c, ("players-landing", tuple(site.my_teams(c))),
+                                                 lambda: playerpage.landing(c, site.my_teams(c))))()
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
+    async def player_(request: Request):
+        q = request.query_params
+        name, section, season = q.get("name", ""), q.get("section", ""), q.get("season", "")
+        try:
+            data = await _with_career(lambda c: kept(c, ("player", name, section, season),
+                                                     lambda: playerpage.page(c, name, section, season)))()
+        except KeyError:
+            return _error(f"{name or 'That player'} hasn't batted or bowled in this career.", 404)
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
     # ------------------------------------------------------------------ Demo of ideas waiting for approval
     async def demo_(request: Request):
         q = request.query_params
@@ -335,6 +351,23 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                 matchpage.ratings(c, sec)
             except Exception:  # noqa: BLE001
                 pass
+        # the Players pages: the list of everyone, and each of your teams' competitions (their top run-scorer's page
+        # works out the pieces every page there shares)
+        try:
+            kept(c, ("players-landing", tuple(site.my_teams(c))), lambda: playerpage.landing(c, site.my_teams(c)))
+        except Exception:  # noqa: BLE001
+            pass
+        for team in myteam.teams_by_latest(c, site.my_teams(c)):
+            m = c.matches[(c.matches.home == team) | (c.matches.away == team)]
+            for sec in m.section.unique():
+                b = c.batting[c.batting.match_id.isin(m[m.section == sec].match_id) & (c.batting.team == team)]
+                if b.empty:
+                    continue
+                top = b.groupby("player").runs.sum().idxmax()
+                try:
+                    kept(c, ("player", top, sec, ""), lambda: playerpage.page(c, top, sec, ""))
+                except Exception:  # noqa: BLE001
+                    pass
 
     async def watch_loop():
         first = True
@@ -400,6 +433,8 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/match/{mid}", match_),
         Route("/api/notes", note_, methods=["POST"]),
         Route("/api/demo", demo_),
+        Route("/api/players", players_),
+        Route("/api/player", player_),
         Route("/api/events", events),
     ]
     if (web / "assets").is_dir():   # the website's files, named after their contents: kept by the browser for good

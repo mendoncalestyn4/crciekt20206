@@ -364,6 +364,39 @@ def form_is_real(career, ids, last: int = 8, min_innings: int = 12) -> pd.DataFr
 # --------------------------------------------------------------------------- #
 
 
+def team_share(career, player: str) -> pd.DataFrame:
+    """The player's share of their team in each competition and season they played, newest first: their matches out
+    of the team's, their runs out of all the team's runs (the totals as printed, extras included) and their wickets
+    out of all the wickets the team's bowlers took. Columns: section, season, team, matches, team_matches, runs,
+    team_runs, run_share, wickets, team_wickets, wicket_share (shares in %)."""
+    cols = ["section", "season", "team", "matches", "team_matches", "runs", "team_runs", "run_share", "wickets",
+            "team_wickets", "wicket_share"]
+    b = career.batting[career.batting.player == player]
+    if b.empty:
+        return pd.DataFrame(columns=cols)
+    m = career.matches.set_index("match_id")
+    played = b[["match_id", "team"]].drop_duplicates()
+    played = played.assign(section=played.match_id.map(m.section), season=played.match_id.map(m.season),
+                           date=played.match_id.map(m.date))
+    out = []
+    for (section, season, team), g in played.groupby(["section", "season", "team"]):
+        mm = career.matches[(career.matches.section == section) & (career.matches.season == season)
+                            & ((career.matches.home == team) | (career.matches.away == team))]
+        ids = set(mm.match_id)
+        inn = career.innings[career.innings.match_id.isin(ids) & (career.innings.team == team)]
+        bowl = career.bowling[career.bowling.match_id.isin(ids) & (career.bowling.team == team)]
+        mine_b = b[b.match_id.isin(ids) & (b.team == team) & b.did_bat]
+        mine_w = bowl[bowl.player == player]
+        team_runs, team_wkts = int(inn.runs.sum()), int(bowl.wickets.sum())
+        runs, wkts = int(mine_b.runs.sum()), int(mine_w.wickets.sum())
+        out.append(dict(section=section, season=season, team=team, matches=int(g.match_id.nunique()),
+                        team_matches=len(ids), runs=runs, team_runs=team_runs,
+                        run_share=runs / team_runs * 100 if team_runs else np.nan, wickets=wkts, team_wickets=team_wkts,
+                        wicket_share=wkts / team_wkts * 100 if team_wkts else np.nan, _last=g.date.max()))
+    d = pd.DataFrame(out).sort_values("_last", ascending=False)
+    return d[cols].reset_index(drop=True)
+
+
 def firsts(career, player: str) -> pd.DataFrame:
     """A player's firsts across the whole career: first match (and first for each
     team and section), first fifty, hundred, wicket, three- and five-for, Player of the Match."""

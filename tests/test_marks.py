@@ -139,3 +139,17 @@ def test_every_player_in_every_series_of_the_test_scorecards(fixtures_marks):
     # the match a player did most in is one of his series' matches
     key = MK.series_key(c.matches.set_index("match_id"))
     assert all(key[r.best_match] == r.series for r in s.itertuples())
+
+
+def test_a_players_share_of_the_team():
+    """Runs out of the team's totals (extras included), wickets out of the team's bowlers', worked by hand."""
+    from ccstats import players as PL
+    b = Book()
+    b.match("m1", "2026-01-01", "India", "England")
+    b.inns("m1", 1, "India", "England", [("A", 60, 80, True), ("B", 30, 40, True)], extras=10)
+    b.bowl("m1", 1, "England", "India", [("X", 60, 50, 2)])
+    b.inns("m1", 2, "England", "India", [("X", 40, 50, True)], extras=0)
+    b.bowl("m1", 2, "India", "England", [("B", 60, 20, 3), ("C", 60, 20, 1)])
+    s = PL.team_share(b.career(), "B").iloc[0]
+    assert (s.matches, s.team_matches, s.runs, s.team_runs, s.wickets, s.team_wickets) == (1, 1, 30, 100, 3, 4)
+    assert s.run_share == pytest.approx(30.0) and s.wicket_share == pytest.approx(75.0)

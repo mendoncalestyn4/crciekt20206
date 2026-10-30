@@ -33,7 +33,20 @@ def entry_scores(career) -> pd.DataFrame:
     """Score and wickets down when each batter walked in.
 
     Openers (positions 1 and 2) come in at 0 for 0; the batter at position p
-    arrives when wicket p-2 falls, and the fall of wickets gives that score."""
+    arrives when wicket p-2 falls, and the fall of wickets gives that score.
+    Kept with the career until its scorecards change (two seconds on a big one)."""
+    stamp = (id(career.batting), len(career.batting), id(career.fow), len(career.fow))
+    kept = getattr(career, "_entry_scores", None)
+    if kept is None or kept[0] != stamp:
+        kept = (stamp, _entry_scores(career))
+        try:
+            career._entry_scores = kept
+        except AttributeError:
+            pass
+    return kept[1]
+
+
+def _entry_scores(career) -> pd.DataFrame:
     fow = career.fow.drop_duplicates(["match_id", "innings_no", "wicket"]).set_index(["match_id", "innings_no", "wicket"]).score
     b = career.batting[["match_id", "innings_no", "position"]].copy()
     wk = (b.position - 2).clip(lower=0)
