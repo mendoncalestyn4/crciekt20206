@@ -206,14 +206,12 @@ export function ScoreRows({ results, scores, narrow }: { results: Result[]; scor
   const track = tw || 300;
   const frac = Math.min(0.4, need / track);
   const mn = Math.min(...vals), mx = Math.max(...vals), span = Math.max(mx - mn, 1) / (1 - 2 * frac);
-  const lo = Math.max(0, Math.floor((mn - frac * span) / 25) * 25), hi = Math.ceil((mx + frac * span) / 25) * 25;
+  // below 0 when a score near 0 needs the room (an abandoned game's 0/0); the axis doesn't print a negative number
+  const lo = Math.floor((mn - frac * span) / 25) * 25, hi = Math.ceil((mx + frac * span) / 25) * 25;
   const x = (v: number) => ((v - lo) / (hi - lo)) * 100;
   const cols = narrow ? { gridTemplateColumns: "62px 92px minmax(0, 1fr)" } : undefined;
   const lab = (pos: number, other: number | null, ours: boolean, text: string, colour: string) => {
-    let left = other == null || pos < other || (pos === other && ours);   // the lower score's label on its left
-    // the scale keeps room at both ends, except below 0: a lone low score with no room before it goes after its dot,
-    // when the other score's dot and label are far enough away to leave room for both
-    if (left && (pos / 100) * track < need && (other == null || ((other - pos) / 100) * track > 2 * need)) left = false;
+    const left = other == null || pos < other || (pos === other && ours);   // the lower score's label on its left
     return left
       ? <span className="v" style={{ right: `calc(${100 - pos}% + 14px)`, color: colour }}>{text}</span>
       : <span className="v" style={{ left: `calc(${pos}% + 14px)`, color: colour }}>{text}</span>;
@@ -237,7 +235,7 @@ export function ScoreRows({ results, scores, narrow }: { results: Result[]; scor
             </div>
           </div>);
       })}
-      <div className="db-axis" style={cols}><span /><span /><div><span>{lo}</span><span>{Math.round((lo + hi) / 2)}</span><span>{hi}</span></div></div>
+      <div className="db-axis" style={cols}><span /><span /><div><span>{lo < 0 ? "" : lo}</span><span>{(lo + hi) / 2 < 0 ? "" : Math.round((lo + hi) / 2)}</span><span>{hi}</span></div></div>
     </div>
   );
 }
