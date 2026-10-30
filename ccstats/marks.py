@@ -66,7 +66,7 @@ def match_values(career, ids=None) -> pd.DataFrame:
     side["white"] = side.format.map(KIND).ne("multi")
     side["rpb"] = side.runs_m / side.balls_m.replace(0, np.nan)
     side["rpw"] = side.runs_m / side.wkts_m.clip(lower=1)
-    quota = side.format.map(BALL_QUOTA)
+    quota = side.format.map(BALL_QUOTA).astype(float)   # numbers even when nothing maps (pandas 3 keeps text otherwise)
     side["weight"] = np.where(side.rain & side.white & quota.notna(),
                               (side.balls_m / (2 * quota)).clip(upper=1.0), 1.0)
     # a side's own total is never taken as less than half the average side's, so one tiny total can't blow a share up
@@ -170,7 +170,7 @@ def _series_marks(career, ids) -> pd.DataFrame:
     # eleven, its wickets by five or so, so one scale would always put the bowlers on top
     kind = s.format.map(KIND)
     s["is_batter"] = s.position.le(7) & ((s.balls > 0) | (s.outs > 0))
-    s["is_bowler"] = s.balls_bowled / s.games >= kind.map(BOWLER_BALLS)
+    s["is_bowler"] = s.balls_bowled / s.games >= kind.map(BOWLER_BALLS).astype(float)
     s["bat_v"], s["bowl_v"] = s.bat + s.field, s.bowl + s.field
     s["z_bat"], s["z_bowl"] = np.nan, np.nan
     for ref, idx in s.groupby("reference").groups.items():
@@ -191,7 +191,7 @@ def _series_marks(career, ids) -> pd.DataFrame:
             # least half a bowler's share, so a part-timer's one lucky over doesn't decide his mark
             batted = (part.balls > 0) | (part.outs > 0)
             keep = batted if who == "is_batter" else (
-                (part.balls_bowled / part.games >= kind.loc[idx].map(BOWLER_BALLS) / 2)
+                (part.balls_bowled / part.games >= kind.loc[idx].map(BOWLER_BALLS).astype(float) / 2)
                 | ((part.balls_bowled > 0) & ~batted))   # bowling was all he did: it's what he's marked on
             s.loc[idx, z_col] = np.where(keep, z, np.nan)
     # someone who only fielded (a substitute) isn't marked

@@ -75,20 +75,16 @@ def score_of(career, match_id: str, team: str) -> str:
                       for i in inn.itertuples())
 
 
-def _innings(g: pd.DataFrame | None, team: str) -> list[dict]:
-    """One side's innings of a match, in order: runs, wickets, all out, declared."""
-    if g is None:
-        return []
+def _innings(g: list | None, team: str) -> list[dict]:
+    """One side's innings of a match, in order: runs, wickets, all out, declared (`g`: the match's innings rows)."""
     return [dict(runs=int(i.runs), wkts=int(i.wickets), all_out=bool(i.all_out), declared=bool(i.declared))
-            for i in g[g.team == team].itertuples()]
+            for i in g or [] if i.team == team]
 
 
-def _score(g: pd.DataFrame | None, team: str) -> str:
-    """score_of from a match's innings already in hand."""
-    if g is None:
-        return ""
+def _score(g: list | None, team: str) -> str:
+    """score_of from a match's innings rows already in hand."""
     return " & ".join(f"{int(i.runs)}" + ("" if i.all_out else f"/{int(i.wickets)}") + ("d" if i.declared else "")
-                      for i in g[g.team == team].itertuples())
+                      for i in g or [] if i.team == team)
 
 
 def results(career, team: str, ids=None) -> list[dict]:
@@ -96,15 +92,17 @@ def results(career, team: str, ids=None) -> list[dict]:
     charts, the margin, every innings of both sides, who batted first, where it was played (home, away or neutral,
     and the host) and the player of the match. Worked out once for each team of a career and kept with it (the
     headlines take a while over a few hundred matches); `ids` picks some of them."""
-    key = (team, id(career.matches), len(career.matches))
+    stamp = (id(career.matches), len(career.matches))
     kept = getattr(career, "_sg_results", None)
-    if kept is None or kept.get("key") != key:
-        kept = {"key": key, "rows": _results(career, team)}
+    if kept is None or kept.get("_stamp") != stamp:   # one list per team, so going back and forth costs nothing
+        kept = {"_stamp": stamp}
         try:
             career._sg_results = kept
         except AttributeError:
             pass
-    rows = kept["rows"]
+    if team not in kept:
+        kept[team] = _results(career, team)
+    rows = kept[team]
     if ids is None:
         return list(rows)
     wanted = set(ids)
@@ -114,15 +112,15 @@ def results(career, team: str, ids=None) -> list[dict]:
 def _results(career, team: str) -> list[dict]:
     m = career.matches
     g = m[(m.home == team) | (m.away == team)]
-    inns = {k: x for k, x in career.innings[career.innings.match_id.isin(g.match_id)].sort_values("innings_no")
-            .groupby("match_id")}
+    inns = {k: list(x.itertuples()) for k, x in career.innings[career.innings.match_id.isin(g.match_id)]
+            .sort_values("innings_no").groupby("match_id")}
     out = []
     for r in g.sort_values(["date", "match_id"]).itertuples():
         opp = r.away if r.home == team else r.home
         outcome = ("W" if r.winner == team else "L" if r.winner == opp else
                    "NR" if r.result_type == "no result" else "T" if r.result_type == "tie" else "D")
         inn = inns.get(r.match_id)
-        first = inn.team.iloc[0] if inn is not None and len(inn) else (r.batted_first or "")
+        first = inn[0].team if inn else (r.batted_first or "")
         pom = r.player_of_match or ""
         out.append(dict(id=r.match_id, date=clean(r.date), section=r.section, event=r.event, opp=opp, outcome=outcome,
                         result=r.result, us=_score(inn, team), them=_score(inn, opp),

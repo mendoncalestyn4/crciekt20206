@@ -196,13 +196,13 @@ def measure(career, t_ids, f_ids) -> tuple[dict, dict]:
     """The gaps measured from the players who played in both sets of matches (batting average, strike rate, bowling
     average, economy; 0.2 = 20% harder in the first), and how many players each rests on."""
     bt, bf = _bat(career, t_ids), _bat(career, f_ids)
-    j = bt.join(bf, lsuffix="_t", rsuffix="_f", how="inner")
+    j = bt.merge(bf, left_index=True, right_index=True, suffixes=("_t", "_f"), how="inner")
     j1 = j[(j.outs_t >= 3) & (j.outs_f >= 3)]
     r_avg, n_avg = _ratio(j1.runs_t / j1.outs_t, j1.runs_f / j1.outs_f, np.minimum(j1.outs_t, j1.outs_f))
     j2 = j[(j.balls_t >= 60) & (j.balls_f >= 60)]
     r_sr, n_sr = _ratio(j2.runs_t / j2.balls_t, j2.runs_f / j2.balls_f, np.minimum(j2.balls_t, j2.balls_f))
     wt, wf = _bowl(career, t_ids), _bowl(career, f_ids)
-    k = wt.join(wf, lsuffix="_t", rsuffix="_f", how="inner")
+    k = wt.merge(wf, left_index=True, right_index=True, suffixes=("_t", "_f"), how="inner")
     k1 = k[(k.wickets_t >= 4) & (k.wickets_f >= 4)]
     r_bowl, n_bowl = _ratio(k1.runs_t / k1.wickets_t, k1.runs_f / k1.wickets_f, np.minimum(k1.wickets_t, k1.wickets_f))
     k2 = k[(k.balls_t >= 120) & (k.balls_f >= 120)]

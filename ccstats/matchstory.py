@@ -22,10 +22,36 @@ def overs_text(balls: int) -> str:
     return f"{balls // 6}" + (f".{balls % 6}" if balls % 6 else "")
 
 
+def by_match(career) -> dict:
+    """Each match's batting, bowling and innings rows, and the matches by id, kept with the career until its tables
+    change: finding one match in a whole big career's tables took 20 to 40 ms every time (seconds for a team's
+    list of results)."""
+    stamp = tuple((id(t), len(t)) for t in (career.matches, career.batting, career.bowling, career.innings))
+    kept = getattr(career, "_by_match", None)
+    if kept is None or kept[0] != stamp:
+        kept = (stamp, dict(bat=dict(tuple(career.batting.groupby("match_id", sort=False))),
+                            bowl=dict(tuple(career.bowling.groupby("match_id", sort=False))),
+                            inn=dict(tuple(career.innings.groupby("match_id", sort=False))),
+                            meta=career.matches.set_index("match_id"),
+                            none=(career.batting.iloc[0:0], career.bowling.iloc[0:0], career.innings.iloc[0:0])))
+        try:
+            career._by_match = kept
+        except AttributeError:
+            pass
+    return kept[1]
+
+
+def _rows(career, match_id: str):
+    """(batting, bowling, innings) rows of one match."""
+    k = by_match(career)
+    nb, nw, ni = k["none"]
+    return k["bat"].get(match_id, nb), k["bowl"].get(match_id, nw), k["inn"].get(match_id, ni)
+
+
 def team_of(career, match_id: str, player: str) -> str:
     """The team a player played for in a match ('' if the scorecards don't have them)."""
-    for df in (career.batting, career.bowling):
-        x = df[(df.match_id == match_id) & (df.player == player)]
+    for df in _rows(career, match_id)[:2]:
+        x = df[df.player == player]
         if len(x):
             return str(x.team.iloc[0])
     return ""
@@ -34,9 +60,9 @@ def team_of(career, match_id: str, player: str) -> str:
 def figures(career, match_id: str, player: str) -> dict:
     """What a player did in a match: {'bat': {...} or None, 'bowl': {...} or None}. A Test's two innings are kept
     apart in the text ('56 & 143'), never added up."""
-    b = career.batting[(career.batting.match_id == match_id) & (career.batting.player == player)
-                       & career.batting.did_bat].sort_values("innings_no")
-    w = career.bowling[(career.bowling.match_id == match_id) & (career.bowling.player == player)]
+    bm, wm, _ = _rows(career, match_id)
+    b = bm[(bm.player == player) & bm.did_bat].sort_values("innings_no")
+    w = wm[wm.player == player]
     bat = None
     if len(b):
         bat = dict(runs=int(b.runs.sum()), balls=int(b.balls.sum()), fours=int(b.fours.sum()), sixes=int(b.sixes.sum()),
@@ -73,7 +99,7 @@ def _margin(r) -> tuple[str, str]:
 def pom_headline(career, match_id: str) -> str:
     """A headline about the player of the match: what they did and what it meant. '' when there's no player of the
     match."""
-    r = career.matches.set_index("match_id").loc[match_id]
+    r = by_match(career)["meta"].loc[match_id]
     p = r.player_of_match
     if not p:
         return ""
@@ -82,7 +108,7 @@ def pom_headline(career, match_id: str) -> str:
     bat, bowl = f["bat"], f["bowl"]
     if not t or (bat is None and bowl is None):            # the scorecards can't place them: say just that much
         return f"{p} is player of the match" + (f" as {r.winner} win" if r.winner else "")
-    inn = career.innings[career.innings.match_id == match_id].sort_values("innings_no")
+    inn = _rows(career, match_id)[2].sort_values("innings_no")
     per_wicket = inn.runs.sum() / max(inn.wickets.sum(), 1)  # a wicket is worth this many runs in this match
     by_bat = (bat["runs"] if bat else 0) >= (bowl["wickets"] * per_wicket if bowl else 0)
     allround = bool(bat and bowl and bat["runs"] >= 30 and bowl["wickets"] >= 2)

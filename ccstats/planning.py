@@ -195,11 +195,11 @@ def travellers(career, team: str, fmt: str, host: str | None = None, min_inns: i
         w["avg"] = w.runs / w.wkts.replace(0, np.nan)
         return w
     bh, ba = bat_side(home_ids), bat_side(away_ids)
-    b = bh.join(ba, lsuffix="_home", rsuffix="_away", how="inner")
+    b = bh.merge(ba, left_index=True, right_index=True, suffixes=("_home", "_away"), how="inner")
     b = b[(b.inns_home >= min_inns) & (b.inns_away >= min_inns)].copy()
     b["diff"] = b.avg_away - b.avg_home
     wh, wa = bowl_side(home_ids), bowl_side(away_ids)
-    w = wh.join(wa, lsuffix="_home", rsuffix="_away", how="inner")
+    w = wh.merge(wa, left_index=True, right_index=True, suffixes=("_home", "_away"), how="inner")
     w = w[(w.balls_home >= min_balls) & (w.balls_away >= min_balls)].copy()
     w["diff"] = w.avg_home - w.avg_away  # positive: cheaper wickets away, so better on the road
     return dict(label=label, bat=b.reset_index().sort_values("diff", ascending=False),

@@ -160,10 +160,13 @@ def test_the_team_s_matches_are_worked_out_once_for_a_career(pc):
     from server.styleguide import results
     c = pc[0].load("My career")[0]
     every = results(c, "England")
-    assert results(c, "England") == every and c._sg_results["key"][0] == "England"
+    assert results(c, "England") == every and set(c._sg_results) == {"_stamp", "England"}
     some = [r["id"] for r in every[::3]]
     assert [r["id"] for r in results(c, "England", some)] == some          # newest first, as the whole list
-    assert results(c, "India") != every and c._sg_results["key"][0] == "India"   # another team is worked out afresh
+    india = results(c, "India")
+    assert india != every and set(c._sg_results) == {"_stamp", "England", "India"}   # each team kept, side by side
+    kept = c._sg_results["England"]
+    assert results(c, "England") == every and c._sg_results["England"] is kept       # going back costs nothing
 
 
 def test_the_form_line_and_runs_of_results():
