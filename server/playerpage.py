@@ -383,52 +383,46 @@ def _batting(career, player, section, season, ids, inns, bat_t, kind) -> dict:
     return out
 
 
-BEST_FROM = 3   # innings at a position before it can be called their best
-
-
 def _positions(career, ids, inns) -> dict | None:
-    """Every position they have batted at on its own (no. 3, no. 4, no. 5...): innings, runs, average, strike rate,
-    50s and 100s, and the average batter at that position here; their best is the position where they beat that
-    average batter by the most, from 3 innings there (an opener's average and a no. 7's aren't the same thing)."""
+    """Every position they have batted at on its own (no. 3, no. 4, no. 5...): innings, runs, not outs, best score,
+    average, strike rate, 50s and 100s, the average batter at that position here, and their edge on that batter,
+    settled (attributes.position_table); their best is the biggest settled edge, from 2 innings there (as the scout
+    report says it)."""
     if inns.empty:
         return None
-    b = career.batting[career.batting.match_id.isin(ids) & career.batting.did_bat]
-    pool = b.groupby("position").agg(runs=("runs", "sum"), outs=("out", "sum"))
-    pool_avg = pool.runs / pool.outs.replace(0, np.nan)
+    player = inns.player.iloc[0]
+    t = AT.position_table(career, ids, player).set_index("position")
+    best = AT.best_position(career, ids, player)
     rows = []
     for pos, g in inns.groupby("position"):
-        outs = int(g.out.sum())
-        avg = g.runs.sum() / outs if outs else np.nan
-        rows.append(dict(position=int(pos), innings=len(g), runs=int(g.runs.sum()), not_outs=len(g) - outs,
-                         average=avg, strike_rate=g.runs.sum() / g.balls.sum() * 100 if g.balls.sum() else np.nan,
+        r = t.loc[pos]
+        rows.append(dict(position=int(pos), innings=len(g), runs=int(g.runs.sum()), not_outs=int((~g.out).sum()),
+                         average=SG.clean(r.average), strike_rate=SG.clean(g.runs.sum() / g.balls.sum() * 100 if g.balls.sum() else None),
                          fifties=int(((g.runs >= 50) & (g.runs < 100)).sum()), hundreds=int((g.runs >= 100).sum()),
                          high=f"{int(g.runs.max())}{'' if g.loc[g.runs.idxmax(), 'out'] else '*'}",
-                         all_average=float(pool_avg.get(pos, np.nan))))
-    t = pd.DataFrame(rows).sort_values("position")
-    t["edge"] = (t.average - t.all_average) / t.all_average * 100
-    ok = t[(t.innings >= BEST_FROM) & t.edge.notna()]
-    if len(ok) > 1:
-        top = ok.sort_values("edge", ascending=False).iloc[0]
-        shows = (f"Best at no. {top.position}: {top.runs} runs in {top.innings} innings at {fmt(top.average)}, "
-                 f"{top.edge:+.0f}% on the average no. {top.position} here ({fmt(top.all_average)}). "
-                 + " · ".join(f"no. {r.position}: {fmt(r.average)} ({r.edge:+.0f}%)" for r in ok.sort_values("position").itertuples()
-                              if r.position != top.position) + ".")
-    elif len(ok) == 1:
-        top = ok.iloc[0]
-        shows = (f"Has batted {BEST_FROM}+ times only at no. {top.position}: {top.runs} runs at {fmt(top.average)} "
-                 f"({top.edge:+.0f}% on the average no. {top.position} here). Too few innings anywhere else to compare.")
+                         all_average=SG.clean(r.all_average), edge=SG.clean(r.edge),
+                         small=bool(len(g) < AT.SMALL), best=best is not None and best["position"] == int(pos)))
+    if best:
+        others = [x for x in rows if x["position"] != best["position"] and x["innings"] >= AT.BEST_FROM and x["edge"] is not None]
+        shows = (f"Best at no. {best['position']}: {best['runs']} runs in {best['innings']} innings"
+                 + (f" at {fmt(best['average'])}" if best["average"] is not None else ", never out")
+                 + f", {best['edge']:+.0f}% on the average no. {best['position']} here ({fmt(best['all_average'])}), settled"
+                 + (" (only a few innings there, so it may change)" if best["small"] else "")
+                 + (f"; over a longer run, no. {best['proven']['position']} ({best['proven']['edge']:+.0f}% in "
+                    f"{best['proven']['innings']} innings)" if best.get("proven") else "") + ". "
+                 + " · ".join(f"no. {x['position']}: {x['edge']:+.0f}%" for x in others) + ("." if others else ""))
+    elif len([x for x in rows if x["innings"] >= AT.BEST_FROM]) == 1:
+        x = next(x for x in rows if x["innings"] >= AT.BEST_FROM)
+        shows = f"Has batted twice or more only at no. {x['position']}, so there's no other position to compare it with."
     else:
-        shows = f"No position with {BEST_FROM} innings yet, so no best one to name."
-    best = int(ok.sort_values("edge", ascending=False).iloc[0].position) if len(ok) > 1 else None   # as the scout report
-    return dict(rows=[dict(label=f"No. {r.position}", me=SG.clean(r.average), all=SG.clean(r.all_average), key=r.position == best,
-                           note=f"{r.innings} innings, {r.runs} runs, strike rate {fmt(r.strike_rate)}") for r in t.itertuples()],
-                table=[dict(position=r.position, innings=r.innings, runs=r.runs, not_outs=r.not_outs, average=SG.clean(r.average),
-                            strike_rate=SG.clean(r.strike_rate), fifties=r.fifties, hundreds=r.hundreds, high=r.high,
-                            all_average=SG.clean(r.all_average), edge=SG.clean(r.edge), best=r.position == best)
-                       for r in t.itertuples()],
-                best=best, shows=shows,
+        shows = "No position with 2 innings yet, so no best one to name."
+    return dict(rows=[dict(label=f"No. {x['position']}", me=x["average"], all=x["all_average"], key=x["best"],
+                           note=f"{x['innings']} innings, {x['runs']} runs, strike rate {fmt(x['strike_rate'])}") for x in rows],
+                table=rows, best=best["position"] if best else None, shows=shows,
                 for_="Tells you where to bat them: each position against the average batter there (gold is them, grey the "
-                     "average batter at that position); ★ is their best, from 3 innings there.")
+                     "average batter at that position). 'They are' is settled: a few innings at the usual level for that "
+                     "position are added before comparing, so two big scores count for a lot but can't decide it alone; "
+                     "★ is their best, from 2 innings there.")
 
 
 def _danger(career, ids, player) -> dict | None:

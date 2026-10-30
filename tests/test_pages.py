@@ -192,3 +192,27 @@ def test_the_inbox_reads_and_removes_and_remembers(live):
 def test_my_team_has_its_squad_depth(live):
     d = live.json("/api/myteam")
     assert d["missing"] == {} and d["depth"]["section"] == d["block"]["section"]
+
+
+def test_the_best_batting_position_is_settled():
+    """Each position on its own, settled with the format's few dismissals at that position's usual level: 2 innings of
+    228 and 12 at no. 4 beat 12 ordinary innings at no. 5; the best over a longer run is named too."""
+    from fakecareer import Book
+    b = Book()
+    # the usual no. 4 averages 40 and no. 5 averages 40 (an "X" batter each game); our player P moves about
+    plan = [(4, 228), (4, 12)] + [(5, 30)] * 12
+    for i, (pos, runs) in enumerate(plan):
+        mid = f"t{i}"
+        b.match(mid, f"2026-{1 + i // 28:02d}-{1 + i % 28:02d}", "India", "England")
+        bats = [(f"O{j}", 40, 60, True) for j in range(1, pos)] + [("P", runs, 100, True)]
+        bats += [(f"Q{pos}", 40, 60, True)] if pos == 4 else []
+        b.inns(mid, 1, "India", "England", bats)
+        b.inns(mid, 2, "England", "India", [(f"E{j}", 40, 60, True) for j in range(1, 6)])
+    c = b.career()
+    t = AT.position_table(c, c.matches.match_id, "P").set_index("position")
+    k = 5   # first-class: five dismissals at the usual level
+    assert t.average[4] == pytest.approx(120) and t.average[5] == pytest.approx(30)
+    assert t.settled[4] == pytest.approx((240 + k * t.all_average[4]) / (2 + k))
+    assert t.settled[5] == pytest.approx((360 + k * t.all_average[5]) / (12 + k))
+    best = AT.best_position(c, c.matches.match_id, "P")
+    assert best["position"] == 4 and best["small"] and best["proven"]["position"] == 5

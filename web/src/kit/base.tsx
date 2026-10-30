@@ -56,7 +56,7 @@ export function Hero({ logo, px = 180, kicker, title, size, side, sideName, h }:
   return (
     <section className="hero" style={h ? { minHeight: h } : undefined}>
       {logo && <Logo team={logo} size={px} />}
-      <div style={{ position: "relative", zIndex: 2 }}>
+      <div className="hero-main" style={{ position: "relative", zIndex: 2 }}>
         <div className="k">{kicker}</div>
         <h2 style={size ? { fontSize: size } : undefined}>{title}</h2>
       </div>

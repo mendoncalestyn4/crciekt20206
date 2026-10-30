@@ -38,7 +38,7 @@ export function SplitBars({ rows, reference, dec = 1, height, unit = "", lowBett
 }
 
 /** The player (gold) against everyone here (grey), side by side for each band or position. */
-export function PairedBars({ rows, me, unit = "", dec = 1 }: { rows: Pair[]; me: string; unit?: string; dec?: number }) {
+export function PairedBars({ rows, me, unit = "", dec = 1, others = "Everyone here" }: { rows: Pair[]; me: string; unit?: string; dec?: number; others?: string }) {
   const t = useTheme();
   const option = useMemo<Option>(() => {
     const L = look(t);
@@ -50,16 +50,16 @@ export function PairedBars({ rows, me, unit = "", dec = 1 }: { rows: Pair[]; me:
         axisLabel: { color: t.ink, fontFamily: "Bebas Neue", fontSize: ts(15), margin: 10 } },
       tooltip: { ...L.TT, trigger: "axis", axisPointer: { type: "shadow" }, formatter: (ps: { dataIndex: number }[]) => {
         const r = rows[ps[0]?.dataIndex ?? 0];
-        return r ? `${r.label}<br/>${me}: <b>${r.me == null ? "–" : (+r.me).toFixed(dec)}${unit}</b><br/>Everyone here: ${r.all == null ? "–" : (+r.all).toFixed(dec)}${unit}${r.note ? `<br/><span style="opacity:.75">${r.note}</span>` : ""}` : ""; } },
+        return r ? `${r.label}<br/>${me}: <b>${r.me == null ? "–" : (+r.me).toFixed(dec)}${unit}</b><br/>${others}: ${r.all == null ? "–" : (+r.all).toFixed(dec)}${unit}${r.note ? `<br/><span style="opacity:.75">${r.note}</span>` : ""}` : ""; } },
       series: [
         { type: "bar", name: me, data: rows.map((r) => r.me), barGap: "15%", itemStyle: { color: t.led, borderRadius: 0 },
           label: { show: true, position: "right", ...L.VAL(15), formatter: (p: { value: number | null }) => (p.value == null ? "" : `${(+p.value).toFixed(dec)}${unit}`) } },
-        { type: "bar", name: "Everyone here", data: rows.map((r) => r.all), itemStyle: { color: t.grey, borderRadius: 0 },
+        { type: "bar", name: others, data: rows.map((r) => r.all), itemStyle: { color: t.grey, borderRadius: 0 },
           label: { show: true, position: "right", color: t.dim, fontFamily: "Inter", fontSize: 12, formatter: (p: { value: number | null }) => (p.value == null ? "" : `${(+p.value).toFixed(dec)}${unit}`) } },
       ],
     };
-  }, [t, rows, me, unit, dec]);
-  return <EChart option={option} height={Math.max(150, 50 + rows.length * 56)} label="Against everyone here" />;
+  }, [t, rows, me, unit, dec, others]);
+  return <EChart option={option} height={Math.max(150, 50 + rows.length * 56)} label={`Against ${others.toLowerCase()}`} />;
 }
 
 /** Every innings (or innings bowled) as a bar, oldest first; the average over the last few as a line; the average
@@ -134,17 +134,17 @@ export function RankLines({ rows }: { rows: { season: string; runs_rank: number 
   const t = useTheme();
   const option = useMemo<Option>(() => {
     const L = look(t), most = Math.max(...rows.map((r) => Math.max(r.runs_of ?? 0, r.wickets_of ?? 0)), 2);
-    const line = (name: string, key: "runs_rank" | "wickets_rank", c: string) => ({ type: "line", name, data: rows.map((r) => r[key]), symbol: "circle", symbolSize: 10,
+    const line = (name: string, key: "runs_rank" | "wickets_rank", c: string, at: "top" | "bottom") => ({ type: "line", name, data: rows.map((r) => r[key]), symbol: "circle", symbolSize: 10,
       lineStyle: { color: c, width: 3 }, itemStyle: { color: c }, connectNulls: true,
-      label: { show: true, position: "top", ...L.VAL(14), color: c, formatter: (p: { value: number | null }) => (p.value == null ? "" : ord(p.value)) } });
+      label: { show: true, position: at, ...L.VAL(14), color: c, formatter: (p: { value: number | null }) => (p.value == null ? "" : ord(p.value)) } });
     return {
       legend: { top: 0, left: 0, textStyle: { color: t.ink, fontFamily: "Bebas Neue", fontSize: ts(14) }, itemWidth: 16, itemHeight: 10 },
-      grid: { left: 44, right: 20, top: 40, bottom: 26 },
+      grid: { left: 44, right: 20, top: 40, bottom: 34 },
       tooltip: { ...L.TT, trigger: "axis" },
       xAxis: { type: "category", data: rows.map((r) => String(r.season)), ...L.AX, splitLine: { show: false } },
       yAxis: { type: "value", inverse: true, min: 1, max: most, ...L.AX, axisLine: { show: false }, axisLabel: { ...L.AX.axisLabel, formatter: (v: number) => ord(v) } },
-      series: [...(rows.some((r) => r.runs_rank != null) ? [line("Rank by runs", "runs_rank", t.led)] : []),
-        ...(rows.some((r) => r.wickets_rank != null) ? [line("Rank by wickets", "wickets_rank", t.blue)] : [])],
+      series: [...(rows.some((r) => r.runs_rank != null) ? [line("Rank by runs", "runs_rank", t.led, "top")] : []),
+        ...(rows.some((r) => r.wickets_rank != null) ? [line("Rank by wickets", "wickets_rank", t.blue, "bottom")] : [])],
     };
   }, [t, rows]);
   return <EChart option={option} height={280} label="Rank over time" />;

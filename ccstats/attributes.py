@@ -260,40 +260,62 @@ def scout_report(career, section: str, name: str) -> dict:
             notes.append(f"Has fallen to {n.bowler.iloc[0]} {int(n.dismissals.iloc[0])} times: keep them apart.")
         bp = best_position(career, ids, name)
         if bp:
-            notes.append(f"Best at no. {bp['position']}: average {bp['average']:.1f} there in {bp['innings']} innings, "
-                         f"against {bp['all_average']:.1f} for the average no. {bp['position']} here.")
+            avg = f"average {bp['average']:.1f}" if bp["average"] is not None else "never out"
+            notes.append(f"Best at no. {bp['position']}: {bp['runs']} runs, {avg} there in {bp['innings']} innings, against "
+                         f"{bp['all_average']:.1f} for the average no. {bp['position']} here"
+                         + (" (only a few innings there)" if bp["small"] else "")
+                         + (f"; over a longer run, no. {bp['proven']['position']} ({bp['proven']['edge']:+.0f}% in "
+                            f"{bp['proven']['innings']} innings)." if bp.get("proven") else "."))
     return dict(verdict=verdict + ".", role=role, overall=round(ov, 1), main=main,
                 strengths=[s for _, s in sorted(strengths, reverse=True)[:3]],
                 weaknesses=[s for _, s in sorted(weaknesses, reverse=True)[:2]], notes=notes[:2], none="")
 
 
-BEST_FROM = 3   # innings at a position before it can be called their best
+BEST_FROM = 2   # innings at a position before it can be called their best
+SMALL = 5       # fewer innings than this at a position: said to be a small sample
 
 
 def position_table(career, ids, name: str) -> pd.DataFrame:
-    """Every position the player has batted at on its own: position, innings, runs, outs, average, and the average
-    batter's average at that position in these matches, with the player's edge on them (%)."""
+    """Every position the player has batted at on its own: position, innings, runs, outs, balls, average, the average
+    batter's average at that position in these matches, and their edge on that batter (%), settled as everywhere on
+    the site (a few dismissals at that position's usual level added), so 2 innings of 228 and 12 still count for a
+    lot and 12 ordinary innings stay ordinary, without one big score deciding it on its own."""
+    cols = ["position", "innings", "runs", "outs", "balls", "average", "all_average", "settled", "edge", "raw_edge"]
     b = career.batting[career.batting.match_id.isin(ids) & career.batting.did_bat]
-    pool = b.groupby("position").agg(runs=("runs", "sum"), outs=("out", "sum"))
-    me = b[b.player == name].groupby("position").agg(innings=("runs", "size"), runs=("runs", "sum"), outs=("out", "sum"))
+    me = b[b.player == name].groupby("position").agg(innings=("runs", "size"), runs=("runs", "sum"), outs=("out", "sum"),
+                                                     balls=("balls", "sum"))
     if me.empty:
-        return pd.DataFrame(columns=["position", "innings", "runs", "outs", "average", "all_average", "edge"])
+        return pd.DataFrame(columns=cols)
+    m = career.matches[career.matches.match_id.isin(ids)]
+    k = SHRINK[KIND.get(m.format.mode().iloc[0], "t20") if len(m) else "t20"]
+    pool = b.groupby("position").agg(runs=("runs", "sum"), outs=("out", "sum"))
     me["average"] = me.runs / me.outs.replace(0, np.nan)
     me["all_average"] = (pool.runs / pool.outs.replace(0, np.nan)).reindex(me.index)
-    me["edge"] = (me.average - me.all_average) / me.all_average * 100
-    return me.reset_index()
+    me["settled"] = (me.runs + k * me.all_average) / (me.outs + k)
+    me["edge"] = (me.settled - me.all_average) / me.all_average * 100
+    me["raw_edge"] = (me.average - me.all_average) / me.all_average * 100
+    return me.reset_index()[cols]
 
 
 def best_position(career, ids, name: str) -> dict | None:
-    """Their best position, when they have batted 3 or more times in two positions or more: the one where they beat
-    the average batter at that position by the most (an opener's average and a no. 7's aren't the same thing)."""
+    """Their best position, when they have batted twice or more in two positions or more: the one where their settled
+    average beats the average batter at that position by the most (an opener's average and a no. 7's aren't the same
+    thing). `small`: fewer than 5 innings there; then `proven` is their best over 5 innings or more, if elsewhere."""
     t = position_table(career, ids, name)
     ok = t[(t.innings >= BEST_FROM) & t.edge.notna()]
     if len(ok) < 2:
         return None
-    r = ok.sort_values("edge", ascending=False).iloc[0]
-    return dict(position=int(r.position), innings=int(r.innings), runs=int(r.runs), average=float(r.average),
-                all_average=float(r.all_average), edge=float(r.edge))
+    def one(r) -> dict:
+        return dict(position=int(r.position), innings=int(r.innings), runs=int(r.runs), average=float(r.average)
+                    if pd.notna(r.average) else None, all_average=float(r.all_average), edge=float(r.edge),
+                    small=bool(r.innings < SMALL))
+    out = one(ok.sort_values("edge", ascending=False).iloc[0])
+    # best on a few innings: say too where they're best over a longer run (5 innings or more), if somewhere else
+    long = ok[ok.innings >= SMALL]
+    out["proven"] = (one(long.sort_values("edge", ascending=False).iloc[0])
+                     if out["small"] and len(long) and long.sort_values("edge", ascending=False).iloc[0].position != out["position"]
+                     else None)
+    return out
 
 
 def profile(career, section: str, name: str) -> dict:

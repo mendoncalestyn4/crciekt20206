@@ -90,13 +90,15 @@ export function PlayerView() {
   const tab = d.tabs.includes(cap(view)) ? cap(view) : d.tabs[0]!;
   const scope = `${d.section}${d.season === "All seasons" ? "" : ` ${d.season}`}`;
   const pal = [t.led, t.warm, t.cream, t.win, t.blue, t.grey];
+  // the latest three teams, newest first (every one is in the career journey below)
+  const teamsLine = d.teams.slice(-3).reverse().join(" · ") + (d.teams.length > 3 ? ` · and ${d.teams.length - 3} more` : "");
   return (
     <>
-      <Head title="Players" crumb={`${d.teams.join(" · ")}${d.keeper ? " · wicketkeeper" : ""}`} chips={d.tabs} on={d.tabs.indexOf(tab)}
+      <Head title="Players" crumb={`${teamsLine}${d.keeper ? " · wicketkeeper" : ""}`} chips={d.tabs} on={d.tabs.indexOf(tab)}
         onChip={(i) => set("view", i === 0 ? "" : d.tabs[i]!.toLowerCase())} />
       <div className="back"><Link to={`/players${keep}`}>← Find another player</Link></div>
       <div className="grid">
-        <Hero logo={d.teams[d.teams.length - 1]} px={170} kicker={`${d.teams.join(" · ")}${d.role ? ` · ${d.role.role.toLowerCase()}` : ""}`} title={d.player} size={104}
+        <Hero logo={d.teams[d.teams.length - 1]} px={170} kicker={`${teamsLine}${d.role ? ` · ${d.role.role.toLowerCase()}` : ""}`} title={d.player} size={104}
           side={["Matches", String(d.matches), `in ${plural(c?.sections ?? 0, "competition")}`]} />
         {c && <Sub cols={6}>{([["Matches", c.matches], ["Runs", c.runs.toLocaleString("en-GB")], ["Best score", c.best_score], ["Wickets", c.wickets],
           ["Best bowling", c.best_bowling], ["Badges", c.badges]] as [string, ReactNode][]).map(([k, v]) => <Tile span={1} key={k} title={k}><Num v={v} px={50} /></Tile>)}</Sub>}
@@ -191,11 +193,11 @@ export function PlayerView() {
           <Tile span={12}><div className="plain">Stronger and weaker teams: teams ranked by their win % here (each counted as if it had already won 2 and lost 2,
             so one win in one game doesn't make a side strong); the top half are the stronger teams. Stronger half: <b>{b.splits.stronger}</b>.</div></Tile>
           {b.positions && <Box span={12} title="At each batting position" right={b.positions.best ? `best at no. ${b.positions.best}` : "against the average batter there"}>
-            <PairedBars rows={b.positions.rows} me={d.player} />
+            <PairedBars rows={b.positions.rows} me={d.player} others="Average batter there" />
             <table className="c" style={{ marginTop: 10 }}><thead><tr><th>Position</th><th className="r">Inns</th><th className="r">Runs</th><th className="r">NO</th>
-              <th className="r">HS</th><th className="r">Avg</th><th className="r">SR</th><th className="r">50s</th><th className="r">100s</th><th className="r">Average batter there</th><th className="r">They are</th></tr></thead>
+              <th className="r">HS</th><th className="r">Avg</th><th className="r">SR</th><th className="r">50s</th><th className="r">100s</th><th className="r">Average batter there</th><th className="r" title="Settled: a few innings at the usual level for that position added before comparing">They are (settled)</th></tr></thead>
               <tbody>{b.positions.table.map((r) => (
-                <tr key={r.position} className={r.best ? "me" : ""}><td><Name p={`${r.best ? "★ " : ""}No. ${r.position}`} px={19} /></td>
+                <tr key={r.position} className={r.best ? "me" : ""}><td><Name p={`${r.best ? "★ " : ""}No. ${r.position}`} px={19} />{r.small && <div className="how">only {r.innings} innings</div>}</td>
                   <td className="r"><span className="tn dimn">{r.innings}</span></td><td className="r"><span className="tn">{r.runs}</span></td>
                   <td className="r"><span className="tn dimn">{r.not_outs}</span></td><td className="r"><span className="tn dimn">{r.high}</span></td>
                   <td className="r"><span className="tn">{f1(r.average)}</span></td><td className="r"><span className="tn dimn">{f1(r.strike_rate)}</span></td>

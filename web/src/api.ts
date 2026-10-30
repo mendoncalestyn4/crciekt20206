@@ -210,7 +210,7 @@ export type Batting = {
   splits: { overall: number | null; stronger: string; rows: Split[] };
   positions: { rows: Pair[]; best: number | null; shows: string; for_: string;
     table: { position: number; innings: number; runs: number; not_outs: number; average: number | null; strike_rate: number | null;
-      fifties: number; hundreds: number; high: string; all_average: number | null; edge: number | null; best: boolean }[] } | null;
+      fifties: number; hundreds: number; high: string; all_average: number | null; edge: number | null; best: boolean; small: boolean }[] } | null;
   came_in: Split & { press: number; rescue: { at: string; score: string; balls: number; against: string; date: string }[] };
   consistency: { bar: number; past_bar_pct: number | null; single_figures_pct: number | null; golden_ducks: number; conversion_pct: number | null };
   nemesis: Split | null; streaks: { streak: string; longest: number; current: number }[];

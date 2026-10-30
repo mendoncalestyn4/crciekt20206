@@ -112,6 +112,7 @@ img.lg { vertical-align: middle; flex: none; object-fit: contain; }
 .hero { grid-column: span 12; position: relative; min-height: 220px; background: var(--tile); border: 1px solid var(--edge);
   border-radius: var(--r); display: flex; align-items: center; gap: 30px; padding: 0 40px; overflow: hidden; }
 .hero .k { font: 400 29px 'Bebas Neue'; letter-spacing: .18em; color: var(--dim); text-transform: uppercase; }
+.hero:has(> .side) .hero-main { padding-right: 290px; }   /* room for the panel on the right: a long line wraps instead */
 .hero h2 { font: 400 112px/.86 'Bebas Neue'; letter-spacing: .02em; word-spacing: .05em; margin-top: 6px; }
 .hero .side { position: absolute; right: 50px; z-index: 2; text-align: right; color: var(--dim); font: 400 27.2px 'Bebas Neue';
   letter-spacing: .16em; text-transform: uppercase; line-height: 1.25; }
@@ -477,3 +478,26 @@ table.tv tr.dim td { opacity: .45; }
 .rail a.nav { position: relative; }
 .rail a.nav .badge { position: absolute; top: 4px; right: 14px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px;
   background: var(--led); color: var(--led-ink, #0b1b3d); font: 700 12.5px/22px Inter; text-align: center; }
+
+/* ------------------------------------------------------------------ stage 1: Players */
+.plist { margin-top: 14px; border-top: 1px solid var(--edge); }
+.pli { display: grid; grid-template-columns: 30px minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); gap: 14px; align-items: center;
+  padding: 8px 6px; border-bottom: 1px solid var(--edge); text-decoration: none; color: var(--ink); }
+.pli:hover { background: var(--tile2); }
+.pli .pn { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.pli .how { margin: 0; min-width: 0; }
+.won { display: grid; gap: 2px; }
+.won > div { padding: 7px 0; border-top: 1px solid var(--edge); }
+.won > div:first-child { border-top: 0; padding-top: 0; }
+.won b { font: 600 15.4px Inter; }
+.won a { display: block; }
+.won .why { display: block; margin-top: 2px; }
+.share { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.share .bar { width: 70px; margin-top: 0; }
+.share .how { margin: 0; font-size: 13px; }
+.keyz { font: 400 21px 'Bebas Neue'; letter-spacing: .06em; color: var(--led); margin-bottom: 6px; }
+.scrollx { width: 100%; }
+table.rec { font-size: 13px; }
+table.rec th { font-size: 17px; letter-spacing: .03em; padding: 5px 4px; white-space: nowrap; cursor: help; }
+table.rec td { padding: 7px 4px; }
+table.rec td .tn { font-size: 15px; }
