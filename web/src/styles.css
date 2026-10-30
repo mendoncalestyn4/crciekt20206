@@ -419,3 +419,37 @@ a.plink { color: var(--ink); text-decoration: none; } a.plink:hover { text-decor
 .grade.gA { background: var(--win); color: #0b1b3d; } .grade.gB { background: color-mix(in srgb, var(--win) 55%, var(--track)); }
 .grade.gD { background: color-mix(in srgb, var(--loss) 55%, var(--track)); } .grade.gE { background: var(--loss); color: #0b1b3d; }
 table.tv tr.dim td { opacity: .45; }
+
+/* ------------------------------------------------------------------ demo: attributes, scout report, depth, inbox */
+.attrs { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.attr { display: grid; grid-template-columns: minmax(0, 1fr) 40px; grid-template-rows: auto auto; column-gap: 10px; align-items: center; padding: 5px 0; border-top: 1px solid var(--edge); }
+.attr .an { font: 600 16px Inter; color: var(--ink); }
+.attr .how { grid-column: 1 / 3; margin: 0; font-size: 13px; }
+.av { display: inline-grid; place-items: center; width: 40px; height: 30px; border-radius: 7px; font: 700 18px 'Space Grotesk'; background: var(--track); color: var(--ink); }
+.av.a4 { background: var(--win); color: #0b1b3d; } .av.a3 { background: color-mix(in srgb, var(--win) 45%, var(--track)); }
+.av.a2 { background: color-mix(in srgb, var(--orange) 45%, var(--track)); } .av.a1 { background: var(--loss); color: #0b1b3d; }
+.attr .av { grid-row: 1; grid-column: 2; }
+.sr { font: 400 15.4px/1.45 Inter; color: var(--soft); padding: 6px 0 6px 26px; position: relative; border-top: 1px solid var(--edge); }
+.sr::before { position: absolute; left: 2px; top: 5px; font: 700 17px 'Space Grotesk'; }
+.sr.plus::before { content: "+"; color: var(--win); } .sr.minus::before { content: "−"; color: var(--loss); } .sr.note2::before { content: "•"; color: var(--dim); }
+.depth { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 22px; }
+.drole { min-width: 0; }
+.drow { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 4px 0; }
+.drow .av { width: 40px; height: 28px; font-size: 16px; }
+.drow:not(.st) { opacity: .8; }
+.drow .dm { display: inline-flex; gap: 3px; }
+.drow .dm .mark { min-width: 24px; height: 24px; font-size: 13px; border-width: 1.5px; border-radius: 6px; padding: 0 3px; }
+.dsub { font: 600 13px Inter; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; margin: 8px 0 2px; }
+.dwait { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; padding: 4px 0; }
+.dwait .how { grid-column: 1 / 3; margin: 0; font-size: 13px; }
+.dwait .gain { font: 700 17px 'Space Grotesk'; color: var(--dim); }
+.dwait.ok .gain { color: var(--win); }
+.inbox { display: grid; }
+.msg { display: grid; grid-template-columns: 34px minmax(0, 1fr) 120px; gap: 12px; align-items: start; padding: 9px 4px; border-top: 1px solid var(--edge); }
+.msg:first-child { border-top: 0; }
+.msg .ic { font-size: 22px; line-height: 1.2; }
+.msg .msgt { font: 600 17px Inter; color: var(--ink); }
+.msg.struggling .msgt { color: var(--led); }
+.msg .how { margin-top: 2px; }
+.msg .md { font: 500 13.5px/1.5 Inter; color: var(--dim); text-align: right; }
+.msg.fresh { background: color-mix(in srgb, var(--led) 6%, transparent); border-radius: 8px; }

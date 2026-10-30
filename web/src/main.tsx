@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router";
+import { Demo } from "./pages/Demo";
 import { MyTeam } from "./pages/MyTeam";
 import { MatchesHome, MatchView } from "./pages/Matches";
 import { NotFound, PLANS, Section } from "./pages/Sections";
@@ -33,6 +34,7 @@ createRoot(document.getElementById("root")!).render(
             ])}
             <Route path="/matches" element={<MatchesHome />} />
             <Route path="/matches/:pick" element={<MatchView />} />
+            <Route path="/demo" element={<Demo />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/style-guide" element={<StyleGuide />} />
             <Route path="*" element={<NotFound />} />

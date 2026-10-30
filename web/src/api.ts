@@ -249,3 +249,16 @@ export type PlayerPage = {
   tabs: string[]; batting: Batting | null; bowling: Bowling | null; fielding: { matches: number; catches: number; stumpings: number } | null;
   story: Story | null;
 };
+
+// ------------------------------------------------------------------ Demo of ideas 2, 3, 5 and 7 (server/demo.py)
+export type Attr = { name: string; score: number | null; text: string };
+export type Attributes = { section: string; kind: string; bat: Attr[]; bowl: Attr[]; bat_overall: number | null; bowl_overall: number | null;
+  pool: { bat: number; bowl: number }; short: Record<string, string> };
+export type ScoutReport = { verdict: string; role?: string; overall?: number; main?: string; strengths: string[]; weaknesses: string[]; notes: string[]; none: string };
+export type DepthPlayer = { player: string; starts: boolean; rating: number | null; spinner: boolean; marks: number[]; games: number };
+export type Depth = { section: string; series: string; roles: { role: string; usual: number; starters: DepthPlayer[]; backups: DepthPlayer[];
+  waiting: { player: string; side: string; gain: number | null; clears: boolean; bat: string; bowl: string; raw_bat: string; raw_bowl: string }[] }[] };
+export type InboxMsg = { date: string; kind: "result" | "struggling" | "knocking" | "milestone"; title: string; body: string; section: string;
+  series: string; player: string; match: string };
+export type DemoPage = { team: string; mine: boolean; section: string; sections: string[]; report: ReportCard | null; missing: Record<string, string>;
+  depth: Depth | null; inbox: InboxMsg[] | null; players: { player: string; attributes: Attributes; report: ScoutReport }[] | null };

@@ -28,7 +28,7 @@ from ccstats import search as SR
 from ccstats.colours import TEAM_COLOURS
 from ccstats.local import CareerStore
 
-from . import matchpage, myteam, styleguide
+from . import demo, matchpage, myteam, styleguide
 from .cache import kept
 from .site import Site
 
@@ -274,6 +274,17 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             return _error("That team hasn't played in this career.", 404)
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
+    # ------------------------------------------------------------------ Demo of ideas waiting for approval
+    async def demo_(request: Request):
+        q = request.query_params
+        players = [p for p in q.get("players", "").split(",") if p]
+        try:
+            data = await _with_career(lambda c: demo.page(c, q.get("team", ""), q.get("section", ""), players,
+                                                          site.my_teams(c)))()
+        except KeyError:
+            return _error("That team hasn't played in this career.", 404)
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
     # ------------------------------------------------------------------ search (Ctrl K)
     def _search():
         c = site.career()
@@ -388,6 +399,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/matches/best", best_),
         Route("/api/match/{mid}", match_),
         Route("/api/notes", note_, methods=["POST"]),
+        Route("/api/demo", demo_),
         Route("/api/events", events),
     ]
     if (web / "assets").is_dir():   # the website's files, named after their contents: kept by the browser for good
