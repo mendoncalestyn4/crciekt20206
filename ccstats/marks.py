@@ -74,17 +74,19 @@ def match_values(career, ids=None) -> pd.DataFrame:
     side["bowl_div"] = 0.5 * (1 / np.maximum(side.took, 0.5 * side.took_avg).clip(lower=1)
                               + 1 / side.took_avg.clip(lower=1))
     key = ["match_id", "team", "player"]
-    b = career.batting[career.batting.match_id.isin(ids)]
-    bat = b[b.did_bat].groupby(key).agg(runs=("runs", "sum"), balls=("balls", "sum"), outs=("out", "sum"),
-                                       top=("runs", "max")).reset_index()
+    b = career.batting[career.batting.match_id.isin(ids) & career.batting.did_bat]
+    # hundreds and fifties innings by innings: two in a Test are two
+    b = b.assign(hundred=b.runs >= 100, fifty=(b.runs >= 50) & (b.runs < 100))
+    bat = b.groupby(key).agg(runs=("runs", "sum"), balls=("balls", "sum"), outs=("out", "sum"), top=("runs", "max"),
+                             hundreds=("hundred", "sum"), fifties=("fifty", "sum")).reset_index()
     w = career.bowling[career.bowling.match_id.isin(ids) & (career.bowling.balls > 0)]
     bowl = w.groupby(key).agg(wickets=("wickets", "sum"), conceded=("runs", "sum"), balls_bowled=("balls", "sum"),
                               haul=("wickets", "max")).reset_index()
     f = career.fielding[career.fielding.match_id.isin(ids) & career.fielding.resolved]
     fld = f.groupby(key).size().rename("dismissals").reset_index()
     d = bat.merge(bowl, on=key, how="outer").merge(fld, on=key, how="outer")
-    nums = ["runs", "balls", "outs", "top", "wickets", "conceded", "balls_bowled", "haul", "dismissals"]
-    d[nums] = d[nums].fillna(0)
+    nums = ["runs", "balls", "outs", "top", "hundreds", "fifties", "wickets", "conceded", "balls_bowled", "haul", "dismissals"]
+    d[nums] = d[nums].astype(float).fillna(0)   # an empty table merges in as text; these are all counts
     d = d.merge(side[["match_id", "team", "white", "rpb", "rpw", "weight", "bat_div", "bowl_div", "runs_own", "took"]],
                 on=["match_id", "team"], how="inner")
     speed = np.where(d.white, SPEED * (d.runs - d.balls * d.rpb.fillna(0)), 0.0)
@@ -151,14 +153,12 @@ def _series_marks(career, ids) -> pd.DataFrame:
     v = v[v.did]
     # the reference: Tests with Tests, every other competition with itself
     v["reference"] = np.where(v.level == "International", v.format, v.section)
-    v["fifty"] = (v.top >= 50) & (v.top < 100)
-    v["hundred"] = v.top >= 100
     pos = career.batting[career.batting.match_id.isin(v.match_id)].groupby(["match_id", "team", "player"]).position.min()
     v = v.join(pos, on=["match_id", "team", "player"])
     g = v.groupby(["series", "team", "player"])
     s = g.agg(games=("match_id", "nunique"), bat=("bat", "sum"), bowl=("bowl", "sum"), field=("field", "sum"),
               value=("value", "sum"), runs=("runs", "sum"), outs=("outs", "sum"), balls=("balls", "sum"),
-              hundreds=("hundred", "sum"), fifties=("fifty", "sum"), wickets=("wickets", "sum"),
+              hundreds=("hundreds", "sum"), fifties=("fifties", "sum"), wickets=("wickets", "sum"),
               conceded=("conceded", "sum"), balls_bowled=("balls_bowled", "sum"), dismissals=("dismissals", "sum"),
               position=("position", "median"), start=("date", "min"), end=("date", "max"),
               format=("format", "first"), reference=("reference", "first")).reset_index()

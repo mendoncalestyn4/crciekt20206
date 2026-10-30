@@ -80,6 +80,7 @@ a { color: inherit; }
 .list { display: grid; gap: 13px; }
 .li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; }
 .li .how { display: block; margin-top: 4px; }
+.li .pn { white-space: normal; }   /* a long competition ("County Championship · Division 1") wraps in its column */
 .av { width: 44px; height: 44px; border-radius: 50%; background: var(--tile2); border: 1px solid var(--edge); display: grid;
   place-items: center; font: 400 17.2px 'Bebas Neue'; letter-spacing: .04em; color: var(--gold); }
 .bar { height: 8px; background: var(--track); margin-top: 6px; overflow: hidden; }

@@ -20,7 +20,8 @@ class Book:
                            competition=competition or section, section=section, event=event or section, format=fmt,
                            level=level, country=country, stage=stage, knockout=bool(stage), neutral=neutral,
                            series_id=series, series_match_no=no, series_length=length, home=home, away=away,
-                           winner=winner, loser="", result_type=result, rain=rain, source=f"{mid}.txt"))
+                           winner=winner, loser=(away if winner == home else home) if winner else "", result_type=result,
+                           rain=rain, source=f"{mid}.txt"))
         return self
 
     def inns(self, mid: str, no: int, team: str, opp: str, bats, extras: int = 0, balls: int | None = None):

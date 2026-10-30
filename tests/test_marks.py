@@ -153,3 +153,17 @@ def test_a_players_share_of_the_team():
     s = PL.team_share(b.career(), "B").iloc[0]
     assert (s.matches, s.team_matches, s.runs, s.team_runs, s.wickets, s.team_wickets) == (1, 1, 30, 100, 3, 4)
     assert s.run_share == pytest.approx(30.0) and s.wicket_share == pytest.approx(75.0)
+
+
+def test_hundreds_and_fifties_are_counted_innings_by_innings():
+    """A hundred in each innings of a Test is two hundreds; a hundred and a fifty is one of each."""
+    b = Book()
+    b.match("t1", "2026-01-01", "India", "England", series="S1")
+    b.inns("t1", 1, "India", "England", [("A", 120, 200, True), ("B", 60, 100, True), ("C", 10, 20, True)])
+    b.inns("t1", 2, "England", "India", [("X", 30, 60, True)])
+    b.inns("t1", 3, "India", "England", [("A", 101, 150, True), ("B", 110, 150, False), ("C", 55, 80, True)])
+    s = MK.series_marks(b.career()).set_index("player")
+    assert (s.hundreds["A"], s.fifties["A"]) == (2, 0)
+    assert (s.hundreds["B"], s.fifties["B"]) == (1, 1)
+    assert (s.hundreds["C"], s.fifties["C"]) == (0, 1)
+    assert "2 hundreds" in s.line["A"]

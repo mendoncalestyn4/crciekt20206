@@ -19,12 +19,13 @@ from . import attributes as AT
 from . import scouting as SC
 from .marks import series_key, series_marks, team_report
 from .players import milestone_watch
+from .records import by_played
 
 # (name, roles, job, the Scouting group that fills it, how many usually play)
 ROLES = [("Openers", {"Opener"}, "bat", "Openers", 2),
          ("Top and middle order", {"Top order", "Middle order"}, "bat", "Top and middle order", 3),
          ("Wicketkeeper", None, "bat", "Wicketkeepers", 1),
-         ("Finishers and lower order", {"Finisher", "Lower order"}, "bat", None, 1),
+         ("Finishers and lower order", {"Finisher", "Lower order", "Tail"}, "bat", None, 1),
          ("All-rounders", {"All-rounder"}, "both", "All-rounders", 1),
          ("Bowlers", {"Bowler"}, "bowl", "Bowlers", 4)]
 KNOCKING = 0.25          # a domestic player this much better than your weakest in the role is "knocking on the door"
@@ -44,10 +45,16 @@ def squad_depth(career, team: str, section: str) -> dict:
     marks = series_marks(career)
     m = career.matches[career.matches.section == section]
     mine = marks[(marks.team == team) & marks.series.isin(set(series_key(m)))]
-    order = {s: i for i, s in enumerate(dict.fromkeys(mine.sort_values("end").series[::-1]))}
+    # newest first in the order the series were played (as the marks and the struggling check order them)
+    order = {r["series"]: i for i, r in enumerate(team_report(career, team))}
     groups = SC.shortlist(career, team, section) if section in SC.sections(career).index else {}
     placed: set = set()
     out = []
+
+    def row(p, starts, rating, spinner=False, games=0):
+        hist = mine[mine.player == p].assign(o=lambda d: d.series.map(order)).sort_values("o")
+        return dict(player=p, starts=starts, rating=rating, spinner=spinner, marks=[int(x) for x in hist.mark.head(3)],
+                    games=games)
     for name, roles, job, group, usual in ROLES:
         if roles is None:
             who = own[own.keeper.astype(bool) & own.role.isin(SC.BATTING_ROLES)]
@@ -56,10 +63,8 @@ def squad_depth(career, team: str, section: str) -> dict:
         who = who[~who.index.isin(placed)]
         rows = []
         for p, r in who.iterrows():
-            a = AT.player(career, section, p)
-            hist = mine[mine.player == p].assign(o=lambda d: d.series.map(order)).sort_values("o")
-            rows.append(dict(player=p, starts=p in side, rating=_rating(a, job), spinner=bool(r.spinner),
-                             marks=[int(x) for x in hist.mark.head(3)], games=int(r.bat_matches if job != "bowl" else r.bowl_matches)))
+            rows.append(row(p, p in side, _rating(AT.player(career, section, p), job), bool(r.spinner),
+                            int(r.bat_matches if job != "bowl" else r.bowl_matches)))
         placed |= set(who.index)
         rows.sort(key=lambda x: (not x["starts"], -(x["rating"] or 0)))
         waiting = []
@@ -69,15 +74,28 @@ def squad_depth(career, team: str, section: str) -> dict:
                                     bat=x["bat"], bowl=x["bowl"], raw_bat=x["raw_bat"], raw_bowl=x["raw_bowl"]))
         out.append(dict(role=name, usual=usual, starters=[x for x in rows if x["starts"]],
                         backups=[x for x in rows if not x["starts"]][:4], waiting=waiting))
+    # everyone in the side is shown: anyone without a role yet (they didn't bat or bowl in the last two seasons here)
+    rest = sorted(side - placed)
+    if rest:
+        out.append(dict(role="No role yet", usual=0, starters=[row(p, True, None) for p in rest], backups=[], waiting=[]))
     return dict(section=section, series=series, roles=out)
 
 
-def _result(career, team: str, ids) -> tuple[int, int, int, str]:
-    m = career.matches[career.matches.match_id.isin(ids)]
-    won, lost = int((m.winner == team).sum()), int(((m.winner != team) & (m.winner != "") & m.winner.notna()).sum())
+OTHER = {"draw": "drawn", "tie": "tied", "no result": "no result"}
+
+
+def _result(career, team: str, ids) -> dict:
+    """The team's own games in a series or tournament (a tournament holds everyone's): won, lost, the rest by kind
+    ("1 drawn, 1 no result"), the opponent when it was one side all through, and the last game's id as played."""
+    m = career.matches[career.matches.match_id.isin(ids) & ((career.matches.home == team) | (career.matches.away == team))]
+    won, lost = int((m.winner == team).sum()), int((m.loser == team).sum())
+    rest = m[(m.winner != team) & (m.loser != team)].result_type.map(lambda k: OTHER.get(k, "other")).value_counts()
     opp = pd.concat([m.home, m.away])
     opp = opp[opp != team]
-    return won, lost, len(m) - won - lost, (opp.mode().iloc[0] if len(opp) and opp.nunique() == 1 else "")
+    return dict(won=won, lost=lost, other=", ".join(f"{n} {k}" for k, n in rest.items()),
+                opp=opp.iloc[0] if len(opp) and opp.nunique() == 1 else "",
+                bilateral=bool((m.series_id.fillna("").astype(str) != "").all()) and len(m) > 0,
+                last=str(by_played(career, m).match_id.iloc[-1]) if len(m) else "")
 
 
 def inbox(career, team: str, series: int = 8) -> list[dict]:
@@ -93,16 +111,15 @@ def inbox(career, team: str, series: int = 8) -> list[dict]:
         g = m[m.series == s["series"]]
         section = g.section.iloc[0]
         when = str(s["end"])[:10]
-        won, lost, other, opp = _result(career, team, ids)
-        if opp:
-            word = "won" if won > lost else "lost" if lost > won else "drawn"
-            score = f"{won}–{lost}" if word != "drawn" else f"{won}–{lost}" + (f" ({other} drawn)" if other else "")
-            title = f"Series {word} {score} v {opp}"
+        r = _result(career, team, ids)
+        if r["opp"] and r["bilateral"]:
+            word = "won" if r["won"] > r["lost"] else "lost" if r["lost"] > r["won"] else "drawn"
+            title = f"Series {word} {r['won']}–{r['lost']} v {r['opp']}" + (f" ({r['other']})" if r["other"] else "")
         else:
-            title = f"{s['label']}: {won} won, {lost} lost" + (f", {other} other" if other else "")
+            title = f"{s['label']}: {r['won']} won, {r['lost']} lost" + (f", {r['other']}" if r["other"] else "")
         top = s["players"][0]
         msgs.append(dict(date=when, kind="result", title=title, section=section, series=s["label"], player="",
-                         match=str(ids.iloc[-1]),
+                         match=r["last"],
                          body=f"{s['label']}. Best by marks: {top['player']} {top['mark']}/10 ({top['line']})."))
         # advice only for the latest series in each competition: it uses today's domestic numbers
         if section in advised:

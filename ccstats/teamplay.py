@@ -430,7 +430,7 @@ def series_games(career, ids) -> pd.DataFrame:
 def first_blood(career, ids, team: str = "") -> pd.DataFrame:
     """Finished series of 2+ matches: how the series went after winning, losing or drawing the first match."""
     s = series_games(career, ids)
-    s = s[s.first & s.complete & (s.length > 1)]
+    s = s[s["first"] & s.complete & (s.length > 1)]   # by name: .first is a pandas method before pandas 3
     if team:
         s = s[s.team == team]
     rows = []

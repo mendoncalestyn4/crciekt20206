@@ -110,12 +110,14 @@ def test_a_scout_report_reads_from_the_attributes(career):
 
 # ------------------------------------------------------------------ squad depth and the inbox
 def test_squad_depth_puts_everyone_once(career):
-    team = career.matches.home.value_counts().index[0]
-    sec = career.matches[(career.matches.home == team) | (career.matches.away == team)].section.value_counts().index[0]
-    d = DP.squad_depth(career, team, sec)
-    names = [p["player"] for r in d["roles"] for p in r["starters"] + r["backups"]]
-    assert len(names) == len(set(names))
-    assert all(p["starts"] for r in d["roles"] for p in r["starters"])
+    from ccstats import scouting as SC
+    for team in career.matches.home.value_counts().index[:6]:
+        for sec in career.matches[(career.matches.home == team) | (career.matches.away == team)].section.unique():
+            d = DP.squad_depth(career, team, sec)
+            names = [p["player"] for r in d["roles"] for p in r["starters"] + r["backups"]]
+            assert len(names) == len(set(names))
+            starters = {p["player"] for r in d["roles"] for p in r["starters"]}
+            assert starters == SC._latest_side(career, team, sec)[1], (team, sec)   # everyone in the side, tail too
 
 
 def test_the_inbox_is_newest_first_with_a_result_for_every_series(career):
@@ -152,3 +154,21 @@ def test_the_pages_answer(live):
     demo = live.json(f"/api/demo?team={team}&players={p}")
     assert demo["missing"] == {} and demo["inbox"] is not None and demo["players"][0]["player"] == p
     assert live.get("/api/demo?team=Nowhere FC")[0] == 404
+
+
+def test_a_tournament_in_the_inbox_counts_only_the_team_s_games():
+    """A tournament holds everyone's games: A won one and lost one; B v C is not A's."""
+    from fakecareer import Book
+    b = Book()
+    games = [("g1", "2026-04-01", "A", "B", "A"), ("g2", "2026-04-03", "B", "C", "C"), ("g3", "2026-04-05", "A", "C", "C")]
+    for mid, date, home, away, winner in games:
+        b.match(mid, date, home, away, section="T20 Cup", fmt="T20", level="Domestic", country="X", event="T20 Cup",
+                season="2026", winner=winner)
+        b.inns(mid, 1, home, away, [(f"{home}1", 40, 30, True), (f"{home}2", 20, 20, True)])
+        b.bowl(mid, 1, away, home, [(f"{away}9", 24, 30, 2)])
+        b.inns(mid, 2, away, home, [(f"{away}1", 30, 25, True)])
+        b.bowl(mid, 2, home, away, [(f"{home}9", 24, 30, 1)])
+    msgs = [m for m in DP.inbox(b.career(), "A") if m["kind"] == "result"]
+    assert len(msgs) == 1
+    assert msgs[0]["title"].endswith(": 1 won, 1 lost") and not msgs[0]["title"].startswith("Series")
+    assert msgs[0]["match"] == "g3"   # A's last game, not the tournament's

@@ -33,7 +33,7 @@ with st.container(border=True):
         "Rivalry": [f"{a} v {b}" for a, b in zip(show.team_a, show.team_b)], "Played": show.played,
         "Won": [f"{wa} – {wb}" + (f" ({o} other)" if o else "") for wa, wb, o in zip(show.wins_a, show.wins_b, show.other)],
         "Last 5 (oldest first)": [" ".join({"A": "◀", "B": "▶", "–": "·"}[x] for x in last) for last in show.last5],
-        "Last met": show.last.dt.strftime("%d %b %Y")}), hide_index=True, width="stretch")
+        "Last met": show["last"].dt.strftime("%d %b %Y")}), hide_index=True, width="stretch")
     st.caption("Won: wins for the first-named team – wins for the second. Last 5: ◀ = the first-named team won, ▶ = the second-named team won, · = draw, tie or no result.")
 
 labels = [f"{a} v {b} ({p})" for a, b, p in zip(rv.team_a, rv.team_b, rv.played)]
