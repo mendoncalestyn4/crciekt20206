@@ -11,8 +11,9 @@ Each match is measured against the match itself, so the same score can be worth 
 A rain-shortened white-ball game counts for the share of its overs that were bowled; a game with no result doesn't
 count, and neither does a game in which a player neither batted, bowled nor took a catch.
 
-A player's series is his average match, as if he had also played one more match at the usual level, so one game alone
-can't make a 10 (or a 1). The mark is where that series ranks among every player's series in the same format in the
+A player's series is their average match, as if they had also played one more match at the usual level, so one great
+game counts for less than the same over a whole series (on a 1,544-match save a single game made a 9 or 10 in 5% of
+cases, a full series in 7%; it still can: 9 wickets in your only Test is a 10). The mark is where that series ranks among every player's series in the same format in the
 career (every team's, not just yours), on a bell curve: 5 or 6 is a usual series, 8 about the best one in seven,
 9 the best one in fifteen, 10 the best one in forty; 1 to 3 the same at the bottom.
 """
