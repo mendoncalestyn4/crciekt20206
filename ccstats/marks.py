@@ -262,8 +262,21 @@ def _labels(m: pd.DataFrame) -> dict:
     return out
 
 
+def among(reference: str) -> str:
+    """The group a series is marked against, in words: 'ODIs', 'the Ranji Trophy', 'all T20 cricket'."""
+    if reference in KIND_WORDS:
+        return KIND_WORDS[reference]
+    if reference in INTERNATIONAL_FORMATS:
+        return f"{reference}s"
+    return reference if reference.startswith("The ") else f"the {reference}"
+
+
+KIND_WORDS = {"multi": "all first-class cricket", "one": "all one-day cricket", "t20": "all T20 cricket"}
+INTERNATIONAL_FORMATS = ("Test", "ODI", "T20I")
+
+
 def team_report(career, team: str) -> list[dict]:
-    """Your side's series, newest first: each with every player who played, ranked, with his mark and why."""
+    """Your side's series, newest first: each with every player who played, ranked, with their mark and why."""
     s = series_marks(career)
     s = s[s.team == team]
     if s.empty:
@@ -273,6 +286,6 @@ def team_report(career, team: str) -> list[dict]:
     out = []
     for sid, g in sorted(s.groupby("series"), key=lambda kv: -last_at.get(kv[0], -1)):
         g = g.sort_values("rank")
-        out.append(dict(series=sid, label=g.label.iloc[0], format=g.format.iloc[0], start=g.start.min(),
-                        end=g.end.max(), players=g.to_dict("records")))
+        out.append(dict(series=sid, label=g.label.iloc[0], format=g.format.iloc[0], reference=g.reference.iloc[0],
+                        start=g.start.min(), end=g.end.max(), players=g.to_dict("records")))
     return out

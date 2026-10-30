@@ -77,7 +77,7 @@ export function MyTeam() {
             <MarksTable r={d.report} keep={keep} />
             <div className="note">Each match is measured against the match itself: a batter's runs as a share of their side's runs and of the average side's,
               a bowler's wickets as a share of the wickets their side took, speed and economy in white-ball cricket, a quarter of a wicket a catch. A
-              lone hundred counts for about twice one of three. The mark is where that series ranks among every player's series in {d.report.format === d.report.section ? d.report.section : `${d.report.format}s`} in
+              lone hundred counts for about twice one of three. The mark is where that series ranks among every player's series in {d.report.among} in
               this career: 5–6 usual, 8 the best one in seven, 10 the best one in forty. Batters are marked against batters, bowlers against bowlers.</div>
           </Tile>
           <Tile span={4} title="Who to bring in" right={d.report.advice.length ? undefined : "nobody struggling"}>

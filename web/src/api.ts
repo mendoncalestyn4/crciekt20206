@@ -151,7 +151,7 @@ export type MarkRow = { player: string; mark: number; rank: number; of: number; 
 export type Pick = { player: string; role: string; gain: number; clears: boolean; keeper: boolean; spinner: boolean; country: string;
   capped: boolean; unsure: boolean; how: string; also: string; side: string; where: string; bat: string; bowl: string; raw_bat: string; raw_bowl: string };
 export type Advice = { player: string; role: string; why: string; verdict: string; own: { bat: string; bowl: string; raw_bat: string; raw_bowl: string }; picks: Pick[] };
-export type ReportCard = { series: string; label: string; format: string; section: string; start: string; end: string; players: MarkRow[];
+export type ReportCard = { series: string; label: string; format: string; among: string; section: string; start: string; end: string; players: MarkRow[];
   earlier: { label: string; series: string; format: string; top: { player: string; mark: number }[] }[]; advice: Advice[] };
 export type BannerTile = Banner & { position: [string, string, number, number] | null };
 export type SeriesItem = { key: string; opp: string; event: string; section: string; start: string; end: string; won: number; lost: number;

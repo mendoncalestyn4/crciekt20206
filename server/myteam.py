@@ -167,7 +167,8 @@ def report_card(career, team: str) -> dict | None:
                                         own=r["own"], picks=r["picks"])))
     except Exception:  # noqa: BLE001 - no advice is better than no report card
         advice = []
-    return SG.clean(dict(series=s["series"], label=s["label"], format=s["format"], section=section, start=s["start"],
+    return SG.clean(dict(series=s["series"], label=s["label"], format=s["format"], among=MK.among(s["reference"]),
+                         section=section, start=s["start"],
                          end=s["end"], players=[{k: p[k] for k in ("player", "mark", "rank", "of", "games", "line",
                                                                      "best", "best_match")} for p in s["players"]],
                          earlier=[dict(label=x["label"], series=x["series"], format=x["format"],
