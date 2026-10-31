@@ -254,7 +254,7 @@ export type PlayerPage = {
   profile?: { attributes: Attributes; report: ScoutReport; show: ("bat" | "bowl")[]; other: string } | null;
 };
 
-// ------------------------------------------------------------------ Demo of ideas 2, 3, 5 and 7 (server/demo.py)
+// ------------------------------------------------------------------ Attributes, scout report, squad depth, inbox (ccstats/attributes.py, ccstats/depth.py)
 export type Attr = { name: string; score: number | null; text: string };
 export type Attributes = { section: string; kind: string; bat: Attr[]; bowl: Attr[]; bat_overall: number | null; bowl_overall: number | null;
   pool: { bat: number; bowl: number }; short: Record<string, string> };
@@ -266,5 +266,3 @@ export type InboxMsg = { date: string; kind: "result" | "struggling" | "knocking
   series: string; player: string; match: string };
 export type InboxItem = InboxMsg & { id: string; team: string; read: boolean };
 export type InboxPage = { teams: string[]; messages: InboxItem[]; unread: number };
-export type DemoPage = { team: string; mine: boolean; section: string; sections: string[]; report: ReportCard | null; missing: Record<string, string>;
-  depth: Depth | null; inbox: InboxMsg[] | null; players: { player: string; attributes: Attributes; report: ScoutReport }[] | null };

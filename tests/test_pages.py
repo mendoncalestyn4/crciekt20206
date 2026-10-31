@@ -150,10 +150,10 @@ def test_the_pages_answer(live):
     assert page["player"] == p and page["missing"] == {}
     status, _, body = live.get("/api/player?name=Nobody At All")
     assert status == 404 and b"hasn't batted or bowled" in body
-    team = live.json("/api/myteam")["team"]
-    demo = live.json(f"/api/demo?team={team}&players={p}")
-    assert demo["missing"] == {} and demo["inbox"] is not None and demo["players"][0]["player"] == p
-    assert live.get("/api/demo?team=Nowhere FC")[0] == 404
+    # the attributes and scout report come with the page (for the competition picked)
+    assert "profile" in page and (page["profile"] is None or {"attributes", "report", "show", "other"} <= set(page["profile"]))
+    st, _, body = live.get("/api/demo")                  # the demo is gone (approved 31 October)
+    assert st == 404 or b"<div id=root>" in body
 
 
 def test_a_tournament_in_the_inbox_counts_only_the_team_s_games():

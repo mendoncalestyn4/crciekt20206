@@ -41,6 +41,9 @@ The bold styles need full control, which only a website of our own gives. Those 
 - **Checks:** zero errors, with deep checks before anything is shown to you.
 - **Approvals:** screenshots for your approval at the end of every stage. Nothing replaces the current site until you say so.
 - **Old site:** the current site keeps working, as it is (no more work on it), until the switch-over.
+- **Parked ideas (31 October, to ask about again after stage 1 or 2):** EA FC style player cards with an overall
+  rating per format; Team of the series and Team of the season; board confidence (results against what the ratings
+  expected) and season awards.
 - **Ask first:** before any extra work that wasn't asked for (checks to be sure, another set-up, anything to make the
   work easier), ask, with the choices; new features always need a yes. (31 October; also in `CLAUDE.md`.)
 

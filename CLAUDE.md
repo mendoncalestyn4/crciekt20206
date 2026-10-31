@@ -7,7 +7,10 @@ Read these at the start of every session. They come from the owner and hold unti
   environment, a different approach, or anything meant to make the work easier. Say what you'd do, why, and roughly
   how long it takes, give the choices, and wait for the answer.
 - When the owner says "stop", "no wait" or "don't make anything", stop.
-- Bug fixes inside the work asked for don't need asking; new features always do.
+- **No need to ask (approved 31 October; say afterwards what was done):** fixing bugs found by checks (wrong numbers,
+  crashes, errors on the new site; crashes on the old one), updating tests that an approved change made outdated,
+  fixing layout problems found by the fit check, and running the owner's saves through every page to find bugs.
+- New features always need a yes.
 
 ## How the owner likes the work done
 - Do it well rather than fast: zero errors, deep checks, and screenshots of what changed.

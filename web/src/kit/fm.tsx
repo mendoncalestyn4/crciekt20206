@@ -1,4 +1,4 @@
-// The pieces you approved from the demo (Football Manager style): attributes out of 20, the scout report, squad
+// The pieces you approved (Football Manager style): attributes out of 20, the scout report, squad
 // depth rows and inbox messages. Used on the Player page, My team and the Inbox.
 import { Link } from "react-router";
 import type { Attr, Attributes, DepthPlayer, InboxMsg, ScoutReport } from "../api";
