@@ -51,20 +51,27 @@ The bold styles need full control, which only a website of our own gives. Those 
   has two sections (your choice, 31 October): **Normal**, the player's own figures innings by innings and nothing else;
   and **Compare**, each figure against the usual (and against the player's own overall), with "better" or "worse" and
   by how much, and the summary line. *Open choice:* whether Compare can also put another player alongside.
+  Your choices for Compare (31 October): **batting** puts each innings against the player's own average in the other
+  three innings, e.g. "4th innings: 52.1 (his other three: 38.7), 13.4 better"; in **ODIs and T20s**, bowling first
+  against bowling second, each also against the usual for that side (bowling second is a little cheaper for everyone,
+  so the two sides can't share one usual).
   1. **Tests and first-class: the match's 1st, 2nd, 3rd and 4th innings apart.** Batting: innings, not-outs, runs,
      average, strike rate. Bowling (the innings the bowler bowled in): innings, overs, wickets, average, economy,
      strike rate (balls a wicket) and five-wicket hauls.
   2. **Against the usual** for that innings in the same competition: batting "30 (the usual: 22)"; bowling "average 21.4
      (the usual: 33.0)", with "better" or "worse" written out, since a lower bowling figure is the better one. The
-     scorecards don't say who bowls spin or pace (checked 31 October: a stumping is the only sign, and only 13 of 295
-     bowlers in the project's scorecards have one), so there is no spin and pace split; which other comparisons
-     Compare shows is your choice (ideas given 31 October).
+     scorecards don't say who bowls spin or pace or which hand anyone bats with (checked on both your saves, 31
+     October). A stumping is the only sign of spin: about 3 in 10 regular bowlers in your saves have one, and they open
+     the bowling far less often than the rest, so it's a fair sign, but a spinner without a stumping can't be told
+     apart. Which other comparisons Compare shows is your choice (ideas given 31 October).
   3. **Few innings:** beside every figure, innings and not-outs (batting) or innings and overs (bowling), and a note when
      there are under 5 innings, so one big score or one big haul can't mislead.
   4. **The 4th innings split in two.** Batting: chasing to win, and batting to save the match. Bowling, the same innings
      seen from the other end: defending a total (the other side chasing), and bowling to win (the other side batting to
-     save). Proposed rule, to be checked on your saves with examples shown to you before it's fixed: a target that
-     needed more than about 4 an over in the time left counts as batting to save.
+     save). Proposed rule, from your saves (31 October): a target that needed 3 or more an over in the time left counts
+     as batting to save (sides chasing at that rate won only about 1 in 9; under 2 an over they won about 3 in 4). The
+     time left uses each competition's own match length, taken from its longest games (Tests, 4-day games and 3-day
+     tour games differ). Examples are shown to you before it's fixed.
   5. **A summary line with the details:** the best and the weakest innings. Batting: "Best in the 4th innings, chasing:
      averages 38 (9 innings, 3 not out) against the usual 22 in Tests. Weakest in the 1st innings: 24 against the usual
      33." Bowling: "Best in the 4th innings, bowling to win: 23 wickets at 17.8 (7 innings, 2 five-wicket hauls),
