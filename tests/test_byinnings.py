@@ -116,6 +116,8 @@ def test_batting_first_or_chasing_with_the_best_named():
     d = PP._by_innings(c, "Z", "ODIs", "", ids, "one", bowling=False)
     assert (d["title"], d["right"]) == ("Innings by innings", "batting first or chasing")
     assert [v["key"] for v in d["views"]] == ["normal", "other", "usual"]          # batting: their other innings and the usual
+    assert view(d, "other")["how"].startswith("Measured only against themselves. Avg: their average in that innings. Other "
+                                              "side: their average on the other side (chasing if they batted first")
     n = normal(d)
     assert n["shows"] == ("Better batting first: averages 80.0 (6 innings, 0 not out) against 20.0 chasing and the usual 60.0 "
                           "for their batting positions. Chasing: 20.0 (6 innings) against 80.0 batting first and "
@@ -254,6 +256,7 @@ def test_over_the_match_by_hand():
     assert om["enough"] and om["verdict"] == "later"
     d = PP._by_innings(c, "S", "Tests", "", ids, "multi", bowling=True)
     assert [v["key"] for v in d["views"]] == ["normal", "other", "usual", "pitches", "match", "newball"]
+    assert all(v["how"] and "{" not in v["how"] for v in d["views"])       # every section says how to read it
     assert view(d, "match")["shows"] == ("Late in the match (3rd and 4th innings) they average 20.0, against 40.0 early "
                                          "(1st and 2nd): 50% better. Main bowlers here are 20% better late. They get "
                                          "better as the pitch wears, more than most: ones for the last day.")

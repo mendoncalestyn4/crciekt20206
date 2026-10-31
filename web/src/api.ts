@@ -261,7 +261,7 @@ export type InningsMarks = { slot: string; label: string; innings: number; small
 export type InningsCol = { k: string; label: string; t: "n" | "m" | "d" | "x"; dec: number; help: string; unit: string };
 export type InningsRow = InningsMarks & Record<string, string | number | boolean | null>;
 export type InningsView = { key: string; label: string; cols: InningsCol[]; rows: InningsRow[]; total?: Record<string, string | number | null>;
-  shows: string; for_: string };
+  shows: string; for_: string; how: string };
 export type ByInnings = { kind: string; title: string; right: string; views: InningsView[]; rule: string; note: string };
 
 // ------------------------------------------------------------------ Attributes, scout report, squad depth, inbox (ccstats/attributes.py, ccstats/depth.py)

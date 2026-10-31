@@ -584,6 +584,56 @@ def _col(k: str, label: str, t: str = "m", dec: int = 0, help: str = "", unit: s
     return dict(k=k, label=label, t=t, dec=dec, help=help, unit=unit)
 
 
+def _how(key: str, bowling: bool, multi: bool, t20: bool) -> str:
+    """'How to read it' under each section of the innings-by-innings tile: what the section is and every column, in
+    plain words."""
+    other = ("in the other three innings of the match" if multi else "on the other side (chasing if they batted first, and "
+             "the other way round)" if not bowling else "on the other side (bowling second if they bowled first, and the other "
+             "way round)")
+    marks = ("★ marks their best innings and ▼ their weakest" if multi else "★ marks the side they're better on")
+    few = "\"only 3 innings\" means too few to judge yet"
+    if not bowling:
+        return {
+            "normal": "Their own figures in each innings, nothing compared. Inns: innings batted. NO: not outs. Runs. HS: highest "
+                      "score (* means not out). Avg: runs per dismissal. SR: runs per 100 balls. 50s and 100s. "
+                      f"{marks}; {few}. All: every innings together, their whole record here.",
+            "other": f"Measured only against themselves. Avg: their average in that innings. Other {'three' if multi else 'side'}: "
+                     f"their average {other}. The next column says how much better or worse that innings is. SR and the "
+                     "columns after it do the same for strike rate (runs per 100 balls).",
+            "usual": "Measured against other batters. Avg: their average in that innings. The usual: what batters at the "
+                     "positions they batted at average in that innings here. The next column says how much better or worse "
+                     "they are. SR and the columns after it do the same for strike rate.",
+        }[key]
+    econ_first = "Econ comes first because in T20 cricket runs saved matter most. " if t20 else ""
+    return {
+        "normal": f"Their own figures in each innings, nothing compared. Inns: innings they bowled in. Overs. Runs conceded. "
+                  f"Wkts: wickets. Best: their best figures in an innings. Avg: runs per wicket. Econ: runs per over. SR: "
+                  f"balls per wicket. {'5w: innings with five' if multi else '4w+: innings with four'} or more wickets. "
+                  f"{marks}; {few}. All: every innings together, their whole record here.",
+        "other": f"Measured only against themselves. Avg and Econ: theirs in that innings. Other {'three' if multi else 'side'}: "
+                 f"theirs {other}. The column after each says how much better or worse that innings is (for a bowler "
+                 f"lower is better). {econ_first}",
+        "usual": "Measured against other bowlers. Avg and Econ: theirs in that innings. The usual: the main bowlers in that "
+                 "innings here (part-timers, who bowl under a tenth of the overs, are left out). The column after each says "
+                 f"how much better or worse they are (lower is better). {econ_first}",
+        "pitches": "Measured against the bowlers who bowled on the very same pitches. Avg and Econ: theirs. Team-mates: their "
+                   "own side's other bowlers in those same innings (same pitch, same day, same batters). Other side: the "
+                   "other team's bowlers in those matches. The column after each says how much better or worse they were. "
+                   "Every innings: all of them together.",
+        "match": "Whether they get better as the match goes on and the pitch wears. Avg: theirs in each innings of the match "
+                 "(the 4th counts both kinds together). On their 1st innings: how much better or worse that is than their "
+                 "own 1st-innings average. The usual: the main bowlers' average in that innings here; Usual on its 1st: "
+                 "how much the usual changes from the 1st innings. If they improve more than the usual does, they're a "
+                 "bowler for a worn pitch.",
+        "newball": "Opening the bowling: innings where they were the 1st or 2nd bowler on (the scorecard lists bowlers in the "
+                   "order they came on). Later on: innings where they came on 3rd or later. The usual: the main bowlers doing "
+                   f"the same job here. The column after each says how much better or worse they are. {econ_first}",
+        "dots": "Dots: dot balls they bowled (balls with no run scored). Dot %: the share of their balls that were dots. "
+                f"Other side: their dot % {other}. The usual: the main bowlers bowling first (or second) here. The "
+                "column after each says how much better or worse; here more dots is better.",
+    }[key].strip()
+
+
 def _by_innings(career, player, section, season, ids, kind, bowling: bool) -> dict | None:
     """Their figures innings by innings (ccstats/byinnings.py), in sections the page switches between: Normal, their
     own figures with every innings together at the bottom and a line naming the best and the weakest; then each
@@ -852,6 +902,7 @@ def _by_innings(career, player, section, season, ids, kind, bowling: bool) -> di
     for v in views:
         if v["rows"] is None:   # other innings and the usual: the same rows as Normal
             v["rows"] = rows
+        v["how"] = _how(v["key"], bowling, multi, t20)
     right = ("1st, 2nd, 3rd and 4th innings of the match" if multi else "bowling first or second" if bowling
              else "batting first or chasing")
     return dict(kind=kind, title="Innings by innings", right=right, views=views, rule=rule,
