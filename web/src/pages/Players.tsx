@@ -322,7 +322,6 @@ function InningsTile({ x }: { x: ByInnings }) {
         <tbody>{v.rows.map((r) => <tr key={r.slot} className={r.best ? "me" : r.slot === "all" ? "tot" : ""}><Slot r={r} />
           {v.cols.map((c) => <Cell key={c.k} c={c} v={r[c.k]} />)}</tr>)}
           {v.total && <tr className="tot"><td><Name p="All" px={19} /></td>{v.cols.map((c) => <Cell key={c.k} c={c} v={v.total![c.k]} />)}</tr>}</tbody></table>
-      <div className="note"><b>How to read it:</b> {v.how}</div>
       {x.note && v.key !== "normal" && <div className="note">{x.note}</div>}
       <Explain shows={v.shows} for_={v.for_} />
       {x.rule && <div className="note">{x.rule}</div>}
