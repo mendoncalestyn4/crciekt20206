@@ -47,7 +47,10 @@ The bold styles need full control, which only a website of our own gives. Those 
 - **To do list (31 October; planned, nothing started; each waits for your "build it"):**
 
   **A. Figures innings by innings, for batting and for bowling** (you liked all five parts). On the Player page, in its
-  own tile: a batter's page shows the batting half, a bowler's page the bowling half, an all-rounder's both.
+  own tile: a batter's page shows the batting half, a bowler's page the bowling half, an all-rounder's both. The tile
+  has two sections (your choice, 31 October): **Normal**, the player's own figures innings by innings and nothing else;
+  and **Compare**, each figure against the usual (and against the player's own overall), with "better" or "worse" and
+  by how much, and the summary line. *Open choice:* whether Compare can also put another player alongside.
   1. **Tests and first-class: the match's 1st, 2nd, 3rd and 4th innings apart.** Batting: innings, not-outs, runs,
      average, strike rate. Bowling (the innings the bowler bowled in): innings, overs, wickets, average, economy,
      strike rate (balls a wicket) and five-wicket hauls.
