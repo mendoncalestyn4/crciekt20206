@@ -44,26 +44,56 @@ The bold styles need full control, which only a website of our own gives. Those 
 - **Parked ideas (31 October, to ask about again after stage 1 or 2):** EA FC style player cards with an overall
   rating per format; Team of the series and Team of the season; board confidence (results against what the ratings
   expected) and season awards.
-- **To do: figures innings by innings (31 October; you liked all five parts; not started, waiting for "build it"):**
-  on the Player page, in its own tile (a bowler's page shows only the bowling half).
-  1. **Tests and first-class:** the match's 1st, 2nd, 3rd and 4th innings apart: runs, average and strike rate when
-     batting; wickets, average and economy when bowling.
-  2. **Against the usual:** every figure next to the usual for that innings in the same competition, e.g. "30 (the
-     usual: 22)", as the batting-position table does.
-  3. **Few innings:** innings and not-outs beside every figure, and a note when there are only a few (under 5), so one
-     big score can't mislead.
-  4. **The 4th innings split in two:** chasing to win, and batting to save the match (for bowlers: bowling to win, and
-     defending a total). Proposed rule, to be checked on your saves with examples shown to you before it's fixed: a
-     target that needed more than about 4 an over in the time left counts as batting to save.
-  5. **A summary line with the details:** the best and the weakest innings, each with its average, innings, not-outs
-     and the usual, e.g. "Best in the 4th innings, chasing: averages 38 (9 innings, 3 not out) against the usual 22
-     in Tests. Weakest in the 1st innings: 24 against the usual 33." An innings is only called the best with enough
-     innings behind it (settled, like the best batting position).
-  6. **ODIs, T20Is and domestic one-day and T20:** batting first against chasing (bowling first against defending), with
-     the same usual, counts and summary line. Each format and each domestic competition stays on its own.
+- **To do list (31 October; planned, nothing started; each waits for your "build it"):**
+
+  **A. Figures innings by innings, for batting and for bowling** (you liked all five parts). On the Player page, in its
+  own tile: a batter's page shows the batting half, a bowler's page the bowling half, an all-rounder's both.
+  1. **Tests and first-class: the match's 1st, 2nd, 3rd and 4th innings apart.** Batting: innings, not-outs, runs,
+     average, strike rate. Bowling (the innings the bowler bowled in): innings, overs, wickets, average, economy,
+     strike rate (balls a wicket) and five-wicket hauls.
+  2. **Against the usual** for that innings in the same competition: batting "30 (the usual: 22)"; bowling "average 21.4
+     (the usual: 33.0)", with "better" or "worse" written out, since a lower bowling figure is the better one. Bowlers
+     are judged like with like: spinners against spinners, pace against pace (spinners usually do better as the pitch
+     wears, so a spinner's 4th innings is judged against other spinners' 4th innings).
+  3. **Few innings:** beside every figure, innings and not-outs (batting) or innings and overs (bowling), and a note when
+     there are under 5 innings, so one big score or one big haul can't mislead.
+  4. **The 4th innings split in two.** Batting: chasing to win, and batting to save the match. Bowling, the same innings
+     seen from the other end: defending a total (the other side chasing), and bowling to win (the other side batting to
+     save). Proposed rule, to be checked on your saves with examples shown to you before it's fixed: a target that
+     needed more than about 4 an over in the time left counts as batting to save.
+  5. **A summary line with the details:** the best and the weakest innings. Batting: "Best in the 4th innings, chasing:
+     averages 38 (9 innings, 3 not out) against the usual 22 in Tests. Weakest in the 1st innings: 24 against the usual
+     33." Bowling: "Best in the 4th innings, bowling to win: 23 wickets at 17.8 (7 innings, 2 five-wicket hauls),
+     economy 2.4, against the usual 29.5 for spinners in Tests. Weakest in the 1st innings: 38.6 against the usual 31.2."
+     An innings is only called the best with enough innings behind it (settled, like the best batting position).
+     Bowlers are ranked on bowling average, except in T20 cricket, where economy decides (runs saved matter most there).
+  6. **ODIs, T20Is and domestic one-day and T20:** batting first against chasing; bowling first against defending a
+     total; the same usual, counts and summary line. Each format and each domestic competition stays on its own.
 
   Checks: hand-worked numbers locked into the tests, every player's page still whole, the fit check, and screenshots.
-  About 1 day.
+  About 1 to 1½ days.
+
+  **B. Hand-worked matches locked into the tests** (idea 6, approved). About 5 tricky scorecards already in the project
+  (rain and a tie with a super over, a T20I super over, a rain-hit Hundred game, a county declaration, a follow-on if
+  there is one), every number worked out by hand and locked in. ½ to 1 day. *Waiting on:* if none of the 66 has a
+  follow-on, make one up in the game's format, or skip that case.
+
+  **C. "Does it add up" check** (idea 7, approved). Every innings: batters' runs + extras = total, bowlers' runs + byes +
+  leg-byes = total, wickets = batters out, bowlers' wickets = their dismissals, overs, fall of wickets, the result and
+  margin. At least everything the old Data check catches. Tried on all 66 scorecards and on your saves. ½ day.
+  *Waiting on:* is a note on the match page, a list in Settings and an alert for a new match the right places?
+
+  **D. Faster: only redo what a new match changed** (idea 1, approved). Each competition gets a fingerprint; a new match
+  only redoes the competitions whose fingerprint changed (safe even when a new match moves an earlier final into another
+  division); anything unlabelled is redone as today. Proved by comparing every kept number with a fresh rebuild, and
+  timed before and after on your 2032 save. About 1 day.
+
+  **E. Faster: remember the sums between starts** (idea 2, approved). Saved in the career's own folder, with a
+  fingerprint of the scorecards, your fixes and the site's code: anything different, or a damaged file, and it's
+  rebuilt as today, so old numbers can never show. ½ day. *Waiting on:* Python's built-in format (no new package; my
+  pick) or the pyarrow package.
+
+  Suggested order: B, C, D, E, then A (the tests guard the numbers before the speed changes).
 - **Ask first:** before any extra work that wasn't asked for (checks to be sure, another set-up, anything to make the
   work easier), ask, with the choices; new features always need a yes. (31 October; also in `CLAUDE.md`.)
 
