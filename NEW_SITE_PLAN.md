@@ -44,9 +44,26 @@ The bold styles need full control, which only a website of our own gives. Those 
 - **Parked ideas (31 October, to ask about again after stage 1 or 2):** EA FC style player cards with an overall
   rating per format; Team of the series and Team of the season; board confidence (results against what the ratings
   expected) and season awards.
-- **To do (31 October, not started; needs your yes before it's built):** on the Player page, a player's Test figures
-  (and first-class in domestic cricket) shown separately for the match's 1st, 2nd, 3rd and 4th innings: runs,
-  average and strike rate when batting; wickets, average and economy when bowling.
+- **To do: figures innings by innings (31 October; you liked all five parts; not started, waiting for "build it"):**
+  on the Player page, in its own tile (a bowler's page shows only the bowling half).
+  1. **Tests and first-class:** the match's 1st, 2nd, 3rd and 4th innings apart: runs, average and strike rate when
+     batting; wickets, average and economy when bowling.
+  2. **Against the usual:** every figure next to the usual for that innings in the same competition, e.g. "30 (the
+     usual: 22)", as the batting-position table does.
+  3. **Few innings:** innings and not-outs beside every figure, and a note when there are only a few (under 5), so one
+     big score can't mislead.
+  4. **The 4th innings split in two:** chasing to win, and batting to save the match (for bowlers: bowling to win, and
+     defending a total). Proposed rule, to be checked on your saves with examples shown to you before it's fixed: a
+     target that needed more than about 4 an over in the time left counts as batting to save.
+  5. **A summary line with the details:** the best and the weakest innings, each with its average, innings, not-outs
+     and the usual, e.g. "Best in the 4th innings, chasing: averages 38 (9 innings, 3 not out) against the usual 22
+     in Tests. Weakest in the 1st innings: 24 against the usual 33." An innings is only called the best with enough
+     innings behind it (settled, like the best batting position).
+  6. **ODIs, T20Is and domestic one-day and T20:** batting first against chasing (bowling first against defending), with
+     the same usual, counts and summary line. Each format and each domestic competition stays on its own.
+
+  Checks: hand-worked numbers locked into the tests, every player's page still whole, the fit check, and screenshots.
+  About 1 day.
 - **Ask first:** before any extra work that wasn't asked for (checks to be sure, another set-up, anything to make the
   work easier), ask, with the choices; new features always need a yes. (31 October; also in `CLAUDE.md`.)
 
