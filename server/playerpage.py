@@ -13,6 +13,7 @@ import pandas as pd
 
 from ccstats import analysis as A
 from ccstats import attributes as AT
+from ccstats import byinnings as BI
 from ccstats import extras as E
 from ccstats import marks as MK
 from ccstats import players as PL
@@ -220,11 +221,13 @@ def page(career, player: str, section: str = "", season: str = "") -> dict:
     if is_bowler and "Bowling" in tabs:   # a bowler's page opens on their bowling, then fielding; batting comes last
         tabs = ["Bowling", "Fielding"] + [t for t in tabs if t not in ("Bowling", "Fielding")]
     out["tabs"] = tabs + ["Story"]
-    out["batting"] = out["bowling"] = None
+    out["batting"] = out["bowling"] = out["bat_innings"] = out["bowl_innings"] = None
     if len(inns):
         piece("batting", lambda: _batting(career, player, section, season, ids, inns, bat_t, kind))
+        piece("bat_innings", lambda: _by_innings(career, player, section, season, ids, kind, bowling=False))
     if len(spells):
         piece("bowling", lambda: _bowling(career, player, section, season, ids, spells, bowl_t, kind))
+        piece("bowl_innings", lambda: _by_innings(career, player, section, season, ids, kind, bowling=True))
     f = fld_t[fld_t.player == player]
     out["fielding"] = SG.clean(dict(matches=f.matches.iloc[0], catches=f.catches.iloc[0], stumpings=f.stumpings.iloc[0])) if len(f) else None
     piece("story", lambda: _story(career, player, section, season, ids, kind, my_matches))
@@ -572,6 +575,119 @@ def _bowling(career, player, section, season, ids, spells, bowl_t, kind) -> dict
                                 "Shows which teams they keep quiet and which ones get after them."))
     out["splits"] = dict(overall=econ, rows=splits)
     return out
+
+
+# ------------------------------------------------------------------ innings by innings
+def _by_innings(career, player, section, season, ids, kind, bowling: bool) -> dict | None:
+    """Their figures innings by innings (ccstats/byinnings.py): Normal, their own figures with every innings together
+    at the bottom; Compare, each against their other innings and the usual there (+ always means better); and one line
+    naming the best and the weakest, with the details."""
+    sl = kept(career, ("slots", section, season), lambda: BI.slots(career, ids, kind))
+    t = (BI.bowling if bowling else BI.batting)(career, ids, player, kind, sl)
+    if t.empty:
+        return None
+    multi = kind == "multi"
+
+    def where(r) -> str:          # "in the 4th innings, chasing" / "chasing"
+        return f"in the {r.label}" if multi else r.label.lower()
+
+    def named(r, lead: str) -> str:   # "Best in the 1st innings", "Better chasing"; with no lead, "Batting first"
+        return f"{lead} {where(r)}" if lead else r.label
+
+    def other(r) -> str:          # "in the other three innings" / "bowling second"
+        return "in the other three innings" if multi else BI.label(kind, BI.others(kind, r.slot)[0], bowling).lower()
+
+    def against(r, theirs, usual, dec, usual_what="") -> str:
+        bits = ([f"{fmt(theirs, dec)} {other(r)}"] if r.other_innings and pd.notna(theirs) else []) + \
+               ([f"the usual {fmt(usual, dec)}{usual_what}"] if pd.notna(usual) else [])
+        return (" against " + " and ".join(bits)) if bits else ""
+
+    best, weak = t[t["best"]], t[t["weakest"]]
+    enough = f"only {BI.SMALL} innings or more count" if multi else f"both sides need {BI.SMALL} innings or more"
+    if bowling:
+        t["avg_vs_other"] = t.other_average - t.average
+        t["avg_vs_usual"] = t.usual_average - t.average
+        t["econ_vs_other"] = t.other_economy - t.economy
+        t["econ_vs_usual"] = t.usual_economy - t.economy
+        haul = "five-wicket haul" if multi else "four-wicket haul"
+        balls, runs, wkts = int(t.balls.sum()), int(t.runs.sum()), int(t.wickets.sum())
+        bb = max(t.bbi, key=lambda x: int(x.split("/")[0]) * 1000 - int(x.split("/")[1]))
+        total = dict(innings=int(t.innings.sum()), overs=BI.balls_to_overs(balls), runs=runs, wickets=wkts, best=bb,
+                     average=runs / wkts if wkts else None, economy=runs / balls * 6 if balls else None,
+                     strike_rate=balls / wkts if wkts else None, hauls=int(t.hauls.sum()))
+
+        def line(r, lead: str) -> str:
+            n = count(r.innings, "innings", "innings")
+            if kind == "t20":
+                head = (f"{fmt(r.economy, 2)} an over ({n}, " + (f"{count(r.wickets, 'wicket')} at {fmt(r.average)})"
+                                                                  if r.wickets else "no wickets)"))
+                return f"{named(r, lead)}: {head}" + against(r, r.other_economy, r.usual_economy, 2, " here") + "."
+            if lead in ("Weakest", ""):
+                head = f"{fmt(r.average)} ({n})" if r.wickets else f"no wickets in {n}, economy {fmt(r.economy, 2)}"
+            else:
+                head = (f"{count(r.wickets, 'wicket')} at {fmt(r.average)} ({n}"
+                        + (f", {count(r.hauls, haul)}" if r.hauls else "") + f"), economy {fmt(r.economy, 2)}")
+            tail = against(r, r.other_average, r.usual_average, 1, " here")
+            return f"{named(r, lead)}: {head}" + ("," if tail and not head.endswith(")") else "") + tail + "."
+        cols = ["slot", "label", "innings", "overs", "runs", "wickets", "bbi", "average", "economy", "strike_rate", "hauls",
+                "other_innings", "other_average", "other_economy", "usual_average", "usual_economy", "avg_vs_other",
+                "avg_vs_usual", "econ_vs_other", "econ_vs_usual", "small", "best", "weakest", "same"]
+        judged = "economy, which matters most in T20 cricket" if kind == "t20" else "bowling average"
+        for_ = (("Shows in which innings of the match they take their wickets. " if multi else
+                 "Shows whether they bowl better first or second. ")
+                + f"Compare sets each against their own figures {'in the other three innings' if multi else 'on the other side'} "
+                "and the usual for every bowler there; a lower average and economy are better, so + always means better. "
+                f"{'The best and weakest are' if multi else 'The better side is'} judged on {judged}, settled: a few "
+                f"innings at the usual level are added before comparing, and {enough}.")
+    else:
+        t["vs_other"] = t.average - t.other_average
+        t["vs_usual"] = t.average - t.usual_average
+        t["sr_vs_other"] = t.strike_rate - t.other_sr
+        t["sr_vs_usual"] = t.strike_rate - t.usual_sr
+        outs, runs, balls = int((t.innings - t.not_outs).sum()), int(t.runs.sum()), int(t.balls.sum())
+        total = dict(innings=int(t.innings.sum()), not_outs=int(t.not_outs.sum()), runs=runs,
+                     high=max(t.high, key=lambda h: int(h.rstrip("*")) * 2 + h.endswith("*")),
+                     average=runs / outs if outs else None, strike_rate=runs / balls * 100 if balls else None,
+                     fifties=int(t.fifties.sum()), hundreds=int(t.hundreds.sum()))
+
+        def line(r, lead: str) -> str:
+            n = count(r.innings, "innings", "innings")
+            if lead in ("Weakest", ""):
+                head = f"{fmt(r.average)} ({n})" if pd.notna(r.average) else f"never out in {n}"
+            else:
+                head = (f"averages {fmt(r.average)}" if pd.notna(r.average) else "never out") + \
+                       f" ({n}, {count(r.not_outs, 'not out', 'not out')})"
+            return (f"{named(r, lead)}: {head}" + against(r, r.other_average, r.usual_average, 1, " for their batting positions")
+                    + ".")
+        cols = ["slot", "label", "innings", "not_outs", "runs", "high", "average", "strike_rate", "fifties", "hundreds",
+                "other_innings", "other_average", "other_sr", "usual_average", "usual_sr", "vs_other", "vs_usual",
+                "sr_vs_other", "sr_vs_usual", "small", "best", "weakest", "same"]
+        for_ = (("Shows in which innings of the match they make their runs. " if multi else
+                 "Shows whether they're better setting a total or chasing one. ")
+                + f"Compare sets each against their own average {'in the other three innings' if multi else 'on the other side'} "
+                "and the usual for a batter at the positions they batted at there (+ is better). "
+                f"{'The best and weakest are' if multi else 'The better side is'} settled: a few innings at the usual level "
+                f"are added before comparing, and {enough}, so one big score can't decide it.")
+    if len(best):
+        # two sides in one-day cricket: "Better batting first: ... Chasing: ..."; four innings: best and weakest
+        shows = line(best.iloc[0], "Best" if multi else "Better") + " " + line(weak.iloc[0], "Weakest" if multi else "")
+    elif t.same.any():
+        shows = ("About the same in every innings with 5 or more" if multi else
+                 f"About the same {t.label.iloc[0].lower()} and {t.label.iloc[-1].lower()}") + \
+                f": once settled, within {BI.SAME}% of each other."
+    else:
+        shows = (f"Not enough innings yet to name a best or a weakest: that needs {BI.SMALL} or more in at least two of them."
+                 if multi else f"Not enough innings yet to say which is better: that needs {BI.SMALL} or more on both sides.")
+    rule = ""
+    if multi:
+        rule = (f"4th innings: chasing to win, unless they needed {BI.SAVE_RATE:.0f} runs an over or more in the time left "
+                f"(worked out from the overs, in a match of about {BI.match_length(career, section):.0f} overs, this "
+                "competition's longest games); a side that got there was chasing, whatever the rate.")
+    right = ("1st, 2nd, 3rd and 4th innings of the match" if multi else "bowling first or second" if bowling
+             else "batting first or chasing")
+    return dict(kind=kind, title="Innings by innings", right=right,
+                rows=SG.rows(t, cols), total=total, shows=shows, for_=for_, rule=rule,
+                haul="5w" if multi else "4w+", haul_help=f"{'Five' if multi else 'Four'} or more wickets in an innings")
 
 
 # ------------------------------------------------------------------ story

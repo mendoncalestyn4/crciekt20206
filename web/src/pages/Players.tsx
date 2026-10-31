@@ -5,7 +5,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
-import { get, type PlayerPage, type PlayersLanding, type Split } from "../api";
+import { get, type InningsMarks, type PlayerPage, type PlayersLanding, type Split } from "../api";
 import { Explain, Hero, Logo, Missing, Name, Num, PName, Sub, Tile } from "../kit/base";
 import { PercentileBars } from "../kit/blocks";
 import { RingList } from "../kit/charts";
@@ -187,6 +187,7 @@ export function PlayerView() {
           <Box title="Conversion" right="% of innings reaching each score">{b.funnel ? <><Funnel rows={b.funnel.rows} />{b.funnel.extra && <div className="plain">{b.funnel.extra}</div>}
             <Explain shows={b.funnel.shows} for_={b.funnel.for_} /></> : <div className="note">No innings yet.</div>}</Box>
           <Box span={12} title={`Every season in ${d.section}`} right="the same columns as the table at the top"><RecordTable t={b.season_table} /></Box>
+          {d.bat_innings && <BatInnings x={d.bat_innings} />}
           <div className="part"><span className="tl2" style={{ fontSize: 32 }}>Average in different situations</span>
             <span className="note" style={{ margin: 0 }}>Each chart splits the same innings one way. The dashed line is their overall average ({f1(b.splits.overall)}).</span></div>
           {b.splits.rows.map((s) => <Box key={s.title} title={s.title!}><Sp s={s} overall={b.splits.overall} /></Box>)}
@@ -242,6 +243,7 @@ export function PlayerView() {
                 <td className="r"><span className="tn">{r.wickets}</span></td><td className="r"><span className="tn">{r.economy}</span></td><td className="r"><span className="tn dimn">{r.maidens}</span></td></tr>)}</tbody></table>
             {w.with_without.shows && <Explain shows={w.with_without.shows} for_={w.with_without.for_ ?? ""} />}</Box>
           <Box span={12} title={`Every season in ${d.section}`} right="the same columns as the table at the top"><RecordTable t={w.season_table} /></Box>
+          {d.bowl_innings && <BowlInnings x={d.bowl_innings} />}
           <Box title="Quality of wickets" right="where their victims bat">{w.quality ? <Sp s={w.quality} dec={0} /> : <div className="note">No wickets yet.</div>}</Box>
           <Box title="Bunnies" right="batters they have got out most">{w.bunnies ? <Sp s={w.bunnies} dec={0} /> : <div className="note">No wickets yet.</div>}</Box>
           <Box span={12} title="Streaks" right="innings bowled in a row"><StreakTable rows={w.streaks} /></Box>
@@ -284,6 +286,89 @@ const pc = (v: number | null) => (v == null ? "–" : `${v >= 0 ? "+" : ""}${Mat
 function ShareBar({ v, of }: { v: number | null; of: number }) {
   return v == null ? <span className="tn dimn">–</span> : (
     <span className="share"><span className="bar"><i style={{ width: `${Math.min(100, v * 2.5)}%` }} /></span><span className="tn">{Math.round(v)}%</span><span className="how"> of {of.toLocaleString("en-GB")}</span></span>);
+}
+
+// ------------------------------------------------------------------ innings by innings (Normal and Compare)
+/** "4.9 better", "0.20 worse" or "same": + always means better (the server turns bowling figures round). */
+function Diff({ v, dec = 1 }: { v: number | null; dec?: number }) {
+  if (v == null) return <span className="tn dimn dif">–</span>;
+  const a = Math.abs(v).toFixed(dec);
+  if (Number(a) === 0) return <span className="tn dimn dif">same</span>;
+  return <span className={`tn dif ${v > 0 ? "up" : "down"}`}>{a} {v > 0 ? "better" : "worse"}</span>;
+}
+
+/** "4th innings" with "chasing" under it (and "only 3 innings" when there are few): ★ the best, ▼ the weakest. */
+function Slot({ r }: { r: InningsMarks }) {
+  const [main, kind] = r.label.split(", ");
+  return <td><Name p={`${r.best ? "★ " : r.weakest ? "▼ " : ""}${main}`} px={19} />
+    {(kind || r.small) && <div className="how">{kind && <span style={{ color: "var(--ink)" }}>{kind}</span>}{kind && r.small ? " · " : ""}
+      {r.small && `only ${plural(r.innings, "innings", "innings")}`}</div>}</td>;
+}
+
+function Modes({ mode, set }: { mode: string; set: (m: string) => void }) {
+  return <div className="itabs" style={{ gridColumn: "auto", margin: "0 0 10px" }}>{["Normal", "Compare"].map((m) => (
+    <button key={m} className={m === mode ? "on" : ""} onClick={() => set(m)}>{m}</button>))}</div>;
+}
+
+const N = ({ v, dim }: { v: ReactNode; dim?: boolean }) => <td className="r"><span className={`tn${dim ? " dimn" : ""}`}>{v}</span></td>;
+const D = ({ v, dec }: { v: number | null; dec?: number }) => <td className="r"><Diff v={v} dec={dec} /></td>;
+
+function BatInnings({ x }: { x: NonNullable<PlayerPage["bat_innings"]> }) {
+  const [mode, setMode] = useState("Normal");
+  const other = x.kind === "multi" ? "Other three" : "Other side";
+  const t = x.total;
+  return (
+    <Tile span={12} title={x.title} right={x.right}>
+      <Modes mode={mode} set={setMode} />
+      {mode === "Normal" ? <table className="c bi"><thead><tr><th /><th className="r">Inns</th><th className="r">NO</th><th className="r">Runs</th>
+        <th className="r">HS</th><th className="r">Avg</th><th className="r">SR</th><th className="r">50s</th><th className="r">100s</th></tr></thead>
+        <tbody>{x.rows.map((r) => <tr key={r.slot} className={r.best ? "me" : ""}><Slot r={r} /><N v={r.innings} dim /><N v={r.not_outs} dim /><N v={r.runs} />
+          <N v={r.high} dim /><N v={f1(r.average)} /><N v={f1(r.strike_rate)} dim /><N v={r.fifties} dim /><N v={r.hundreds} dim /></tr>)}
+          <tr className="tot"><td><Name p="All" px={19} /></td><N v={t.innings} dim /><N v={t.not_outs} dim /><N v={t.runs} /><N v={t.high} dim />
+            <N v={f1(t.average)} /><N v={f1(t.strike_rate)} dim /><N v={t.fifties} dim /><N v={t.hundreds} dim /></tr></tbody></table>
+        : <table className="c bi"><thead><tr><th /><th className="r">Avg</th><th className="r" title="Their average in their other innings">{other}</th><th className="r" />
+          <th className="r" title="The usual average for a batter at the positions they batted at, in that innings here">The usual</th><th className="r" />
+          <th className="r">SR</th><th className="r" title="Their strike rate in their other innings">{other}</th><th className="r" />
+          <th className="r" title="The usual strike rate for a batter at their positions, in that innings here">The usual</th><th className="r" /></tr></thead>
+          <tbody>{x.rows.map((r) => <tr key={r.slot} className={r.best ? "me" : ""}><Slot r={r} />
+            <N v={f1(r.average)} /><N v={f1(r.other_average)} dim /><D v={r.vs_other} /><N v={f1(r.usual_average)} dim /><D v={r.vs_usual} />
+            <N v={f1(r.strike_rate)} /><N v={f1(r.other_sr)} dim /><D v={r.sr_vs_other} /><N v={f1(r.usual_sr)} dim /><D v={r.sr_vs_usual} /></tr>)}</tbody></table>}
+      <Explain shows={x.shows} for_={x.for_} />
+      {x.rule && <div className="note">{x.rule}</div>}
+    </Tile>
+  );
+}
+
+function BowlInnings({ x }: { x: NonNullable<PlayerPage["bowl_innings"]> }) {
+  const [mode, setMode] = useState("Normal");
+  const other = x.kind === "multi" ? "Other three" : "Other side";
+  const t = x.total;
+  // in T20 cricket economy decides, so it comes first
+  const avg = (r: (typeof x.rows)[number]) => [<N key="a" v={f1(r.average)} />, <N key="ao" v={f1(r.other_average)} dim />, <D key="ad" v={r.avg_vs_other} />,
+    <N key="au" v={f1(r.usual_average)} dim />, <D key="aud" v={r.avg_vs_usual} />];
+  const econ = (r: (typeof x.rows)[number]) => [<N key="e" v={f2(r.economy)} />, <N key="eo" v={f2(r.other_economy)} dim />, <D key="ed" v={r.econ_vs_other} dec={2} />,
+    <N key="eu" v={f2(r.usual_economy)} dim />, <D key="eud" v={r.econ_vs_usual} dec={2} />];
+  const head = (what: string) => [<th key={what} className="r">{what}</th>, <th key={what + "o"} className="r" title={`Their ${what === "Avg" ? "average" : "economy"} in their other innings`}>{other}</th>,
+    <th key={what + "d"} className="r" />, <th key={what + "u"} className="r" title={`The usual ${what === "Avg" ? "average" : "economy"} for every bowler in that innings here`}>The usual</th>,
+    <th key={what + "ud"} className="r" />];
+  const t20 = x.kind === "t20";
+  return (
+    <Tile span={12} title={x.title} right={x.right}>
+      <Modes mode={mode} set={setMode} />
+      {mode === "Normal" ? <table className="c bi"><thead><tr><th /><th className="r">Inns</th><th className="r">Overs</th><th className="r">Runs</th>
+        <th className="r">Wkts</th><th className="r">Best</th><th className="r">Avg</th><th className="r">Econ</th><th className="r" title="Balls a wicket">SR</th>
+        <th className="r" title={x.haul_help}>{x.haul}</th></tr></thead>
+        <tbody>{x.rows.map((r) => <tr key={r.slot} className={r.best ? "me" : ""}><Slot r={r} /><N v={r.innings} dim /><N v={r.overs} dim /><N v={r.runs} dim />
+          <N v={r.wickets} /><N v={r.bbi} dim /><N v={f1(r.average)} /><N v={f2(r.economy)} /><N v={f1(r.strike_rate)} dim /><N v={r.hauls} dim /></tr>)}
+          <tr className="tot"><td><Name p="All" px={19} /></td><N v={t.innings} dim /><N v={t.overs} dim /><N v={t.runs} dim /><N v={t.wickets} />
+            <N v={t.best} dim /><N v={f1(t.average)} /><N v={f2(t.economy)} /><N v={f1(t.strike_rate)} dim /><N v={t.hauls} dim /></tr></tbody></table>
+        : <table className="c bi"><thead><tr><th />{t20 ? [...head("Econ"), ...head("Avg")] : [...head("Avg"), ...head("Econ")]}</tr></thead>
+          <tbody>{x.rows.map((r) => <tr key={r.slot} className={r.best ? "me" : ""}><Slot r={r} />{t20 ? [...econ(r), ...avg(r)] : [...avg(r), ...econ(r)]}</tr>)}</tbody></table>}
+      {mode === "Compare" && <div className="note">For bowlers lower is better, so "better" here means a lower average or economy.</div>}
+      <Explain shows={x.shows} for_={x.for_} />
+      {x.rule && <div className="note">{x.rule}</div>}
+    </Tile>
+  );
 }
 
 function StreakTable({ rows }: { rows: { streak: string; longest: number; current: number }[] }) {

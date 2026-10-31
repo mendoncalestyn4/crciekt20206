@@ -64,6 +64,26 @@ def test_every_player_has_a_whole_page(career):
         PP.page(career, "Nobody At All")
 
 
+def test_the_innings_tiles_add_up_to_the_competition_record(career):
+    """Innings by innings (ccstats/byinnings.py): every slot together is the player's whole record in that competition,
+    for batting and bowling, in every format."""
+    kinds = set()
+    for p in players_by_matches(career, 12):
+        for sec in PP.page(career, p)["sections"][:3]:
+            d = PP.page(career, p, sec)
+            bt, wt, _, base = PP.tables(career, sec, "")
+            if d["bat_innings"]:
+                kinds.add(d["bat_innings"]["kind"])
+                me = bt[bt.player == p].iloc[0]
+                assert (d["bat_innings"]["total"]["runs"], d["bat_innings"]["total"]["innings"]) == (int(me.runs), int(me.innings))
+                assert sum(r["innings"] for r in d["bat_innings"]["rows"]) == int(me.innings)
+            if d["bowl_innings"]:
+                me = wt[wt.player == p].iloc[0]
+                t = d["bowl_innings"]["total"]
+                assert (t["wickets"], t["runs"]) == (int(me.wickets), int(me.runs))
+    assert kinds == {"multi", "one", "t20"}
+
+
 def test_the_card_and_the_tables_agree(career):
     """The career card's runs and wickets are the sums of the table at the top."""
     for p in players_by_matches(career, 6):

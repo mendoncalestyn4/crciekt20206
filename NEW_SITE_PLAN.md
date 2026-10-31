@@ -44,9 +44,16 @@ The bold styles need full control, which only a website of our own gives. Those 
 - **Parked ideas (31 October, to ask about again after stage 1 or 2):** EA FC style player cards with an overall
   rating per format; Team of the series and Team of the season; board confidence (results against what the ratings
   expected) and season awards.
-- **To do list (31 October; planned, nothing started; each waits for your "build it"):**
+- **To do list (31 October; A is built, B to E wait for your "build it"):**
 
-  **A. Figures innings by innings, for batting and for bowling** (you liked all five parts). On the Player page, in its
+  **A. Figures innings by innings, for batting and for bowling: BUILT 31 October** (`ccstats/byinnings.py`, the
+  "Innings by innings" tile in the Player page's Batting and Bowling tabs, so a bowler's page opens on the bowling one;
+  `tests/test_byinnings.py`; checked on both your saves, every figure recounted another way: 0 problems). Settled while
+  building: in one-day and T20 cricket the line says "Better batting first: … Chasing: …" (two sides, not a best and a
+  weakest); a competition with too few games to measure takes the shortest of three, four or five days its longest
+  game fits in (Tests always five), so three-day tour games aren't given four days.
+
+  The plan as agreed (you liked all five parts). On the Player page, in its
   own tile: a batter's page shows the batting half, a bowler's page the bowling half, an all-rounder's both. The tile
   has two sections (your choice, 31 October): **Normal**, the player's own figures innings by innings and nothing else;
   and **Compare**, each figure against the usual (and against the player's own overall), with "better" or "worse" and

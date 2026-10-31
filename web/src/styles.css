@@ -97,6 +97,8 @@ table.c td { padding: 9px 7px; border-top: 1px solid var(--edge); vertical-align
 table.c .r, table.tv .r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 table.c tr.me td { background: color-mix(in srgb, var(--orange) 13%, transparent); }
 table.c tr.me td:first-child { border-radius: 10px 0 0 10px; } table.c tr.me td:last-child { border-radius: 0 10px 10px 0; }
+table.c tr.tot td { border-top: 1.5px solid var(--edge); }
+table.c.bi td, table.c.bi th { padding-left: 5px; padding-right: 5px; } table.c.bi .dif { font-size: 15px; }
 table.tv { width: 100%; border-collapse: collapse; }
 table.tv th { border-bottom: 2px solid var(--gold); }
 table.tv td { padding: 9px 7px; border-bottom: 1px solid var(--edge); vertical-align: middle; }
