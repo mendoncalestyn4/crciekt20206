@@ -25,8 +25,9 @@ Read these at the start of every session. They come from the owner and hold unti
 - Desktop only. Every feature must work for every team and competition: national, franchise and domestic.
 - Formats are never mixed: Tests, ODIs and T20Is apart; each domestic competition on its own.
 - The plan, stages and approvals: `NEW_SITE_PLAN.md`.
-- Tests: `python3 -m pytest -q` (the browser tests are `tests/test_web.py`). The site runs on pandas 2.x and 3.x;
-  the owner's PC has Python 3.14.
+- Tests: `python3 -m pytest -q` (the browser tests are `tests/test_web.py`). The owner's PC has Python 3.14;
+  `requirements.txt` pins pandas 3.1 (chosen 31 October, every test passing on Python 3.14); the code also works on
+  pandas 2.3. Changing the packages the site installs always needs a yes.
 
 ## The owner's data
 - Uploaded scorecards and saves are the owner's: use them only for checks and screenshots, keep them out of the
