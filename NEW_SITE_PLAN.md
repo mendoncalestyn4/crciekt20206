@@ -52,6 +52,12 @@ The bold styles need full control, which only a website of our own gives. Those 
   building: in one-day and T20 cricket the line says "Better batting first: … Chasing: …" (two sides, not a best and a
   weakest); a competition with too few games to measure takes the shortest of three, four or five days its longest
   game fits in (Tests always five), so three-day tour games aren't given four days.
+  **Sections, 31 October (your choice):** the tile opens on Normal (their own figures and the best and weakest), with
+  buttons to switch to each comparison on its own: Other innings (their own average in the other innings), The usual
+  (part-timers, who bowl under a tenth of the overs, left out), and for bowlers Same pitches (team-mates in those very
+  innings and the other side's bowlers in those matches), Over the match (Tests and first-class: do they get better as
+  the pitch wears, against how much everyone does), New ball (the 1st or 2nd bowler on, against later) and Dot balls
+  (T20 only; its cards print them). Ticking "bowls spin" was scrapped: a fair "usual" would need every spinner marked.
 
   The plan as agreed (you liked all five parts). On the Player page, in its
   own tile: a batter's page shows the batting half, a bowler's page the bowling half, an all-rounder's both. The tile

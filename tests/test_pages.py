@@ -75,12 +75,16 @@ def test_the_innings_tiles_add_up_to_the_competition_record(career):
             if d["bat_innings"]:
                 kinds.add(d["bat_innings"]["kind"])
                 me = bt[bt.player == p].iloc[0]
-                assert (d["bat_innings"]["total"]["runs"], d["bat_innings"]["total"]["innings"]) == (int(me.runs), int(me.innings))
-                assert sum(r["innings"] for r in d["bat_innings"]["rows"]) == int(me.innings)
+                n = d["bat_innings"]["views"][0]
+                assert (n["total"]["runs"], n["total"]["innings"]) == (int(me.runs), int(me.innings))
+                assert sum(r["innings"] for r in n["rows"]) == int(me.innings)
             if d["bowl_innings"]:
                 me = wt[wt.player == p].iloc[0]
-                t = d["bowl_innings"]["total"]
+                t = d["bowl_innings"]["views"][0]["total"]
                 assert (t["wickets"], t["runs"]) == (int(me.wickets), int(me.runs))
+                # the same pitches: every innings together is their whole record here too
+                pt = next((v for v in d["bowl_innings"]["views"] if v["key"] == "pitches"), None)
+                assert pt and pt["rows"][-1]["slot"] == "all" and pt["rows"][-1]["innings"] == t["innings"]
     assert kinds == {"multi", "one", "t20"}
 
 

@@ -38,10 +38,10 @@ class Book:
         return self
 
     def bowl(self, mid: str, no: int, team: str, opp: str, spells):
-        """`spells`: (player, balls, runs, wickets) for the side bowling in innings `no`."""
-        for p, bl, r, wk in spells:
+        """`spells`: (player, balls, runs, wickets[, dots]) for the side bowling in innings `no`, in the order they came on."""
+        for p, bl, r, wk, *dots in spells:
             self.w.append(dict(match_id=mid, innings_no=no, team=team, opposition=opp, player=p, balls=bl, runs=r,
-                               wickets=wk, maidens=0, dots=0))
+                               wickets=wk, maidens=0, dots=dots[0] if dots else 0))
         return self
 
     def catch(self, mid: str, no: int, team: str, player: str, kind: str = "caught"):

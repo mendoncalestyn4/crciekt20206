@@ -24,6 +24,7 @@ LENGTH_FROM = 20         # four-innings games a competition needs before its own
 SMALL = 5                # fewer innings than this in a slot: "only a few", and never named the best or weakest
 SAME = 10                # best and weakest within this many % of each other: about the same in every innings
 ECON_SETTLE_BALLS = 60   # T20 economy: 10 overs at the usual rate added before comparing
+MAIN_SHARE = 0.10        # a main bowler bowls a tenth of the innings' balls or more on average; the rest are part-timers
 
 MULTI = ["1", "2", "3", "4c", "4s"]
 LIMITED = ["1", "2"]
@@ -147,16 +148,35 @@ def batting(career, ids, name: str, kind: str, sl: pd.DataFrame | None = None) -
     return _mark(pd.DataFrame(rows))
 
 
-def bowling(career, ids, name: str, kind: str, sl: pd.DataFrame | None = None) -> pd.DataFrame:
+def spells(career, ids, sl: pd.DataFrame) -> pd.DataFrame:
+    """Every spell in these matches with its slot; `order`, the order the bowler came on (the scorecard lists them that
+    way: in the owner's saves an early first wicket went to the 1st or 2nd bowler listed 99-100% of the time); `share`,
+    their share of the innings' balls; `main`, a bowler who bowls a tenth of the balls or more on average here (the
+    rest are part-timers, left out of the usual)."""
+    w = career.bowling[career.bowling.match_id.isin(set(ids))]
+    w = w.assign(order=w.groupby(["match_id", "innings_no"]).cumcount() + 1)
+    w = w[w.balls > 0].merge(sl[["match_id", "innings_no", "slot"]], on=["match_id", "innings_no"])
+    balls = career.innings.set_index(["match_id", "innings_no"]).balls.replace(0, np.nan)
+    w["share"] = w.balls.values / balls.reindex(pd.MultiIndex.from_frame(w[["match_id", "innings_no"]])).values
+    w["main"] = w.player.map(w.groupby("player").share.mean() >= MAIN_SHARE).fillna(False).astype(bool)
+    return w
+
+
+def _figs(g: pd.DataFrame) -> dict:
+    runs, wkts, balls = int(g.runs.sum()), int(g.wickets.sum()), int(g.balls.sum())
+    return dict(innings=len(g), balls=balls, overs=balls_to_overs(balls), runs=runs, wickets=wkts,
+                average=runs / wkts if wkts else np.nan, economy=runs / balls * 6 if balls else np.nan)
+
+
+def bowling(career, ids, name: str, kind: str, sl: pd.DataFrame | None = None, w: pd.DataFrame | None = None) -> pd.DataFrame:
     """One row a slot the player bowled in (in order): innings, balls, overs (text), runs, wickets, bbi (best, text),
     average, economy, strike rate (balls a wicket), hauls (5 wickets in an innings in first-class cricket, 4 or more in
-    one-day and T20); their average and economy in their other innings; the usual average and economy there; settled
-    edge on the usual (economy in T20 cricket, average otherwise; + is better)."""
+    one-day and T20); their average and economy in their other innings; the usual average and economy there (main
+    bowlers only); settled edge on the usual (economy in T20 cricket, average otherwise; + is better)."""
     sl = slots(career, ids, kind) if sl is None else sl
-    w = career.bowling[career.bowling.match_id.isin(set(ids)) & (career.bowling.balls > 0)]
-    w = w.merge(sl[["match_id", "innings_no", "slot"]], on=["match_id", "innings_no"])
+    w = spells(career, ids, sl) if w is None else w
     me = w[w.player == name]
-    pool = w.groupby("slot").agg(runs=("runs", "sum"), wickets=("wickets", "sum"), balls=("balls", "sum"))
+    pool = w[w.main].groupby("slot").agg(runs=("runs", "sum"), wickets=("wickets", "sum"), balls=("balls", "sum"))
     k = SHRINK[kind]
     haul = 5 if kind == "multi" else 4
     rows = []
@@ -165,7 +185,7 @@ def bowling(career, ids, name: str, kind: str, sl: pd.DataFrame | None = None) -
         if g.empty:
             continue
         o = me[me.slot.isin(others(kind, slot))]
-        p = pool.loc[slot]
+        p = pool.loc[slot] if slot in pool.index else pd.Series(dict(runs=0, wickets=0, balls=0))
         u_avg = p.runs / p.wickets if p.wickets else np.nan
         u_econ = p.runs / p.balls * 6 if p.balls else np.nan
         runs, wkts, balls = int(g.runs.sum()), int(g.wickets.sum()), int(g.balls.sum())
@@ -184,6 +204,103 @@ def bowling(career, ids, name: str, kind: str, sl: pd.DataFrame | None = None) -
                          other_economy=o.runs.sum() / o.balls.sum() * 6 if o.balls.sum() else np.nan,
                          usual_average=u_avg, usual_economy=u_econ, edge=edge))
     return _mark(pd.DataFrame(rows))
+
+
+def pitches(career, ids, name: str, kind: str, sl: pd.DataFrame | None = None, w: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Against the bowlers on the same pitches: a row a slot, then every innings together (slot "all"): their average
+    and economy; their team-mates' in those very innings (the same pitch, the same day, the same batters); and the
+    other side's bowlers' in those matches."""
+    sl = slots(career, ids, kind) if sl is None else sl
+    w = spells(career, ids, sl) if w is None else w
+    me = w[w.player == name]
+    rows = []
+    for slot in order(kind) + ["all"]:
+        g = me if slot == "all" else me[me.slot == slot]
+        if g.empty:
+            continue
+        mates = w.merge(g[["match_id", "innings_no", "team"]].drop_duplicates(), on=["match_id", "innings_no", "team"])
+        mates = mates[mates.player != name]
+        opp = w.merge(g[["match_id", "team"]].drop_duplicates().rename(columns={"team": "his"}), on="match_id")
+        opp = opp[(opp.team != opp.his) & (opp.player != name)]   # never themselves (a same-named player on both sides)
+        f, fm, fo = _figs(g), _figs(mates), _figs(opp)
+        rows.append(dict(slot=slot, label="Every innings" if slot == "all" else label(kind, slot, True), innings=f["innings"],
+                         wickets=f["wickets"], average=f["average"], economy=f["economy"], mates_average=fm["average"],
+                         mates_economy=fm["economy"], opp_average=fo["average"], opp_economy=fo["economy"]))
+    d = pd.DataFrame(rows)
+    if len(d):
+        d["small"] = d.innings < SMALL
+    return d
+
+
+def over_match(career, ids, name: str, sl: pd.DataFrame | None = None, w: pd.DataFrame | None = None) -> dict:
+    """Tests and first-class: do they get better as the match goes on? Their average in each innings (the 4th
+    together) and the usual (main bowlers), each as % better (+) or worse than in the 1st innings; then early (1st and
+    2nd innings) against late (3rd and 4th): how much better they are late, against how much better the usual is."""
+    sl = slots(career, ids, "multi") if sl is None else sl
+    w = spells(career, ids, sl) if w is None else w
+    w = w.assign(n=w.slot.str[0])
+    me, main = w[w.player == name], w[w.main]
+    first, ufirst = _figs(me[me.n == "1"])["average"], _figs(main[main.n == "1"])["average"]
+    gain = lambda a, b: (a - b) / a * 100 if np.isfinite(a) and np.isfinite(b) and a else np.nan   # noqa: E731
+    rows = []
+    for n in "1234":
+        g = me[me.n == n]
+        if g.empty:
+            continue
+        f, u = _figs(g), _figs(main[main.n == n])["average"]
+        rows.append(dict(slot=n, label=f"{n}{['st', 'nd', 'rd', 'th'][int(n) - 1]} innings", innings=f["innings"],
+                         wickets=f["wickets"], average=f["average"], vs_first=gain(first, f["average"]) if n != "1" else np.nan,
+                         usual_average=u, usual_vs_first=gain(ufirst, u) if n != "1" else np.nan, small=f["innings"] < SMALL))
+    early, late = me[me.n.isin(["1", "2"])], me[me.n.isin(["3", "4"])]
+    ue, ul = main[main.n.isin(["1", "2"])], main[main.n.isin(["3", "4"])]
+    fe, fl = _figs(early), _figs(late)
+    out = dict(rows=pd.DataFrame(rows), early=fe["average"], late=fl["average"], early_innings=fe["innings"],
+               late_innings=fl["innings"], gain=gain(fe["average"], fl["average"]),
+               usual_early=_figs(ue)["average"], usual_late=_figs(ul)["average"],
+               usual_gain=gain(_figs(ue)["average"], _figs(ul)["average"]))
+    out["enough"] = bool(fe["innings"] >= SMALL and fl["innings"] >= SMALL and fe["wickets"] and fl["wickets"]
+                         and np.isfinite(out["usual_gain"]))
+    diff = out["gain"] - out["usual_gain"] if out["enough"] else np.nan
+    out["verdict"] = "" if not out["enough"] else "later" if diff > SAME else "earlier" if diff < -SAME else "same"
+    return out
+
+
+def new_ball(career, ids, name: str, kind: str, sl: pd.DataFrame | None = None, w: pd.DataFrame | None = None) -> pd.DataFrame:
+    """With the new ball (the 1st or 2nd bowler on in the innings) or later on: their figures and the usual for main
+    bowlers in that job here."""
+    sl = slots(career, ids, kind) if sl is None else sl
+    w = spells(career, ids, sl) if w is None else w
+    me, main = w[w.player == name], w[w.main]
+    rows = []
+    for key, lab, pick in (("new", "Opening the bowling", lambda d: d.order <= 2), ("later", "Later on", lambda d: d.order > 2)):
+        g = me[pick(me)]
+        if g.empty:
+            continue
+        f, u = _figs(g), _figs(main[pick(main)])
+        rows.append(dict(slot=key, label=lab, innings=f["innings"], overs=f["overs"], wickets=f["wickets"],
+                         average=f["average"], economy=f["economy"], usual_average=u["average"], usual_economy=u["economy"],
+                         small=f["innings"] < SMALL))
+    return pd.DataFrame(rows)
+
+
+def dots(career, ids, name: str, kind: str, sl: pd.DataFrame | None = None, w: pd.DataFrame | None = None) -> pd.DataFrame:
+    """T20 cricket (its cards print dot balls instead of maidens): their dot-ball % bowling first and second, on the
+    other side, and the usual for main bowlers there."""
+    sl = slots(career, ids, kind) if sl is None else sl
+    w = spells(career, ids, sl) if w is None else w
+    w = w[w.dots.notna()]
+    me, main = w[w.player == name], w[w.main]
+    pct = lambda g: g.dots.sum() / g.balls.sum() * 100 if g.balls.sum() else np.nan   # noqa: E731
+    rows = []
+    for slot in order(kind):
+        g = me[me.slot == slot]
+        if g.empty:
+            continue
+        o = me[me.slot.isin(others(kind, slot))]
+        rows.append(dict(slot=slot, label=label(kind, slot, True), innings=len(g), dots=int(g.dots.sum()), pct=pct(g),
+                         other_innings=len(o), other_pct=pct(o) if len(o) else np.nan,
+                         usual_pct=pct(main[main.slot == slot]), small=len(g) < SMALL))
+    return pd.DataFrame(rows)
 
 
 def _mark(d: pd.DataFrame) -> pd.DataFrame:

@@ -250,24 +250,19 @@ export type PlayerPage = {
   section: string; season: string; sections: string[]; seasons: string[];
   role: { role: string; tags: string[]; usual_position: number } | null;
   tabs: string[]; batting: Batting | null; bowling: Bowling | null; fielding: { matches: number; catches: number; stumpings: number } | null;
-  bat_innings?: ByInnings<InningsBat, { innings: number; not_outs: number; runs: number; high: string; average: number | null;
-    strike_rate: number | null; fifties: number; hundreds: number }> | null;
-  bowl_innings?: ByInnings<InningsBowl, { innings: number; overs: string; runs: number; wickets: number; best: string; average: number | null;
-    economy: number | null; strike_rate: number | null; hauls: number }> | null;
+  bat_innings?: ByInnings | null; bowl_innings?: ByInnings | null;
   story: Story | null;
   profile?: { attributes: Attributes; report: ScoutReport; show: ("bat" | "bowl")[]; other: string } | null;
 };
 
-// ------------------------------------------------------------------ Innings by innings (ccstats/byinnings.py): + in a vs_ field is always better
-export type InningsMarks = { slot: string; label: string; innings: number; other_innings: number; small: boolean; best: boolean; weakest: boolean; same: boolean };
-export type InningsBat = InningsMarks & { not_outs: number; runs: number; high: string; average: number | null; strike_rate: number | null;
-  fifties: number; hundreds: number; other_average: number | null; other_sr: number | null; usual_average: number | null; usual_sr: number | null;
-  vs_other: number | null; vs_usual: number | null; sr_vs_other: number | null; sr_vs_usual: number | null };
-export type InningsBowl = InningsMarks & { overs: string; runs: number; wickets: number; bbi: string; average: number | null; economy: number | null;
-  strike_rate: number | null; hauls: number; other_average: number | null; other_economy: number | null; usual_average: number | null;
-  usual_economy: number | null; avg_vs_other: number | null; avg_vs_usual: number | null; econ_vs_other: number | null; econ_vs_usual: number | null };
-export type ByInnings<R, T> = { kind: string; title: string; right: string; rows: R[]; total: T; shows: string; for_: string; rule: string;
-  haul: string; haul_help: string };
+// ------------------------------------------------------------------ Innings by innings (ccstats/byinnings.py): sections the tile switches
+// between, each a table whose columns say how to show them (n a figure, m a dim figure, d a difference where + is better, x text)
+export type InningsMarks = { slot: string; label: string; innings: number; small: boolean; best?: boolean; weakest?: boolean };
+export type InningsCol = { k: string; label: string; t: "n" | "m" | "d" | "x"; dec: number; help: string; unit: string };
+export type InningsRow = InningsMarks & Record<string, string | number | boolean | null>;
+export type InningsView = { key: string; label: string; cols: InningsCol[]; rows: InningsRow[]; total?: Record<string, string | number | null>;
+  shows: string; for_: string };
+export type ByInnings = { kind: string; title: string; right: string; views: InningsView[]; rule: string; note: string };
 
 // ------------------------------------------------------------------ Attributes, scout report, squad depth, inbox (ccstats/attributes.py, ccstats/depth.py)
 export type Attr = { name: string; score: number | null; text: string };
