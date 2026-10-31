@@ -55,9 +55,10 @@ The bold styles need full control, which only a website of our own gives. Those 
      average, strike rate. Bowling (the innings the bowler bowled in): innings, overs, wickets, average, economy,
      strike rate (balls a wicket) and five-wicket hauls.
   2. **Against the usual** for that innings in the same competition: batting "30 (the usual: 22)"; bowling "average 21.4
-     (the usual: 33.0)", with "better" or "worse" written out, since a lower bowling figure is the better one. Bowlers
-     are judged like with like: spinners against spinners, pace against pace (spinners usually do better as the pitch
-     wears, so a spinner's 4th innings is judged against other spinners' 4th innings).
+     (the usual: 33.0)", with "better" or "worse" written out, since a lower bowling figure is the better one. The
+     scorecards don't say who bowls spin or pace (checked 31 October: a stumping is the only sign, and only 13 of 295
+     bowlers in the project's scorecards have one), so there is no spin and pace split; which other comparisons
+     Compare shows is your choice (ideas given 31 October).
   3. **Few innings:** beside every figure, innings and not-outs (batting) or innings and overs (bowling), and a note when
      there are under 5 innings, so one big score or one big haul can't mislead.
   4. **The 4th innings split in two.** Batting: chasing to win, and batting to save the match. Bowling, the same innings
@@ -67,7 +68,7 @@ The bold styles need full control, which only a website of our own gives. Those 
   5. **A summary line with the details:** the best and the weakest innings. Batting: "Best in the 4th innings, chasing:
      averages 38 (9 innings, 3 not out) against the usual 22 in Tests. Weakest in the 1st innings: 24 against the usual
      33." Bowling: "Best in the 4th innings, bowling to win: 23 wickets at 17.8 (7 innings, 2 five-wicket hauls),
-     economy 2.4, against the usual 29.5 for spinners in Tests. Weakest in the 1st innings: 38.6 against the usual 31.2."
+     economy 2.4, against the usual 29.5 in Tests. Weakest in the 1st innings: 38.6 against the usual 31.2."
      An innings is only called the best with enough innings behind it (settled, like the best batting position).
      Bowlers are ranked on bowling average, except in T20 cricket, where economy decides (runs saved matter most there).
   6. **ODIs, T20Is and domestic one-day and T20:** batting first against chasing; bowling first against defending a
