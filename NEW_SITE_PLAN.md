@@ -44,6 +44,9 @@ The bold styles need full control, which only a website of our own gives. Those 
 - **Parked ideas (31 October, to ask about again after stage 1 or 2):** EA FC style player cards with an overall
   rating per format; Team of the series and Team of the season; board confidence (results against what the ratings
   expected) and season awards.
+- **To do (31 October, not started; needs your yes before it's built):** on the Player page, a player's Test figures
+  (and first-class in domestic cricket) shown separately for the match's 1st, 2nd, 3rd and 4th innings: runs,
+  average and strike rate when batting; wickets, average and economy when bowling.
 - **Ask first:** before any extra work that wasn't asked for (checks to be sure, another set-up, anything to make the
   work easier), ask, with the choices; new features always need a yes. (31 October; also in `CLAUDE.md`.)
 
