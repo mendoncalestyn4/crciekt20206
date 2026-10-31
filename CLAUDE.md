@@ -21,7 +21,8 @@ Read these at the start of every session. They come from the owner and hold unti
 ## The site
 - New site: `server/` (Starlette) + `web/` (React, built into `web/dist`, which is committed: run `npm run build` in
   `web/`). Engine: `ccstats/`. The old Streamlit site (`app.py`, `views/`, `ui/`) gets no new work, but must keep
-  working until the switch-over.
+  working until the switch-over (stage 5). At the switch-over it is deleted completely, with no backup launcher (chosen
+  31 October).
 - Desktop only. Every feature must work for every team and competition: national, franchise and domestic.
 - Formats are never mixed: Tests, ODIs and T20Is apart; each domestic competition on its own.
 - The plan, stages and approvals: `NEW_SITE_PLAN.md`.

@@ -119,8 +119,10 @@ Your PC
 
 While the new site is being built, `Start Stats Pack.bat` still starts the current site, and
 `Start new Stats Pack (preview).bat` starts the new one. Both read the same careers, so you can open either. At the
-switch-over (stage 5) the new site becomes `Start Stats Pack.bat` and the current one becomes `Start old Stats Pack.bat`,
-kept until you're happy with the new one.
+switch-over (stage 5) the new site becomes `Start Stats Pack.bat` and the old site is deleted completely, with no
+backup launcher (your choice, 31 October): `app.py`, `views/`, `ui/`, the tests that only check it, the preview
+launcher, and Streamlit and Plotly from `requirements.txt`. Any engine checks inside those tests move to other test
+files first, so nothing goes unchecked.
 
 ---
 
@@ -293,7 +295,7 @@ Each stage ends with the same steps:
 | **2. Teams and competitions** | Teams, Team vs team, Opponent preview, Team planner, Rivalries, Competitions, Season, Season review, Honours. New: who carries the team, your usual score at each wicket, collapses, the score to aim for against your next opponent, home or away, your season wrapped (section 14) | 5–6 days |
 | **3. Leaders, records and insights** | Stat by stat, Records, Hall of fame, Rankings, Insights, Analytics, Player stories, Compare players. New: every team ranked by runs and wickets up to any date, best stand for each wicket, the score to aim for against every team, home and away, "plays like" on Compare players (section 14) | 4–5 days |
 | **4. Fixtures and tools** | Fixtures (all 8 tabs, the biggest page), careers and uploads, backups, Data check, the first-start question, live alerts | 4–5 days |
-| **5. Final checks and switch-over** | Full test runs, stress tests (including the three logo stress tests), a new-user install test from the zip, speed checks, and screenshots of every page and tab. Then the new site becomes `Start Stats Pack.bat`, the old site stays as a backup launcher, and the README is rewritten. | 3–4 days |
+| **5. Final checks and switch-over** | Full test runs, stress tests (including the three logo stress tests), a new-user install test from the zip, speed checks, and screenshots of every page and tab. Then the new site becomes `Start Stats Pack.bat`, the old site (Streamlit) is deleted completely with no backup launcher (your choice, 31 October), and the README is rewritten. | 3–4 days |
 
 **Total:** about 4 weeks of work (3½ to 5), plus the time you take to approve each stage. After stage 1 you can already use the new Home, Player and Match pages next to the old site.
 
