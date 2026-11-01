@@ -150,6 +150,7 @@ export type MatchPage = {
 export type MarkRow = { player: string; mark: number; rank: number; of: number; games: number; line: string; best: string; best_match: string };
 export type Pick = { player: string; role: string; gain: number; clears: boolean; keeper: boolean; spinner: boolean; country: string;
   capped: boolean; unsure: boolean; how: string; also: string; side: string; where: string; bat: string; bowl: string; raw_bat: string; raw_bowl: string };
+export type ScoutingPage = { team: string; sections: { section: string; series: string; advice: Advice[]; none: string }[] };
 export type Advice = { player: string; role: string; why: string; verdict: string; own: { bat: string; bowl: string; raw_bat: string; raw_bowl: string }; picks: Pick[] };
 export type ReportCard = { series: string; label: string; format: string; among: string; section: string; start: string; end: string; players: MarkRow[];
   earlier: { label: string; series: string; format: string; top: { player: string; mark: number }[] }[]; advice: Advice[] };

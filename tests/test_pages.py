@@ -245,3 +245,19 @@ def test_the_best_batting_position_is_settled():
     assert t.settled[5] == pytest.approx((360 + k * t.all_average[5]) / (12 + k))
     best = AT.best_position(c, c.matches.match_id, "P")
     assert best["position"] == 4 and best["small"] and best["proven"]["position"] == 5
+
+
+def test_my_team_scouting_tab(live):
+    """Every competition the team plays, each with its struggling players (and who could come in) or a plain reason why
+    there's nobody; the latest series agrees with the report card's "Who to bring in"."""
+    d = live.json("/api/scouting")
+    my = live.json("/api/myteam")
+    assert d["team"] == my["team"] and [s["section"] for s in d["sections"]] == my["sections"]
+    for s in d["sections"]:
+        assert bool(s["advice"]) != bool(s["none"])
+        for a in s["advice"]:
+            assert a["verdict"] and a["why"] and isinstance(a["picks"], list)
+    if my.get("report") and my["report"]["section"] in my["sections"]:
+        same = next(s for s in d["sections"] if s["section"] == my["report"]["section"])
+        assert [a["player"] for a in same["advice"]] == [a["player"] for a in my["report"]["advice"]]
+    assert live.get("/api/scouting?team=Nobody FC")[0] == 404

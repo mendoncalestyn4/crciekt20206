@@ -4,7 +4,7 @@
 // national side and a franchise, the chips at the top switch between them; it opens on whichever played last.
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
-import { get, type MyTeam as Data, type Result } from "../api";
+import { get, type MyTeam as Data, type Result, type ScoutingPage } from "../api";
 import { Lamps, Logo, Missing, Name, Num, PName, Tile } from "../kit/base";
 import { SquadTable, Story, Ticker, TopList } from "../kit/blocks";
 import { RankTrack, Ring } from "../kit/charts";
@@ -23,11 +23,13 @@ export function MyTeam() {
   const { career, noCareer, nation } = useShell();
   const [params, setParams] = useSearchParams();
   const keep = nation ? `?nation=${encodeURIComponent(nation)}` : "";
-  const team = params.get("team") ?? "", section = params.get("section") ?? "";
+  const team = params.get("team") ?? "", section = params.get("section") ?? "", scouting = params.get("view") === "scouting";
   const q = useQuery({ queryKey: ["myteam", team, section, career?.name], enabled: Boolean(career),
     queryFn: () => get<Data>(`/api/myteam?team=${encodeURIComponent(team)}&section=${encodeURIComponent(section)}`), retry: false });
   const box = useInbox();
-  useReady(Boolean(q.data || q.error || noCareer), `${team}|${section}`);
+  const sc = useQuery({ queryKey: ["scouting", team, career?.name], enabled: Boolean(career) && scouting, retry: false,
+    queryFn: () => get<ScoutingPage>(`/api/scouting?team=${encodeURIComponent(team)}`) });
+  useReady(Boolean(q.data || q.error || noCareer) && (!scouting || Boolean(sc.data || sc.error)), `${team}|${section}|${scouting}`);
   const set = (k: string, v: string) => { const p = new URLSearchParams(params); if (v) p.set(k, v); else p.delete(k); if (k === "team") p.delete("section"); setParams(p); };
   if (noCareer) return <><Head title={greeting()} crumb="No career open yet" /><div className="grid"><Tile span={12} title="No career yet">
     <div className="plain">Add a career on the current site for now (<b>Start Stats Pack.bat</b>): the new site sees it straight away. Adding careers here comes in stage 4.</div></Tile></div></>;
@@ -44,9 +46,12 @@ export function MyTeam() {
   const sq = b?.squad ?? [];
   return (
     <>
-      <Head title={greeting()} crumb={`${d.team} · ${d.mine ? "your team" : "the team with the most matches"}${label ? ` · ${label}` : ""}`}
-        chips={chips} on={chips ? Math.max(0, chips.indexOf(d.team)) : 0} onChip={chips ? (i) => set("team", chips[i]!) : undefined} />
+      <Head title={greeting()} crumb={`${d.team} · ${d.mine ? "your team" : team ? "not one of your teams" : "the team with the most matches"}${label ? ` · ${label}` : ""}`}
+        chips={chips} on={chips ? chips.indexOf(d.team) : 0} onChip={chips ? (i) => set("team", chips[i]!) : undefined} />
       <div className="grid">
+        <div className="itabs">{["Season", "Scouting"].map((x) => (
+          <button key={x} className={(x === "Scouting") === scouting ? "on" : ""} onClick={() => set("view", x === "Scouting" ? "scouting" : "")}>{x}</button>))}</div>
+        {scouting ? <Scouting sc={sc.data} error={sc.error} team={d.team} keep={keep} /> : <>
         {!d.mine && <Tile span={12} title="Pick your team"><div className="plain">You haven't said which teams you play as, so this shows the team
           with the most matches. Pick yours on the current site (My team) for now; the question comes to the new site in stage 4.</div></Tile>}
         {d.ticker?.length ? <Ticker results={d.ticker} team={d.team} /> : null}
@@ -217,8 +222,31 @@ export function MyTeam() {
               the IPL, the T20 Blast and each County Championship division, is its own competition. The latest results everywhere are on <Link to={`/matches${keep}`}>Matches</Link>.</div>
           </Tile>
         </>}
+        </>}
       </div>
     </>
   );
 }
 
+/** The Scouting tab: in every competition the team plays, who is struggling after the latest series there, and who
+ * could come in, with their numbers and the verdict (the same advice as "Who to bring in", for every competition). */
+function Scouting({ sc, error, team, keep }: { sc?: ScoutingPage; error: unknown; team: string; keep: string }) {
+  if (error) return <Tile span={12}><Missing why={String(error)} /></Tile>;
+  if (!sc) return <div className="empty" style={{ gridColumn: "span 12" }}>Looking at {team}'s players in every competition…</div>;
+  const struggling = sc.sections.reduce((n, s) => n + s.advice.length, 0);
+  return <>
+    <Tile span={12} title={`Scouting · ${sc.team}`} right={struggling ? `${struggling} struggling` : "nobody struggling"}>
+      <div className="plain">Every competition {sc.team} plays, after its latest series or tournament: anyone who has had two poor series running
+        (4 or less out of 10 in both), or three (4 or less on average), with the best players who could take their place. One bad series alone
+        doesn't count.</div>
+      <div className="note">Candidates come from {sc.team}'s own competitions of the same kind, their numbers converted to this level (never easier
+        than 25% in first-class cricket, 15% in white-ball), and must beat your player by 10%. Settled: a few dismissals (or wickets) at the usual
+        level are added to everyone's record, so seven good innings don't count for as much as thirty.</div>
+    </Tile>
+    {sc.sections.map((s) => (
+      <Tile key={s.section} span={s.advice.length ? 12 : 6} title={`${fmtOf(s.section)}${s.series ? ` · after ${s.series}` : ""}`}
+        right={s.advice.length ? `${s.advice.length} struggling` : undefined}>
+        {s.advice.length ? <AdviceList items={s.advice} keep={keep} /> : <div className="plain">{s.none}</div>}
+      </Tile>))}
+  </>;
+}

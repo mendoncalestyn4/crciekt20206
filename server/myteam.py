@@ -331,6 +331,33 @@ def page(career, team: str, section: str, mine: list[str], notes: dict, sched: l
     return out
 
 
+def scouting(career, team: str) -> dict:
+    """The Scouting tab on My team: for each competition the team plays, its players struggling after the latest series
+    there (poor for two series running, or three: one bad series doesn't count), with who could come in, their numbers
+    at this level and as they are, and the verdict (ccstats/scouting.py, as the report card's "Who to bring in")."""
+    marks = MK.series_marks(career)
+    mine = marks[marks.team == team]
+    mine = mine.assign(section=mine.best_match.map(career.matches.set_index("match_id").section))
+    out = []
+    for sec in MT.sections_of(career, team):
+        done = mine[mine.section == sec].sort_values("end")
+        row = dict(section=sec, series=done.label.iloc[-1] if len(done) else "", advice=[], none="")
+        if done.empty:
+            row["none"] = "No series or tournament finished here yet, so nobody has marks to judge."
+        else:
+            try:
+                for r in kept(career, ("replacements", team, sec), lambda: SC.replacements(career, team, sec)):
+                    row["advice"].append(dict(player=r["player"], role=r["role"], why=r["why"], verdict=r["verdict"],
+                                              own=r["own"], picks=r["picks"]))
+            except Exception as e:  # noqa: BLE001 - one competition that can't be worked out never stops the others
+                row["none"] = f"Couldn't be worked out ({type(e).__name__}: {e})"
+            if not row["advice"] and not row["none"]:
+                row["none"] = ("Nobody is struggling: no one has had two poor series running (4 or less in both) or three "
+                               "(4 or less on average). One bad series alone doesn't count.")
+        out.append(row)
+    return SG.clean(dict(team=team, sections=out))
+
+
 def whole_career(career) -> dict:
     """The current site's "Everything" tab, at the foot of My team: the career's numbers and the headlines from the 10
     matches played most recently anywhere (the table of every competition comes with Competitions in stage 2; the

@@ -275,6 +275,22 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             return _error("That team hasn't played in this career.", 404)
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
+    async def scouting_(request: Request):
+        """My team's Scouting tab: struggling players and who could come in, in every competition the team plays."""
+        q = request.query_params
+
+        def make(c):
+            order = myteam.teams_by_latest(c, site.my_teams(c))
+            team = q.get("team", "") or (order[0] if order else styleguide.pick_team(c, []) or "")
+            if team not in set(c.matches.home) | set(c.matches.away):
+                raise KeyError(team)
+            return kept(c, ("scouting", team), lambda: myteam.scouting(c, team))
+        try:
+            data = await _with_career(make)()
+        except KeyError:
+            return _error("That team hasn't played in this career.", 404)
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
     # ------------------------------------------------------------------ Players
     async def players_(request: Request):
         data = await _with_career(lambda c: kept(c, ("players-landing", tuple(site.my_teams(c))),
@@ -397,6 +413,13 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                 except Exception:  # noqa: BLE001
                     pass
 
+        # last, the Scouting tab of each of your teams (the replacements take a few seconds in a big career)
+        for team in myteam.teams_by_latest(c, site.my_teams(c)):
+            try:
+                kept(c, ("scouting", team), lambda: myteam.scouting(c, team))
+            except Exception:  # noqa: BLE001
+                pass
+
     async def watch_loop():
         first = True
         while True:
@@ -463,6 +486,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/inbox", inbox_, methods=["GET", "POST"]),
         Route("/api/players", players_),
         Route("/api/names", names_),
+        Route("/api/scouting", scouting_),
         Route("/api/player", player_),
         Route("/api/events", events),
     ]
