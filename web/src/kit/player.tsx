@@ -134,9 +134,17 @@ export function RankLines({ rows }: { rows: { season: string; runs_rank: number 
   const t = useTheme();
   const option = useMemo<Option>(() => {
     const L = look(t), most = Math.max(...rows.map((r) => Math.max(r.runs_of ?? 0, r.wickets_of ?? 0)), 2);
-    const line = (name: string, key: "runs_rank" | "wickets_rank", c: string, at: "top" | "bottom") => ({ type: "line", name, data: rows.map((r) => r[key]), symbol: "circle", symbolSize: 10,
+    // each season's two labels move apart: the higher point's above it, the lower point's below (in a big competition a
+    // 6th and a 71st can sit close together)
+    const other = (key: "runs_rank" | "wickets_rank") => (key === "runs_rank" ? "wickets_rank" : "runs_rank");
+    const at = (r: (typeof rows)[number], key: "runs_rank" | "wickets_rank", dflt: "top" | "bottom") => {
+      const mine = r[key], theirs = r[other(key)];
+      return mine == null || theirs == null ? dflt : mine <= theirs ? "top" : "bottom";
+    };
+    const line = (name: string, key: "runs_rank" | "wickets_rank", c: string, dflt: "top" | "bottom") => ({ type: "line", name,
+      data: rows.map((r) => ({ value: r[key], label: { position: at(r, key, dflt) } })), symbol: "circle", symbolSize: 10,
       lineStyle: { color: c, width: 3 }, itemStyle: { color: c }, connectNulls: true,
-      label: { show: true, position: at, ...L.VAL(14), color: c, formatter: (p: { value: number | null }) => (p.value == null ? "" : ord(p.value)) } });
+      label: { show: true, ...L.VAL(14), color: c, formatter: (p: { value: number | null }) => (p.value == null ? "" : ord(p.value)) } });
     return {
       legend: { top: 0, left: 0, textStyle: { color: t.ink, fontFamily: "Bebas Neue", fontSize: ts(14) }, itemWidth: 16, itemHeight: 10 },
       grid: { left: 44, right: 20, top: 40, bottom: 34 },

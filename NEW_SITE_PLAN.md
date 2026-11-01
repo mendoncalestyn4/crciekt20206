@@ -1,6 +1,6 @@
 # The new Stats Pack website: the plan
 
-**Status:** stage 0 approved (27 October); stage 1 (core pages) under way.
+**Status:** stage 0 approved (27 October); stage 1 (core pages) built (1 November), waiting for your approval.
 **You said:** build it without waiting for answers; screenshots come at the end of each stage.
 **27 October:** you've stopped using the current site, so it gets no more work (it stays as it is until the
 switch-over). The zip comes once the whole new site is done. Screenshots of other teams' colours go in a set of their
@@ -634,6 +634,44 @@ trailing by 115 got 6.7), so it was reworked (27 October) and checked on your th
 
 **The series score (confirmed 26 October):** the tug of war on the main pages, the scoreboard ladder in the analysis,
 as decided above.
+
+---
+
+## 15. Stage 1: what was built
+
+**The pages** (each for every team and competition: national, franchise and domestic):
+- **My team:** your team's season (every format), the latest result, what it changed, what's next, the inbox's newest
+  messages, the marks out of 10 after the latest series with "Who to bring in", form in every format, runs of results,
+  our score v theirs, home, away and neutral, the series this season, match-winners, where you rank; then one
+  competition in detail (so far, report card, stars, top run-scorers and wicket-takers, how you win, squad, squad
+  depth, headlines, milestones, rivals, trophy cabinet, records, season by season, your match notes) and the whole
+  career (its numbers and the latest headlines anywhere). **Season | Scouting** at the top: Scouting shows every
+  competition the team plays, with anyone poor for two series running or three, and the best three to come in.
+- **Inbox:** results, struggling players, players knocking on the door, milestones; read ones shaded darker, ✕ to
+  remove, saved with the career; the unread count on the menu.
+- **Players:** find anyone, your squads, then one player in full: career card, every competition's tables, every
+  format side by side, share of the team, matches they won, marks in every series, career journey, attributes out of
+  20 and the scout report; batting, bowling, fielding and their story for one competition, including runs at each
+  batting position and the innings-by-innings tile (Normal, then each comparison in its own section).
+- **Matches:** find a match, the best games (rated out of 10), and each match's summary, rain note, report and
+  excitement, notes, win chance, top scores, best bowling, best and worst, scorecard, and wicket by wicket.
+- **Everywhere:** tap any player's name, in a list, a sentence or a chart, for a menu (their page, batting, bowling,
+  story); search (Ctrl K); live news of new matches.
+
+**The nothing-lost checklist** (`design/INVENTORY.md`): 943 lines of the current site's My team, Players and Matches
+ticked with where each is on the new site; 99 marked with the later stage they go to (stage 4: adding careers, uploads,
+backups, the first start, Data check; stage 2: the table of every competition, Opponent preview). Gaps closed: the
+whole-career part on My team (the old Everything tab), the line under the Players competition picker, and how
+international matches are grouped.
+
+**Checks:** every new figure worked out a second way on both your saves and compared (0 problems). Still running:
+the layout sweep of every stage 1 page on both saves (1280, 1440 and 1920 wide, dark and light) and the full test
+suite.
+
+**Choices made while building it (all yours):** the struggling rule (two series running at 4 or less, or three
+averaging 4 or less; one bad series doesn't count); domestic players compared with the same format (first-class with
+Tests, one-day with ODIs, T20 with T20Is); the Scouting tab on My team; spin ticking scrapped; the section notes left
+for stage 6.
 
 ---
 

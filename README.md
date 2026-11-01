@@ -43,9 +43,10 @@ Tip: right-click `Start Stats Pack.bat` → **Send to → Desktop (create shortc
 ### The new site (a preview)
 A completely new site, in the look you chose, is being built page by page (see `NEW_SITE_PLAN.md`). To have a look,
 double-click **`Start new Stats Pack (preview).bat`**: it opens on the same careers as the current site (add a
-career on the current site first). For now it has the new menu, search (Ctrl K), your team's colours, live news of
-new matches and a **style guide** with every chart drawn from your own career; the pages arrive stage by stage. The
-current site stays exactly as it is until the new one has everything.
+career on the current site first). It has **My team** (with a Scouting tab), the **Inbox**, **Players** and
+**Matches**, search (Ctrl K), your team's colours, live news of new matches, and a menu on every player's name (in
+lists, sentences and charts). Teams, Seasons, Fixtures, Leaders, Insights and the career tools arrive in stages 2 to 4.
+The current site stays as it is until the new one has everything; then it is removed.
 
 ### 5 · Connect your career
 On the **Home** page:

@@ -272,7 +272,7 @@ export function PlayerView() {
           <Box title="Career firsts" right="every competition">{st.firsts.length ? <table className="c"><tbody>{st.firsts.map((x, i) => (
             <tr key={i}><td><span className="tn dimn">{dayY(x.date)}</span></td><td><span className="why" style={{ color: "var(--ink)" }}>{x.what}</span><div className="how">{x.detail}</div></td>
               <td><Link to={`/matches/${x.id}${keep}`} className="why lk">v {x.against}</Link></td></tr>))}</tbody></table> : <div className="note">Nothing yet.</div>}</Box>
-          <Box title={`When ${d.player} fires`} right={`their team's win % in ${scope}`}>{st.fires.rows.length ? <table className="c"><thead><tr><th /><th className="r">Times</th><th className="r">Win % then</th><th className="r">Otherwise</th></tr></thead>
+          <Box title={`When ${d.player} fires`} right={`their team's win % in ${fmtOf(d.section)}${d.season === "All seasons" ? "" : ` ${d.season}`}`}>{st.fires.rows.length ? <table className="c"><thead><tr><th /><th className="r">Times</th><th className="r">Win % then</th><th className="r">Otherwise</th></tr></thead>
             <tbody>{st.fires.rows.map((r) => <tr key={r.label}><td><span className="why">{r.label}</span></td><td className="r"><span className="tn dimn">{r.times}</span></td><td className="r"><span className="tn">{r.when}</span></td><td className="r"><span className="tn dimn">{r.other}</span></td></tr>)}</tbody></table>
             : <div className="note">{st.fires.none}</div>}
             <div className="k3" style={{ marginTop: 16 }}>Odd ones</div>{st.quirks.length ? st.quirks.map((x) => <div className="plain" key={x}><T>{x}</T></div>) : <div className="note">Nothing unusual yet.</div>}</Box>
