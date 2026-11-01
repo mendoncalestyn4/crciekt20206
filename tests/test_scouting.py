@@ -124,6 +124,65 @@ def test_who_is_struggling(monkeypatch):
     assert {f["player"] for f in SC.struggling(c, "India", "Tests", at=1)} == {"Poor3"}
 
 
+def pk(player, gain):
+    return dict(player=player, gain=gain, clears=gain >= SC.BAR)
+
+
+def test_one_man_goes_in_for_one_player():
+    """Two struggling players with the same best pick: the one he'd improve on by more gets him, the other moves on to
+    his next best still free; a level gain goes to the one listed first; a pick below the bar is never taken."""
+    wants = [[pk("X", 0.5), pk("Y", 0.3)],     # A
+             [pk("X", 0.4), pk("Z", 0.2)],     # B: loses X to A (0.5 beats 0.4), gets Z
+             [pk("X", 0.3)],                   # C: loses X too, no one else
+             [pk("W", 0.05)],                  # D: no one 10% better
+             [pk("X", 0.12), pk("W", 0.06)]]   # E: loses X, W is below the bar
+    assert SC.share(wants) == {"X": 0, "Z": 1}
+    # a chain: B gets X, so A moves on to Y, which C wants more; A is left with no one
+    assert SC.share([[pk("X", 0.3), pk("Y", 0.2)], [pk("X", 0.4)], [pk("Y", 0.5)]]) == {"X": 1, "Y": 2}
+    # A moves on to Y, which nobody else wants
+    assert SC.share([[pk("X", 0.3), pk("Y", 0.25)], [pk("X", 0.4), pk("Y", 0.35)]]) == {"X": 1, "Y": 0}
+    assert SC.share([[pk("X", 0.3)], [pk("X", 0.3)]]) == {"X": 0}
+    assert SC.share([]) == {}
+
+
+def test_the_verdicts_when_two_want_the_same_man(monkeypatch):
+    b = Book()
+    b.match("m1", "2026-01-01", "India", "England")
+    c = b.career()
+    flagged = [dict(player=p, role="Opener", why="poor", mark=3, marks=[3, 3], line="", series="s", label="s")
+               for p in ("A", "B", "C", "D")]
+    wants = {"A": [pk("X", 0.5), pk("Y", 0.3), pk("V", 0.2), pk("U", 0.15)],
+             "B": [pk("X", 0.4), pk("Z", 0.2), pk("Y", 0.15), pk("T", 0.1), pk("S", 0.05)],
+             "C": [pk("X", 0.3), pk("Y", 0.08)],
+             "D": [pk("X", 0.2)]}
+    tops = []
+    monkeypatch.setattr(SC, "struggling", lambda *a, **k: flagged)
+    monkeypatch.setattr(SC, "picks_for", lambda career, team, target, player, role, top=3:
+                        tops.append(top) or wants[player][:top])
+    monkeypatch.setattr(SC, "own_numbers", lambda *a: pd.DataFrame(dict(keeper=[False] * 4), index=list("ABCD")))
+    monkeypatch.setattr(SC, "lines", lambda *a, **k: {})
+    r = {x["player"]: x for x in SC.replacements(c, "India", "Tests", top=3)}
+    assert tops == [6, 6, 6, 6]       # three each, plus one for every other struggling player who could take one
+    assert r["A"]["verdict"] == "Replace A with X" and [p["player"] for p in r["A"]["picks"]] == ["X", "Y", "V"]
+    # B is shown his own list without X (going in for A); Y stays on it: no one brings Y in
+    assert r["A"]["elsewhere"] == "" and r["A"]["lost"] == []
+    why = "Their best pick, X, goes in for A instead, a bigger step up there."
+    assert r["B"]["verdict"] == "Replace B with Z" and r["B"]["elsewhere"] == why
+    assert [p["player"] for p in r["B"]["picks"]] == ["Z", "Y", "T"]
+    assert r["B"]["lost"] == [dict(player="X", goes_to="A")]
+    assert r["C"]["verdict"] == "Keep C for now: no one else is 10% better (closest: Y)" and r["C"]["elsewhere"] == why
+    assert r["D"]["verdict"] == "Keep D for now: no one else is 10% better" and r["D"]["elsewhere"] == why
+    assert r["D"]["picks"] == []
+
+
+def test_several_men_going_in_for_others_said_once():
+    assert SC._going_elsewhere([]) == ""
+    assert SC._going_elsewhere([("X", "A"), ("Y", "B")]) == (
+        "Their best picks go in for others instead, bigger steps up there: X for A and Y for B.")
+    assert SC._going_elsewhere([("X", "A"), ("Y", "B"), ("Z", "C")]) == (
+        "Their best picks go in for others instead, bigger steps up there: X for A, Y for B and Z for C.")
+
+
 @pytest.fixture(scope="module")
 def fixtures_career():
     return Career.build("Test career", [(f.name, f.read_bytes()) for f in FIXTURES])

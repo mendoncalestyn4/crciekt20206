@@ -132,7 +132,7 @@ def inbox(career, team: str, series: int = 8) -> list[dict]:
                 pick = r["picks"][0] if r["picks"] else None
                 msgs.append(dict(date=when, kind="struggling", title=r["verdict"], section=section, series=s["label"],
                                  player=r["player"], match="",
-                                 body=f"{r['player']} ({r['role'].lower()}): {r['why']}." + (
+                                 body=f"{r['player']} ({r['role'].lower()}): {r['why']}." + (f" {r['elsewhere']}" if r["elsewhere"] else "") + (
                                      f" {pick['player']} ({pick['side']}): {pick['raw_bat'] or pick['raw_bowl']} in the last two "
                                      f"seasons, {pick['gain'] * 100:+.0f}% at this level." if pick else "")))
             for grp, v in SC.shortlist(career, team, section).items():

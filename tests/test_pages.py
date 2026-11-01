@@ -182,6 +182,21 @@ def test_the_pages_answer(live):
     assert st == 404 or b"<div id=root>" in body
 
 
+def test_inbox_milestones_are_only_your_players(career):
+    """The inbox's milestone messages name only your own players, who played for you in that competition (the other
+    side's milestones show under "What changed" on My team, never in the inbox)."""
+    seen = 0
+    for team in career.matches.home.value_counts().index[:6]:
+        for msg in DP.inbox(career, team):
+            if msg["kind"] != "milestone":
+                continue
+            ids = career.matches[career.matches.section == msg["section"]].match_id
+            mine = career.batting[career.batting.match_id.isin(ids) & (career.batting.team == team)]
+            assert msg["player"] in set(mine.player), (team, msg["title"])
+            seen += 1
+    assert seen
+
+
 def test_a_tournament_in_the_inbox_counts_only_the_team_s_games():
     """A tournament holds everyone's games: A won one and lost one; B v C is not A's."""
     from fakecareer import Book
@@ -256,7 +271,10 @@ def test_my_team_scouting_tab(live):
     for s in d["sections"]:
         assert bool(s["advice"]) != bool(s["none"])
         for a in s["advice"]:
-            assert a["verdict"] and a["why"] and isinstance(a["picks"], list)
+            assert a["verdict"] and a["why"] and isinstance(a["picks"], list) and isinstance(a["elsewhere"], str)
+        # one man is never brought in for two players
+        brought = [a["picks"][0]["player"] for a in s["advice"] if a["verdict"].startswith("Replace")]
+        assert len(brought) == len(set(brought))
     if my.get("report") and my["report"]["section"] in my["sections"]:
         same = next(s for s in d["sections"] if s["section"] == my["report"]["section"])
         assert [a["player"] for a in same["advice"]] == [a["player"] for a in my["report"]["advice"]]

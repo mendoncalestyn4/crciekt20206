@@ -165,7 +165,7 @@ def report_card(career, team: str) -> dict | None:
     try:
         for r in SC.replacements(career, team, section):
             advice.append(SG.clean(dict(player=r["player"], role=r["role"], why=r["why"], verdict=r["verdict"],
-                                        own=r["own"], picks=r["picks"])))
+                                        elsewhere=r["elsewhere"], own=r["own"], picks=r["picks"])))
     except Exception:  # noqa: BLE001 - no advice is better than no report card
         advice = []
     return SG.clean(dict(series=s["series"], label=s["label"], format=s["format"], among=MK.among(s["reference"]),
@@ -348,7 +348,7 @@ def scouting(career, team: str) -> dict:
             try:
                 for r in kept(career, ("replacements", team, sec), lambda: SC.replacements(career, team, sec)):
                     row["advice"].append(dict(player=r["player"], role=r["role"], why=r["why"], verdict=r["verdict"],
-                                              own=r["own"], picks=r["picks"]))
+                                              elsewhere=r["elsewhere"], own=r["own"], picks=r["picks"]))
             except Exception as e:  # noqa: BLE001 - one competition that can't be worked out never stops the others
                 row["none"] = f"Couldn't be worked out ({type(e).__name__}: {e})"
             if not row["advice"] and not row["none"]:

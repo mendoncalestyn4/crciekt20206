@@ -23,6 +23,9 @@ one-day, 8 in T20, as on the Players page. Seven innings at 72 then count for mu
 settled numbers by 10% or more (in white-ball cricket average and strike rate together, or bowling average and economy
 together), over enough cricket in the last two seasons: a first-class batter 8 innings, a bowler 100 overs; a
 white-ball batter 5 innings, a bowler 30 overs in one-day cricket or 15 in T20.
+
+**One man, one place.** If the best pick for two struggling players is the same man, he goes in for the one he'd
+improve on by more (the weaker of the two); the other is told his next best pick still free, and why.
 """
 
 from __future__ import annotations
@@ -490,22 +493,75 @@ def picks_for(career, team: str, target: str, player: str, role: str, top: int =
     return out[:top]
 
 
+def share(wants: list[list[dict]]) -> dict[str, int]:
+    """One man can't come in for two players. `wants` holds each struggling player's picks, best first (player, gain,
+    clears); the answer says which of them each brought-in man goes in for (his place in `wants`). When two would
+    bring in the same man, the one he'd improve on by more (the weaker of the two) gets him, and the other moves on to
+    his next best still free, round after round. Only a man who clears the bar is brought in: a player whose best free
+    pick doesn't clear it keeps his place."""
+    gone: dict[str, int] = {}
+    left = set(range(len(wants)))
+    while left:
+        first: dict[str, list] = {}
+        for i in sorted(left):
+            nxt = next((p for p in wants[i] if p["player"] not in gone), None)
+            if nxt is None or not nxt["clears"]:
+                left.discard(i)
+                continue
+            first.setdefault(nxt["player"], []).append((nxt["gain"], -i))
+        for man, rivals in first.items():
+            i = -max(rivals)[1]       # the biggest gain; level, the one listed first
+            gone[man] = i
+            left.discard(i)
+    return gone
+
+
+def _going_elsewhere(lost: list[tuple[str, str]]) -> str:
+    """Why a struggling player isn't given his best pick, in a sentence: 'Their best pick, X, goes in for A instead, a
+    bigger step up there.', or for several 'Their best picks go in for others instead, bigger steps up there: X for A,
+    Y for B and Z for C.'"""
+    if not lost:
+        return ""
+    if len(lost) == 1:
+        return f"Their best pick, {lost[0][0]}, goes in for {lost[0][1]} instead, a bigger step up there."
+    parts = [f"{x} for {a}" for x, a in lost]
+    return f"Their best picks go in for others instead, bigger steps up there: {', '.join(parts[:-1])} and {parts[-1]}."
+
+
 def replacements(career, team: str, target: str, top: int = 3, at: int = 0) -> list[dict]:
     """For each struggling player: who to bring in, best first, and the verdict ("Replace X with Y", or keep him
-    because no one is 10% better yet)."""
+    because no one is 10% better yet). A man who would be the best pick for two of them goes in for one (see share);
+    the other is shown his next best, and `elsewhere` says why."""
     kind = sections(career).kind[target] if target in sections(career).index else "t20"
     own = own_numbers(career, team, target) if target in sections(career).index else pd.DataFrame()
+    flagged = struggling(career, team, target, at)
+    # enough picks that each still has `top` once the ones going in for the others are taken out
+    wants = [picks_for(career, team, target, f["player"], f["role"], top + len(flagged) - 1) for f in flagged]
+    gone = share(wants)
     out = []
-    for f in struggling(career, team, target, at):
-        picks = picks_for(career, team, target, f["player"], f["role"], top)
+    for i, f in enumerate(flagged):
+        free = [p for p in wants[i] if gone.get(p["player"], i) == i]
+        # the men who'd clear the bar for him but go in for someone else, ahead of his first free pick
+        lost = []
+        for p in wants[i]:
+            if gone.get(p["player"], i) == i:
+                break
+            if p["clears"]:
+                lost.append(p["player"])
+        elsewhere = _going_elsewhere([(x, flagged[gone[x]]["player"]) for x in lost])
+        picks = free[:top]
         me = own.loc[f["player"]]
         if picks and picks[0]["clears"]:
             verdict = f"Replace {f['player']} with {picks[0]['player']}"
+        elif lost:
+            verdict = f"Keep {f['player']} for now: no one else is 10% better" + (
+                f" (closest: {picks[0]['player']})" if picks else "")
         elif picks:
             verdict = f"Keep {f['player']} for now: no one is 10% better yet (closest: {picks[0]['player']})"
         else:
             verdict = f"Keep {f['player']} for now: no one in the same role has played enough domestic cricket"
-        out.append(dict(**f, keeper=bool(me.keeper), own=lines(me, kind, _job(f["role"])), picks=picks, verdict=verdict))
+        out.append(dict(**f, keeper=bool(me.keeper), own=lines(me, kind, _job(f["role"])), picks=picks, verdict=verdict,
+                        elsewhere=elsewhere, lost=[dict(player=x, goes_to=flagged[gone[x]]["player"]) for x in lost]))
     return out
 
 

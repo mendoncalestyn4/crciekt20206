@@ -34,6 +34,7 @@ export function AdviceList({ items }: { items: Advice[]; keep?: string }) {
     <div className="adv" key={a.player}>
       <div className="verdict2">{a.verdict}</div>
       <div className="how"><span data-player={a.player}>{a.player}</span> ({a.role.toLowerCase()}): {a.why}.</div>
+      {a.elsewhere && <div className="how"><T>{a.elsewhere}</T></div>}
       {(a.own.bat || a.own.bowl) && <div className="how">Their numbers here, last two seasons (settled): {[a.own.bat, a.own.bowl].filter(Boolean).join(" · ")}.</div>}
       {a.picks.map((p, i) => (
         <div className={`pickx ${p.clears ? "ok" : ""}`} key={p.player}>
