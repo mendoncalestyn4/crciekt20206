@@ -664,9 +664,14 @@ backups, the first start, Data check; stage 2: the table of every competition, O
 whole-career part on My team (the old Everything tab), the line under the Players competition picker, and how
 international matches are grouped.
 
-**Checks:** every new figure worked out a second way on both your saves and compared (0 problems). Still running:
-the layout sweep of every stage 1 page on both saves (1280, 1440 and 1920 wide, dark and light) and the full test
-suite.
+**Checks (1 November, the final round):** on both your saves, every figure worked out a second way and compared (the
+marks, inbox, struggling players and every pick, squad depth, attributes, every innings-by-innings figure and
+comparison, the whole-career numbers, the Scouting tab): 0 problems; every address asked for many teams, players and
+matches (222 and 289 requests): 0 problems; every stage 1 page at 1280, 1440 and 1920 wide in dark and light (246
+views on each save): 0 layout problems; the full test suite: 1,181 passed. Fixed along the way: the Rank over time
+line (it named a season the player sat out, and a bowler's peak by runs), the Rank over time labels and a long
+competition name in "When X fires". The only gap between the game's totals and the batters out is retired hurt (the
+game counts it as a wicket, cricket's law doesn't, and the players' figures follow the law).
 
 **Choices made while building it (all yours):** the struggling rule (two series running at 4 or less, or three
 averaging 4 or less; one bad series doesn't count); domestic players compared with the same format (first-class with

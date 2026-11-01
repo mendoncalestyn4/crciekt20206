@@ -49,6 +49,12 @@ def fmt(v, d: int = 1) -> str:
     return f"{v:.{d}f}" if d else f"{int(round(v))}"
 
 
+def ordinal(n) -> str:
+    """1st, 2nd, 3rd, 4th, 11th, 22nd."""
+    n = int(n)
+    return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
+
+
 def count(n, one: str, many: str | None = None) -> str:
     return f"{int(n)} {one if int(n) == 1 else (many or one + 's')}"
 
@@ -883,15 +889,20 @@ def _story(career, player, section, season, ids, kind, my_matches) -> dict:
     if rk.empty:
         out["rank"] = None
     else:
-        r0 = rk.iloc[-1]
+        # the latest season they played (not a later one they sat out), and their best rank for each job, best first:
+        # a bowler's peak is a wickets rank, not where their few runs put them
+        played = rk[rk.runs_rank.notna() | rk.wickets_rank.notna()]
+        r0 = played.iloc[-1] if len(played) else rk.iloc[-1]
         bits = []
         if np.isfinite(r0.runs_rank):
-            bits.append(f"{int(r0.runs_rank)} of {r0.runs_of} for runs")
+            bits.append(f"{ordinal(r0.runs_rank)} of {r0.runs_of} for runs")
         if np.isfinite(r0.wickets_rank):
-            bits.append(f"{int(r0.wickets_rank)} of {r0.wickets_of} for wickets")
-        peak = rk.runs_rank.min() if rk.runs_rank.notna().any() else rk.wickets_rank.min()
+            bits.append(f"{ordinal(r0.wickets_rank)} of {r0.wickets_of} for wickets")
+        peaks = sorted((rk[col].min(), f"{ordinal(rk[col].min())} for {word} ({rk.season[rk[col].idxmin()]})")
+                       for col, word in (("runs_rank", "runs"), ("wickets_rank", "wickets")) if rk[col].notna().any())
         out["rank"] = dict(rows=SG.rows(rk, ["season", "runs_rank", "runs_of", "wickets_rank", "wickets_of"]),
-                           shows=f"In {r0.season}: " + (", ".join(bits) or "no runs or wickets") + (f". Peak: {int(peak)}." if np.isfinite(peak) else "."),
+                           shows=(f"In {r0.season}: " + (", ".join(bits) or "no runs or wickets") + "."
+                                  + (f" Best: {'; '.join(t for _, t in peaks)}." if peaks else "")),
                            for_="A career story at a glance: when they peaked and whether they're climbing or fading.")
     fa = kept(career, ("fastest", section, season), lambda: PD.fastest(career, ids))
     unit = fa.attrs.get("unit", "innings")
