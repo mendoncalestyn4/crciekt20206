@@ -44,7 +44,12 @@ The bold styles need full control, which only a website of our own gives. Those 
 - **Parked ideas (31 October, to ask about again after stage 1 or 2):** EA FC style player cards with an overall
   rating per format; Team of the series and Team of the season; board confidence (results against what the ratings
   expected) and season awards.
-- **To do list (31 October; A is built, B to E wait for your "build it"):**
+- **Finishing stage 1 (your choices, 1 November):** the nothing-lost checklist ticked for My team, Players and Matches
+  (small missing pieces rebuilt as part of stage 1; anything big, or anything that might be better dropped, listed for
+  your yes first); player names inside charts and sentences open the player menu too; a **Scouting tab on My team**
+  (every struggling player in each of your teams and formats, with replacement options and their stats); the plan and
+  README brought up to date; then the stage-end screenshots for your approval. B to E below come after stage 1.
+- **To do list (31 October; A is built, B to E wait for your "build it", after stage 1):**
 
   **A. Figures innings by innings, for batting and for bowling: BUILT 31 October** (`ccstats/byinnings.py`, the
   "Innings by innings" tile in the Player page's Batting and Bowling tabs, so a bowler's page opens on the bowling one;
