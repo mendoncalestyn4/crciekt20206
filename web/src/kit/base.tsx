@@ -4,6 +4,7 @@ import type { Outcome } from "../api";
 import { useShell } from "../shell/Shell";
 import { useTheme } from "../theme";
 import { sc, ts } from "./look";
+import { T } from "../shell/names";
 
 /** A number in Space Grotesk, gold: px is the mock-up's size (the approved scale is applied). */
 export function Num({ v, px, style }: { v: ReactNode; px: number; style?: CSSProperties }) {
@@ -85,6 +86,6 @@ export function Missing({ why }: { why?: string }) {
 /** Under a chart: what it shows (with its numbers) and what it's for, as on the current site. */
 export function Explain({ shows, for_ }: { shows: ReactNode; for_: ReactNode }) {
   return (
-    <div className="explain"><div><b>What it shows:</b> {shows}</div><div><b>What it's for:</b> {for_}</div></div>
+    <div className="explain"><div><b>What it shows:</b> <T>{shows}</T></div><div><b>What it's for:</b> {for_}</div></div>
   );
 }

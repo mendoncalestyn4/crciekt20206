@@ -10,6 +10,7 @@ import { Logo, Name, Num } from "./base";
 import { alpha } from "./charts";
 import { EChart, type Option } from "./EChart";
 import { look, ts } from "./look";
+import { T } from "../shell/names";
 
 /** The chance for the side batting first at the start of each innings and after every wicket, ending at the result:
  *  one line in one-day cricket (50% dashed), won / drawn / lost stacked in a game over several days. */
@@ -93,7 +94,7 @@ export function ExcitementPanel({ ex, section }: { ex: Excitement; section: stri
         <div className="pbar small" key={k}><span className="k2">{k}</span>
           <span className="tr2"><span className="fill" style={{ width: `${Math.min(100, (v / max) * 100)}%` }} /></span>
           <span className="v"><b>{f1(v)}</b><small> / {max}</small></span></div>))}</div>
-      {ex.why && <div className="note" style={{ gridColumn: "1 / -1" }}>Why: {ex.why}.</div>}
+      {ex.why && <div className="note" style={{ gridColumn: "1 / -1" }}>Why: <T>{ex.why}</T>.</div>}
     </div>
   );
 }

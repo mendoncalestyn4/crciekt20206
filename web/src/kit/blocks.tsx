@@ -7,6 +7,7 @@ import { useTheme } from "../theme";
 import { Lamp, Logo, Missing, Name, Num, PName, Tile } from "./base";
 import { PartnershipBars, RingList } from "./charts";
 import { ts } from "./look";
+import { T } from "../shell/names";
 
 /** Scores like 2–1 never break across lines. */
 export function KeepScores({ text }: { text: string }) {
@@ -96,7 +97,7 @@ export function Story({ kicker, headline, report, size = 46, scores }: {
           <span className="tag" style={{ background: `color-mix(in srgb, ${scores.r.outcome === "W" ? t.win : t.loss} 16%, transparent)`,
             color: scores.r.outcome === "W" ? t.win : t.loss }}>● {scores.r.result}</span>
         </div>)}
-      <div className="deck">{report}</div>
+      <div className="deck"><T>{report}</T></div>
     </>
   );
 }
@@ -143,7 +144,7 @@ export function MatchSummary({ m }: { m: Match }) {
       {m.pom ? (
         <div className="pomx"><div className="kick">Player of the match</div><div style={{ marginTop: 12 }}><PomCard pom={m.pom} /></div>
           <div className="rule" /><div className="hl" style={{ fontSize: 34, marginTop: 0 }}><KeepScores text={m.pom.headline} /></div>
-          <div className="deck">{m.pom.report}</div></div>
+          <div className="deck"><T>{m.pom.report}</T></div></div>
       ) : <div className="pomx"><div className="kick">Player of the match</div><Missing why="The scorecard names no player of the match." /></div>}
       </div></div>
   );

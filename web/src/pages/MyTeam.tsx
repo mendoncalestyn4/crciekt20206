@@ -15,6 +15,7 @@ import { FormCard, MatchWinners, ScoreRows, Streaks, VenueRecord } from "../kit/
 import { dayY, f0, f1, f2, fmtOf, ord } from "../format";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
+import { T } from "../shell/names";
 
 const greeting = () => { const h = new Date().getHours(); return h < 12 ? "Good morning, captain" : h < 18 ? "Good afternoon, captain" : "Good evening, captain"; };
 
@@ -138,7 +139,7 @@ export function MyTeam() {
                 <td className="r"><span className="tn dimn">avg {f1(r.average)}</span></td><td className="r">{r.form}</td></tr>)}
               {b.stars.bowl.map((r) => <tr key={`w${r.player}`}><td><PName p={r.player} px={22} /></td><td className="r"><span className="tn">{r.wickets}</span> wkts</td>
                 <td className="r"><span className="tn dimn">econ {f2(r.economy)}</span></td><td /></tr>)}</tbody></table> : <Missing why="No games yet." />}
-            {b.alerts && b.alerts.length > 0 && <><div className="k3" style={{ marginTop: 14 }}>Worth a look</div>{b.alerts.map((a) => <div className="plain" key={a}>{a}</div>)}</>}
+            {b.alerts && b.alerts.length > 0 && <><div className="k3" style={{ marginTop: 14 }}>Worth a look</div>{b.alerts.map((a) => <div className="plain" key={a}><T>{a}</T></div>)}</>}
           </Tile>
           {sq.length > 0 && <>
             <Tile span={4} title="Top run-scorers"><TopList rows={[...sq].sort((x, y) => y.runs - x.runs).slice(0, 5)} value="runs" /></Tile>
@@ -165,7 +166,7 @@ export function MyTeam() {
             <div className="note">Starters: who played in the latest series here. The number is their rating out of 20 here (the average of their attributes; – means
               not enough cricket here yet); the small marks are their last three series, newest first. Waiting: the best eligible domestic players, and how much
               better than your weakest in the role they are after the conversion (green: 10% or more).</div></Tile>}
-          <Tile span={6} title={`📰 ${d.team} headlines`}>{b.headlines?.length ? <ul className="dots">{b.headlines.map((h) => <li key={h}>{h}</li>)}</ul>
+          <Tile span={6} title={`📰 ${d.team} headlines`}>{b.headlines?.length ? <ul className="dots">{b.headlines.map((h) => <li key={h}><T>{h}</T></li>)}</ul>
             : <div className="note">Nothing big in your recent games.</div>}</Tile>
           <Tile span={6} title="Milestones and records in sight">{b.milestones?.length ? <table className="c"><tbody>{b.milestones.map((r) => (
             <tr key={r.player + r.chasing}><td><PName p={r.player} px={22} /></td><td><span className="why">{r.chasing}</span></td><td className="r"><span className="tn">{r.needs}</span></td></tr>))}</tbody></table>
@@ -205,12 +206,12 @@ export function MyTeam() {
         {d.career && <>
           <div className="part"><span className="tl2">Whole career</span>
             <span className="note" style={{ margin: 0 }}>every team and competition in {career?.name ?? "this career"}</span></div>
-          <div className="sub" style={{ gridColumn: "span 12", gridTemplateColumns: "repeat(6, minmax(0, 1fr))" }}>
+          <div className="sub" style={{ gridColumn: "span 12", gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
             {([["Matches", d.career.matches], ["Competitions", d.career.sections], ["Seasons", d.career.seasons], ["Players", d.career.players],
               ["Runs", d.career.runs], ["Wickets", d.career.wickets]] as [string, number][]).map(([k, v]) => (
               <Tile span={1} key={k} title={k}><Num v={v.toLocaleString("en-GB")} px={46} /></Tile>))}</div>
           <Tile span={12} title="📰 Headlines" right="hundreds, five-fors, collapses, titles and new records from the 10 latest matches">
-            {d.career.headlines.length ? <ul className="dots">{d.career.headlines.map((h) => <li key={h}>{h}</li>)}</ul>
+            {d.career.headlines.length ? <ul className="dots">{d.career.headlines.map((h) => <li key={h}><T>{h}</T></li>)}</ul>
               : <div className="note">Nothing big in the last 10 matches. Hundreds, five-wicket hauls, collapses, titles and new records show up here.</div>}
             <div className="note">International matches are grouped by format (all Tests, all ODIs, all T20Is, World Cups included); everything else, like
               the IPL, the T20 Blast and each County Championship division, is its own competition. The latest results everywhere are on <Link to={`/matches${keep}`}>Matches</Link>.</div>

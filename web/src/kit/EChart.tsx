@@ -7,6 +7,7 @@ import { GridComponent, LegendComponent, MarkAreaComponent, MarkLineComponent, M
 import * as echarts from "echarts/core";
 import { SVGRenderer } from "echarts/renderers";
 import { useEffect, useRef, useState } from "react";
+import { useNames } from "../shell/names";
 import { ts } from "./look";
 
 echarts.use([BarChart, LineChart, PieChart, ScatterChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent,
@@ -46,6 +47,7 @@ export function adapt(input: Option, width = 0, height = 0): Option {
         }
         ax.axisLabel = { ...ax.axisLabel, fontSize: fs, ...(every ? { interval: 0, hideOverlap: false } : { hideOverlap: true }) };
       }
+      if (ax.type === "category") ax.triggerEvent = true;   // a player's name on the axis can be clicked (the player menu)
       return ax;
     });
     opt[key] = Array.isArray(opt[key]) ? axes : axes[0];
@@ -84,10 +86,20 @@ export function EChart({ option, height, width, label }: { option: Option; heigh
   const chart = useRef<echarts.ECharts | null>(null);
   const [w, setW] = useState(0);
   const drawn = useRef(false);   // only the first drawing is animated: a resize redraws at once
+  const names = useNames();
+  const known = useRef(names.set);
+  known.current = names.set;
   useEffect(() => {
     if (!el.current) return;
     const c = echarts.init(el.current, null, { renderer: "svg" });
     chart.current = c;
+    // a click on a player's name (an axis label, or a bar or point named after them) opens the player menu there
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    c.on("click", (p: any) => {
+      const player = [p.value, p.name, p.seriesName].find((v) => typeof v === "string" && known.current.has(v));
+      const ev = p.event?.event as MouseEvent | undefined;
+      if (player && ev) window.dispatchEvent(new CustomEvent("player-menu", { detail: { player, x: ev.clientX, y: ev.clientY } }));
+    });
     const ro = new ResizeObserver(() => {
       c.resize();
       const now = Math.round(el.current?.getBoundingClientRect().width ?? 0);

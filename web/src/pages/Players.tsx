@@ -16,6 +16,7 @@ import { cap, dayY, f0, f1, f2, fmtOf, plural } from "../format";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
 import { useTheme } from "../theme";
+import { T } from "../shell/names";
 
 const SHOWN = 40;
 
@@ -135,7 +136,7 @@ export function PlayerView() {
             wickets out of all the wickets the team took; matches: theirs of the team's.</div></Tile>}
         {d.won && <Tile span={5} title="Matches they won" right="player of the match in a win">
           {d.won.length ? <div className="won">{d.won.slice(0, 8).map((x) => (
-            <div key={x.id}><Link to={`/matches/${x.id}${keep}`} className="lk"><b>{fmtOf(x.section)} v {x.opp} · {dayY(x.date)}</b></Link><span className="why">{x.headline}</span></div>))}
+            <div key={x.id}><Link to={`/matches/${x.id}${keep}`} className="lk"><b>{fmtOf(x.section)} v {x.opp} · {dayY(x.date)}</b></Link><span className="why"><T>{x.headline}</T></span></div>))}
             {d.won.length > 8 && <div className="note">and {d.won.length - 8} more.</div>}</div> : <div className="note">No player of the match award in a win yet.</div>}</Tile>}
         {d.marks && d.marks.length > 0 && <Tile span={12} title="Marks out of 10 · every series" right="newest first">
           <table className="c marks"><thead><tr><th>Series</th><th className="r">Mark</th><th className="r">Rank</th><th>In the series</th><th>Best match</th></tr></thead>
@@ -274,7 +275,7 @@ export function PlayerView() {
           <Box title={`When ${d.player} fires`} right={`their team's win % in ${scope}`}>{st.fires.rows.length ? <table className="c"><thead><tr><th /><th className="r">Times</th><th className="r">Win % then</th><th className="r">Otherwise</th></tr></thead>
             <tbody>{st.fires.rows.map((r) => <tr key={r.label}><td><span className="why">{r.label}</span></td><td className="r"><span className="tn dimn">{r.times}</span></td><td className="r"><span className="tn">{r.when}</span></td><td className="r"><span className="tn dimn">{r.other}</span></td></tr>)}</tbody></table>
             : <div className="note">{st.fires.none}</div>}
-            <div className="k3" style={{ marginTop: 16 }}>Odd ones</div>{st.quirks.length ? st.quirks.map((x) => <div className="plain" key={x}>{x}</div>) : <div className="note">Nothing unusual yet.</div>}</Box>
+            <div className="k3" style={{ marginTop: 16 }}>Odd ones</div>{st.quirks.length ? st.quirks.map((x) => <div className="plain" key={x}><T>{x}</T></div>) : <div className="note">Nothing unusual yet.</div>}</Box>
           <CompareSeasons c={st.compare} section={d.section} />
         </>}
       </div>

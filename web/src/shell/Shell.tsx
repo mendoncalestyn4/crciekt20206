@@ -8,6 +8,7 @@ import { ab, dayY } from "../format";
 import { refit } from "../fit";
 import { ThemeProvider } from "../theme";
 import { Finder } from "./Finder";
+import { NamesProvider } from "./names";
 import { PlayerMenu } from "./PlayerMenu";
 
 const I = (d: ReactNode) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">{d}</svg>;
@@ -113,7 +114,7 @@ export function Shell({ children }: { children: ReactNode }) {
     openFinder: () => setFinder(true), nation, logos: { teams: new Set(logos.data.teams), comps: new Set(logos.data.comps) } };
   return (
     <ThemeProvider theme={theme.data}>
-      <ShellContext.Provider value={shared}>
+      <ShellContext.Provider value={shared}><NamesProvider on={Boolean(career.data)}>
         <nav className="rail"><div className="rail-in">
           <Link className="mark" to={`/${keep}`} title="Stats Pack">SP</Link>
           {SECTIONS.map((s) => (
@@ -129,7 +130,7 @@ export function Shell({ children }: { children: ReactNode }) {
         {toasts.length > 0 && <div className="toasts">{toasts.map((x) => (
           <div key={x.id} className={`toast ${x.kind}`}><div><b>{x.title}</b>{x.text}</div>
             <button onClick={() => setToasts((ts) => ts.filter((y) => y.id !== x.id))} aria-label="Close">✕</button></div>))}</div>}
-      </ShellContext.Provider>
+      </NamesProvider></ShellContext.Provider>
     </ThemeProvider>
   );
 }

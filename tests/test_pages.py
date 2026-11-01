@@ -170,6 +170,8 @@ def test_the_pages_answer(live):
     landing = live.json("/api/players")
     assert landing["players"] and {"player", "team", "teams", "matches", "sections"} <= set(landing["players"][0])
     p = landing["players"][0]["player"]
+    names = live.json("/api/names")["names"]                    # for the player menu on names in sentences and charts
+    assert names == sorted(names) and p in names and len(names) == len(landing["players"])
     page = live.json(f"/api/player?name={p}")
     assert page["player"] == p and page["missing"] == {}
     status, _, body = live.get("/api/player?name=Nobody At All")

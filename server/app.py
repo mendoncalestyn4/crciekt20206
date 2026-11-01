@@ -281,6 +281,12 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                                                  lambda: playerpage.landing(c, site.my_teams(c))))()
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
+    async def names_(request: Request):
+        """Every player who has batted or bowled, so the website can open the player menu from a name in a sentence or a
+        chart."""
+        data = await _with_career(lambda c: kept(c, ("names",), lambda: sorted({p["player"] for p in playerpage.everyone(c)})))()
+        return _json(dict(names=data)) if data is not None else _error("No career is open yet.", 404)
+
     async def player_(request: Request):
         q = request.query_params
         name, section, season = q.get("name", ""), q.get("section", ""), q.get("season", "")
@@ -456,6 +462,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/notes", note_, methods=["POST"]),
         Route("/api/inbox", inbox_, methods=["GET", "POST"]),
         Route("/api/players", players_),
+        Route("/api/names", names_),
         Route("/api/player", player_),
         Route("/api/events", events),
     ]

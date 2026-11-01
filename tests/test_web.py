@@ -6,6 +6,7 @@ the search box finds things, and new matches show up on an open page by themselv
 Needs Playwright and its Chromium (a developer's machine); they aren't part of the Stats Pack itself."""
 
 import os
+import re
 import shutil
 from pathlib import Path
 
@@ -134,6 +135,39 @@ def test_a_domestic_side_gets_short_competition_names_and_fits(browser, domestic
         strip = pg.inner_text(".strip")
         assert "Ranji" in strip and "Ranji Trophy" not in strip
         assert pg.locator(".mt").count() == 12
+    finally:
+        pg.close()
+
+
+def test_a_name_in_a_sentence_or_on_a_chart_opens_the_player_menu(browser, site):
+    """Any player's name opens the menu: inside a sentence (a "What it shows" line) and on a chart's axis, as in a list."""
+    live, _ = site
+    # a batter whose Nemesis chart names a bowler (the chart and its "What it shows" line both name them)
+    for p in live.json("/api/players")["players"][:40]:
+        page = live.json(f"/api/player?name={p['player']}")
+        nemesis = (page.get("batting") or {}).get("nemesis")
+        if nemesis and nemesis["rows"]:
+            batter, bowler = p["player"], nemesis["rows"][0]["label"]
+            break
+    pg, said = open_page(browser, site, f"/players/{batter}?view=batting")
+    try:
+        tile = pg.locator(".t", has=pg.locator(".tt .tl", has_text=re.compile("^Nemesis$"))).first
+        tile.scroll_into_view_if_needed()
+        in_sentence = tile.locator(".explain [data-player]").first
+        assert in_sentence.get_attribute("data-player") == bowler and in_sentence.inner_text() == bowler
+        in_sentence.click()
+        pg.wait_for_selector(".pm-pop")
+        assert pg.inner_text(".pm-pop .pm-t") == bowler
+        pg.keyboard.press("Escape")
+        assert pg.locator(".pm-pop").count() == 0
+        first, last = bowler.split(" ", 1)
+        on_chart = tile.locator("svg text").filter(has_text=re.compile(rf"^{re.escape(first)}\s+{re.escape(last)}$")).first
+        on_chart.click()
+        pg.wait_for_selector(".pm-pop")
+        assert pg.inner_text(".pm-pop .pm-t") == bowler
+        pg.click(".pm-pop a:has-text('Player page')")
+        pg.wait_for_url(f"**/players/{bowler.replace(' ', '%20')}")
+        assert not [x for x in said if x.startswith("error")], said
     finally:
         pg.close()
 

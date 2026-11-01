@@ -10,6 +10,7 @@ import { MatchSummary, Scorecard } from "../kit/blocks";
 import { BestTable, ExcitementPanel, NoteBox, WicketClimb, WinChanceChart } from "../kit/match";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
+import { T } from "../shell/names";
 
 const PAGE = 15;   // matches listed at first, and how many more each "Show more" adds
 
@@ -104,7 +105,7 @@ export function MatchView() {
           {d.rain && <Tile span={12} title="🌧️ Rain"><div className="plain">{d.rain}</div></Tile>}
           <Tile span={7} title="Match report · excitement" right="out of 10">
             {d.excitement ? <ExcitementPanel ex={d.excitement} section={d.section} /> : <Missing why="Too few matches in this competition to rate yet." />}
-            {!d.match.pom && <div className="deck" style={{ marginTop: 12 }}>{d.report}</div>}
+            {!d.match.pom && <div className="deck" style={{ marginTop: 12 }}><T>{d.report}</T></div>}
           </Tile>
           <Tile span={5} title="📝 Your notes on this match"><NoteBox mid={d.id} note={d.note} /></Tile>
           {d.win && <Tile span={12} title="Win chance through the match" right={d.win.none ? undefined : `${d.win.multi ? "won / drawn / lost" : "chance"} for ${d.win.team1}`}>

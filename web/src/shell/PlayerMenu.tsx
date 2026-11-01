@@ -1,6 +1,7 @@
 // The player menu: tap any player's name anywhere on the site (a name drawn with PName, or any element with
 // data-player) and a small menu opens beside it: their page, batting, bowling, their story. One menu for the whole
-// site, opened from a click anywhere, so every name works the same way.
+// site, opened from a click anywhere, so every name works the same way. A chart opens it with a "player-menu" event (a
+// name drawn in the chart has no element of its own), at the point clicked.
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
 
@@ -34,6 +35,12 @@ export function PlayerMenu({ keep }: { keep: string }) {
       if ((e.key === "Enter" || e.key === " ") && el) { e.preventDefault(); at(el); }
     };
     const away = () => setOpen(null);
+    const fromChart = (e: Event) => {
+      const d = (e as CustomEvent<{ player: string; x: number; y: number }>).detail;
+      setOpen({ player: d.player, x: Math.max(8, Math.min(d.x, innerWidth - WIDTH - 8)),
+        y: d.y + 14 + 200 > innerHeight ? Math.max(8, d.y - 14 - 200) : d.y + 14 });
+    };
+    window.addEventListener("player-menu", fromChart);
     document.addEventListener("click", click, true);
     document.addEventListener("keydown", key);
     window.addEventListener("scroll", away, true);
@@ -43,6 +50,7 @@ export function PlayerMenu({ keep }: { keep: string }) {
       document.removeEventListener("keydown", key);
       window.removeEventListener("scroll", away, true);
       window.removeEventListener("resize", away);
+      window.removeEventListener("player-menu", fromChart);
     };
   }, []);
   if (!open) return null;

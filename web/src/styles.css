@@ -461,6 +461,7 @@ table.tv tr.dim td { opacity: .45; }
 
 /* ------------------------------------------------------------------ the player menu (any player's name) */
 .pmenu, [data-player] { cursor: pointer; }
+.pin { white-space: nowrap; }   /* a name inside a sentence never breaks over two lines */
 .pmenu:hover, .pmenu:focus-visible, [data-player]:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; outline: none; }
 .pm-pop { position: fixed; z-index: 60; background: var(--tile); border: 1px solid var(--edge); border-radius: 14px; padding: 6px;
   box-shadow: 0 14px 40px rgba(0, 0, 0, .45); }

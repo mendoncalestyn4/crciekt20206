@@ -5,6 +5,7 @@ import type { Attr, Attributes, DepthPlayer, InboxMsg, ScoutReport } from "../ap
 import { dayY } from "../format";
 import { PName } from "./base";
 import { Mark } from "./myteam";
+import { T } from "../shell/names";
 
 export const band = (v: number) => (v >= 16 ? "a4" : v >= 11 ? "a3" : v >= 6 ? "a2" : "a1");
 
@@ -59,7 +60,7 @@ export function Msg({ m, keep, read, onOpen, onRemove }: { m: InboxMsg; keep: st
   return (
     <div className={`msg ${m.kind} ${read ? "read" : "fresh"}`} onClick={onOpen}>
       <span className="ic">{ICON[m.kind]}</span>
-      <div><div className="msgt">{!read && <i className="dotnew" title="New" />}{m.title}</div><div className="how">{m.body}</div></div>
+      <div><div className="msgt">{!read && <i className="dotnew" title="New" />}<T>{m.title}</T></div><div className="how"><T>{m.body}</T></div></div>
       <span className="md">{dayY(m.date)}<br />{m.match ? <Link className="lk" to={`/matches/${m.match}${keep}`}>scorecard</Link>
         : m.player ? <span className="lk" data-player={m.player}>{m.player}</span> : null}</span>
       {onRemove && <button className="msgx" title="Remove this message" aria-label="Remove this message"

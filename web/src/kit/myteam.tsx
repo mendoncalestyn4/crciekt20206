@@ -5,6 +5,7 @@ import type { Advice, MyTeam, ReportCard } from "../api";
 import { dayY, pct } from "../format";
 import { useTheme } from "../theme";
 import { Name, PName } from "./base";
+import { T } from "../shell/names";
 
 /** A mark out of 10 as a badge: green 8 and up, gold 5 to 7, red 4 and under. */
 export function Mark({ v, big }: { v: number; big?: boolean }) {
@@ -50,10 +51,10 @@ export function AfterLines({ a, keep }: { a: NonNullable<MyTeam["after"]>; keep:
   return (
     <>
       <div className="facts">{a.lines.map((l) => (
-        <div className="fact" key={l.k}><span>{l.k}</span><b style={l.up == null ? undefined : { color: l.up ? t.win : t.loss }}>{l.text}</b></div>))}</div>
+        <div className="fact" key={l.k}><span>{l.k}</span><b style={l.up == null ? undefined : { color: l.up ? t.win : t.loss }}><T>{l.text}</T></b></div>))}</div>
       {a.form.map((f) => (
         <div className="frm" key={f.player}><span style={{ color: f.arrow === "▲" ? t.win : f.arrow === "▼" ? t.loss : t.dim }}>{f.arrow}</span>
-          <PName p={f.player} px={21} /><span className="how">{f.text}</span></div>))}
+          <PName p={f.player} px={21} /><span className="how"><T>{f.text}</T></span></div>))}
       {a.news.map((n) => <div className="how" key={n} style={{ marginTop: 6 }}>{n}</div>)}
       <div className="note">v {a.opponent}, {dayY(a.date)} · <Link to={`/matches/${a.match_id}${keep}`}>the scorecard</Link>. Rating: Elo before and after this game.
         Table: league position before and after. ▲ a big game for the player (well above their season average before it, or a haul); ▼ a low
