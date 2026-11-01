@@ -160,6 +160,7 @@ export function PlayerView() {
             <span className="note" style={{ margin: 0 }}>from where they bat (usually no. {f0(d.role.usual_position)}) and how much they bowl</span></span>}
           <div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>{d.tabs.map((x) => (
             <button key={x} className={x === tab ? "on" : ""} onClick={() => set("view", x === d.tabs[0] ? "" : x.toLowerCase())}>{x}</button>))}</div>
+          <span className="note" style={{ margin: 0 }}>Everything below is for {scope} only; pick another competition or season above.</span>
         </div>
 
         {d.profile && <Tile span={7} title={`Attributes in ${d.section}`} right="out of 20 · against everyone there">

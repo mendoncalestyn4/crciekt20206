@@ -183,6 +183,7 @@ export type MyTeam = {
   notes?: { id: string; date: string; home: string; away: string; note: string }[] | null;
   block?: SectionBlock | null;
   depth?: Depth | null;
+  career?: { matches: number; sections: number; seasons: number; players: number; runs: number; wickets: number; headlines: string[] } | null;
 };
 
 // ------------------------------------------------------------------ Players (server/playerpage.py)

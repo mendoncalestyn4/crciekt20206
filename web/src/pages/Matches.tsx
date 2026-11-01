@@ -44,6 +44,8 @@ export function MatchesHome() {
       <div className="grid">
         <Tile span={12} title="Find a match" right={`${d.matches.length.toLocaleString("en-GB")} to choose from, newest first`}>
           <div className="plain">Narrow the list by competition or team, then type to search: a team, a date, a stage like "Final", or a result.</div>
+          <div className="note">International matches are grouped by format (all Tests, all ODIs, all T20Is, World Cups included); everything else, like the
+            IPL, the T20 Blast and each County Championship division, is its own competition.</div>
           <div className="field">
             <label htmlFor="mt-sec">Competition</label>
             <select id="mt-sec" className="pick" value={d.section} onChange={(e) => set("section", e.target.value)}>

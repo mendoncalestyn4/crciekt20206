@@ -327,4 +327,15 @@ def page(career, team: str, section: str, mine: list[str], notes: dict, sched: l
     piece("block", lambda: section_block(career, team, section, notes, sched))
     # squad depth in the competition picked below (who starts, the backups, who's waiting in domestic cricket)
     piece("depth", lambda: kept(career, ("depth", team, section), lambda: DP.squad_depth(career, team, section)))
+    piece("career", lambda: kept(career, ("whole career",), lambda: whole_career(career)))
     return out
+
+
+def whole_career(career) -> dict:
+    """The current site's "Everything" tab, at the foot of My team: the career's numbers and the headlines from the 10
+    matches played most recently anywhere (the table of every competition comes with Competitions in stage 2; the
+    latest results anywhere are on Matches)."""
+    m = career.matches
+    return dict(matches=len(m), sections=int(m.section.nunique()), seasons=int(m.season.nunique()),
+                players=int(career.batting.player.nunique()), runs=int(career.innings.runs.sum()),
+                wickets=int(career.innings.wickets.sum()), headlines=E.headlines(career))

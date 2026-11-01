@@ -216,6 +216,9 @@ def test_the_inbox_reads_and_removes_and_remembers(live):
 def test_my_team_has_its_squad_depth(live):
     d = live.json("/api/myteam")
     assert d["missing"] == {} and d["depth"]["section"] == d["block"]["section"]
+    # the whole career at the foot of the page (the current site's "Everything" tab)
+    w = d["career"]
+    assert w["matches"] > 0 and w["sections"] >= 1 and w["runs"] > w["wickets"] > 0 and isinstance(w["headlines"], list)
 
 
 def test_the_best_batting_position_is_settled():

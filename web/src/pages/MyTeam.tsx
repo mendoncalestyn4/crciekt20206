@@ -202,6 +202,20 @@ export function MyTeam() {
             : <div className="note">No notes yet. Open any match on Matches and write one under the summary.</div>}
           {d.latest && <div className="note">Latest scorecard: <Link to={`/matches/${d.latest.result.id}${keep}`}>{d.team} v {d.latest.result.opp}, {dayY(d.latest.result.date)}</Link></div>}
         </Tile>
+        {d.career && <>
+          <div className="part"><span className="tl2">Whole career</span>
+            <span className="note" style={{ margin: 0 }}>every team and competition in {career?.name ?? "this career"}</span></div>
+          <div className="sub" style={{ gridColumn: "span 12", gridTemplateColumns: "repeat(6, minmax(0, 1fr))" }}>
+            {([["Matches", d.career.matches], ["Competitions", d.career.sections], ["Seasons", d.career.seasons], ["Players", d.career.players],
+              ["Runs", d.career.runs], ["Wickets", d.career.wickets]] as [string, number][]).map(([k, v]) => (
+              <Tile span={1} key={k} title={k}><Num v={v.toLocaleString("en-GB")} px={46} /></Tile>))}</div>
+          <Tile span={12} title="📰 Headlines" right="hundreds, five-fors, collapses, titles and new records from the 10 latest matches">
+            {d.career.headlines.length ? <ul className="dots">{d.career.headlines.map((h) => <li key={h}>{h}</li>)}</ul>
+              : <div className="note">Nothing big in the last 10 matches. Hundreds, five-wicket hauls, collapses, titles and new records show up here.</div>}
+            <div className="note">International matches are grouped by format (all Tests, all ODIs, all T20Is, World Cups included); everything else, like
+              the IPL, the T20 Blast and each County Championship division, is its own competition. The latest results everywhere are on <Link to={`/matches${keep}`}>Matches</Link>.</div>
+          </Tile>
+        </>}
       </div>
     </>
   );

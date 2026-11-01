@@ -147,6 +147,8 @@ def test_search_finds_a_player_and_opens_their_page(browser, site):
         assert "J Bethell" in pg.inner_text(".finder li.on")
         pg.keyboard.press("Enter")
         pg.wait_for_url("**/players/J%20Bethell")
+        # the address changes before the new page replaces the old one, whose "ready" mark is still up: wait for the player
+        pg.wait_for_function("document.querySelector('main .hero') && document.querySelector('main').innerText.includes('J Bethell')")
         pg.wait_for_selector("body[data-ready='1']")
         assert "J Bethell" in pg.inner_text("main")
         pg.keyboard.press("Control+k")

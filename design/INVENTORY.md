@@ -5,6 +5,8 @@ Made by `tools/inventory.py` from the site's own code and from opening every pag
 - From the code: **3036** headings, labels, options, help texts, explanations, columns and messages in 32 files.
 - From the live crawl: **1409** things shown across 27 pages (My career: 106 matches (tests/fixtures and tests/fixtures_2026), my team England).
 
+**Stage 1 ticked (1 November):** My team / Home, Matches, Players and `ui/myteam_view.py`: 943 lines ticked with where each one is on the new site; 99 marked with the later stage they go to (adding careers, uploads, backups and the first start: stage 4; Data check: stage 4; the table of every competition and Opponent preview: stage 2). Built to close the gaps found: a Whole career part on My team (the old Everything tab), the line under the Players competition picker, and the sentence about how international matches are grouped.
+
 ## Saved on your PC · `ccstats/local.py`
 
 Everything kept in `Documents\Cricket Captain Stats Pack`. The new site reads and writes the same files with the same code.
@@ -1181,243 +1183,243 @@ Everything kept in `Documents\Cricket Captain Stats Pack`. The new site reads an
 
 **Shown on the page as it opens** (73 things)
 
-- [ ] *markdown* Career
-- [ ] *title* My career
-- [ ] *markdown* International matches are grouped by format (all Tests, all ODIs, all T20Is, World Cups included); everything else, like IPL, T20 Blast and each County Championship division, is its own section.
-- [ ] *tab* 🏏 England
-- [ ] *markdown* ODIs 2027 3–0 · 1 of 3
-- [ ] *markdown* Tests 2026 3–0
-- [ ] *markdown* T20Is 2026 0–1
-- [ ] *caption* ODIs: Elo 1527 ▲27, 2 of 11 in the ratings, 1 in ODI World Cup · Tests: Elo 1528 ▲28, 1 of 5 in the ratings · T20Is: Elo 1490 ▼10, 5 of 7 in the ratings. ▲▼ = rating change over the last 5 games.
-- [ ] *markdown* Latest result · ODI World Cup · Final · 23 Jun 2027 Sri Lanka 277/9 v England 279/6 England won by 4 wickets · Player of the match: B Stokes
-- [ ] *markdown* **What changed after the latest game** · v Sri Lanka, 23 Jun 2027 **Rating:** Elo 1511 → 1527 (+16) ▲ **B Duckett** 51 (season average before this: 31.5) ▲ **J Bethell** 76 (season average before this: 16.0) ▼ **T Banton** 8 after averaging 48 in their last 3
-- [ ] *caption* Rating: Elo before and after this game. Table: league position before and after. ▲ a big game for the player (well above their season average before it, or a haul); ▼ a low score after a run of good ones. Next opponent: from your schedule (Fixtures page); preview any side under Rivals below.
-- [ ] *selectbox* Section [3 options: ODIs, Tests, T20Is]
-- [ ] *markdown* **ODIs 2027 so far** · last 5: L W W W
-- [ ] *markdown* After 3 games: **3–0**. At the same point of 2026: 0–1 (+3 wins).
-- [ ] *markdown* Report card Grade Why Results A 3–0 (100% of games with a result) Batting B 39.2 runs per wicket, average team 36.1 Bowling B 35.7 runs per wicket conceded, average team 37.6 Fielding A 5.0 catches a game, average team 3.3 Form B won 3 of the last 3
-- [ ] *caption* Grades against the average team in this section this season: A well above, C about average, E well below.
-- [ ] *markdown* **Your stars this season** · ▲▼ form over the last 3 innings
-- [ ] *markdown* Player Form H Brook 196 runs avg 196.0 ▬ B Stokes 166 runs avg 83.0 ▬ B Duckett 114 runs avg 38.0 ▬ G Atkinson 8 wkts econ 5.80 J Archer 7 wkts econ 6.40 R Ahmed 4 wkts econ 5.93
-- [ ] *expander* Squad · everyone who has played for England in ODIs 2027
-- [ ] *markdown* Player Games Runs Avg SR Wkts Econ Last 5 scores Form H Brook 3 196 196.0 113.3 0 – 103* 25 68* ▬ B Stokes 3 166 83.0 111.4 3 6.17 56 50* 60 ▬ B Duckett 3 114 38.0 96.6 0 – 0 63 51 ▬ J Bethell 3 108 36.0 100.9 0 – 7 25 76 ▬ T Banton 3 105 35.0 101.0 0 – 20 77 8 ▬ J Root 3 70 23.3 81.4 0 – 52 5 13 ▬ S Curran 3 29 14.5 116.0 3 5.23 17 12 0* ▬ R Ahmed 3 17 8.5 58.6 4 5.93 17 0 ▬ G Atkinson 3 8 8.0 26
-- [ ] *caption* Greyed out: not in the last 3 games.
-- [ ] *markdown* **📰 England headlines**
-- [ ] *markdown* - 🤝 B Stokes and H Brook put on 118 for the 6th wicket for England v Sri Lanka in the final (ODI World Cup, 23 Jun) - 🤝 B Duckett and T Banton put on 133 for the 1st wicket for England v South Africa (ODI World Cup, 13 Jun) - 🏅 New ODIs record · Best 5th-wicket stand: New Zealand 95 for New Zealand v England (ODI World Cup, 11 Jun) - 💯 B Ahern hits 127 for New Zealand v England (ODI World Cup, 11
-- [ ] *markdown* **Milestones and records in sight**
-- [ ] *markdown* Player Chasing H Brook 250 runs needs 21
-- [ ] *markdown* **How you win**
-- [ ] *markdown* Batting first **–** (0 of 0) · chasing **75%** (3 of 4).
-- [ ] *markdown* **Rivals at a glance** · most-played opponents here
-- [ ] *markdown* Opponent Played Record Win % New Zealand 1 1–0 100% South Africa 1 1–0 100% Sri Lanka 1 1–0 100% India 1 0–1 0%
-- [ ] *selectbox* Next opponent [10 options: Afghanistan, Australia, Bangladesh, India, Ireland, New Zealand, Pakistan, South Africa…]
-- [ ] *button* Preview →
-- [ ] *markdown* **🏆 Trophy cabinet**
-- [ ] *caption* No titles yet.
-- [ ] *markdown* **England records in ODIs**
-- [ ] *markdown* Highest total 321/8 v New Zealand (Jun 2027) Lowest total 200 v India (Jul 2026) Highest score H Brook 103* (79) v New Zealand (Jun 2027) Best bowling G Atkinson 3/51 (10) v South Africa (Jun 2027) Best stand B Duckett &amp; T Banton (England), 1st wkt 133 v South Africa (Jun 2027)
-- [ ] *markdown* **Season by season**
-- [ ] *markdown* Season Section Record Win % Finished 2027 ODIs 3–0 100% ODI World Cup: Final 2026 ODIs 0–1 0% – 2026 T20Is 0–1 0% – 2026 Tests 3–0 100% –
-- [ ] *markdown* **📝 Your match notes**
-- [ ] *caption* No notes yet. Open any match on the Matches page and write one under the score.
-- [ ] *markdown* Latest scorecard: Sri Lanka v England, 23 Jun 2027
-- [ ] *tab* Everything
-- [ ] *markdown* Latest result · Vijay Hazare Trophy · 05 Jan 2029 Mumbai CC 265/9 v Sikkim 260 Mumbai CC won by 1 wicket · Player of the match: N Kumar Reddy
-- [ ] *markdown* Matches 106
-- [ ] *markdown* Sections 10
-- [ ] *markdown* Seasons 4
-- [ ] *markdown* Players 587
-- [ ] *markdown* Runs 52,081
-- [ ] *markdown* Wickets 1,923
-- [ ] *markdown* **Worth a minute of your time** 👉 **4 names are used by two different players**, so their stats are mixed together (e.g. *M Khan* at Punjab Kings and Lucknow Super Giants). One click keeps them apart.
-- [ ] *markdown* Open Data check →
-- [ ] *markdown* **📰 Headlines** · hundreds, five-fors, collapses, titles and new records from your 10 most recent matches
-- [ ] *markdown* - 🏅 New Vijay Hazare Trophy record · Best bowling in an innings: D Chahar 5/33 (9) v Sikkim (Vijay Hazare Trophy, 5 Jan) - 🏅 New Vijay Hazare Trophy record · Best 2nd-wicket stand: A Sharma & S Lad 56 for Sikkim v Mumbai CC (Vijay Hazare Trophy, 5 Jan) - 🏅 New Vijay Hazare Trophy record · Best 5th-wicket stand: Sikkim 53 for Sikkim v Mumbai CC (Vijay Hazare Trophy, 5 Jan) - 💯 N Kumar Reddy hits 11
-- [ ] *subheader* Sections
-- [ ] *table* 10 rows · columns: section, matches, seasons, first, last, format, level
-- [ ] *subheader* Latest results
-- [ ] *table* 12 rows · columns: date, section, stage, home, away, result, player_of_match
-- [ ] *expander* Add another career (a different Scorecards folder)
-- [ ] *markdown* **1 · Your Scorecards folder**
-- [ ] *caption* In Cricket Captain 2026, turn on **Autosave scorecards** in Options. The folder is normally `AppData\Roaming\Childish Things\Cricket Captain 2026\Scorecards`.
-- [ ] *text_input* Folder
-- [ ] *button* Browse…
-- [ ] *markdown* **2 · Name this career**
-- [ ] *text_input* Career name
-- [ ] *button* Start watching
-- [ ] *expander* Upload files instead, or open a career file
-- [ ] *tab* Upload a folder
-- [ ] *file_uploader* Scorecards folder
-- [ ] *tab* Upload files or a zip
-- [ ] *file_uploader* Scorecard .txt files or a .zip
-- [ ] *tab* Open a career file
-- [ ] *file_uploader* Career file (.zip saved from this site)
-- [ ] *button* Load
-- [ ] *download_button* Download career file
+- [x] *markdown* Career — ✓ the page name, My team
+- [x] *title* My career — ✓ the page title (a greeting on My team)
+- [x] *markdown* International matches are grouped by format (all Tests, all ODIs, all T20Is, World Cups included); everything else, like IPL, T20 Blast and each County Championship division, is its own section. — ✓ My team · Whole career, and Matches · Find a match (the same sentence)
+- [x] *tab* 🏏 England — ✓ My team · the team chips at the top
+- [x] *markdown* ODIs 2027 3–0 · 1 of 3 — ✓ My team · a tile for each format at the top (record, season)
+- [x] *markdown* Tests 2026 3–0 — ✓ My team · a tile for each format at the top (record, season)
+- [x] *markdown* T20Is 2026 0–1 — ✓ My team · a tile for each format at the top (record, season)
+- [x] *caption* ODIs: Elo 1527 ▲27, 2 of 11 in the ratings, 1 in ODI World Cup · Tests: Elo 1528 ▲28, 1 of 5 in the ratings · T20Is: Elo 1490 ▼10, 5 of 7 in the ratings. ▲▼ = rating change over the last 5 games. — ✓ My team · a tile for each format at the top (Elo, its change, rank, table position) and 'Where they rank'
+- [x] *markdown* Latest result · ODI World Cup · Final · 23 Jun 2027 Sri Lanka 277/9 v England 279/6 England won by 4 wickets · Player of the match: B Stokes — ✓ My team · Latest result
+- [x] *markdown* **What changed after the latest game** · v Sri Lanka, 23 Jun 2027 **Rating:** Elo 1511 → 1527 (+16) ▲ **B Duckett** 51 (season average before this: 31.5) ▲ **J Bethell** 76 (season average before this: 16.0) ▼ **T Banton** 8 after averaging 48 in their last 3 — ✓ My team · What changed after the latest game
+- [x] *caption* Rating: Elo before and after this game. Table: league position before and after. ▲ a big game for the player (well above their season average before it, or a haul); ▼ a low score after a run of good ones. Next opponent: from your schedule (Fixtures page); preview any side under Rivals below. — ✓ My team · What changed (its note)
+- [x] *selectbox* Section [3 options: ODIs, Tests, T20Is] — ✓ My team · the competition buttons
+- [x] *markdown* **ODIs 2027 so far** · last 5: L W W W — ✓ My team · {competition} so far (last 5)
+- [x] *markdown* After 3 games: **3–0**. At the same point of 2026: 0–1 (+3 wins). — ✓ My team · so far
+- [x] *markdown* Report card Grade Why Results A 3–0 (100% of games with a result) Batting B 39.2 runs per wicket, average team 36.1 Bowling B 35.7 runs per wicket conceded, average team 37.6 Fielding A 5.0 catches a game, average team 3.3 Form B won 3 of the last 3 — ✓ My team · so far (report card grades)
+- [x] *caption* Grades against the average team in this section this season: A well above, C about average, E well below. — ✓ My team · so far (the grades note)
+- [x] *markdown* **Your stars this season** · ▲▼ form over the last 3 innings — ✓ My team · Your stars this season
+- [x] *markdown* Player Form H Brook 196 runs avg 196.0 ▬ B Stokes 166 runs avg 83.0 ▬ B Duckett 114 runs avg 38.0 ▬ G Atkinson 8 wkts econ 5.80 J Archer 7 wkts econ 6.40 R Ahmed 4 wkts econ 5.93 — ✓ My team · Your stars this season
+- [x] *expander* Squad · everyone who has played for England in ODIs 2027 — ✓ My team · Squad
+- [x] *markdown* Player Games Runs Avg SR Wkts Econ Last 5 scores Form H Brook 3 196 196.0 113.3 0 – 103* 25 68* ▬ B Stokes 3 166 83.0 111.4 3 6.17 56 50* 60 ▬ B Duckett 3 114 38.0 96.6 0 – 0 63 51 ▬ J Bethell 3 108 36.0 100.9 0 – 7 25 76 ▬ T Banton 3 105 35.0 101.0 0 – 20 77 8 ▬ J Root 3 70 23.3 81.4 0 – 52 5 13 ▬ S Curran 3 29 14.5 116.0 3 5.23 17 12 0* ▬ R Ahmed 3 17 8.5 58.6 4 5.93 17 0 ▬ G Atkinson 3 8 8.0 26 — ✓ My team · Squad
+- [x] *caption* Greyed out: not in the last 3 games. — ✓ My team · Squad (greyed-out note)
+- [x] *markdown* **📰 England headlines** — ✓ My team · headlines
+- [x] *markdown* - 🤝 B Stokes and H Brook put on 118 for the 6th wicket for England v Sri Lanka in the final (ODI World Cup, 23 Jun) - 🤝 B Duckett and T Banton put on 133 for the 1st wicket for England v South Africa (ODI World Cup, 13 Jun) - 🏅 New ODIs record · Best 5th-wicket stand: New Zealand 95 for New Zealand v England (ODI World Cup, 11 Jun) - 💯 B Ahern hits 127 for New Zealand v England (ODI World Cup, 11 — ✓ My team · headlines
+- [x] *markdown* **Milestones and records in sight** — ✓ My team · Milestones and records in sight
+- [x] *markdown* Player Chasing H Brook 250 runs needs 21 — ✓ My team · Milestones
+- [x] *markdown* **How you win** — ✓ My team · How you win
+- [x] *markdown* Batting first **–** (0 of 0) · chasing **75%** (3 of 4). — ✓ My team · How you win
+- [x] *markdown* **Rivals at a glance** · most-played opponents here — ✓ My team · Rivals at a glance
+- [x] *markdown* Opponent Played Record Win % New Zealand 1 1–0 100% South Africa 1 1–0 100% Sri Lanka 1 1–0 100% India 1 0–1 0% — ✓ My team · Rivals at a glance
+- [x] *selectbox* Next opponent [10 options: Afghanistan, Australia, Bangladesh, India, Ireland, New Zealand, Pakistan, South Africa…] — ✓ My team · Rivals (next opponent list)
+- [ ] *button* Preview → — → stage 2: Opponent preview (My team says so beside the list for now)
+- [x] *markdown* **🏆 Trophy cabinet** — ✓ My team · Trophy cabinet
+- [x] *caption* No titles yet. — ✓ My team · Trophy cabinet
+- [x] *markdown* **England records in ODIs** — ✓ My team · Trophy cabinet ({team} records)
+- [x] *markdown* Highest total 321/8 v New Zealand (Jun 2027) Lowest total 200 v India (Jul 2026) Highest score H Brook 103* (79) v New Zealand (Jun 2027) Best bowling G Atkinson 3/51 (10) v South Africa (Jun 2027) Best stand B Duckett &amp; T Banton (England), 1st wkt 133 v South Africa (Jun 2027) — ✓ My team · Trophy cabinet ({team} records)
+- [x] *markdown* **Season by season** — ✓ My team · Season by season
+- [x] *markdown* Season Section Record Win % Finished 2027 ODIs 3–0 100% ODI World Cup: Final 2026 ODIs 0–1 0% – 2026 T20Is 0–1 0% – 2026 Tests 3–0 100% – — ✓ My team · Season by season
+- [x] *markdown* **📝 Your match notes** — ✓ My team · Your match notes
+- [x] *caption* No notes yet. Open any match on the Matches page and write one under the score. — ✓ My team · Your match notes
+- [x] *markdown* Latest scorecard: Sri Lanka v England, 23 Jun 2027 — ✓ My team · notes tile (latest scorecard)
+- [x] *tab* Everything — ✓ My team · Whole career (the old Everything tab)
+- [x] *markdown* Latest result · Vijay Hazare Trophy · 05 Jan 2029 Mumbai CC 265/9 v Sikkim 260 Mumbai CC won by 1 wicket · Player of the match: N Kumar Reddy — ✓ Matches · Find a match (every match, newest first)
+- [x] *markdown* Matches 106 — ✓ My team · Whole career (the career's numbers)
+- [x] *markdown* Sections 10 — ✓ My team · Whole career (the career's numbers)
+- [x] *markdown* Seasons 4 — ✓ My team · Whole career (the career's numbers)
+- [x] *markdown* Players 587 — ✓ My team · Whole career (the career's numbers)
+- [x] *markdown* Runs 52,081 — ✓ My team · Whole career (the career's numbers)
+- [x] *markdown* Wickets 1,923 — ✓ My team · Whole career (the career's numbers)
+- [ ] *markdown* **Worth a minute of your time** 👉 **4 names are used by two different players**, so their stats are mixed together (e.g. *M Khan* at Punjab Kings and Lucknow Super Giants). One click keeps them apart. — → stage 4: Data check
+- [ ] *markdown* Open Data check → — → stage 4: Data check
+- [x] *markdown* **📰 Headlines** · hundreds, five-fors, collapses, titles and new records from your 10 most recent matches — ✓ My team · Whole career · Headlines
+- [x] *markdown* - 🏅 New Vijay Hazare Trophy record · Best bowling in an innings: D Chahar 5/33 (9) v Sikkim (Vijay Hazare Trophy, 5 Jan) - 🏅 New Vijay Hazare Trophy record · Best 2nd-wicket stand: A Sharma & S Lad 56 for Sikkim v Mumbai CC (Vijay Hazare Trophy, 5 Jan) - 🏅 New Vijay Hazare Trophy record · Best 5th-wicket stand: Sikkim 53 for Sikkim v Mumbai CC (Vijay Hazare Trophy, 5 Jan) - 💯 N Kumar Reddy hits 11 — ✓ My team · Whole career · Headlines
+- [ ] *subheader* Sections — → stage 2: the Competitions page (the table of every competition)
+- [ ] *table* 10 rows · columns: section, matches, seasons, first, last, format, level — → stage 2: the Competitions page (the table of every competition)
+- [x] *subheader* Latest results — ✓ Matches · Find a match (every match, newest first)
+- [x] *table* 12 rows · columns: date, section, stage, home, away, result, player_of_match — ✓ Matches · Find a match (every match, newest first)
+- [ ] *expander* Add another career (a different Scorecards folder) — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *markdown* **1 · Your Scorecards folder** — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *caption* In Cricket Captain 2026, turn on **Autosave scorecards** in Options. The folder is normally `AppData\Roaming\Childish Things\Cricket Captain 2026\Scorecards`. — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *text_input* Folder — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *button* Browse… — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *markdown* **2 · Name this career** — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *text_input* Career name — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *button* Start watching — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *expander* Upload files instead, or open a career file — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *tab* Upload a folder — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *file_uploader* Scorecards folder — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *tab* Upload files or a zip — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *file_uploader* Scorecard .txt files or a .zip — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *tab* Open a career file — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *file_uploader* Career file (.zip saved from this site) — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *button* Load — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *download_button* Download career file — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
 
 **Shown on the page with no team picked** (36 things)
 
-- [ ] *markdown* Career
-- [ ] *title* My career
-- [ ] *markdown* International matches are grouped by format (all Tests, all ODIs, all T20Is, World Cups included); everything else, like IPL, T20 Blast and each County Championship division, is its own section.
-- [ ] *info* **Make this your home page:** pick the team you play as under **My team** in the sidebar (more than one if you manage a franchise and a country). Home then opens on your team: results, form, stars, report cards, milestones, rivals and a preview of your next opponent.
-- [ ] *markdown* Latest result · Vijay Hazare Trophy · 05 Jan 2029 Mumbai CC 265/9 v Sikkim 260 Mumbai CC won by 1 wicket · Player of the match: N Kumar Reddy
-- [ ] *markdown* Matches 106
-- [ ] *markdown* Sections 10
-- [ ] *markdown* Seasons 4
-- [ ] *markdown* Players 587
-- [ ] *markdown* Runs 52,081
-- [ ] *markdown* Wickets 1,923
-- [ ] *markdown* **Worth a minute of your time** 👉 **4 names are used by two different players**, so their stats are mixed together (e.g. *M Khan* at Punjab Kings and Lucknow Super Giants). One click keeps them apart.
-- [ ] *markdown* Open Data check →
-- [ ] *markdown* **📰 Headlines** · hundreds, five-fors, collapses, titles and new records from your 10 most recent matches
-- [ ] *markdown* - 🏅 New Vijay Hazare Trophy record · Best bowling in an innings: D Chahar 5/33 (9) v Sikkim (Vijay Hazare Trophy, 5 Jan) - 🏅 New Vijay Hazare Trophy record · Best 2nd-wicket stand: A Sharma & S Lad 56 for Sikkim v Mumbai CC (Vijay Hazare Trophy, 5 Jan) - 🏅 New Vijay Hazare Trophy record · Best 5th-wicket stand: Sikkim 53 for Sikkim v Mumbai CC (Vijay Hazare Trophy, 5 Jan) - 💯 N Kumar Reddy hits 11
-- [ ] *subheader* Sections
-- [ ] *table* 10 rows · columns: section, matches, seasons, first, last, format, level
-- [ ] *subheader* Latest results
-- [ ] *table* 12 rows · columns: date, section, stage, home, away, result, player_of_match
-- [ ] *expander* Add another career (a different Scorecards folder)
-- [ ] *markdown* **1 · Your Scorecards folder**
-- [ ] *caption* In Cricket Captain 2026, turn on **Autosave scorecards** in Options. The folder is normally `AppData\Roaming\Childish Things\Cricket Captain 2026\Scorecards`.
-- [ ] *text_input* Folder
-- [ ] *button* Browse…
-- [ ] *markdown* **2 · Name this career**
-- [ ] *text_input* Career name
-- [ ] *button* Start watching
-- [ ] *expander* Upload files instead, or open a career file
-- [ ] *tab* Upload a folder
-- [ ] *file_uploader* Scorecards folder
-- [ ] *tab* Upload files or a zip
-- [ ] *file_uploader* Scorecard .txt files or a .zip
-- [ ] *tab* Open a career file
-- [ ] *file_uploader* Career file (.zip saved from this site)
-- [ ] *button* Load
-- [ ] *download_button* Download career file
+- [x] *markdown* Career — ✓ the page name, My team
+- [x] *title* My career — ✓ the page title (a greeting on My team)
+- [x] *markdown* International matches are grouped by format (all Tests, all ODIs, all T20Is, World Cups included); everything else, like IPL, T20 Blast and each County Championship division, is its own section. — ✓ My team · Whole career, and Matches · Find a match (the same sentence)
+- [x] *info* **Make this your home page:** pick the team you play as under **My team** in the sidebar (more than one if you manage a franchise and a country). Home then opens on your team: results, form, stars, report cards, milestones, rivals and a preview of your next opponent. — ✓ My team · 'Pick your team' (the question itself comes in stage 4)
+- [x] *markdown* Latest result · Vijay Hazare Trophy · 05 Jan 2029 Mumbai CC 265/9 v Sikkim 260 Mumbai CC won by 1 wicket · Player of the match: N Kumar Reddy — ✓ Matches · Find a match (every match, newest first)
+- [x] *markdown* Matches 106 — ✓ My team · Whole career (the career's numbers)
+- [x] *markdown* Sections 10 — ✓ My team · Whole career (the career's numbers)
+- [x] *markdown* Seasons 4 — ✓ My team · Whole career (the career's numbers)
+- [x] *markdown* Players 587 — ✓ My team · Whole career (the career's numbers)
+- [x] *markdown* Runs 52,081 — ✓ My team · Whole career (the career's numbers)
+- [x] *markdown* Wickets 1,923 — ✓ My team · Whole career (the career's numbers)
+- [ ] *markdown* **Worth a minute of your time** 👉 **4 names are used by two different players**, so their stats are mixed together (e.g. *M Khan* at Punjab Kings and Lucknow Super Giants). One click keeps them apart. — → stage 4: Data check
+- [ ] *markdown* Open Data check → — → stage 4: Data check
+- [x] *markdown* **📰 Headlines** · hundreds, five-fors, collapses, titles and new records from your 10 most recent matches — ✓ My team · Whole career · Headlines
+- [x] *markdown* - 🏅 New Vijay Hazare Trophy record · Best bowling in an innings: D Chahar 5/33 (9) v Sikkim (Vijay Hazare Trophy, 5 Jan) - 🏅 New Vijay Hazare Trophy record · Best 2nd-wicket stand: A Sharma & S Lad 56 for Sikkim v Mumbai CC (Vijay Hazare Trophy, 5 Jan) - 🏅 New Vijay Hazare Trophy record · Best 5th-wicket stand: Sikkim 53 for Sikkim v Mumbai CC (Vijay Hazare Trophy, 5 Jan) - 💯 N Kumar Reddy hits 11 — ✓ My team · Whole career · Headlines
+- [ ] *subheader* Sections — → stage 2: the Competitions page (the table of every competition)
+- [ ] *table* 10 rows · columns: section, matches, seasons, first, last, format, level — → stage 2: the Competitions page (the table of every competition)
+- [x] *subheader* Latest results — ✓ Matches · Find a match (every match, newest first)
+- [x] *table* 12 rows · columns: date, section, stage, home, away, result, player_of_match — ✓ Matches · Find a match (every match, newest first)
+- [ ] *expander* Add another career (a different Scorecards folder) — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *markdown* **1 · Your Scorecards folder** — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *caption* In Cricket Captain 2026, turn on **Autosave scorecards** in Options. The folder is normally `AppData\Roaming\Childish Things\Cricket Captain 2026\Scorecards`. — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *text_input* Folder — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *button* Browse… — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *markdown* **2 · Name this career** — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *text_input* Career name — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *button* Start watching — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *expander* Upload files instead, or open a career file — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *tab* Upload a folder — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *file_uploader* Scorecards folder — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *tab* Upload files or a zip — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *file_uploader* Scorecard .txt files or a .zip — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *tab* Open a career file — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *file_uploader* Career file (.zip saved from this site) — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *button* Load — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+- [ ] *download_button* Download career file — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
 
 **In the code** (every part of the page, including what shows only for some choices)
 
 - **new_career_form**
-  - [ ] *markdown* **1 · Your Scorecards folder**
-  - [ ] *caption* In Cricket Captain 2026, turn on **Autosave scorecards** in Options. The folder is normally `AppData\Roaming\Childish Things\Cricket Captain 2026\Scorecards`
-  - [ ] *caption* and it was found on this PC.
-  - [ ] *text_input* Folder
-  - [ ] *text_input* {k}_folder
-  - [ ] *text_input* collapsed
-  - [ ] *text_input* Paste the folder path here
-  - [ ] *button* Browse…
-  - [ ] *button* stretch
-  - [ ] *button* {k}_browse
-  - [ ] *markdown* **2 · Name this career**
-  - [ ] *text_input* Career name
-  - [ ] *text_input* My career
-  - [ ] *text_input* e.g. India save
-  - [ ] *text_input* {k}_name
-  - [ ] *warning* This folder is already used by **{owner}**. One Scorecards folder is one career, so both saves' matches go there. Pick a different folder for a separate career.
-  - [ ] *warning* That folder doesn't exist on this PC. Check the path or use Browse….
-  - [ ] *warning* A career with that name already exists. Pick another name.
-  - [ ] *button* Start watching
-  - [ ] *button* primary
-  - [ ] *button* {k}_start
-  - [ ] *spinner* Reading scorecards…
+  - [ ] *markdown* **1 · Your Scorecards folder** — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *caption* In Cricket Captain 2026, turn on **Autosave scorecards** in Options. The folder is normally `AppData\Roaming\Childish Things\Cricket Captain 2026\Scorecards` — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *caption* and it was found on this PC. — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *text_input* Folder — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [x] *text_input* {k}_folder — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *text_input* collapsed — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [ ] *text_input* Paste the folder path here — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *button* Browse… — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [x] *button* stretch — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *button* {k}_browse — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [ ] *markdown* **2 · Name this career** — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *text_input* Career name — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *text_input* My career — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *text_input* e.g. India save — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [x] *text_input* {k}_name — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [ ] *warning* This folder is already used by **{owner}**. One Scorecards folder is one career, so both saves' matches go there. Pick a different folder for a separate career. — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *warning* That folder doesn't exist on this PC. Check the path or use Browse…. — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *warning* A career with that name already exists. Pick another name. — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *button* Start watching — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [x] *button* primary — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *button* {k}_start — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [ ] *spinner* Reading scorecards… — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
 - **upload_panel**
-  - [ ] *tabs* Upload a folder
-  - [ ] *tabs* Upload files or a zip
-  - [ ] *tabs* Open a career file
-  - [ ] *file_uploader* Scorecards folder
-  - [ ] *file_uploader* directory
-  - [ ] *file_uploader* txt
-  - [ ] *file_uploader* up_folder
-  - [ ] *file_uploader* collapsed
-  - [ ] *file_uploader* Scorecard .txt files or a .zip
-  - [ ] *file_uploader* zip
-  - [ ] *file_uploader* up_files
-  - [ ] *file_uploader* Career file (.zip saved from this site)
-  - [ ] *file_uploader* up_pack
-  - [ ] *button* Load
-  - [ ] *button* up_go
-  - [ ] *spinner* Reading scorecards…
+  - [ ] *tabs* Upload a folder — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *tabs* Upload files or a zip — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *tabs* Open a career file — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *file_uploader* Scorecards folder — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [x] *file_uploader* directory — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *file_uploader* txt — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *file_uploader* up_folder — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *file_uploader* collapsed — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [ ] *file_uploader* Scorecard .txt files or a .zip — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [x] *file_uploader* zip — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *file_uploader* up_files — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [ ] *file_uploader* Career file (.zip saved from this site) — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [x] *file_uploader* up_pack — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [ ] *button* Load — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [x] *button* up_go — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [ ] *spinner* Reading scorecards… — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
 - **backups_panel**
-  - [ ] *expander* Backups ({len(items)})
-  - [ ] *caption* A copy of this career is saved automatically once a week; the newest {store.BACKUPS_KEPT} are kept, in `{store.root / 'backups'}`. Restoring puts that copy back; your current state is backed up first, so you can always undo it.
-  - [ ] *button* Back up now
-  - [ ] *button* bk_now
-  - [ ] *markdown* **{time.strftime('%a %d %b %Y, %H:%M', time.localtime(made))}**{note}
-  - [ ] *button* Yes, restore
-  - [ ] *button* bk_yes_{i}
-  - [ ] *button* primary
-  - [ ] *button* Restore
-  - [ ] *button* bk_{i}
+  - [ ] *expander* Backups ({len(items)}) — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *caption* A copy of this career is saved automatically once a week; the newest {store.BACKUPS_KEPT} are kept, in `{store.root / 'backups'}`. Restoring puts that copy back; your current state is backed up first, so you can always undo it. — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *button* Back up now — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [x] *button* bk_now — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [ ] *markdown* **{time.strftime('%a %d %b %Y, %H:%M', time.localtime(made))}**{note} — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *button* Yes, restore — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [x] *button* bk_yes_{i} — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *button* primary — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [ ] *button* Restore — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [x] *button* bk_{i} — ✓ code detail (a name inside the old site's code; nothing is shown)
 - **page**
-  - [ ] *page_header* Cricket Captain 2026
-  - [ ] *page_header* Your stats pack
-  - [ ] *page_header* Point the site at your Scorecards folder and every page fills in: leaderboards for every stat, player and team pages, team-vs-team comparisons and records. New matches appear by themselves while you play.
-  - [ ] *expander* Other ways to load: upload files, open a career file, or try the demo league
-  - [ ] *button* Try the demo league
-  - [ ] *page_header* Career
-  - [ ] *page_header* International matches are grouped by format (all Tests, all ODIs, all T20Is, World Cups included); everything else, like IPL, T20 Blast and each County Championship division, is its own section.
-  - [ ] *success* Finished:
-  - [ ] *success* {v} {words.get(k, k)}
-  - [ ] *expander* {len(bad)} file(s) could not be read
-  - [ ] *dataframe* File
-  - [ ] *dataframe* Reason
-  - [ ] *tabs* 🏏 {t}
-  - [ ] *tabs* Everything
-  - [ ] *info* **Make this your home page:** pick the team you play as under **My team** in the sidebar (more than one if you manage a franchise and a country). Home then opens on your team: results, form, stars, report cards, milestones, rivals and a preview of your next opponent.
-  - [ ] *info* No matches yet. Play a match in Cricket Captain (with Autosave scorecards on) and it will appear here within about 20 seconds.
-  - [ ] *scoreboard* Latest result · {with_stage(shown_name(last.section, last.event), last.stage)} · {last.date}
-  - [ ] *scoreboard* {last.result} · Player of the match: {last.player_of_match}
-  - [ ] *kpis* Matches
-  - [ ] *kpis* {len(m)}
-  - [ ] *kpis* Sections
-  - [ ] *kpis* {m.section.nunique()}
-  - [ ] *kpis* Seasons
-  - [ ] *kpis* {m.season.nunique()}
-  - [ ] *kpis* Players
-  - [ ] *kpis* {career.batting.player.nunique()}
-  - [ ] *kpis* Runs
-  - [ ] *kpis* {int(career.innings.runs.sum())}
-  - [ ] *kpis* Wickets
-  - [ ] *kpis* {int(career.innings.wickets.sum())}
-  - [ ] *warning* {career.problems.match_id.nunique()} scorecard(s) failed the self-check (numbers that don't add up). They'll be listed on the Data check page.
-  - [ ] *info* {auto_left} game{'s' if auto_left > 1 else ''} from an earlier playthrough of a season {'are' if auto_left > 1 else 'is'} left out of every figure (you reloaded a save and the knockouts went differently). See Data check → Games left out.
-  - [ ] *markdown* **Worth a minute of your time**
-  - [ ] *markdown* 👉 {t}
-  - [ ] *markdown* Open Data check →
-  - [ ] *markdown* **📰 Headlines** · hundreds, five-fors, collapses, titles and new records from your 10 most recent matches
-  - [ ] *markdown* - {h}
-  - [ ] *caption* Nothing big in your last 10 matches. Hundreds, five-wicket hauls, collapses, titles and new records show up here, and records also pop up as a message while you play.
-  - [ ] *dataframe* stretch
-  - [ ] *dataframe* section
-  - [ ] *dataframe* matches
-  - [ ] *dataframe* seasons
-  - [ ] *dataframe* first
-  - [ ] *dataframe* last
-  - [ ] *dataframe* format
-  - [ ] *dataframe* level
-  - [ ] *dataframe* Section
-  - [ ] *dataframe* First match
-  - [ ] *dataframe* D MMM YYYY
-  - [ ] *dataframe* Latest match
-  - [ ] *dataframe* Format
-  - [ ] *dataframe* Level
-  - [ ] *subheader* Latest results
-  - [ ] *dataframe* date
-  - [ ] *dataframe* stage
-  - [ ] *dataframe* home
-  - [ ] *dataframe* away
-  - [ ] *dataframe* result
-  - [ ] *dataframe* player_of_match
-  - [ ] *dataframe* Date
-  - [ ] *dataframe* Stage
-  - [ ] *dataframe* Home
-  - [ ] *dataframe* Away
-  - [ ] *dataframe* Result
-  - [ ] *dataframe* Player of the match
-  - [ ] *expander* Add another career (a different Scorecards folder)
-  - [ ] *expander* Upload files instead, or open a career file
-  - [ ] *download_button* Download career file
-  - [ ] *download_button* {career.name}.stats-pack.zip
-  - [ ] *download_button · help* One small file with every match and your manual fixes, e.g. to back it up or open it on another PC.
+  - [ ] *page_header* Cricket Captain 2026 — → stage 4: the first-start screen (pointing the site at your Scorecards folder; the demo league)
+  - [ ] *page_header* Your stats pack — → stage 4: the first-start screen (pointing the site at your Scorecards folder; the demo league)
+  - [ ] *page_header* Point the site at your Scorecards folder and every page fills in: leaderboards for every stat, player and team pages, team-vs-team comparisons and records. New matches appear by themselves while you play. — → stage 4: the first-start screen (pointing the site at your Scorecards folder; the demo league)
+  - [ ] *expander* Other ways to load: upload files, open a career file, or try the demo league — → stage 4: the first-start screen (pointing the site at your Scorecards folder; the demo league)
+  - [ ] *button* Try the demo league — → stage 4: the first-start screen (pointing the site at your Scorecards folder; the demo league)
+  - [x] *page_header* Career — ✓ the page name, My team
+  - [x] *page_header* International matches are grouped by format (all Tests, all ODIs, all T20Is, World Cups included); everything else, like IPL, T20 Blast and each County Championship division, is its own section. — ✓ My team · Whole career, and Matches · Find a match
+  - [ ] *success* Finished: — → stage 4: Settings and tools (the report after reading a folder; files that couldn't be read already show as an alert)
+  - [ ] *success* {v} {words.get(k, k)} — → stage 4: Settings and tools (the report after reading a folder; files that couldn't be read already show as an alert)
+  - [ ] *expander* {len(bad)} file(s) could not be read — → stage 4: Settings and tools (the report after reading a folder; files that couldn't be read already show as an alert)
+  - [ ] *dataframe* File — → stage 4: Settings and tools (the report after reading a folder; files that couldn't be read already show as an alert)
+  - [ ] *dataframe* Reason — → stage 4: Settings and tools (the report after reading a folder; files that couldn't be read already show as an alert)
+  - [x] *tabs* 🏏 {t} — ✓ My team · the team chips at the top
+  - [x] *tabs* Everything — ✓ My team · Whole career (the old Everything tab)
+  - [x] *info* **Make this your home page:** pick the team you play as under **My team** in the sidebar (more than one if you manage a franchise and a country). Home then opens on your team: results, form, stars, report cards, milestones, rivals and a preview of your next opponent. — ✓ My team · 'Pick your team' (the question itself comes in stage 4)
+  - [ ] *info* No matches yet. Play a match in Cricket Captain (with Autosave scorecards on) and it will appear here within about 20 seconds. — → stage 4: the first start (a career with no matches yet)
+  - [x] *scoreboard* Latest result · {with_stage(shown_name(last.section, last.event), last.stage)} · {last.date} — ✓ My team · Latest result, and Matches · Find a match
+  - [x] *scoreboard* {last.result} · Player of the match: {last.player_of_match} — ✓ My team · Latest result
+  - [x] *kpis* Matches — ✓ My team · Whole career (the career's numbers)
+  - [x] *kpis* {len(m)} — ✓ My team · Whole career (the career's numbers)
+  - [x] *kpis* Sections — ✓ My team · Whole career (the career's numbers)
+  - [x] *kpis* {m.section.nunique()} — ✓ My team · Whole career (the career's numbers)
+  - [x] *kpis* Seasons — ✓ My team · Whole career (the career's numbers)
+  - [x] *kpis* {m.season.nunique()} — ✓ My team · Whole career (the career's numbers)
+  - [x] *kpis* Players — ✓ My team · Whole career (the career's numbers)
+  - [x] *kpis* {career.batting.player.nunique()} — ✓ My team · Whole career (the career's numbers)
+  - [x] *kpis* Runs — ✓ My team · Whole career (the career's numbers)
+  - [x] *kpis* {int(career.innings.runs.sum())} — ✓ My team · Whole career (the career's numbers)
+  - [x] *kpis* Wickets — ✓ My team · Whole career (the career's numbers)
+  - [x] *kpis* {int(career.innings.wickets.sum())} — ✓ My team · Whole career (the career's numbers)
+  - [ ] *warning* {career.problems.match_id.nunique()} scorecard(s) failed the self-check (numbers that don't add up). They'll be listed on the Data check page. — → stage 4: Data check
+  - [ ] *info* {auto_left} game{'s' if auto_left > 1 else ''} from an earlier playthrough of a season {'are' if auto_left > 1 else 'is'} left out of every figure (you reloaded a save and the knockouts went differently). See Data check → Games left out. — → stage 4: Data check
+  - [ ] *markdown* **Worth a minute of your time** — → stage 4: Data check
+  - [ ] *markdown* 👉 {t} — → stage 4: Data check
+  - [ ] *markdown* Open Data check → — → stage 4: Data check
+  - [x] *markdown* **📰 Headlines** · hundreds, five-fors, collapses, titles and new records from your 10 most recent matches — ✓ My team · Whole career · Headlines
+  - [x] *markdown* - {h} — ✓ My team · Whole career · Headlines
+  - [x] *caption* Nothing big in your last 10 matches. Hundreds, five-wicket hauls, collapses, titles and new records show up here, and records also pop up as a message while you play. — ✓ My team · Whole career · Headlines (said when there's nothing)
+  - [x] *dataframe* stretch — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *dataframe* section — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *dataframe* matches — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *dataframe* seasons — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *dataframe* first — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *dataframe* last — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *dataframe* format — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *dataframe* level — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [ ] *dataframe* Section — → stage 2: the Competitions page (the table of every competition)
+  - [ ] *dataframe* First match — → stage 2: the Competitions page (the table of every competition)
+  - [x] *dataframe* D MMM YYYY — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [ ] *dataframe* Latest match — → stage 2: the Competitions page (the table of every competition)
+  - [ ] *dataframe* Format — → stage 2: the Competitions page (the table of every competition)
+  - [ ] *dataframe* Level — → stage 2: the Competitions page (the table of every competition)
+  - [x] *subheader* Latest results — ✓ Matches · Find a match (every match, newest first)
+  - [x] *dataframe* date — ✓ Matches · Find a match (date, competition and stage, teams, result; the player of the match on each match)
+  - [x] *dataframe* stage — ✓ Matches · Find a match (date, competition and stage, teams, result; the player of the match on each match)
+  - [x] *dataframe* home — ✓ Matches · Find a match (date, competition and stage, teams, result; the player of the match on each match)
+  - [x] *dataframe* away — ✓ Matches · Find a match (date, competition and stage, teams, result; the player of the match on each match)
+  - [x] *dataframe* result — ✓ Matches · Find a match (date, competition and stage, teams, result; the player of the match on each match)
+  - [x] *dataframe* player_of_match — ✓ Matches · Find a match (date, competition and stage, teams, result; the player of the match on each match)
+  - [x] *dataframe* Date — ✓ Matches · Find a match (date, competition and stage, teams, result; the player of the match on each match)
+  - [x] *dataframe* Stage — ✓ Matches · Find a match (date, competition and stage, teams, result; the player of the match on each match)
+  - [x] *dataframe* Home — ✓ Matches · Find a match (date, competition and stage, teams, result; the player of the match on each match)
+  - [x] *dataframe* Away — ✓ Matches · Find a match (date, competition and stage, teams, result; the player of the match on each match)
+  - [x] *dataframe* Result — ✓ Matches · Find a match (date, competition and stage, teams, result; the player of the match on each match)
+  - [x] *dataframe* Player of the match — ✓ Matches · Find a match (date, competition and stage, teams, result; the player of the match on each match)
+  - [ ] *expander* Add another career (a different Scorecards folder) — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *expander* Upload files instead, or open a career file — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *download_button* Download career file — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *download_button* {career.name}.stats-pack.zip — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
+  - [ ] *download_button · help* One small file with every match and your manual fixes, e.g. to back it up or open it on another PC. — → stage 4: Settings and tools (add a career from a folder, uploads, career files, backups)
 
 ## Honours board · `views/honours.py`
 
@@ -1669,195 +1671,195 @@ Everything kept in `Documents\Cricket Captain Stats Pack`. The new site reads an
 
 **Shown on the page as it opens** (7 things)
 
-- [ ] *markdown* Matches
-- [ ] *title* Find a match
-- [ ] *markdown* Narrow the list by section or team, then type to search: a team, a date, a stage like 'Final', or a result.
-- [ ] *selectbox* Section [11 options: All sections, County Championship · Division 1, County Championship · Division 2, Indian Premier League, ODIs, Ranji Trophy, T20 Blast, T20Is…]
-- [ ] *selectbox* Team [52 options: All teams, Afghanistan, Andhra, Australia, Bangladesh, Baroda, Birmingham Phoenix, Chandigarh…]
-- [ ] *selectbox* Match (106 to choose from, newest first) [106 options: 05 Jan 2029 · Mumbai CC v Sikkim · Vijay Hazare Trophy · Mumbai CC won by 1 wicket, 18 Jan 2028 · Karnataka v Kerala CC · Vijay Hazare Trophy · Final · Karnataka won by 7 wickets, 11 Jan 2028 · Baroda v Karnataka · Vijay Hazare Trophy · Quarter-final · Karnataka won by 4 wickets, 06 Nov 2027 · Karnataka v Goa · Ranji Trophy · Karnataka won by 45 runs, 11 Oct 2027 · Karnataka v Chandigarh · Ranji Trophy · Karnataka won by 6 wickets, 23 Jun 2027 · Pakistan v Australia · ODI World Cup · Final · Australia won by 2 wickets, 23 Jun 2027 · Sri Lanka v England · ODI World Cup · Final · England won by 4 wickets, 13 Jun 2027 · South Africa v England · ODI World Cup · Group · England won by 1 wicket…]
-- [ ] *markdown* **Best games you've played** · pick a section above to see its most exciting matches
+- [x] *markdown* Matches — ✓ Matches · Find a match
+- [x] *title* Find a match — ✓ Matches · Find a match
+- [x] *markdown* Narrow the list by section or team, then type to search: a team, a date, a stage like 'Final', or a result. — ✓ Matches · Find a match
+- [x] *selectbox* Section [11 options: All sections, County Championship · Division 1, County Championship · Division 2, Indian Premier League, ODIs, Ranji Trophy, T20 Blast, T20Is…] — ✓ Matches · Find a match
+- [x] *selectbox* Team [52 options: All teams, Afghanistan, Andhra, Australia, Bangladesh, Baroda, Birmingham Phoenix, Chandigarh…] — ✓ Matches · Find a match
+- [x] *selectbox* Match (106 to choose from, newest first) [106 options: 05 Jan 2029 · Mumbai CC v Sikkim · Vijay Hazare Trophy · Mumbai CC won by 1 wicket, 18 Jan 2028 · Karnataka v Kerala CC · Vijay Hazare Trophy · Final · Karnataka won by 7 wickets, 11 Jan 2028 · Baroda v Karnataka · Vijay Hazare Trophy · Quarter-final · Karnataka won by 4 wickets, 06 Nov 2027 · Karnataka v Goa · Ranji Trophy · Karnataka won by 45 runs, 11 Oct 2027 · Karnataka v Chandigarh · Ranji Trophy · Karnataka won by 6 wickets, 23 Jun 2027 · Pakistan v Australia · ODI World Cup · Final · Australia won by 2 wickets, 23 Jun 2027 · Sri Lanka v England · ODI World Cup · Final · England won by 4 wickets, 13 Jun 2027 · South Africa v England · ODI World Cup · Group · England won by 1 wicket…] — ✓ Match · Scorecard tab
+- [x] *markdown* **Best games you've played** · pick a section above to see its most exciting matches — ✓ Matches · Best games
 
 **Shown on the page with match Australia v India, T20Is** (36 things)
 
-- [ ] *markdown* Matches
-- [ ] *title* Find a match
-- [ ] *markdown* Narrow the list by section or team, then type to search: a team, a date, a stage like 'Final', or a result.
-- [ ] *selectbox* Section [11 options: All sections, County Championship · Division 1, County Championship · Division 2, Indian Premier League, ODIs, Ranji Trophy, T20 Blast, T20Is…]
-- [ ] *selectbox* Team [8 options: All teams, Australia, Bangladesh, England, India, New Zealand, Pakistan, Sri Lanka]
-- [ ] *selectbox* Match (7 to choose from, newest first) [7 options: 03 Oct 2026 · Pakistan v Sri Lanka · T20Is · Pakistan won by 84 runs, 01 Oct 2026 · Pakistan v Sri Lanka · T20Is · Pakistan won by 98 runs, 07 Jul 2026 · England v India · T20Is · India won by 6 wickets, 02 May 2026 · Bangladesh v New Zealand · T20Is · New Zealand won by 4 wickets, 29 Apr 2026 · Bangladesh v New Zealand · T20Is · Bangladesh won by 8 runs, 27 Apr 2026 · Bangladesh v New Zealand · T20Is · New Zealand won by 10 wickets, 11 Mar 2026 · Australia v India · T20 World Cup · Final · India won by 34 runs]
-- [ ] *divider*
-- [ ] *markdown* T20 World Cup · Final · 11 Mar 2026 Australia 121 v India 155 India won by 34 runs · Player of the match: J Bumrah
-- [ ] *expander* 📝 Your notes on this match
-- [ ] *text_area* Notes
-- [ ] *button* Save note
-- [ ] *caption* Saved with this career on this PC. Your notes also show on the Home page under My team.
-- [ ] *markdown* **Match report** · 2.0 / 10 for excitement (a final)
-- [ ] *markdown* India made 155, led by Y Jaiswal's 47. J Bumrah took 3/6 for India. Australia replied with 121, led by J Inglis' 31. The turning point came at Start of innings 2 (Australia): India's chance went from 31% to 50%. India won by 34 runs. Player of the Match: J Bumrah.
-- [ ] *markdown* **Win chance through the match** · chance for India, at the start of each innings and after every wicket
-- [ ] *chart* 1 series · x: Each wicket, in order (dotted lines: a new innings) · y: % chance (India batted first) · series: India win
-- [ ] *markdown* What it shows: The biggest swing came at Start of innings 2 (Australia): India's chance went from 31% to 50%. The winner's lowest point was 31% at India 143/9. What it's for: Shows how the game swung. Each point is how often T20Is games in the same spot (same innings, same wickets down, a similar lead) ended in a win. The scorecards have no overs, so it uses runs and wickets only; hover a point fo
-- [ ] *markdown* **Wicket timeline** · the score each time a wicket fell
-- [ ] *chart* 3 series · x: Wickets down · y: Score · series: India 155, Australia 121, Par (typical score at each wicket)
-- [ ] *markdown* Each step to the right is one more wicket down. The height of a step is the partnership: runs added before the next wicket. Several short steps in a row = a collapse. One tall step = a big stand that rebuilt the innings. Grey dashed line: par , the typical score when each wicket falls in T20Is. Above it = ahead of the game; below it = behind. It stops where too few innings get that far. The scorec
-- [ ] *markdown* What it shows: The biggest stand was 35 for the 4th wicket by J Inglis and T David for Australia, 29% of their runs in the match. What it's for: Shows how each innings was built and where it fell apart, wicket by wicket.
-- [ ] *markdown* **Top scores**
-- [ ] *table* 3 rows · columns: Batter, Team, Score, Balls
-- [ ] *markdown* **Best bowling**
-- [ ] *table* 3 rows · columns: Bowler, Team, Figures, Overs
-- [ ] *subheader* Scorecard
-- [ ] *expander* India · 1st innings · 155 all out (20 overs)
-- [ ] *table* 11 rows · columns: Batter, How out, R, B, 4s, 6s, SR
-- [ ] *caption* Extras 1 (w 1) · Total 155 all out (20 overs)
-- [ ] *table* 5 rows · columns: Bowler, O, Dots, R, W, Econ
-- [ ] *caption* Fall of wickets (partnership in brackets): 1-30 (+30), 2-40 (+10), 3-46 (+6), 4-77 (+31), 5-94 (+17), 6-96 (+2), 7-111 (+15), 8-118 (+7), 9-143 (+25), 10-155 (+12)
-- [ ] *expander* Australia · 1st innings · 121 all out (18.2 overs)
-- [ ] *table* 11 rows · columns: Batter, How out, R, B, 4s, 6s, SR
-- [ ] *caption* Extras 1 (w 1) · Total 121 all out (18.2 overs)
-- [ ] *table* 5 rows · columns: Bowler, O, Dots, R, W, Econ
-- [ ] *caption* Fall of wickets (partnership in brackets): 1-19 (+19), 2-19 (+0), 3-27 (+8), 4-62 (+35), 5-82 (+20), 6-90 (+8), 7-100 (+10), 8-107 (+7), 9-121 (+14), 10-121 (+0)
+- [x] *markdown* Matches — ✓ Matches · Find a match
+- [x] *title* Find a match — ✓ Matches · Find a match
+- [x] *markdown* Narrow the list by section or team, then type to search: a team, a date, a stage like 'Final', or a result. — ✓ Matches · Find a match
+- [x] *selectbox* Section [11 options: All sections, County Championship · Division 1, County Championship · Division 2, Indian Premier League, ODIs, Ranji Trophy, T20 Blast, T20Is…] — ✓ Matches · Find a match
+- [x] *selectbox* Team [8 options: All teams, Australia, Bangladesh, England, India, New Zealand, Pakistan, Sri Lanka] — ✓ Match · Scorecard tab
+- [x] *selectbox* Match (7 to choose from, newest first) [7 options: 03 Oct 2026 · Pakistan v Sri Lanka · T20Is · Pakistan won by 84 runs, 01 Oct 2026 · Pakistan v Sri Lanka · T20Is · Pakistan won by 98 runs, 07 Jul 2026 · England v India · T20Is · India won by 6 wickets, 02 May 2026 · Bangladesh v New Zealand · T20Is · New Zealand won by 4 wickets, 29 Apr 2026 · Bangladesh v New Zealand · T20Is · Bangladesh won by 8 runs, 27 Apr 2026 · Bangladesh v New Zealand · T20Is · New Zealand won by 10 wickets, 11 Mar 2026 · Australia v India · T20 World Cup · Final · India won by 34 runs] — ✓ Match · Scorecard tab
+- [x] *divider* — ✓ the new match page lays its parts out as tiles
+- [x] *markdown* T20 World Cup · Final · 11 Mar 2026 Australia 121 v India 155 India won by 34 runs · Player of the match: J Bumrah — ✓ Match · the summary at the top (result, player of the match, super over)
+- [x] *expander* 📝 Your notes on this match — ✓ Match · Your notes on this match
+- [x] *text_area* Notes — ✓ Match · Your notes on this match
+- [x] *button* Save note — ✓ Match · Your notes on this match
+- [x] *caption* Saved with this career on this PC. Your notes also show on the Home page under My team. — ✓ Match · Your notes on this match
+- [x] *markdown* **Match report** · 2.0 / 10 for excitement (a final) — ✓ Match · Match report and excitement
+- [x] *markdown* India made 155, led by Y Jaiswal's 47. J Bumrah took 3/6 for India. Australia replied with 121, led by J Inglis' 31. The turning point came at Start of innings 2 (Australia): India's chance went from 31% to 50%. India won by 34 runs. Player of the Match: J Bumrah. — ✓ Match · Match report and excitement
+- [x] *markdown* **Win chance through the match** · chance for India, at the start of each innings and after every wicket — ✓ Match · Win chance through the match
+- [x] *chart* 1 series · x: Each wicket, in order (dotted lines: a new innings) · y: % chance (India batted first) · series: India win — ✓ Match · Win chance through the match
+- [x] *markdown* What it shows: The biggest swing came at Start of innings 2 (Australia): India's chance went from 31% to 50%. The winner's lowest point was 31% at India 143/9. What it's for: Shows how the game swung. Each point is how often T20Is games in the same spot (same innings, same wickets down, a similar lead) ended in a win. The scorecards have no overs, so it uses runs and wickets only; hover a point fo — ✓ Match · Win chance through the match
+- [x] *markdown* **Wicket timeline** · the score each time a wicket fell — ✓ Match · Wicket by wicket tab
+- [x] *chart* 3 series · x: Wickets down · y: Score · series: India 155, Australia 121, Par (typical score at each wicket) — ✓ Match · Wicket by wicket tab
+- [x] *markdown* Each step to the right is one more wicket down. The height of a step is the partnership: runs added before the next wicket. Several short steps in a row = a collapse. One tall step = a big stand that rebuilt the innings. Grey dashed line: par , the typical score when each wicket falls in T20Is. Above it = ahead of the game; below it = behind. It stops where too few innings get that far. The scorec — ✓ Match · Wicket by wicket tab
+- [x] *markdown* What it shows: The biggest stand was 35 for the 4th wicket by J Inglis and T David for Australia, 29% of their runs in the match. What it's for: Shows how each innings was built and where it fell apart, wicket by wicket. — ✓ Match · Wicket by wicket tab
+- [x] *markdown* **Top scores** — ✓ Match · Top scores
+- [x] *table* 3 rows · columns: Batter, Team, Score, Balls — ✓ Match · Top scores
+- [x] *markdown* **Best bowling** — ✓ Match · Best bowling
+- [x] *table* 3 rows · columns: Bowler, Team, Figures, Overs — ✓ Match · Best bowling
+- [x] *subheader* Scorecard — ✓ Match · Scorecard tab
+- [x] *expander* India · 1st innings · 155 all out (20 overs) — ✓ Match · Scorecard tab
+- [x] *table* 11 rows · columns: Batter, How out, R, B, 4s, 6s, SR — ✓ Match · Top scores
+- [x] *caption* Extras 1 (w 1) · Total 155 all out (20 overs) — ✓ Match · Scorecard tab
+- [x] *table* 5 rows · columns: Bowler, O, Dots, R, W, Econ — ✓ Match · Best bowling
+- [x] *caption* Fall of wickets (partnership in brackets): 1-30 (+30), 2-40 (+10), 3-46 (+6), 4-77 (+31), 5-94 (+17), 6-96 (+2), 7-111 (+15), 8-118 (+7), 9-143 (+25), 10-155 (+12) — ✓ Match · Scorecard tab
+- [x] *expander* Australia · 1st innings · 121 all out (18.2 overs) — ✓ Match · Scorecard tab
+- [x] *table* 11 rows · columns: Batter, How out, R, B, 4s, 6s, SR — ✓ Match · Top scores
+- [x] *caption* Extras 1 (w 1) · Total 121 all out (18.2 overs) — ✓ Match · Scorecard tab
+- [x] *table* 5 rows · columns: Bowler, O, Dots, R, W, Econ — ✓ Match · Best bowling
+- [x] *caption* Fall of wickets (partnership in brackets): 1-19 (+19), 2-19 (+0), 3-27 (+8), 4-62 (+35), 5-82 (+20), 6-90 (+8), 7-100 (+10), 8-107 (+7), 9-121 (+14), 10-121 (+0) — ✓ Match · Scorecard tab
 
 **Shown on the page with match Kerala CC v Karnataka, Ranji Trophy** (46 things)
 
-- [ ] *markdown* Matches
-- [ ] *title* Find a match
-- [ ] *markdown* Narrow the list by section or team, then type to search: a team, a date, a stage like 'Final', or a result.
-- [ ] *selectbox* Section [11 options: All sections, County Championship · Division 1, County Championship · Division 2, Indian Premier League, ODIs, Ranji Trophy, T20 Blast, T20Is…]
-- [ ] *selectbox* Team [7 options: All teams, Andhra, Chandigarh, Goa, Gujarat CC, Karnataka, Kerala CC]
-- [ ] *selectbox* Match (5 to choose from, newest first) [5 options: 06 Nov 2027 · Karnataka v Goa · Ranji Trophy · Karnataka won by 45 runs, 11 Oct 2027 · Karnataka v Chandigarh · Ranji Trophy · Karnataka won by 6 wickets, 08 Feb 2027 · Karnataka v Andhra · Ranji Trophy · Quarter-final · Karnataka won by 143 runs, 17 Feb 2026 · Gujarat CC v Karnataka · Ranji Trophy · Semi-final · Karnataka won on more wickets left, 30 Jan 2026 · Kerala CC v Karnataka · Ranji Trophy · Karnataka won by 7 wickets]
-- [ ] *divider*
-- [ ] *markdown* Ranji Trophy · 30 Jan 2026 Kerala CC 274 & 345 v Karnataka 569 & 51/3 Karnataka won by 7 wickets · Player of the match: S Gopal
-- [ ] *expander* 📝 Your notes on this match
-- [ ] *text_area* Notes
-- [ ] *button* Save note
-- [ ] *caption* Saved with this career on this PC. Your notes also show on the Home page under My team.
-- [ ] *markdown* **Match report** · 2.0 / 10 for excitement (a comeback from 18% at Kerala CC 345/10, a hundred, a 5-wicket haul)
-- [ ] *markdown* Kerala CC made 274, led by K Prasad's 79, losing 4 wickets for 18 at the end. S Gopal took 7/140 for Karnataka. Karnataka replied with 569, led by L Rahul's 173. Kerala CC then made 345, led by S Seecharan's 174. Karnataka then made 51/3, led by L Rahul's 38*. Karnataka won by 7 wickets. Player of the Match: S Gopal.
-- [ ] *markdown* **Win chance through the match** · won / drawn / lost for Kerala CC, at the start of each innings and after every wicket
-- [ ] *chart* 3 series · x: Each wicket, in order (dotted lines: a new innings) · y: % chance (Kerala CC batted first) · series: Kerala CC win, Draw, Karnataka win
-- [ ] *markdown* What it shows: The biggest swing came at Start of innings 4 (Karnataka): Kerala CC's chance went from 64% to 50%. The winner's lowest point was 18% at Kerala CC 345/10. What it's for: Shows how the game swung. Each point is how often Ranji Trophy games in the same spot (same innings, same wickets down, a similar lead) ended in a win, draw or defeat. The scorecards have no overs, so it uses runs an
-- [ ] *markdown* **Wicket timeline** · the score each time a wicket fell
-- [ ] *chart* 5 series · x: Wickets down · y: Score · series: Kerala CC 274, Karnataka 569, Kerala CC 345 (2nd inns), Karnataka 51/3 (2nd inns), Par (typical score at each wicket)
-- [ ] *markdown* Each step to the right is one more wicket down. The height of a step is the partnership: runs added before the next wicket. Several short steps in a row = a collapse. One tall step = a big stand that rebuilt the innings. Grey dashed line: par , the typical score when each wicket falls in Ranji Trophy. Above it = ahead of the game; below it = behind. It stops where too few innings get that far. The
-- [ ] *markdown* What it shows: The biggest stand was 192 for the 3rd wicket by L Rahul and R Smaran for Karnataka, 31% of their runs in the match. What it's for: Shows how each innings was built and where it fell apart, wicket by wicket.
-- [ ] *markdown* **Top scores**
-- [ ] *table* 3 rows · columns: Batter, Team, Score, Balls
-- [ ] *markdown* **Best bowling**
-- [ ] *table* 3 rows · columns: Bowler, Team, Figures, Overs
-- [ ] *subheader* Scorecard
-- [ ] *expander* Kerala CC · 1st innings · 274 all out (82.3 overs)
-- [ ] *table* 11 rows · columns: Batter, How out, R, B, 4s, 6s, SR
-- [ ] *caption* Extras 5 (nb 5) · Total 274 all out (82.3 overs)
-- [ ] *table* 5 rows · columns: Bowler, O, M, R, W, Econ
-- [ ] *caption* Fall of wickets (partnership in brackets): 1-104 (+104), 2-125 (+21), 3-182 (+57), 4-190 (+8), 5-232 (+42), 6-256 (+24), 7-258 (+2), 8-265 (+7), 9-270 (+5), 10-274 (+4)
-- [ ] *expander* Karnataka · 1st innings · 569 all out (164.4 overs)
-- [ ] *table* 11 rows · columns: Batter, How out, R, B, 4s, 6s, SR
-- [ ] *caption* Extras 19 (lb 2, w 3, nb 14) · Total 569 all out (164.4 overs)
-- [ ] *table* 6 rows · columns: Bowler, O, M, R, W, Econ
-- [ ] *caption* Fall of wickets (partnership in brackets): 1-16 (+16), 2-54 (+38), 3-246 (+192), 4-270 (+24), 5-372 (+102), 6-420 (+48), 7-468 (+48), 8-472 (+4), 9-551 (+79), 10-569 (+18)
-- [ ] *expander* Kerala CC · 2nd innings · 345 all out (103.2 overs)
-- [ ] *table* 11 rows · columns: Batter, How out, R, B, 4s, 6s, SR
-- [ ] *caption* Extras 12 (b 4, lb 2, w 1, nb 5) · Total 345 all out (103.2 overs)
-- [ ] *table* 5 rows · columns: Bowler, O, M, R, W, Econ
-- [ ] *caption* Fall of wickets (partnership in brackets): 1-12 (+12), 2-34 (+22), 3-55 (+21), 4-182 (+127), 5-234 (+52), 6-272 (+38), 7-287 (+15), 8-308 (+21), 9-335 (+27), 10-345 (+10)
-- [ ] *expander* Karnataka · 2nd innings · 51/3 (4 overs)
-- [ ] *table* 11 rows · columns: Batter, How out, R, B, 4s, 6s, SR
-- [ ] *caption* Extras 0 · Total 51/3 (4 overs)
-- [ ] *table* 2 rows · columns: Bowler, O, M, R, W, Econ
-- [ ] *caption* Fall of wickets (partnership in brackets): 1-0 (+0), 2-6 (+6), 3-39 (+33)
+- [x] *markdown* Matches — ✓ Matches · Find a match
+- [x] *title* Find a match — ✓ Matches · Find a match
+- [x] *markdown* Narrow the list by section or team, then type to search: a team, a date, a stage like 'Final', or a result. — ✓ Matches · Find a match
+- [x] *selectbox* Section [11 options: All sections, County Championship · Division 1, County Championship · Division 2, Indian Premier League, ODIs, Ranji Trophy, T20 Blast, T20Is…] — ✓ Matches · Find a match
+- [x] *selectbox* Team [7 options: All teams, Andhra, Chandigarh, Goa, Gujarat CC, Karnataka, Kerala CC] — ✓ Matches · Find a match
+- [x] *selectbox* Match (5 to choose from, newest first) [5 options: 06 Nov 2027 · Karnataka v Goa · Ranji Trophy · Karnataka won by 45 runs, 11 Oct 2027 · Karnataka v Chandigarh · Ranji Trophy · Karnataka won by 6 wickets, 08 Feb 2027 · Karnataka v Andhra · Ranji Trophy · Quarter-final · Karnataka won by 143 runs, 17 Feb 2026 · Gujarat CC v Karnataka · Ranji Trophy · Semi-final · Karnataka won on more wickets left, 30 Jan 2026 · Kerala CC v Karnataka · Ranji Trophy · Karnataka won by 7 wickets] — ✓ Match · the summary at the top (result, player of the match, super over)
+- [x] *divider* — ✓ the new match page lays its parts out as tiles
+- [x] *markdown* Ranji Trophy · 30 Jan 2026 Kerala CC 274 & 345 v Karnataka 569 & 51/3 Karnataka won by 7 wickets · Player of the match: S Gopal — ✓ Match · the summary at the top (result, player of the match, super over)
+- [x] *expander* 📝 Your notes on this match — ✓ Match · Your notes on this match
+- [x] *text_area* Notes — ✓ Match · Your notes on this match
+- [x] *button* Save note — ✓ Match · Your notes on this match
+- [x] *caption* Saved with this career on this PC. Your notes also show on the Home page under My team. — ✓ Match · Your notes on this match
+- [x] *markdown* **Match report** · 2.0 / 10 for excitement (a comeback from 18% at Kerala CC 345/10, a hundred, a 5-wicket haul) — ✓ Match · Match report and excitement
+- [x] *markdown* Kerala CC made 274, led by K Prasad's 79, losing 4 wickets for 18 at the end. S Gopal took 7/140 for Karnataka. Karnataka replied with 569, led by L Rahul's 173. Kerala CC then made 345, led by S Seecharan's 174. Karnataka then made 51/3, led by L Rahul's 38*. Karnataka won by 7 wickets. Player of the Match: S Gopal. — ✓ Match · Match report and excitement
+- [x] *markdown* **Win chance through the match** · won / drawn / lost for Kerala CC, at the start of each innings and after every wicket — ✓ Match · Win chance through the match
+- [x] *chart* 3 series · x: Each wicket, in order (dotted lines: a new innings) · y: % chance (Kerala CC batted first) · series: Kerala CC win, Draw, Karnataka win — ✓ Match · Win chance through the match
+- [x] *markdown* What it shows: The biggest swing came at Start of innings 4 (Karnataka): Kerala CC's chance went from 64% to 50%. The winner's lowest point was 18% at Kerala CC 345/10. What it's for: Shows how the game swung. Each point is how often Ranji Trophy games in the same spot (same innings, same wickets down, a similar lead) ended in a win, draw or defeat. The scorecards have no overs, so it uses runs an — ✓ Match · Win chance through the match
+- [x] *markdown* **Wicket timeline** · the score each time a wicket fell — ✓ Match · Wicket by wicket tab
+- [x] *chart* 5 series · x: Wickets down · y: Score · series: Kerala CC 274, Karnataka 569, Kerala CC 345 (2nd inns), Karnataka 51/3 (2nd inns), Par (typical score at each wicket) — ✓ Match · Wicket by wicket tab
+- [x] *markdown* Each step to the right is one more wicket down. The height of a step is the partnership: runs added before the next wicket. Several short steps in a row = a collapse. One tall step = a big stand that rebuilt the innings. Grey dashed line: par , the typical score when each wicket falls in Ranji Trophy. Above it = ahead of the game; below it = behind. It stops where too few innings get that far. The — ✓ Match · Wicket by wicket tab
+- [x] *markdown* What it shows: The biggest stand was 192 for the 3rd wicket by L Rahul and R Smaran for Karnataka, 31% of their runs in the match. What it's for: Shows how each innings was built and where it fell apart, wicket by wicket. — ✓ Match · Wicket by wicket tab
+- [x] *markdown* **Top scores** — ✓ Match · Top scores
+- [x] *table* 3 rows · columns: Batter, Team, Score, Balls — ✓ Match · Top scores
+- [x] *markdown* **Best bowling** — ✓ Match · Best bowling
+- [x] *table* 3 rows · columns: Bowler, Team, Figures, Overs — ✓ Match · Best bowling
+- [x] *subheader* Scorecard — ✓ Match · Scorecard tab
+- [x] *expander* Kerala CC · 1st innings · 274 all out (82.3 overs) — ✓ Match · Scorecard tab
+- [x] *table* 11 rows · columns: Batter, How out, R, B, 4s, 6s, SR — ✓ Match · Top scores
+- [x] *caption* Extras 5 (nb 5) · Total 274 all out (82.3 overs) — ✓ Match · Scorecard tab
+- [x] *table* 5 rows · columns: Bowler, O, M, R, W, Econ — ✓ Match · Best bowling
+- [x] *caption* Fall of wickets (partnership in brackets): 1-104 (+104), 2-125 (+21), 3-182 (+57), 4-190 (+8), 5-232 (+42), 6-256 (+24), 7-258 (+2), 8-265 (+7), 9-270 (+5), 10-274 (+4) — ✓ Match · Scorecard tab
+- [x] *expander* Karnataka · 1st innings · 569 all out (164.4 overs) — ✓ Match · Scorecard tab
+- [x] *table* 11 rows · columns: Batter, How out, R, B, 4s, 6s, SR — ✓ Match · Top scores
+- [x] *caption* Extras 19 (lb 2, w 3, nb 14) · Total 569 all out (164.4 overs) — ✓ Match · Scorecard tab
+- [x] *table* 6 rows · columns: Bowler, O, M, R, W, Econ — ✓ Match · Best bowling
+- [x] *caption* Fall of wickets (partnership in brackets): 1-16 (+16), 2-54 (+38), 3-246 (+192), 4-270 (+24), 5-372 (+102), 6-420 (+48), 7-468 (+48), 8-472 (+4), 9-551 (+79), 10-569 (+18) — ✓ Match · Scorecard tab
+- [x] *expander* Kerala CC · 2nd innings · 345 all out (103.2 overs) — ✓ Match · Scorecard tab
+- [x] *table* 11 rows · columns: Batter, How out, R, B, 4s, 6s, SR — ✓ Match · Top scores
+- [x] *caption* Extras 12 (b 4, lb 2, w 1, nb 5) · Total 345 all out (103.2 overs) — ✓ Match · Scorecard tab
+- [x] *table* 5 rows · columns: Bowler, O, M, R, W, Econ — ✓ Match · Best bowling
+- [x] *caption* Fall of wickets (partnership in brackets): 1-12 (+12), 2-34 (+22), 3-55 (+21), 4-182 (+127), 5-234 (+52), 6-272 (+38), 7-287 (+15), 8-308 (+21), 9-335 (+27), 10-345 (+10) — ✓ Match · Scorecard tab
+- [x] *expander* Karnataka · 2nd innings · 51/3 (4 overs) — ✓ Match · Scorecard tab
+- [x] *table* 11 rows · columns: Batter, How out, R, B, 4s, 6s, SR — ✓ Match · Top scores
+- [x] *caption* Extras 0 · Total 51/3 (4 overs) — ✓ Match · Scorecard tab
+- [x] *table* 2 rows · columns: Bowler, O, M, R, W, Econ — ✓ Match · Best bowling
+- [x] *caption* Fall of wickets (partnership in brackets): 1-0 (+0), 2-6 (+6), 3-39 (+33) — ✓ Match · Scorecard tab
 
 **In the code** (every part of the page, including what shows only for some choices)
 
 - **page**
-  - [ ] *info* Load a career on the Home page first.
-  - [ ] *page_header* Matches
-  - [ ] *page_header* Find a match
-  - [ ] *page_header* Narrow the list by section or team, then type to search: a team, a date, a stage like 'Final', or a result.
-  - [ ] *selectbox* Section
-  - [ ] *selectbox* All sections
-  - [ ] *selectbox* mt_section
-  - [ ] *selectbox* section
-  - [ ] *selectbox* Team
-  - [ ] *selectbox* All teams
-  - [ ] *selectbox* mt_team
-  - [ ] *selectbox* team
-  - [ ] *selectbox* Match ({len(labels)} to choose from, newest first)
-  - [ ] *selectbox* mt_match
-  - [ ] *selectbox* Type to search, e.g. 'Final' or 'Kent'
-  - [ ] *safe_section* best games
-  - [ ] *markdown* **Best games you've played** · pick a section above to see its most exciting matches
-  - [ ] *spinner* Rating every match…
-  - [ ] *markdown* **Best games you've played in {section}** · rated 0-10 for excitement
-  - [ ] *html_table* {r.rating}
-  - [ ] *html_table* {r.home} v {r.away}
-  - [ ] *html_table* {r.date}
-  - [ ] *html_table* Rating
-  - [ ] *html_table* Match
-  - [ ] *html_table* Date
-  - [ ] *html_table* Stage
-  - [ ] *html_table* Why
-  - [ ] *caption* Points for a close finish, a tie or super over, a comeback (the winner's chance fell low), a final or knockout, a hundred, a big haul and high scoring. The closeness and haul bars follow the format.
-  - [ ] *scoreboard* {with_stage(shown_name(row.section, row.event), row.stage)}{series} · {row.date}
-  - [ ] *scoreboard* (super over: {row.super_over})
-  - [ ] *scoreboard* · Player of the match: {row.player_of_match}
-  - [ ] *caption* 🌧️ {why} Games like this aren't used for par scores, "Is this total enough?", lowest total defended or the win chances of other games; the players' runs and wickets count as normal.
-  - [ ] *safe_section* best and worst
-  - [ ] *markdown* **⭐ {esc(side)}: best and worst in this match**
-  - [ ] *markdown* **Best**
-  - [ ] *markdown* {['🥇', '🥈', '🥉'][i]} {player_link(p)} · {esc(fig)}
-  - [ ] *markdown* best
-  - [ ] *markdown* **Did least**
-  - [ ] *markdown* 🔻 {player_link(p)} · {esc(fig)}
-  - [ ] *markdown* worst
-  - [ ] *markdown* Everyone who batted or bowled chipped in.
-  - [ ] *caption* By match impact (as on the Player page): runs, with a strike-rate part in white-ball cricket; wickets worth the section's runs per wicket, with an economy part; a little for catches. Did least: of those who batted in the top seven or bowled.
-  - [ ] *safe_section* match journal
-  - [ ] *expander* 📝 Your notes on this match
-  - [ ] *expander* · saved
-  - [ ] *text_area* Notes
-  - [ ] *text_area* note_{mid}
-  - [ ] *text_area* collapsed
-  - [ ] *text_area* e.g. rested Bumrah, regretted it · went spin-heavy on a turner
-  - [ ] *form_submit_button* Save note
-  - [ ] *toast* Note saved
-  - [ ] *toast* Note removed
-  - [ ] *caption* Saved with this career on this PC. Your notes also show on the Home page under My team.
-  - [ ] *safe_section* match report
-  - [ ] *markdown* **Match report** · = 6 else 'B' if score_ >= 4 else 'C'}'>{score_} / 10 for excitement
-  - [ ] *markdown* ({', '.join(why_)})
-  - [ ] *caption* Win chance through the match: not enough other {row.section} games yet to compare this one with.
-  - [ ] *markdown* **Win chance through the match** · {'won / drawn / lost' if multi_ else 'chance'} for {t1}, at the start of each innings and after every wicket
-  - [ ] *chart_note* Not enough similar games yet.
-  - [ ] *chart_note* Shows how the game swung. Each point is how often {row.section} games in the same spot (same innings, same wickets down, a similar lead) ended in a win
-  - [ ] *chart_note* , draw or defeat
-  - [ ] *chart_note* . The scorecards have no overs, so it uses runs and wickets only; hover a point for how many games it rests on. The last point is the result.
-  - [ ] *markdown* **Wicket timeline** · the score each time a wicket fell
-  - [ ] *chart_note* The biggest stand was {big.runs}{'*' if big.unbroken else ''} for the {n_}{P.suffix(n_)} wicket{who} for {big.team}, {big.runs / max(tot_, 1) * 100}% of their runs in the match.
-  - [ ] *chart_note* Shows how each innings was built and where it fell apart, wicket by wicket.
-  - [ ] *markdown* **Top scores**
-  - [ ] *dataframe* Batter
-  - [ ] *dataframe* Score
-  - [ ] *dataframe* Balls
-  - [ ] *dataframe* {r}{'' if o else '*'}
-  - [ ] *dataframe* stretch
-  - [ ] *markdown* **Best bowling**
-  - [ ] *dataframe* Bowler
-  - [ ] *dataframe* Figures
-  - [ ] *dataframe* Overs
-  - [ ] *dataframe* {w}/{r}
-  - [ ] *dataframe* balls
-  - [ ] *subheader* Scorecard
-  - [ ] *expander* {r.team} · {'1st' if r.team_innings == 1 else '2nd'} innings · {tot} ({length}){fo}
-  - [ ] *dataframe* How out
-  - [ ] *dataframe* 4s
-  - [ ] *dataframe* 6s
-  - [ ] *dataframe* SR
-  - [ ] *dataframe* did not bat
-  - [ ] *caption* Extras {r.extras}
-  - [ ] *caption* ({', '.join(parts)})
-  - [ ] *caption* · Total {tot} ({length})
-  - [ ] *dataframe* Dots
-  - [ ] *dataframe* Econ
-  - [ ] *caption* Fall of wickets (partnership in brackets):
+  - [x] *info* Load a career on the Home page first. — ✓ the new site says when no career is open (My team · No career yet)
+  - [x] *page_header* Matches — ✓ Matches · Find a match
+  - [x] *page_header* Find a match — ✓ Matches · Find a match
+  - [x] *page_header* Narrow the list by section or team, then type to search: a team, a date, a stage like 'Final', or a result. — ✓ Matches · Find a match
+  - [x] *selectbox* Section — ✓ Matches · Find a match
+  - [x] *selectbox* All sections — ✓ Matches · Find a match (the 'every competition' and 'All teams' choices)
+  - [x] *selectbox* mt_section — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *selectbox* section — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *selectbox* Team — ✓ Matches · Find a match
+  - [x] *selectbox* All teams — ✓ Matches · Find a match (the 'every competition' and 'All teams' choices)
+  - [x] *selectbox* mt_team — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *selectbox* team — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *selectbox* Match ({len(labels)} to choose from, newest first) — ✓ Matches · Find a match
+  - [x] *selectbox* mt_match — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *selectbox* Type to search, e.g. 'Final' or 'Kent' — ✓ Matches · Find a match
+  - [x] *safe_section* best games — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **Best games you've played** · pick a section above to see its most exciting matches — ✓ Matches · Best games
+  - [x] *spinner* Rating every match… — ✓ Matches · Best games
+  - [x] *markdown* **Best games you've played in {section}** · rated 0-10 for excitement — ✓ Matches · Best games
+  - [x] *html_table* {r.rating} — ✓ Matches · Best games
+  - [x] *html_table* {r.home} v {r.away} — ✓ Matches · Find a match
+  - [x] *html_table* {r.date} — ✓ Matches · Find a match
+  - [x] *html_table* Rating — ✓ Matches · Best games
+  - [x] *html_table* Match — ✓ Matches · Best games
+  - [x] *html_table* Date — ✓ Matches · Best games
+  - [x] *html_table* Stage — ✓ Matches · Best games
+  - [x] *html_table* Why — ✓ Matches · Best games
+  - [x] *caption* Points for a close finish, a tie or super over, a comeback (the winner's chance fell low), a final or knockout, a hundred, a big haul and high scoring. The closeness and haul bars follow the format. — ✓ Matches · Best games
+  - [x] *scoreboard* {with_stage(shown_name(row.section, row.event), row.stage)}{series} · {row.date} — ✓ Match · the summary at the top (result, player of the match, super over)
+  - [x] *scoreboard* (super over: {row.super_over}) — ✓ Match · the summary at the top (result, player of the match, super over)
+  - [x] *scoreboard* · Player of the match: {row.player_of_match} — ✓ Match · the summary at the top (result, player of the match, super over)
+  - [x] *caption* 🌧️ {why} Games like this aren't used for par scores, "Is this total enough?", lowest total defended or the win chances of other games; the players' runs and wickets count as normal. — ✓ Match · Rain
+  - [x] *safe_section* best and worst — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **⭐ {esc(side)}: best and worst in this match** — ✓ Match · best and worst in this match
+  - [x] *markdown* **Best** — ✓ Match · best and worst in this match
+  - [x] *markdown* {['🥇', '🥈', '🥉'][i]} {player_link(p)} · {esc(fig)} — ✓ Match · best and worst in this match
+  - [x] *markdown* best — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *markdown* **Did least** — ✓ Match · best and worst in this match
+  - [x] *markdown* 🔻 {player_link(p)} · {esc(fig)} — ✓ Match · best and worst in this match
+  - [x] *markdown* worst — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *markdown* Everyone who batted or bowled chipped in. — ✓ Match · best and worst in this match
+  - [x] *caption* By match impact (as on the Player page): runs, with a strike-rate part in white-ball cricket; wickets worth the section's runs per wicket, with an economy part; a little for catches. Did least: of those who batted in the top seven or bowled. — ✓ Match · best and worst in this match
+  - [x] *safe_section* match journal — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *expander* 📝 Your notes on this match — ✓ Match · Your notes on this match
+  - [x] *expander* · saved — ✓ Matches · Find a match
+  - [x] *text_area* Notes — ✓ Match · Your notes on this match
+  - [x] *text_area* note_{mid} — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *text_area* collapsed — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *text_area* e.g. rested Bumrah, regretted it · went spin-heavy on a turner — ✓ Matches · Find a match
+  - [x] *form_submit_button* Save note — ✓ Match · Your notes on this match
+  - [x] *toast* Note saved — ✓ Match · Your notes on this match
+  - [x] *toast* Note removed — ✓ Match · Your notes on this match
+  - [x] *caption* Saved with this career on this PC. Your notes also show on the Home page under My team. — ✓ Match · Your notes on this match
+  - [x] *safe_section* match report — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **Match report** · = 6 else 'B' if score_ >= 4 else 'C'}'>{score_} / 10 for excitement — ✓ Match · Match report and excitement
+  - [x] *markdown* ({', '.join(why_)}) — ✓ Match · Match report and excitement
+  - [x] *caption* Win chance through the match: not enough other {row.section} games yet to compare this one with. — ✓ Match · Win chance through the match
+  - [x] *markdown* **Win chance through the match** · {'won / drawn / lost' if multi_ else 'chance'} for {t1}, at the start of each innings and after every wicket — ✓ Match · Win chance through the match
+  - [x] *chart_note* Not enough similar games yet. — ✓ Match · Win chance through the match
+  - [x] *chart_note* Shows how the game swung. Each point is how often {row.section} games in the same spot (same innings, same wickets down, a similar lead) ended in a win — ✓ Match · Win chance through the match
+  - [x] *chart_note* , draw or defeat — ✓ Match · Win chance through the match
+  - [x] *chart_note* . The scorecards have no overs, so it uses runs and wickets only; hover a point for how many games it rests on. The last point is the result. — ✓ Match · Scorecard tab
+  - [x] *markdown* **Wicket timeline** · the score each time a wicket fell — ✓ Match · Wicket by wicket tab
+  - [x] *chart_note* The biggest stand was {big.runs}{'*' if big.unbroken else ''} for the {n_}{P.suffix(n_)} wicket{who} for {big.team}, {big.runs / max(tot_, 1) * 100}% of their runs in the match. — ✓ Match · Wicket by wicket tab
+  - [x] *chart_note* Shows how each innings was built and where it fell apart, wicket by wicket. — ✓ Match · Wicket by wicket tab
+  - [x] *markdown* **Top scores** — ✓ Match · Top scores
+  - [x] *dataframe* Batter — ✓ Match · Top scores
+  - [x] *dataframe* Score — ✓ Match · Top scores
+  - [x] *dataframe* Balls — ✓ Matches · Find a match
+  - [x] *dataframe* {r}{'' if o else '*'} — ✓ Match · Top scores
+  - [x] *dataframe* stretch — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *markdown* **Best bowling** — ✓ Match · Best bowling
+  - [x] *dataframe* Bowler — ✓ Match · Best bowling
+  - [x] *dataframe* Figures — ✓ Match · Best bowling
+  - [x] *dataframe* Overs — ✓ Matches · Find a match
+  - [x] *dataframe* {w}/{r} — ✓ Match · Best bowling
+  - [x] *dataframe* balls — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *subheader* Scorecard — ✓ Match · Scorecard tab
+  - [x] *expander* {r.team} · {'1st' if r.team_innings == 1 else '2nd'} innings · {tot} ({length}){fo} — ✓ Match · Scorecard tab
+  - [x] *dataframe* How out — ✓ Match · Scorecard tab
+  - [x] *dataframe* 4s — ✓ Match · Scorecard tab
+  - [x] *dataframe* 6s — ✓ Match · Scorecard tab
+  - [x] *dataframe* SR — ✓ Match · Scorecard tab
+  - [x] *dataframe* did not bat — ✓ Match · Scorecard tab
+  - [x] *caption* Extras {r.extras} — ✓ Match · Scorecard tab
+  - [x] *caption* ({', '.join(parts)}) — ✓ Match · Match report and excitement
+  - [x] *caption* · Total {tot} ({length}) — ✓ Match · Scorecard tab
+  - [x] *dataframe* Dots — ✓ Match · Scorecard tab
+  - [x] *dataframe* Econ — ✓ Match · Scorecard tab
+  - [x] *caption* Fall of wickets (partnership in brackets): — ✓ Match · Scorecard tab
 
 ## Opponent preview · `views/opponent.py`
 
@@ -2261,561 +2263,561 @@ Everything kept in `Documents\Cricket Captain Stats Pack`. The new site reads an
 
 **Shown on the page as it opens** (4 things)
 
-- [ ] *selectbox* Player [587 options: A Afridi, A Ahmed, A Auguste, A Awais, A Azad, A Badoni, A Basith, A Carey…]
-- [ ] *markdown* Player
-- [ ] *title* Pick a player
-- [ ] *markdown* Type a name in the box above. Every player who has batted or bowled in this career is listed.
+- [x] *selectbox* Player [587 options: A Afridi, A Ahmed, A Auguste, A Awais, A Azad, A Badoni, A Basith, A Carey…] — ✓ Players · Find a player (search box, and your squads)
+- [x] *markdown* Player — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *title* Pick a player — ✓ Players · Find a player (search box, and your squads)
+- [x] *markdown* Type a name in the box above. Every player who has batted or bowled in this career is listed. — ✓ Players · Find a player (search box, and your squads)
 
 **Shown on the page with player S Gill** (117 things)
 
-- [ ] *selectbox* Player [587 options: A Afridi, A Ahmed, A Auguste, A Awais, A Azad, A Badoni, A Basith, A Carey…]
-- [ ] *markdown* Gujarat Titans · India
-- [ ] *title* S Gill
-- [ ] *markdown* 16 matches in 3 sections. Pick a section below; every figure on this page is for that section only.
-- [ ] *markdown* Matches 16
-- [ ] *markdown* Runs 825
-- [ ] *markdown* Best score 211*
-- [ ] *markdown* Wickets 0
-- [ ] *markdown* Best bowling –
-- [ ] *markdown* Badges 4
-- [ ] *markdown* Last 10 innings: 🏅 Three 50s in a row 🏅 150 in a one-day game ×2 🏅 One-day double hundred
-- [ ] *markdown* **Batting and fielding · every section**
-- [ ] *table* 3 rows · columns: section, Mat, Inns, NO, Runs, HS, Avg, BF, SR, 100, 50, 0, 4s, 6s, Ct, St
-- [ ] *caption* Hasn't bowled.
-- [ ] *caption* Same columns in every section. Hover a column name for what it means. Maidens are only printed on longer-format scorecards and dot balls only on T20 and Hundred scorecards, so one of them is blank.
-- [ ] *markdown* **Every format side by side** · each against the average player in that format, so they can be compared
-- [ ] *markdown* Format Mat Runs Avg Avg v average SR SR v average Wkts Bowl avg Bowl avg v average Indian Premier League 11 321 29.2 +38% 163.8 +14% 0 – – ⭐ ODIs 3 472 472.0 +1310% 133.3 +39% 0 – – T20Is 2 32 16.0 -29% 160.0 +8% 0 – –
-- [ ] *markdown* What it shows: Best format: ODIs, where they are +1310% better than the average player. What it's for: Compares formats fairly: a 35 average is great in T20 but ordinary in Tests, so each format is measured against its own average (bowling: lower average is better, so + means better).
-- [ ] *expander* Career journey · every team and competition, in order
-- [ ] *table* 4 rows · columns: From, To, Team, Section, Season, Matches, Runs, Wickets
-- [ ] *selectbox* Section [3 options: Indian Premier League, ODIs, T20Is]
-- [ ] *selectbox* Season [2 options: All seasons, 2026]
-- [ ] *markdown* Opener Role in ODIs, from where they bat (usually no. 1) and how much they bowl
-- [ ] *tab* Batting
-- [ ] *markdown* Innings 3
-- [ ] *markdown* Runs 472
-- [ ] *markdown* Average 472.00
-- [ ] *markdown* Strike rate 133.3
-- [ ] *markdown* High score 211*
-- [ ] *markdown* 100s / 50s 3 / 0
-- [ ] *markdown* **Form: every innings**
-- [ ] *chart* 2 series · x: Innings, in order · y: Runs
-- [ ] *markdown* Grey bars : runs in each innings, oldest on the left. Blue line : average over the last 10 innings (5 for a shorter career). Rising means in form, falling means out of form. Dashed line : average over every innings shown.
-- [ ] *markdown* What it shows: 3 innings. Their last 3 average 472.0 against 472.0 overall (+0%). What it's for: Shows whether they are in form right now, not just how good they are over the whole career.
-- [ ] *markdown* **Season by season · runs**
-- [ ] *chart* 1 series · x: Runs
-- [ ] *markdown* What it shows: Most runs in 2026: 472 (100% of their 472 here), average 472.0. What it's for: Shows whether they are getting better or fading, season by season.
-- [ ] *markdown* **How they get out**
-- [ ] *chart* 1 series · x: Dismissals
-- [ ] *markdown* What it shows: 100% of their 1 dismissals are bowled. What it's for: How bowlers get them out: a weakness to work on with your own players, or to attack in an opponent.
-- [ ] *markdown* **Danger zones** · when they get out (share of their dismissals in each score band)
-- [ ] *chart* 2 series · x: % of dismissals · series: Every batter here, S Gill
-- [ ] *markdown* What it shows: 0% of their 1 dismissals come before 10 (every batter here: 34%). Their most dangerous band compared with others is 100+: 100% against 3%. What it's for: Shows when to attack this batter (or when to protect your own): a big share early means they're vulnerable before they're set. The bands follow the format.
-- [ ] *markdown* **Conversion** · % of innings reaching each score; the key marks for this format in colour
-- [ ] *chart* 2 series · x: Score reached · y: % of innings · series: This player, Every batter here
-- [ ] *markdown* What it shows: They reach 30 in 100% of innings (everyone: 35%). 100% of their 30s became 50s (everyone: 59%); 100% of their 50s became 80s (everyone: 25%); 100% of their 80s became 100s (everyone: 71%). What it's for: Shows whether they turn starts into big scores. Key marks: 30, 50, 80, 100 in this format; the grey dots are every batter here.
-- [ ] *markdown* **Every season in ODIs** · the same columns as the table at the top
-- [ ] *table* 1 rows · columns: season, Mat, Inns, NO, Runs, HS, Avg, BF, SR, 100, 50, 0, 4s, 6s, Ct, St
-- [ ] *subheader* Average in different situations
-- [ ] *caption* Each chart splits the same innings one way. The dashed line is their overall average (472.0).
-- [ ] *markdown* **Batting first or chasing**
-- [ ] *chart* 1 series · x: Average
-- [ ] *markdown* What it shows: Best batting first: 311.0 (-34% on their 472.0 overall). What it's for: Shows whether they are better at setting a total or chasing one.
-- [ ] *markdown* **Home or away**
-- [ ] *chart* 1 series · x: Average
-- [ ] *markdown* What it shows: Best home: 261.0 (-45% on their 472.0 overall). What it's for: Shows how much home conditions help them.
-- [ ] *markdown* **In wins, defeats and draws**
-- [ ] *chart* 1 series · x: Average
-- [ ] *markdown* What it shows: Best won: 472.0 (+0% on their 472.0 overall). What it's for: Shows whether their runs come when the team wins, or when the game is already lost.
-- [ ] *markdown* **Against stronger or weaker teams**
-- [ ] *chart* 1 series · x: Average
-- [ ] *markdown* What it shows: Best weaker half: 261.0 (-45% on their 472.0 overall). What it's for: Shows whether they score against the good sides too, or fill their boots against the weak ones.
-- [ ] *markdown* **Stronger and weaker teams** · teams ranked by their win % in this section; the top half are the stronger teams. Stronger half: England, India, Ireland, New Zealand.
-- [ ] *markdown* **Average at each batting position** · compared with the average batter at that position
-- [ ] *chart* 2 series · x: Average · series: Average batter there, S Gill
-- [ ] *markdown* What it shows: They have batted in only one position with 3+ innings so far. What it's for: Tells you where to bat them: blue is them, grey the average batter in that position.
-- [ ] *subheader* When they came in
-- [ ] *markdown* **Average by the situation they walked into**
-- [ ] *chart* 1 series · x: Average
-- [ ] *markdown* What it shows: Best opening the innings: 472.0 (+0% on their 472.0 overall). On average they came in at 0 for 0. What it's for: Shows whether they handle pressure. The score comes from the fall of wickets: the number 5 walks in when the 3rd wicket falls.
-- [ ] *markdown* **Best rescue innings** · came in with 3 or more down for 60 or fewer
-- [ ] *caption* No innings started in that kind of trouble yet.
-- [ ] *markdown* **Consistency**
-- [ ] *markdown* 30+ scores 100%
-- [ ] *markdown* Single figures 0%
-- [ ] *markdown* Golden ducks 0
-- [ ] *markdown* 50s → 100s 100%
-- [ ] *caption* '30+ scores' is how often they pass 30, a decent score in this format. 'Single figures' is how often they're out for under 10. A golden duck is out first ball. '50s → 100s' is how often a fifty is turned into a hundred.
-- [ ] *markdown* **Nemesis** · bowlers who have dismissed them most
-- [ ] *chart* 1 series · x: Times dismissed
-- [ ] *markdown* What it shows: A Hosein has got them out 1 time, 100% of their 1 dismissals. What it's for: The bowlers who have their number: keep them away from these bowlers, or bring these bowlers on when this batter comes in.
-- [ ] *markdown* **Streaks** · innings in a row
-- [ ] *table* 5 rows · columns: Streak, Longest, Current
-- [ ] *caption* Current = the run they're on now, counting back from their latest innings here.
-- [ ] *markdown* **When chasing** · batting in the last innings of the match
-- [ ] *markdown* Chases won 1
-- [ ] *markdown* Average in wins –
-- [ ] *markdown* Chases lost 0
-- [ ] *markdown* Average in defeats –
-- [ ] *caption* Not out at the end of 1 winning chase: still there when the runs were knocked off.
-- [ ] *markdown* **Against each team** · average
-- [ ] *chart* 1 series · x: Average
-- [ ] *markdown* What it shows: Best west indies: 261.0 (-45% on their 472.0 overall). (teams they have batted against at least twice) What it's for: Shows which opponents they like and which ones keep them quiet.
-- [ ] *tab* Fielding
-- [ ] *markdown* Matches 3
-- [ ] *markdown* Catches 3
-- [ ] *markdown* Stumpings 0
-- [ ] *caption* Catches and stumpings are credited under the player's own name, so 'c de Kock' counts for Q de Kock. Run outs aren't credited to fielders because the scorecard doesn't name them.
-- [ ] *tab* Story
-- [ ] *markdown* **Match impact** · one number per match in ODIs (batting, bowling and fielding together)
-- [ ] *chart* 1 series · x: Match (oldest first) · y: Match impact
-- [ ] *markdown* What it shows: Average 188 a match, number 2 of the 48 players here with 3+ matches. Best: 252 v England (211 runs, 0 wkts). Blue bars are wins. What it's for: Puts batting, bowling and fielding on one scale: runs, plus each wicket worth the section's runs per wicket, with scoring speed and economy counted in white-ball cricket.
-- [ ] *markdown* **Rank over time** · where they finished in ODIs each season
-- [ ] *chart* 1 series · x: Season · y: Rank in the section (1 = top) · series: Rank by runs
-- [ ] *markdown* What it shows: In 2027: no runs or wickets. Peak: 1. What it's for: A career story at a glance: when they peaked and whether they're climbing or fading.
-- [ ] *markdown* **Milestones** · how many innings it took, and the rank among everyone here who got there
-- [ ] *caption* No milestone reached here yet.
-- [ ] *markdown* **Badges** · special feats, with the rules for each format
-- [ ] *markdown* Badge Match 🏅 Three 50s in a row ODIs 03 Oct 2026 🏅 150 in a one-day game 161* 01 Oct 2026 🏅 150 in a one-day game 211* 16 Jul 2026 🏅 One-day double hundred 211* 16 Jul 2026
-- [ ] *markdown* **Career firsts** · every competition
-- [ ] *markdown* Date Match 11 Mar 2026 First match for India v Australia 11 Mar 2026 First run v Australia 31 Mar 2026 First match in Indian Premier League for Gujarat Titans v Punjab Kings 17 Apr 2026 First fifty 91 (50 balls) v Kolkata Knight Riders 17 Apr 2026 First Player of the Match v Kolkata Knight Riders 16 Jul 2026 First match in ODIs for India v England 16 Jul 2026 First hundred 211* (152 balls) v Engla
-- [ ] *markdown* **When S Gill fires** · their team's win % in ODIs
-- [ ] *markdown* Times Win % then Win % otherwise 50+ with the bat 3 100% –
-- [ ] *markdown* **Odd ones**
-- [ ] *markdown* 🛡️ Not out in 2 of 3 innings (67%). 🏋️ Makes 47.5% of their team's runs in the innings they bat. 💯➡️ After a hundred: 161*, 100 (average 261.0 against 472.0 overall).
-- [ ] *markdown* **Compare two seasons** · ODIs
-- [ ] *caption* Only one season in this section so far.
+- [x] *selectbox* Player [587 options: A Afridi, A Ahmed, A Auguste, A Awais, A Azad, A Badoni, A Basith, A Carey…] — ✓ Players · Find a player (search box, and your squads)
+- [x] *markdown* Gujarat Titans · India — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *title* S Gill — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* 16 matches in 3 sections. Pick a section below; every figure on this page is for that section only. — ✓ Players · the top of the page (matches and competitions) and the line under the competition picker
+- [x] *markdown* Matches 16 — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* Runs 825 — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* Best score 211* — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* Wickets 0 — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* Best bowling – — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* Badges 4 — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* Last 10 innings: 🏅 Three 50s in a row 🏅 150 in a one-day game ×2 🏅 One-day double hundred — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* **Batting and fielding · every section** — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *table* 3 rows · columns: section, Mat, Inns, NO, Runs, HS, Avg, BF, SR, 100, 50, 0, 4s, 6s, Ct, St — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *caption* Hasn't bowled. — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *caption* Same columns in every section. Hover a column name for what it means. Maidens are only printed on longer-format scorecards and dot balls only on T20 and Hundred scorecards, so one of them is blank. — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* **Every format side by side** · each against the average player in that format, so they can be compared — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* Format Mat Runs Avg Avg v average SR SR v average Wkts Bowl avg Bowl avg v average Indian Premier League 11 321 29.2 +38% 163.8 +14% 0 – – ⭐ ODIs 3 472 472.0 +1310% 133.3 +39% 0 – – T20Is 2 32 16.0 -29% 160.0 +8% 0 – – — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* What it shows: Best format: ODIs, where they are +1310% better than the average player. What it's for: Compares formats fairly: a 35 average is great in T20 but ordinary in Tests, so each format is measured against its own average (bowling: lower average is better, so + means better). — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *expander* Career journey · every team and competition, in order — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *table* 4 rows · columns: From, To, Team, Section, Season, Matches, Runs, Wickets — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *selectbox* Section [3 options: Indian Premier League, ODIs, T20Is] — ✓ Players · the competition and season pickers
+- [x] *selectbox* Season [2 options: All seasons, 2026] — ✓ Players · the competition and season pickers
+- [x] *markdown* Opener Role in ODIs, from where they bat (usually no. 1) and how much they bowl — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *tab* Batting — ✓ Players · the Batting tab
+- [x] *markdown* Innings 3 — ✓ Players · the Batting tab
+- [x] *markdown* Runs 472 — ✓ Players · the Batting tab
+- [x] *markdown* Average 472.00 — ✓ Players · the Batting tab
+- [x] *markdown* Strike rate 133.3 — ✓ Players · the Batting tab
+- [x] *markdown* High score 211* — ✓ Players · the Batting tab
+- [x] *markdown* 100s / 50s 3 / 0 — ✓ Players · the Batting tab
+- [x] *markdown* **Form: every innings** — ✓ Players · the Batting tab
+- [x] *chart* 2 series · x: Innings, in order · y: Runs — ✓ Players · the Batting tab
+- [x] *markdown* Grey bars : runs in each innings, oldest on the left. Blue line : average over the last 10 innings (5 for a shorter career). Rising means in form, falling means out of form. Dashed line : average over every innings shown. — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: 3 innings. Their last 3 average 472.0 against 472.0 overall (+0%). What it's for: Shows whether they are in form right now, not just how good they are over the whole career. — ✓ Players · the Batting tab
+- [x] *markdown* **Season by season · runs** — ✓ Players · the Batting tab
+- [x] *chart* 1 series · x: Runs — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: Most runs in 2026: 472 (100% of their 472 here), average 472.0. What it's for: Shows whether they are getting better or fading, season by season. — ✓ Players · the Batting tab
+- [x] *markdown* **How they get out** — ✓ Players · the Batting tab
+- [x] *chart* 1 series · x: Dismissals — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: 100% of their 1 dismissals are bowled. What it's for: How bowlers get them out: a weakness to work on with your own players, or to attack in an opponent. — ✓ Players · the Batting tab
+- [x] *markdown* **Danger zones** · when they get out (share of their dismissals in each score band) — ✓ Players · the Batting tab
+- [x] *chart* 2 series · x: % of dismissals · series: Every batter here, S Gill — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: 0% of their 1 dismissals come before 10 (every batter here: 34%). Their most dangerous band compared with others is 100+: 100% against 3%. What it's for: Shows when to attack this batter (or when to protect your own): a big share early means they're vulnerable before they're set. The bands follow the format. — ✓ Players · the Batting tab
+- [x] *markdown* **Conversion** · % of innings reaching each score; the key marks for this format in colour — ✓ Players · the Batting tab
+- [x] *chart* 2 series · x: Score reached · y: % of innings · series: This player, Every batter here — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: They reach 30 in 100% of innings (everyone: 35%). 100% of their 30s became 50s (everyone: 59%); 100% of their 50s became 80s (everyone: 25%); 100% of their 80s became 100s (everyone: 71%). What it's for: Shows whether they turn starts into big scores. Key marks: 30, 50, 80, 100 in this format; the grey dots are every batter here. — ✓ Players · the Batting tab
+- [x] *markdown* **Every season in ODIs** · the same columns as the table at the top — ✓ Players · the Batting tab
+- [x] *table* 1 rows · columns: season, Mat, Inns, NO, Runs, HS, Avg, BF, SR, 100, 50, 0, 4s, 6s, Ct, St — ✓ Players · the Batting tab
+- [x] *subheader* Average in different situations — ✓ Players · the Batting tab
+- [x] *caption* Each chart splits the same innings one way. The dashed line is their overall average (472.0). — ✓ Players · the Batting tab
+- [x] *markdown* **Batting first or chasing** — ✓ Players · the Batting tab
+- [x] *chart* 1 series · x: Average — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: Best batting first: 311.0 (-34% on their 472.0 overall). What it's for: Shows whether they are better at setting a total or chasing one. — ✓ Players · the Batting tab
+- [x] *markdown* **Home or away** — ✓ Players · the Batting tab
+- [x] *chart* 1 series · x: Average — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: Best home: 261.0 (-45% on their 472.0 overall). What it's for: Shows how much home conditions help them. — ✓ Players · the Batting tab
+- [x] *markdown* **In wins, defeats and draws** — ✓ Players · the Batting tab
+- [x] *chart* 1 series · x: Average — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: Best won: 472.0 (+0% on their 472.0 overall). What it's for: Shows whether their runs come when the team wins, or when the game is already lost. — ✓ Players · the Batting tab
+- [x] *markdown* **Against stronger or weaker teams** — ✓ Players · the Batting tab
+- [x] *chart* 1 series · x: Average — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: Best weaker half: 261.0 (-45% on their 472.0 overall). What it's for: Shows whether they score against the good sides too, or fill their boots against the weak ones. — ✓ Players · the Batting tab
+- [x] *markdown* **Stronger and weaker teams** · teams ranked by their win % in this section; the top half are the stronger teams. Stronger half: England, India, Ireland, New Zealand. — ✓ Players · the Batting tab
+- [x] *markdown* **Average at each batting position** · compared with the average batter at that position — ✓ Players · the Batting tab
+- [x] *chart* 2 series · x: Average · series: Average batter there, S Gill — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: They have batted in only one position with 3+ innings so far. What it's for: Tells you where to bat them: blue is them, grey the average batter in that position. — ✓ Players · the Batting tab
+- [x] *subheader* When they came in — ✓ Players · the Batting tab
+- [x] *markdown* **Average by the situation they walked into** — ✓ Players · the Batting tab
+- [x] *chart* 1 series · x: Average — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: Best opening the innings: 472.0 (+0% on their 472.0 overall). On average they came in at 0 for 0. What it's for: Shows whether they handle pressure. The score comes from the fall of wickets: the number 5 walks in when the 3rd wicket falls. — ✓ Players · the Batting tab
+- [x] *markdown* **Best rescue innings** · came in with 3 or more down for 60 or fewer — ✓ Players · the Batting tab
+- [x] *caption* No innings started in that kind of trouble yet. — ✓ Players · the Batting tab
+- [x] *markdown* **Consistency** — ✓ Players · the Batting tab
+- [x] *markdown* 30+ scores 100% — ✓ Players · the Batting tab
+- [x] *markdown* Single figures 0% — ✓ Players · the Batting tab
+- [x] *markdown* Golden ducks 0 — ✓ Players · the Batting tab
+- [x] *markdown* 50s → 100s 100% — ✓ Players · the Batting tab
+- [x] *caption* '30+ scores' is how often they pass 30, a decent score in this format. 'Single figures' is how often they're out for under 10. A golden duck is out first ball. '50s → 100s' is how often a fifty is turned into a hundred. — ✓ Players · the Batting tab
+- [x] *markdown* **Nemesis** · bowlers who have dismissed them most — ✓ Players · the Batting tab
+- [x] *chart* 1 series · x: Times dismissed — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: A Hosein has got them out 1 time, 100% of their 1 dismissals. What it's for: The bowlers who have their number: keep them away from these bowlers, or bring these bowlers on when this batter comes in. — ✓ Players · the Batting tab
+- [x] *markdown* **Streaks** · innings in a row — ✓ Players · the Batting tab
+- [x] *table* 5 rows · columns: Streak, Longest, Current — ✓ Players · the Batting tab
+- [x] *caption* Current = the run they're on now, counting back from their latest innings here. — ✓ Players · the Batting tab
+- [x] *markdown* **When chasing** · batting in the last innings of the match — ✓ Players · the Batting tab
+- [x] *markdown* Chases won 1 — ✓ Players · the Batting tab
+- [x] *markdown* Average in wins – — ✓ Players · the Batting tab
+- [x] *markdown* Chases lost 0 — ✓ Players · the Batting tab
+- [x] *markdown* Average in defeats – — ✓ Players · the Batting tab
+- [x] *caption* Not out at the end of 1 winning chase: still there when the runs were knocked off. — ✓ Players · the Batting tab
+- [x] *markdown* **Against each team** · average — ✓ Players · the Batting tab
+- [x] *chart* 1 series · x: Average — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: Best west indies: 261.0 (-45% on their 472.0 overall). (teams they have batted against at least twice) What it's for: Shows which opponents they like and which ones keep them quiet. — ✓ Players · the Batting tab
+- [x] *tab* Fielding — ✓ Players · the Fielding tab
+- [x] *markdown* Matches 3 — ✓ Players · the Fielding tab
+- [x] *markdown* Catches 3 — ✓ Players · the Fielding tab
+- [x] *markdown* Stumpings 0 — ✓ Players · the Fielding tab
+- [x] *caption* Catches and stumpings are credited under the player's own name, so 'c de Kock' counts for Q de Kock. Run outs aren't credited to fielders because the scorecard doesn't name them. — ✓ Players · the Fielding tab
+- [x] *tab* Story — ✓ Players · the Story tab
+- [x] *markdown* **Match impact** · one number per match in ODIs (batting, bowling and fielding together) — ✓ Players · the Story tab
+- [x] *chart* 1 series · x: Match (oldest first) · y: Match impact — ✓ Players · the Story tab
+- [x] *markdown* What it shows: Average 188 a match, number 2 of the 48 players here with 3+ matches. Best: 252 v England (211 runs, 0 wkts). Blue bars are wins. What it's for: Puts batting, bowling and fielding on one scale: runs, plus each wicket worth the section's runs per wicket, with scoring speed and economy counted in white-ball cricket. — ✓ Players · the Story tab
+- [x] *markdown* **Rank over time** · where they finished in ODIs each season — ✓ Players · the Story tab
+- [x] *chart* 1 series · x: Season · y: Rank in the section (1 = top) · series: Rank by runs — ✓ Players · the Story tab
+- [x] *markdown* What it shows: In 2027: no runs or wickets. Peak: 1. What it's for: A career story at a glance: when they peaked and whether they're climbing or fading. — ✓ Players · the Story tab
+- [x] *markdown* **Milestones** · how many innings it took, and the rank among everyone here who got there — ✓ Players · the Story tab
+- [x] *caption* No milestone reached here yet. — ✓ Players · the Story tab
+- [x] *markdown* **Badges** · special feats, with the rules for each format — ✓ Players · the Story tab
+- [x] *markdown* Badge Match 🏅 Three 50s in a row ODIs 03 Oct 2026 🏅 150 in a one-day game 161* 01 Oct 2026 🏅 150 in a one-day game 211* 16 Jul 2026 🏅 One-day double hundred 211* 16 Jul 2026 — ✓ Players · the Story tab
+- [x] *markdown* **Career firsts** · every competition — ✓ Players · the Story tab
+- [x] *markdown* Date Match 11 Mar 2026 First match for India v Australia 11 Mar 2026 First run v Australia 31 Mar 2026 First match in Indian Premier League for Gujarat Titans v Punjab Kings 17 Apr 2026 First fifty 91 (50 balls) v Kolkata Knight Riders 17 Apr 2026 First Player of the Match v Kolkata Knight Riders 16 Jul 2026 First match in ODIs for India v England 16 Jul 2026 First hundred 211* (152 balls) v Engla — ✓ Players · the Story tab
+- [x] *markdown* **When S Gill fires** · their team's win % in ODIs — ✓ Players · the Story tab
+- [x] *markdown* Times Win % then Win % otherwise 50+ with the bat 3 100% – — ✓ Players · the Story tab
+- [x] *markdown* **Odd ones** — ✓ Players · the Story tab
+- [x] *markdown* 🛡️ Not out in 2 of 3 innings (67%). 🏋️ Makes 47.5% of their team's runs in the innings they bat. 💯➡️ After a hundred: 161*, 100 (average 261.0 against 472.0 overall). — ✓ Players · the Story tab
+- [x] *markdown* **Compare two seasons** · ODIs — ✓ Players · the Story tab
+- [x] *caption* Only one season in this section so far. — ✓ Players · the Story tab
 
 **Shown on the page with player J Archer** (153 things)
 
-- [ ] *selectbox* Player [587 options: A Afridi, A Ahmed, A Auguste, A Awais, A Azad, A Badoni, A Basith, A Carey…]
-- [ ] *markdown* England · Rajasthan Royals · Southern Brave
-- [ ] *title* J Archer
-- [ ] *markdown* 17 matches in 5 sections. Pick a section below; every figure on this page is for that section only.
-- [ ] *markdown* Matches 17
-- [ ] *markdown* Runs 133
-- [ ] *markdown* Best score 39
-- [ ] *markdown* Wickets 40
-- [ ] *markdown* Best bowling 6/73
-- [ ] *markdown* Badges 0
-- [ ] *markdown* Last 10 innings:
-- [ ] *markdown* **Batting and fielding · every section**
-- [ ] *table* 5 rows · columns: section, Mat, Inns, NO, Runs, HS, Avg, BF, SR, 100, 50, 0, 4s, 6s, Ct, St
-- [ ] *markdown* **Bowling · every section**
-- [ ] *table* 5 rows · columns: section, Mat, Inns, Overs, Mdns, Dots, Runs, Wkts, BBI, BBM, Avg, Econ, SR, 4w, 5w, 10m
-- [ ] *caption* Same columns in every section. Hover a column name for what it means. Maidens are only printed on longer-format scorecards and dot balls only on T20 and Hundred scorecards, so one of them is blank.
-- [ ] *markdown* **Every format side by side** · each against the average player in that format, so they can be compared
-- [ ] *markdown* Format Mat Runs Avg Avg v average SR SR v average Wkts Bowl avg Bowl avg v average Indian Premier League 8 38 6.3 -70% 97.4 -32% 13 20.2 +11% ODIs 4 16 – – 123.1 +28% 8 29.5 +17% ⭐ Tests 3 49 12.2 -61% 58.3 -1% 15 16.7 +90% T20Is 1 5 – – 125.0 -16% 2 28.5 -12% The Hundred 1 25 25.0 +28% 138.9 -7% 2 15.0 +37%
-- [ ] *markdown* What it shows: Best format: Tests, where they are +90% better than the average player. What it's for: Compares formats fairly: a 35 average is great in T20 but ordinary in Tests, so each format is measured against its own average (bowling: lower average is better, so + means better).
-- [ ] *expander* Career journey · every team and competition, in order
-- [ ] *table* 6 rows · columns: From, To, Team, Section, Season, Matches, Runs, Wickets
-- [ ] *selectbox* Section [5 options: Indian Premier League, ODIs, Tests, T20Is, The Hundred]
-- [ ] *selectbox* Season [3 options: All seasons, 2027, 2026]
-- [ ] *markdown* Bowler Role in ODIs, from where they bat (usually no. 11) and how much they bowl
-- [ ] *tab* Bowling
-- [ ] *markdown* Wickets 8
-- [ ] *markdown* Average 29.50
-- [ ] *markdown* Economy 5.90
-- [ ] *markdown* Strike rate 30.0
-- [ ] *markdown* Best 3/59
-- [ ] *markdown* 4+ hauls 0
-- [ ] *markdown* **Form: wickets in every innings bowled**
-- [ ] *chart* 2 series · x: Innings, in order · y: Wickets
-- [ ] *markdown* Grey bars : wickets in each innings bowled. Blue line : wickets per innings over the last 10 (5 for a shorter career). Dashed line : wickets per innings over everything shown.
-- [ ] *markdown* What it shows: 4 innings bowled. Their last 4 average 2.00 wickets an innings against 2.00 overall (+0%). What it's for: Shows whether they are taking wickets right now, not just over the whole career.
-- [ ] *markdown* **Season by season · wickets**
-- [ ] *chart* 1 series · x: Wickets
-- [ ] *markdown* What it shows: Most wickets in 2027: 7 (88% of their 8 here), economy 6.40. What it's for: Shows whether they are getting better or fading, season by season.
-- [ ] *markdown* **How they take wickets**
-- [ ] *chart* 1 series · x: Wickets
-- [ ] *markdown* What it shows: 62% of their 8 wickets are caught. What it's for: How they get batters out: bowled and lbw mean they hit the stumps; catches mean they need the fielders, so set the field for them.
-- [ ] *markdown* **With and without wickets** · their spells split by whether they took a wicket
-- [ ] *markdown* Spells Wkts Econ Maidens per 10 overs Took a wicket 4 8 5.90 – Wicketless 0 0 – –
-- [ ] *markdown* **Every season in ODIs** · the same columns as the table at the top
-- [ ] *table* 2 rows · columns: season, Mat, Inns, Overs, Mdns, Dots, Runs, Wkts, BBI, BBM, Avg, Econ, SR, 4w, 5w, 10m
-- [ ] *markdown* **Quality of wickets** · where in the order their victims bat
-- [ ] *chart* 1 series · x: Wickets
-- [ ] *markdown* What it shows: 50% of their 8 wickets are specialist batters (positions 1-7): 3 top order, 1 middle order, 4 tail. What it's for: Shows whether their wickets are the ones that matter or mostly tail-enders.
-- [ ] *markdown* **Bunnies** · batters they have dismissed most
-- [ ] *chart* 1 series · x: Times dismissed
-- [ ] *markdown* What it shows: They have got B Ahern out 1 time, 12% of their 8 wickets. What it's for: The batters they have the wood on: bring them on when these batters come in.
-- [ ] *markdown* **Streaks** · innings bowled in a row
-- [ ] *table* 4 rows · columns: Streak, Longest, Current
-- [ ] *markdown* **Bowling first or second** · economy
-- [ ] *chart* 1 series · x: Economy (runs per over)
-- [ ] *markdown* What it shows: Best their side bowled first: 5.90 (+0% on their 5.90 overall). Lower is better. What it's for: Shows whether they bowl better defending a total or chasing one.
-- [ ] *markdown* **Against each team** · economy
-- [ ] *chart* 1 series · x: Economy (runs per over)
-- [ ] *markdown* What it shows: Best india: 4.40 (-25% on their 5.90 overall); worst south africa: 7.10 (+20%). Lower is better. What it's for: Shows which teams they keep quiet and which ones get after them.
-- [ ] *tab* Fielding
-- [ ] *markdown* Matches 4
-- [ ] *markdown* Catches 0
-- [ ] *markdown* Stumpings 0
-- [ ] *caption* Catches and stumpings are credited under the player's own name, so 'c de Kock' counts for Q de Kock. Run outs aren't credited to fielders because the scorecard doesn't name them.
-- [ ] *tab* Batting
-- [ ] *markdown* Innings 2
-- [ ] *markdown* Runs 16
-- [ ] *markdown* Average –
-- [ ] *markdown* Strike rate 123.1
-- [ ] *markdown* High score 16*
-- [ ] *markdown* 100s / 50s 0 / 0
-- [ ] *markdown* **Form: every innings**
-- [ ] *chart* 2 series · x: Innings, in order · y: Runs
-- [ ] *markdown* Grey bars : runs in each innings, oldest on the left. Blue line : average over the last 10 innings (5 for a shorter career). Rising means in form, falling means out of form. Dashed line : average over every innings shown.
-- [ ] *markdown* What it shows: 2 innings, never dismissed. What it's for: Shows whether they are in form right now, not just how good they are over the whole career.
-- [ ] *markdown* **Season by season · runs**
-- [ ] *chart* 1 series · x: Runs
-- [ ] *markdown* What it shows: Most runs in 2026: 16 (100% of their 16 here), average –. What it's for: Shows whether they are getting better or fading, season by season.
-- [ ] *markdown* **How they get out**
-- [ ] *caption* Never dismissed.
-- [ ] *markdown* **Danger zones** · when they get out (share of their dismissals in each score band)
-- [ ] *caption* Never dismissed here.
-- [ ] *markdown* **Conversion** · % of innings reaching each score; the key marks for this format in colour
-- [ ] *chart* 2 series · x: Score reached · y: % of innings · series: This player, Every batter here
-- [ ] *markdown* What it shows: They reach 30 in 0% of innings (everyone: 35%). What it's for: Shows whether they turn starts into big scores. Key marks: 30, 50, 80, 100 in this format; the grey dots are every batter here.
-- [ ] *markdown* **Every season in ODIs** · the same columns as the table at the top
-- [ ] *table* 2 rows · columns: season, Mat, Inns, NO, Runs, HS, Avg, BF, SR, 100, 50, 0, 4s, 6s, Ct, St
-- [ ] *subheader* Average in different situations
-- [ ] *caption* Each chart splits the same innings one way. The dashed line is their overall average (–).
-- [ ] *markdown* **Batting first or chasing**
-- [ ] *chart* 1 series · x: Average
-- [ ] *markdown* What it shows: Not enough innings to compare yet. What it's for: Shows whether they are better at setting a total or chasing one.
-- [ ] *markdown* **Home or away**
-- [ ] *chart* 1 series · x: Average
-- [ ] *markdown* What it shows: Not enough innings to compare yet. What it's for: Shows how much home conditions help them.
-- [ ] *markdown* **In wins, defeats and draws**
-- [ ] *chart* 1 series · x: Average
-- [ ] *markdown* What it shows: Not enough innings to compare yet. What it's for: Shows whether their runs come when the team wins, or when the game is already lost.
-- [ ] *markdown* **Against stronger or weaker teams**
-- [ ] *chart* 1 series · x: Average
-- [ ] *markdown* What it shows: Not enough innings to compare yet. What it's for: Shows whether they score against the good sides too, or fill their boots against the weak ones.
-- [ ] *markdown* **Stronger and weaker teams** · teams ranked by their win % in this section; the top half are the stronger teams. Stronger half: England, India, Ireland, New Zealand.
-- [ ] *markdown* **Average at each batting position** · compared with the average batter at that position
-- [ ] *chart* 2 series · x: Average · series: Average batter there, J Archer
-- [ ] *markdown* What it shows: They have batted in only one position with 3+ innings so far. What it's for: Tells you where to bat them: blue is them, grey the average batter in that position.
-- [ ] *subheader* When they came in
-- [ ] *markdown* **Average by the situation they walked into**
-- [ ] *chart* 1 series · x: Average
-- [ ] *markdown* What it shows: Not enough innings to compare yet. On average they came in at 232 for 8.5. What it's for: Shows whether they handle pressure. The score comes from the fall of wickets: the number 5 walks in when the 3rd wicket falls.
-- [ ] *markdown* **Best rescue innings** · came in with 3 or more down for 60 or fewer
-- [ ] *caption* No innings started in that kind of trouble yet.
-- [ ] *markdown* **Consistency**
-- [ ] *markdown* 30+ scores 0%
-- [ ] *markdown* Single figures 0%
-- [ ] *markdown* Golden ducks 0
-- [ ] *markdown* 50s → 100s –
-- [ ] *caption* '30+ scores' is how often they pass 30, a decent score in this format. 'Single figures' is how often they're out for under 10. A golden duck is out first ball. '50s → 100s' is how often a fifty is turned into a hundred.
-- [ ] *markdown* **Nemesis** · bowlers who have dismissed them most
-- [ ] *caption* No bowler has dismissed them yet.
-- [ ] *markdown* **Streaks** · innings in a row
-- [ ] *table* 5 rows · columns: Streak, Longest, Current
-- [ ] *caption* Current = the run they're on now, counting back from their latest innings here.
-- [ ] *markdown* **When chasing** · batting in the last innings of the match
-- [ ] *markdown* Chases won 1
-- [ ] *markdown* Average in wins –
-- [ ] *markdown* Chases lost 1
-- [ ] *markdown* Average in defeats –
-- [ ] *caption* Not out at the end of 1 winning chase: still there when the runs were knocked off.
-- [ ] *markdown* **Against each team** · average
-- [ ] *chart* 1 series · x: Average
-- [ ] *markdown* What it shows: Not enough innings to compare yet. (teams they have batted against at least twice) What it's for: Shows which opponents they like and which ones keep them quiet.
-- [ ] *tab* Story
-- [ ] *markdown* **Match impact** · one number per match in ODIs (batting, bowling and fielding together)
-- [ ] *chart* 1 series · x: Match (oldest first) · y: Match impact
-- [ ] *markdown* What it shows: Average 73 a match, number 11 of the 48 players here with 3+ matches. Best: 103 v Sri Lanka (0 runs, 3 wkts). Blue bars are wins. What it's for: Puts batting, bowling and fielding on one scale: runs, plus each wicket worth the section's runs per wicket, with scoring speed and economy counted in white-ball cricket.
-- [ ] *markdown* **Rank over time** · where they finished in ODIs each season
-- [ ] *chart* 2 series · x: Season · y: Rank in the section (1 = top) · series: Rank by runs, Rank by wickets
-- [ ] *markdown* What it shows: In 2027: 62 of 64 for runs, 2 of 24 for wickets. Peak: 62. What it's for: A career story at a glance: when they peaked and whether they're climbing or fading.
-- [ ] *markdown* **Milestones** · how many innings it took, and the rank among everyone here who got there
-- [ ] *caption* No milestone reached here yet.
-- [ ] *markdown* **Badges** · special feats, with the rules for each format
-- [ ] *caption* No badges yet: a T20 hundred, a five-for, a Test double hundred or ten in a match earns one.
-- [ ] *markdown* **Career firsts** · every competition
-- [ ] *markdown* Date Match 30 Mar 2026 First match for Rajasthan Royals v Chennai Super Kings 04 Apr 2026 First run v Gujarat Titans 04 Apr 2026 First wicket 1/29 v Gujarat Titans 07 Apr 2026 First three-for 3/43 v Mumbai Indians 07 Jul 2026 First match in T20Is for England v India 16 Jul 2026 First match in ODIs for England v India 01 Aug 2026 First match in The Hundred for Southern Brave v London Spirit 19 Aug
-- [ ] *markdown* **When J Archer fires** · their team's win % in ODIs
-- [ ] *caption* No 50+ scores or 4-wicket hauls here yet.
-- [ ] *markdown* **Odd ones**
-- [ ] *markdown* 🛡️ Not out in 2 of 2 innings (100%). 🏋️ Makes 3.2% of their team's runs in the innings they bat.
-- [ ] *markdown* **Compare two seasons** · ODIs
-- [ ] *selectbox* Season [2 options: 2027, 2026]
-- [ ] *selectbox* Against [1 options: 2026]
-- [ ] *markdown* 2027 2026 Batting Mat 3 1 Batting Inns 1 1 Batting Runs 0 ✓ 16 Batting Avg – – Batting SR 0.0 ✓ 145.5 Batting 100 0 0 Batting 50 0 0 Bowling Wkts ✓ 7 1 Bowling Avg ✓ 27.43 44.00 Bowling Econ 6.40 ✓ 4.40 Bowling SR ✓ 25.7 60.0
-- [ ] *caption* ✓ marks the better season on each (for bowling average, economy and strike rate, lower is better).
+- [x] *selectbox* Player [587 options: A Afridi, A Ahmed, A Auguste, A Awais, A Azad, A Badoni, A Basith, A Carey…] — ✓ Players · Find a player (search box, and your squads)
+- [x] *markdown* England · Rajasthan Royals · Southern Brave — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *title* J Archer — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* 17 matches in 5 sections. Pick a section below; every figure on this page is for that section only. — ✓ Players · the top of the page (matches and competitions) and the line under the competition picker
+- [x] *markdown* Matches 17 — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* Runs 133 — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* Best score 39 — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* Wickets 40 — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* Best bowling 6/73 — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* Badges 0 — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* Last 10 innings: — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* **Batting and fielding · every section** — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *table* 5 rows · columns: section, Mat, Inns, NO, Runs, HS, Avg, BF, SR, 100, 50, 0, 4s, 6s, Ct, St — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* **Bowling · every section** — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *table* 5 rows · columns: section, Mat, Inns, Overs, Mdns, Dots, Runs, Wkts, BBI, BBM, Avg, Econ, SR, 4w, 5w, 10m — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *caption* Same columns in every section. Hover a column name for what it means. Maidens are only printed on longer-format scorecards and dot balls only on T20 and Hundred scorecards, so one of them is blank. — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* **Every format side by side** · each against the average player in that format, so they can be compared — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* Format Mat Runs Avg Avg v average SR SR v average Wkts Bowl avg Bowl avg v average Indian Premier League 8 38 6.3 -70% 97.4 -32% 13 20.2 +11% ODIs 4 16 – – 123.1 +28% 8 29.5 +17% ⭐ Tests 3 49 12.2 -61% 58.3 -1% 15 16.7 +90% T20Is 1 5 – – 125.0 -16% 2 28.5 -12% The Hundred 1 25 25.0 +28% 138.9 -7% 2 15.0 +37% — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *markdown* What it shows: Best format: Tests, where they are +90% better than the average player. What it's for: Compares formats fairly: a 35 average is great in T20 but ordinary in Tests, so each format is measured against its own average (bowling: lower average is better, so + means better). — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *expander* Career journey · every team and competition, in order — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *table* 6 rows · columns: From, To, Team, Section, Season, Matches, Runs, Wickets — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *selectbox* Section [5 options: Indian Premier League, ODIs, Tests, T20Is, The Hundred] — ✓ Players · the competition and season pickers
+- [x] *selectbox* Season [3 options: All seasons, 2027, 2026] — ✓ Players · the competition and season pickers
+- [x] *markdown* Bowler Role in ODIs, from where they bat (usually no. 11) and how much they bowl — ✓ Players · the top of the page (career card, tables for every competition, every format, career journey)
+- [x] *tab* Bowling — ✓ Players · the Bowling tab
+- [x] *markdown* Wickets 8 — ✓ Players · the Bowling tab
+- [x] *markdown* Average 29.50 — ✓ Players · the Bowling tab
+- [x] *markdown* Economy 5.90 — ✓ Players · the Bowling tab
+- [x] *markdown* Strike rate 30.0 — ✓ Players · the Bowling tab
+- [x] *markdown* Best 3/59 — ✓ Players · the Bowling tab
+- [x] *markdown* 4+ hauls 0 — ✓ Players · the Bowling tab
+- [x] *markdown* **Form: wickets in every innings bowled** — ✓ Players · the Bowling tab
+- [x] *chart* 2 series · x: Innings, in order · y: Wickets — ✓ Players · the Bowling tab
+- [x] *markdown* Grey bars : wickets in each innings bowled. Blue line : wickets per innings over the last 10 (5 for a shorter career). Dashed line : wickets per innings over everything shown. — ✓ Players · the Bowling tab
+- [x] *markdown* What it shows: 4 innings bowled. Their last 4 average 2.00 wickets an innings against 2.00 overall (+0%). What it's for: Shows whether they are taking wickets right now, not just over the whole career. — ✓ Players · the Bowling tab
+- [x] *markdown* **Season by season · wickets** — ✓ Players · the Bowling tab
+- [x] *chart* 1 series · x: Wickets — ✓ Players · the Bowling tab
+- [x] *markdown* What it shows: Most wickets in 2027: 7 (88% of their 8 here), economy 6.40. What it's for: Shows whether they are getting better or fading, season by season. — ✓ Players · the Bowling tab
+- [x] *markdown* **How they take wickets** — ✓ Players · the Bowling tab
+- [x] *chart* 1 series · x: Wickets — ✓ Players · the Bowling tab
+- [x] *markdown* What it shows: 62% of their 8 wickets are caught. What it's for: How they get batters out: bowled and lbw mean they hit the stumps; catches mean they need the fielders, so set the field for them. — ✓ Players · the Bowling tab
+- [x] *markdown* **With and without wickets** · their spells split by whether they took a wicket — ✓ Players · the Bowling tab
+- [x] *markdown* Spells Wkts Econ Maidens per 10 overs Took a wicket 4 8 5.90 – Wicketless 0 0 – – — ✓ Players · the Bowling tab
+- [x] *markdown* **Every season in ODIs** · the same columns as the table at the top — ✓ Players · the Bowling tab
+- [x] *table* 2 rows · columns: season, Mat, Inns, Overs, Mdns, Dots, Runs, Wkts, BBI, BBM, Avg, Econ, SR, 4w, 5w, 10m — ✓ Players · the Bowling tab
+- [x] *markdown* **Quality of wickets** · where in the order their victims bat — ✓ Players · the Bowling tab
+- [x] *chart* 1 series · x: Wickets — ✓ Players · the Bowling tab
+- [x] *markdown* What it shows: 50% of their 8 wickets are specialist batters (positions 1-7): 3 top order, 1 middle order, 4 tail. What it's for: Shows whether their wickets are the ones that matter or mostly tail-enders. — ✓ Players · the Bowling tab
+- [x] *markdown* **Bunnies** · batters they have dismissed most — ✓ Players · the Bowling tab
+- [x] *chart* 1 series · x: Times dismissed — ✓ Players · the Bowling tab
+- [x] *markdown* What it shows: They have got B Ahern out 1 time, 12% of their 8 wickets. What it's for: The batters they have the wood on: bring them on when these batters come in. — ✓ Players · the Bowling tab
+- [x] *markdown* **Streaks** · innings bowled in a row — ✓ Players · the Bowling tab
+- [x] *table* 4 rows · columns: Streak, Longest, Current — ✓ Players · the Bowling tab
+- [x] *markdown* **Bowling first or second** · economy — ✓ Players · the Bowling tab
+- [x] *chart* 1 series · x: Economy (runs per over) — ✓ Players · the Bowling tab
+- [x] *markdown* What it shows: Best their side bowled first: 5.90 (+0% on their 5.90 overall). Lower is better. What it's for: Shows whether they bowl better defending a total or chasing one. — ✓ Players · the Bowling tab
+- [x] *markdown* **Against each team** · economy — ✓ Players · the Bowling tab
+- [x] *chart* 1 series · x: Economy (runs per over) — ✓ Players · the Bowling tab
+- [x] *markdown* What it shows: Best india: 4.40 (-25% on their 5.90 overall); worst south africa: 7.10 (+20%). Lower is better. What it's for: Shows which teams they keep quiet and which ones get after them. — ✓ Players · the Bowling tab
+- [x] *tab* Fielding — ✓ Players · the Fielding tab
+- [x] *markdown* Matches 4 — ✓ Players · the Fielding tab
+- [x] *markdown* Catches 0 — ✓ Players · the Fielding tab
+- [x] *markdown* Stumpings 0 — ✓ Players · the Fielding tab
+- [x] *caption* Catches and stumpings are credited under the player's own name, so 'c de Kock' counts for Q de Kock. Run outs aren't credited to fielders because the scorecard doesn't name them. — ✓ Players · the Fielding tab
+- [x] *tab* Batting — ✓ Players · the Batting tab
+- [x] *markdown* Innings 2 — ✓ Players · the Batting tab
+- [x] *markdown* Runs 16 — ✓ Players · the Batting tab
+- [x] *markdown* Average – — ✓ Players · the Batting tab
+- [x] *markdown* Strike rate 123.1 — ✓ Players · the Batting tab
+- [x] *markdown* High score 16* — ✓ Players · the Batting tab
+- [x] *markdown* 100s / 50s 0 / 0 — ✓ Players · the Batting tab
+- [x] *markdown* **Form: every innings** — ✓ Players · the Batting tab
+- [x] *chart* 2 series · x: Innings, in order · y: Runs — ✓ Players · the Batting tab
+- [x] *markdown* Grey bars : runs in each innings, oldest on the left. Blue line : average over the last 10 innings (5 for a shorter career). Rising means in form, falling means out of form. Dashed line : average over every innings shown. — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: 2 innings, never dismissed. What it's for: Shows whether they are in form right now, not just how good they are over the whole career. — ✓ Players · the Batting tab
+- [x] *markdown* **Season by season · runs** — ✓ Players · the Batting tab
+- [x] *chart* 1 series · x: Runs — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: Most runs in 2026: 16 (100% of their 16 here), average –. What it's for: Shows whether they are getting better or fading, season by season. — ✓ Players · the Batting tab
+- [x] *markdown* **How they get out** — ✓ Players · the Batting tab
+- [x] *caption* Never dismissed. — ✓ Players · the Batting tab
+- [x] *markdown* **Danger zones** · when they get out (share of their dismissals in each score band) — ✓ Players · the Batting tab
+- [x] *caption* Never dismissed here. — ✓ Players · the Batting tab
+- [x] *markdown* **Conversion** · % of innings reaching each score; the key marks for this format in colour — ✓ Players · the Batting tab
+- [x] *chart* 2 series · x: Score reached · y: % of innings · series: This player, Every batter here — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: They reach 30 in 0% of innings (everyone: 35%). What it's for: Shows whether they turn starts into big scores. Key marks: 30, 50, 80, 100 in this format; the grey dots are every batter here. — ✓ Players · the Batting tab
+- [x] *markdown* **Every season in ODIs** · the same columns as the table at the top — ✓ Players · the Batting tab
+- [x] *table* 2 rows · columns: season, Mat, Inns, NO, Runs, HS, Avg, BF, SR, 100, 50, 0, 4s, 6s, Ct, St — ✓ Players · the Batting tab
+- [x] *subheader* Average in different situations — ✓ Players · the Batting tab
+- [x] *caption* Each chart splits the same innings one way. The dashed line is their overall average (–). — ✓ Players · the Batting tab
+- [x] *markdown* **Batting first or chasing** — ✓ Players · the Batting tab
+- [x] *chart* 1 series · x: Average — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: Not enough innings to compare yet. What it's for: Shows whether they are better at setting a total or chasing one. — ✓ Players · the Batting tab
+- [x] *markdown* **Home or away** — ✓ Players · the Batting tab
+- [x] *chart* 1 series · x: Average — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: Not enough innings to compare yet. What it's for: Shows how much home conditions help them. — ✓ Players · the Batting tab
+- [x] *markdown* **In wins, defeats and draws** — ✓ Players · the Batting tab
+- [x] *chart* 1 series · x: Average — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: Not enough innings to compare yet. What it's for: Shows whether their runs come when the team wins, or when the game is already lost. — ✓ Players · the Batting tab
+- [x] *markdown* **Against stronger or weaker teams** — ✓ Players · the Batting tab
+- [x] *chart* 1 series · x: Average — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: Not enough innings to compare yet. What it's for: Shows whether they score against the good sides too, or fill their boots against the weak ones. — ✓ Players · the Batting tab
+- [x] *markdown* **Stronger and weaker teams** · teams ranked by their win % in this section; the top half are the stronger teams. Stronger half: England, India, Ireland, New Zealand. — ✓ Players · the Batting tab
+- [x] *markdown* **Average at each batting position** · compared with the average batter at that position — ✓ Players · the Batting tab
+- [x] *chart* 2 series · x: Average · series: Average batter there, J Archer — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: They have batted in only one position with 3+ innings so far. What it's for: Tells you where to bat them: blue is them, grey the average batter in that position. — ✓ Players · the Batting tab
+- [x] *subheader* When they came in — ✓ Players · the Batting tab
+- [x] *markdown* **Average by the situation they walked into** — ✓ Players · the Batting tab
+- [x] *chart* 1 series · x: Average — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: Not enough innings to compare yet. On average they came in at 232 for 8.5. What it's for: Shows whether they handle pressure. The score comes from the fall of wickets: the number 5 walks in when the 3rd wicket falls. — ✓ Players · the Batting tab
+- [x] *markdown* **Best rescue innings** · came in with 3 or more down for 60 or fewer — ✓ Players · the Batting tab
+- [x] *caption* No innings started in that kind of trouble yet. — ✓ Players · the Batting tab
+- [x] *markdown* **Consistency** — ✓ Players · the Batting tab
+- [x] *markdown* 30+ scores 0% — ✓ Players · the Batting tab
+- [x] *markdown* Single figures 0% — ✓ Players · the Batting tab
+- [x] *markdown* Golden ducks 0 — ✓ Players · the Batting tab
+- [x] *markdown* 50s → 100s – — ✓ Players · the Batting tab
+- [x] *caption* '30+ scores' is how often they pass 30, a decent score in this format. 'Single figures' is how often they're out for under 10. A golden duck is out first ball. '50s → 100s' is how often a fifty is turned into a hundred. — ✓ Players · the Batting tab
+- [x] *markdown* **Nemesis** · bowlers who have dismissed them most — ✓ Players · the Batting tab
+- [x] *caption* No bowler has dismissed them yet. — ✓ Players · the Batting tab
+- [x] *markdown* **Streaks** · innings in a row — ✓ Players · the Batting tab
+- [x] *table* 5 rows · columns: Streak, Longest, Current — ✓ Players · the Batting tab
+- [x] *caption* Current = the run they're on now, counting back from their latest innings here. — ✓ Players · the Batting tab
+- [x] *markdown* **When chasing** · batting in the last innings of the match — ✓ Players · the Batting tab
+- [x] *markdown* Chases won 1 — ✓ Players · the Batting tab
+- [x] *markdown* Average in wins – — ✓ Players · the Batting tab
+- [x] *markdown* Chases lost 1 — ✓ Players · the Batting tab
+- [x] *markdown* Average in defeats – — ✓ Players · the Batting tab
+- [x] *caption* Not out at the end of 1 winning chase: still there when the runs were knocked off. — ✓ Players · the Batting tab
+- [x] *markdown* **Against each team** · average — ✓ Players · the Batting tab
+- [x] *chart* 1 series · x: Average — ✓ Players · the Batting tab
+- [x] *markdown* What it shows: Not enough innings to compare yet. (teams they have batted against at least twice) What it's for: Shows which opponents they like and which ones keep them quiet. — ✓ Players · the Batting tab
+- [x] *tab* Story — ✓ Players · the Story tab
+- [x] *markdown* **Match impact** · one number per match in ODIs (batting, bowling and fielding together) — ✓ Players · the Story tab
+- [x] *chart* 1 series · x: Match (oldest first) · y: Match impact — ✓ Players · the Story tab
+- [x] *markdown* What it shows: Average 73 a match, number 11 of the 48 players here with 3+ matches. Best: 103 v Sri Lanka (0 runs, 3 wkts). Blue bars are wins. What it's for: Puts batting, bowling and fielding on one scale: runs, plus each wicket worth the section's runs per wicket, with scoring speed and economy counted in white-ball cricket. — ✓ Players · the Story tab
+- [x] *markdown* **Rank over time** · where they finished in ODIs each season — ✓ Players · the Story tab
+- [x] *chart* 2 series · x: Season · y: Rank in the section (1 = top) · series: Rank by runs, Rank by wickets — ✓ Players · the Story tab
+- [x] *markdown* What it shows: In 2027: 62 of 64 for runs, 2 of 24 for wickets. Peak: 62. What it's for: A career story at a glance: when they peaked and whether they're climbing or fading. — ✓ Players · the Story tab
+- [x] *markdown* **Milestones** · how many innings it took, and the rank among everyone here who got there — ✓ Players · the Story tab
+- [x] *caption* No milestone reached here yet. — ✓ Players · the Story tab
+- [x] *markdown* **Badges** · special feats, with the rules for each format — ✓ Players · the Story tab
+- [x] *caption* No badges yet: a T20 hundred, a five-for, a Test double hundred or ten in a match earns one. — ✓ Players · the Story tab
+- [x] *markdown* **Career firsts** · every competition — ✓ Players · the Story tab
+- [x] *markdown* Date Match 30 Mar 2026 First match for Rajasthan Royals v Chennai Super Kings 04 Apr 2026 First run v Gujarat Titans 04 Apr 2026 First wicket 1/29 v Gujarat Titans 07 Apr 2026 First three-for 3/43 v Mumbai Indians 07 Jul 2026 First match in T20Is for England v India 16 Jul 2026 First match in ODIs for England v India 01 Aug 2026 First match in The Hundred for Southern Brave v London Spirit 19 Aug — ✓ Players · the Story tab
+- [x] *markdown* **When J Archer fires** · their team's win % in ODIs — ✓ Players · the Story tab
+- [x] *caption* No 50+ scores or 4-wicket hauls here yet. — ✓ Players · the Story tab
+- [x] *markdown* **Odd ones** — ✓ Players · the Story tab
+- [x] *markdown* 🛡️ Not out in 2 of 2 innings (100%). 🏋️ Makes 3.2% of their team's runs in the innings they bat. — ✓ Players · the Story tab
+- [x] *markdown* **Compare two seasons** · ODIs — ✓ Players · the Story tab
+- [x] *selectbox* Season [2 options: 2027, 2026] — ✓ Players · Story · Compare two seasons
+- [x] *selectbox* Against [1 options: 2026] — ✓ Players · Story · Compare two seasons
+- [x] *markdown* 2027 2026 Batting Mat 3 1 Batting Inns 1 1 Batting Runs 0 ✓ 16 Batting Avg – – Batting SR 0.0 ✓ 145.5 Batting 100 0 0 Batting 50 0 0 Bowling Wkts ✓ 7 1 Bowling Avg ✓ 27.43 44.00 Bowling Econ 6.40 ✓ 4.40 Bowling SR ✓ 25.7 60.0 — ✓ Players · the Story tab
+- [x] *caption* ✓ marks the better season on each (for bowling average, economy and strike rate, lower is better). — ✓ Players · the Story tab
 
 **In the code** (every part of the page, including what shows only for some choices)
 
 - **page**
-  - [ ] *info* Load a career on the Home page first.
-  - [ ] *selectbox* Player
-  - [ ] *selectbox* pl_player
-  - [ ] *selectbox* Type a name, e.g. S Gill
-  - [ ] *page_header* Pick a player
-  - [ ] *page_header* Type a name in the box above. Every player who has batted or bowled in this career is listed.
-  - [ ] *page_header* · Wicketkeeper
-  - [ ] *page_header* {len(my_matches)} matches in {my_matches.section.nunique()} section{'s' if my_matches.section.nunique() != 1 else ''}. Pick a section below; every figure on this page is for that section only.
-  - [ ] *safe_section* career card
-  - [ ] *markdown* Last {len(last10)} innings: {spark} {badges}
-  - [ ] *markdown* **Batting and fielding · every section**
-  - [ ] *markdown* **Bowling · every section**
-  - [ ] *caption* Hasn't bowled.
-  - [ ] *caption* Same columns in every section. Hover a column name for what it means. Maidens are only printed on longer-format scorecards and dot balls only on T20 and Hundred scorecards, so one of them is blank.
-  - [ ] *safe_section* all formats
-  - [ ] *markdown* **Every format side by side** · each against the average player in that format, so they can be compared
-  - [ ] *html_table* Format
-  - [ ] *html_table* Mat
-  - [ ] *html_table* Runs
-  - [ ] *html_table* Avg
-  - [ ] *html_table* Avg v average
-  - [ ] *html_table* SR
-  - [ ] *html_table* SR v average
-  - [ ] *html_table* Wkts
-  - [ ] *html_table* Bowl avg
-  - [ ] *html_table* Bowl avg v average
-  - [ ] *html_table* hi
-  - [ ] *chart_note* Best format: {best_.section.iloc[0]}, where they are {best_.score.iloc[0]}% better than the average player.
-  - [ ] *chart_note* Not enough games in any format yet to compare.
-  - [ ] *chart_note* Compares formats fairly: a 35 average is great in T20 but ordinary in Tests, so each format is measured against its own average (bowling: lower average is better, so + means better).
-  - [ ] *expander* Career journey · every team and competition, in order
-  - [ ] *dataframe* From
-  - [ ] *dataframe* To
-  - [ ] *dataframe* Team
-  - [ ] *dataframe* Section
-  - [ ] *dataframe* Season
-  - [ ] *dataframe* Matches
-  - [ ] *dataframe* Wickets
-  - [ ] *dataframe* first
-  - [ ] *dataframe* %d %b %Y
-  - [ ] *dataframe* last
-  - [ ] *dataframe* stretch
-  - [ ] *selectbox* pl_section
-  - [ ] *selectbox* section
-  - [ ] *selectbox* All seasons
-  - [ ] *selectbox* pl_season
-  - [ ] *selectbox* season
-  - [ ] *markdown* {chips} Role in {section}{'' if season == 'All seasons' else ' ' + season}, from where they bat (usually no. {r.usual_position}) and how much they bowl
-  - [ ] *safe_section* batting
-  - [ ] *kpis* Innings
-  - [ ] *kpis* {b.innings}
-  - [ ] *kpis* {b.runs}
-  - [ ] *kpis* Average
-  - [ ] *kpis* Strike rate
-  - [ ] *kpis* High score
-  - [ ] *kpis* 100s / 50s
-  - [ ] *kpis* {b.hundreds} / {b.fifties}
-  - [ ] *markdown* **Form: every innings**
-  - [ ] *explain_list* Grey bars : runs in each innings, oldest on the left.
-  - [ ] *explain_list* dot
-  - [ ] *explain_list* Blue line : average over the last 10 innings (5 for a shorter career). Rising means in form, falling means out of form.
-  - [ ] *explain_list* line
-  - [ ] *explain_list* Dashed line : average over every innings shown.
-  - [ ] *chart_note* {len(inns)} innings. Their last {n_} average {recent_avg} against {fmt(b.average, 1)} overall ({(recent_avg - b.average) / b.average * 100}%).
-  - [ ] *chart_note* {len(inns)} innings, never dismissed.
-  - [ ] *chart_note* Shows whether they are in form right now, not just how good they are over the whole career.
-  - [ ] *markdown* **Season by season · runs**
-  - [ ] *chart_note* Most runs in {bs_.season}: {bs_.runs} ({bs_.runs / max(ss.runs.sum(), 1) * 100}% of their {ss.runs.sum()} here), average {fmt(bs_.average, 1)}.
-  - [ ] *chart_note* Shows whether they are getting better or fading, season by season.
-  - [ ] *markdown* **How they get out**
-  - [ ] *caption* Never dismissed.
-  - [ ] *chart_note* {ho.iloc[0] / ho.sum() * 100}% of their {int(ho.sum())} dismissals are {say(ho.index[0]).lower()}.
-  - [ ] *chart_note* How bowlers get them out: a weakness to work on with your own players, or to attack in an opponent.
-  - [ ] *safe_section* danger zones
-  - [ ] *markdown* **Danger zones** · when they get out (share of their dismissals in each score band)
-  - [ ] *caption* Never dismissed here.
-  - [ ] *markdown* ⭐ Got in, out before 50 ({key_label}): {kz.pct}% of their dismissals ({int(kz.outs)} of {dz.attrs['dismissals']}), every batter here {kz.all_pct}%
-  - [ ] *markdown* · a weak spot
-  - [ ] *markdown* · better than most
-  - [ ] *chart_note* {dz.pct.iloc[0]}% of their {dz.attrs['dismissals']} dismissals come before 10 (every batter here: {dz.all_pct.iloc[0]}%). Their most dangerous band compared with others is {worst.zone}: {worst.pct}% against {worst.all_pct}%.
-  - [ ] *chart_note* Shows when to attack this batter (or when to protect your own): a big share early means they're vulnerable before they're set. The bands follow the format.
-  - [ ] *safe_section* conversion
-  - [ ] *markdown* **Conversion** · % of innings reaching each score; the key marks for this format in colour
-  - [ ] *caption* No innings yet.
-  - [ ] *chart_note* Shows whether they turn starts into big scores. Key marks:
-  - [ ] *chart_note* in this format; the grey dots are every batter here.
-  - [ ] *markdown* **Hundreds, on their own:** {h_} in {fn.attrs['innings']} innings
-  - [ ] *markdown* · {fn.attrs['fifty_to_100']}% of their {f_} fifties went on to 100 (everyone: {pct(fn.attrs['all_fifty_to_100'])})
-  - [ ] *markdown* . In T20 the fifty is the big score, so the chart stops there.
-  - [ ] *markdown* **Every season in {section}** · the same columns as the table at the top
-  - [ ] *subheader* Average in different situations
-  - [ ] *caption* Each chart splits the same innings one way. The dashed line is their overall average ({fmt(b.average, 1)}).
-  - [ ] *markdown* **{title}**
-  - [ ] *chart_note* average
-  - [ ] *chart_note* innings
-  - [ ] *chart_note* Shows whether they are better at setting a total or chasing one.
-  - [ ] *chart_note* Shows whether their runs come when the team wins, or when the game is already lost.
-  - [ ] *chart_note* Shows how much home conditions help them.
-  - [ ] *chart_note* Shows whether they score against the good sides too, or fill their boots against the weak ones.
-  - [ ] *markdown* **Stronger and weaker teams** · teams ranked by their win % in this section; the top half are the stronger teams. Stronger half: {', '.join(sorted((t for t, v in strength.items() if v > np.median(list(strength.values()))))) or '–'}.
-  - [ ] *markdown* **Average at each batting position** · compared with the average batter at that position
-  - [ ] *chart_note* Best position: {top.group}, where they average {fmt(top.average, 1)} against {fmt(top.section_average, 1)} for the average batter there ({edge_pct}%, at least 3 innings).
-  - [ ] *chart_note* Tells you where to bat them: blue is them, grey the average batter in that position.
-  - [ ] *chart_note* They have batted in only one position with 3+ innings so far.
-  - [ ] *subheader* When they came in
-  - [ ] *markdown* **Average by the situation they walked into**
-  - [ ] *chart_note* situation
-  - [ ] *chart_note* On average they came in at {ci.came_in_score.mean()} for {fmt(wk, 0 if wk.is_integer() else 1)}.
-  - [ ] *chart_note* Shows whether they handle pressure. The score comes from the fall of wickets: the number 5 walks in when the 3rd wicket falls.
-  - [ ] *markdown* **Best rescue innings** · came in with 3 or more down for {press} or fewer
-  - [ ] *caption* No innings started in that kind of trouble yet.
-  - [ ] *dataframe* Came in at
-  - [ ] *dataframe* Score
-  - [ ] *dataframe* Balls
-  - [ ] *dataframe* Against
-  - [ ] *dataframe* Date
-  - [ ] *dataframe* {int(s)}/{int(w)}
-  - [ ] *dataframe* {x}{'' if o else '*'}
-  - [ ] *markdown* **Consistency**
-  - [ ] *kpis* {cs['bar']}+ scores
-  - [ ] *kpis* {cs['past_bar_pct']}%
-  - [ ] *kpis* Single figures
-  - [ ] *kpis* {cs['single_figures_pct']}%
-  - [ ] *kpis* Golden ducks
-  - [ ] *kpis* {cs['golden_ducks']}
-  - [ ] *kpis* 50s → 100s
-  - [ ] *kpis* conversion_pct
-  - [ ] *kpis* {cs['conversion_pct']}%
-  - [ ] *caption* '{cs['bar']}+ scores' is how often they pass {cs['bar']}, a decent score in this format. 'Single figures' is how often they're out for under 10. A golden duck is out first ball. '50s → 100s' is how often a fifty is turned into a hundred.
-  - [ ] *markdown* **Nemesis** · bowlers who have dismissed them most
-  - [ ] *caption* No bowler has dismissed them yet.
-  - [ ] *chart_note* {n.bowler.iloc[0]} has got them out {_n(n.dismissals.iloc[0], 'time')}, {n.dismissals.iloc[0] / max(outs_, 1) * 100}% of their {outs_} dismissals.
-  - [ ] *chart_note* The bowlers who have their number: keep them away from these bowlers, or bring these bowlers on when this batter comes in.
-  - [ ] *markdown* **Streaks** · innings in a row
-  - [ ] *dataframe* Streak
-  - [ ] *dataframe* Longest
-  - [ ] *dataframe* Current
-  - [ ] *dataframe* streak
-  - [ ] *dataframe* longest
-  - [ ] *dataframe* current
-  - [ ] *caption* Current = the run they're on now, counting back from their latest innings here.
-  - [ ] *markdown* **When chasing** · batting in the last innings of the match
-  - [ ] *caption* Hasn't batted in a chase here yet.
-  - [ ] *kpis* Chases won
-  - [ ] *kpis* {r.won_innings}
-  - [ ] *kpis* Average in wins
-  - [ ] *kpis* Chases lost
-  - [ ] *kpis* {r.lost_innings}
-  - [ ] *kpis* Average in defeats
-  - [ ] *caption* Not out at the end of {r.not_out_in_wins} winning chase{'s' if r.not_out_in_wins != 1 else ''}: still there when the runs were knocked off.
-  - [ ] *markdown* **Against each team** · average
-  - [ ] *chart_note* opposition
-  - [ ] *chart_note* (teams they have batted against at least twice)
-  - [ ] *chart_note* Shows which opponents they like and which ones keep them quiet.
-  - [ ] *safe_section* bowling
-  - [ ] *kpis* {w.wickets}
-  - [ ] *kpis* Economy
-  - [ ] *kpis* Best
-  - [ ] *kpis* 4+ hauls
-  - [ ] *kpis* {w.hauls}
-  - [ ] *markdown* **Form: wickets in every innings bowled**
-  - [ ] *explain_list* Grey bars : wickets in each innings bowled.
-  - [ ] *explain_list* Blue line : wickets per innings over the last 10 (5 for a shorter career).
-  - [ ] *explain_list* Dashed line : wickets per innings over everything shown.
-  - [ ] *chart_note* {len(spells)} innings bowled. Their last {n_} average {rw_} wickets an innings against {aw_} overall
-  - [ ] *chart_note* ({(rw_ - aw_) / aw_ * 100}%).
-  - [ ] *chart_note* Shows whether they are taking wickets right now, not just over the whole career.
-  - [ ] *markdown* **Season by season · wickets**
-  - [ ] *chart_note* Most wickets in {bw_.season}: {int(bw_.wickets)} ({bw_.wickets / max(ss.wickets.sum(), 1) * 100}% of their {int(ss.wickets.sum())} here), economy {fmt(bw_.economy, 2)}.
-  - [ ] *markdown* **How they take wickets**
-  - [ ] *caption* No wickets yet.
-  - [ ] *chart_note* {wt.iloc[0] / wt.sum() * 100}% of their {int(wt.sum())} wickets are {say(wt.index[0]).lower()}.
-  - [ ] *chart_note* How they get batters out: bowled and lbw mean they hit the stumps; catches mean they need the fielders, so set the field for them.
-  - [ ] *safe_section* match pattern
-  - [ ] *markdown* **Over a match** · first bowling innings against the second, as the pitch wears
-  - [ ] *caption* Hasn't bowled in both innings of a match yet.
-  - [ ] *html_table* First innings
-  - [ ] *html_table* Second innings
-  - [ ] *html_table* Wickets in both innings
-  - [ ] *html_table* {r_.both_pct}% of {r_.matches} matches
-  - [ ] *html_table* Best match figures
-  - [ ] *chart_note* Their average is {r_.change}% in the second innings ({fmt(r_.second_avg, 1)} against {fmt(r_.first_avg, 1)}).
-  - [ ] *chart_note* Shows whether they get better as the pitch wears (lower is better) and how often they strike in both innings: the ones to bowl on a final day.
-  - [ ] *safe_section* with and without wickets
-  - [ ] *markdown* **With and without wickets** · their spells split by whether they took a wicket
-  - [ ] *html_table* Took a wicket
-  - [ ] *html_table* spells
-  - [ ] *html_table* wickets
-  - [ ] *html_table* economy
-  - [ ] *html_table* maidens_per_10
-  - [ ] *html_table* Wicketless
-  - [ ] *html_table* Spells
-  - [ ] *html_table* Econ
-  - [ ] *html_table* Maidens per 10 overs
-  - [ ] *chart_note* Economy {fmt(a_['economy'], 2)} in spells with a wicket, {fmt(b_['economy'], 2)} without ({d_}%): {kind_word}.
-  - [ ] *chart_note* Tells a strike bowler from a containing one, so you know who to bowl when you must stop the runs.
-  - [ ] *chart_note* In Tests, maidens show the control too.
-  - [ ] *markdown* **Quality of wickets** · where in the order their victims bat
-  - [ ] *chart_note* {q['top_seven_pct']}% of their {q['total']} wickets are specialist batters (positions 1-7): {q['top_order']} top order, {q['middle_order']} middle order, {q['tail']} tail.
-  - [ ] *chart_note* Shows whether their wickets are the ones that matter or mostly tail-enders.
-  - [ ] *markdown* **Bunnies** · batters they have dismissed most
-  - [ ] *chart_note* They have got {bn.player.iloc[0]} out {_n(bn.dismissals.iloc[0], 'time')}, {bn.dismissals.iloc[0] / max(tw_, 1) * 100}% of their {tw_} wickets.
-  - [ ] *chart_note* The batters they have the wood on: bring them on when these batters come in.
-  - [ ] *markdown* **Streaks** · innings bowled in a row
-  - [ ] *markdown* **{title}** · economy
-  - [ ] *chart_note* overs
-  - [ ] *chart_note* Lower is better.
-  - [ ] *chart_note* Shows whether they bowl better defending a total or chasing one.
-  - [ ] *chart_note* Shows which teams they keep quiet and which ones get after them.
-  - [ ] *safe_section* fielding
-  - [ ] *kpis* {f.matches}
-  - [ ] *kpis* Catches
-  - [ ] *kpis* {f.catches}
-  - [ ] *kpis* Stumpings
-  - [ ] *kpis* {f.stumpings}
-  - [ ] *caption* No fielding record in this section.
-  - [ ] *caption* Catches and stumpings are credited under the player's own name, so 'c de Kock' counts for Q de Kock. Run outs aren't credited to fielders because the scorecard doesn't name them.
-  - [ ] *safe_section* match impact
-  - [ ] *markdown* **Match impact** · one number per match in {section} (batting, bowling and fielding together)
-  - [ ] *caption* No matches yet.
-  - [ ] *chart_note* Average {mine_i.impact.mean()} a match, number {rank_i} of the {len(per_m)} players here with {need_i}+ matches. Best: {best_i.impact} v {best_i.opponent} ({int(best_i.runs)} runs, {_n(best_i.wickets, 'wkt')}). Blue bars are wins.
-  - [ ] *chart_note* Puts batting, bowling and fielding on one scale: runs, plus each wicket worth the section's runs per wicket
-  - [ ] *chart_note* kind
-  - [ ] *chart_note* multi
-  - [ ] *chart_note* , with scoring speed and economy counted in white-ball cricket.
-  - [ ] *safe_section* rank over time
-  - [ ] *markdown* **Rank over time** · where they finished in {section} each season
-  - [ ] *caption* No seasons yet.
-  - [ ] *chart_note* In {r0.season}:
-  - [ ] *chart_note* no runs or wickets
-  - [ ] *chart_note* . Peak: {int(peak)}.
-  - [ ] *chart_note* A career story at a glance: when they peaked and whether they're climbing or fading.
-  - [ ] *safe_section* milestones
-  - [ ] *markdown* **Milestones** · how many {unit_} it took, and the rank among everyone here who got there
-  - [ ] *caption* No milestone reached here yet.
-  - [ ] *html_table* {r.milestone} {r.what}
-  - [ ] *html_table* {r.taken} {unit_}
-  - [ ] *html_table* {r.rank} of {int(((fa.what == r.what) & (fa.milestone == r.milestone)).sum())}
-  - [ ] *html_table* {r.date}
-  - [ ] *html_table* Milestone
-  - [ ] *html_table* Took
-  - [ ] *html_table* Fastest
-  - [ ] *html_table* Reached
-  - [ ] *safe_section* badges
-  - [ ] *markdown* **Badges** · special feats, with the rules for each format
-  - [ ] *caption* No badges yet: a T20 hundred, a five-for, a Test double hundred or ten in a match earns one.
-  - [ ] *html_table* 🏅 {r.badge}
-  - [ ] *html_table* Badge
-  - [ ] *html_table* Match
-  - [ ] *safe_section* career firsts
-  - [ ] *markdown* **Career firsts** · every competition
-  - [ ] *caption* Nothing yet.
-  - [ ] *html_table* v {r.against}
-  - [ ] *safe_section* team wins
-  - [ ] *markdown* **When {player} fires** · their team's win % in {section}{'' if season == 'All seasons' else ' ' + season}
-  - [ ] *html_table* Times
-  - [ ] *html_table* Win % then
-  - [ ] *html_table* Win % otherwise
-  - [ ] *caption* No {wb.attrs.get('big', 50)}+ scores or {ww.attrs.get('haul', 3)}-wicket hauls here yet.
-  - [ ] *safe_section* quirks
-  - [ ] *markdown* **Odd ones**
-  - [ ] *markdown* Nothing unusual yet.
-  - [ ] *safe_section* compare seasons
-  - [ ] *markdown* **Compare two seasons** · {section}
-  - [ ] *caption* Only one season in this section so far.
-  - [ ] *selectbox* pl_cmp_a
-  - [ ] *selectbox* pl_cmp_b
-  - [ ] *caption* ✓ marks the better season on each (for bowling average, economy and strike rate, lower is better).
+  - [x] *info* Load a career on the Home page first. — ✓ the new site says when no career is open (My team · No career yet)
+  - [x] *selectbox* Player — ✓ Players · Find a player (search box, and your squads)
+  - [x] *selectbox* pl_player — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *selectbox* Type a name, e.g. S Gill — ✓ Players · Find a player (search box, and your squads)
+  - [x] *page_header* Pick a player — ✓ Players · Find a player (search box, and your squads)
+  - [x] *page_header* Type a name in the box above. Every player who has batted or bowled in this career is listed. — ✓ Players · Find a player (search box, and your squads)
+  - [x] *page_header* · Wicketkeeper — ✓ Players · the Bowling tab
+  - [x] *page_header* {len(my_matches)} matches in {my_matches.section.nunique()} section{'s' if my_matches.section.nunique() != 1 else ''}. Pick a section below; every figure on this page is for that section only. — ✓ Players · the top of the page (matches and competitions) and the line under the competition picker
+  - [x] *safe_section* career card — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* Last {len(last10)} innings: {spark} {badges} — ✓ Players · the top of the page
+  - [x] *markdown* **Batting and fielding · every section** — ✓ Players · the top of the page
+  - [x] *markdown* **Bowling · every section** — ✓ Players · the top of the page
+  - [x] *caption* Hasn't bowled. — ✓ Players · the Bowling tab
+  - [x] *caption* Same columns in every section. Hover a column name for what it means. Maidens are only printed on longer-format scorecards and dot balls only on T20 and Hundred scorecards, so one of them is blank. — ✓ Players · the top of the page
+  - [x] *safe_section* all formats — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **Every format side by side** · each against the average player in that format, so they can be compared — ✓ Players · the top of the page
+  - [x] *html_table* Format — ✓ Players · the Batting tab
+  - [x] *html_table* Mat — ✓ Players · the Batting tab
+  - [x] *html_table* Runs — ✓ Players · the Batting tab
+  - [x] *html_table* Avg — ✓ Players · the Batting tab
+  - [x] *html_table* Avg v average — ✓ Players · the Batting tab
+  - [x] *html_table* SR — ✓ Players · the Batting tab
+  - [x] *html_table* SR v average — ✓ Players · the Batting tab
+  - [x] *html_table* Wkts — ✓ Players · the Batting tab
+  - [x] *html_table* Bowl avg — ✓ Players · the Bowling tab
+  - [x] *html_table* Bowl avg v average — ✓ Players · the Bowling tab
+  - [x] *html_table* hi — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *chart_note* Best format: {best_.section.iloc[0]}, where they are {best_.score.iloc[0]}% better than the average player. — ✓ Players · the Batting tab
+  - [x] *chart_note* Not enough games in any format yet to compare. — ✓ Players · the Batting tab
+  - [x] *chart_note* Compares formats fairly: a 35 average is great in T20 but ordinary in Tests, so each format is measured against its own average (bowling: lower average is better, so + means better). — ✓ Players · the top of the page
+  - [x] *expander* Career journey · every team and competition, in order — ✓ Players · the top of the page
+  - [x] *dataframe* From — ✓ Players · the Batting tab
+  - [x] *dataframe* To — ✓ Players · the Batting tab
+  - [x] *dataframe* Team — ✓ Players · the Batting tab
+  - [x] *dataframe* Section — ✓ Players · the Batting tab
+  - [x] *dataframe* Season — ✓ Players · the Batting tab
+  - [x] *dataframe* Matches — ✓ Players · the Batting tab
+  - [x] *dataframe* Wickets — ✓ Players · the Bowling tab
+  - [x] *dataframe* first — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *dataframe* %d %b %Y — ✓ Players · the Batting tab
+  - [x] *dataframe* last — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *dataframe* stretch — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *selectbox* pl_section — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *selectbox* section — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *selectbox* All seasons — ✓ Players · the Batting tab
+  - [x] *selectbox* pl_season — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *selectbox* season — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *markdown* {chips} Role in {section}{'' if season == 'All seasons' else ' ' + season}, from where they bat (usually no. {r.usual_position}) and how much they bowl — ✓ Players · the Bowling tab
+  - [x] *safe_section* batting — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *kpis* Innings — ✓ Players · the Batting tab
+  - [x] *kpis* {b.innings} — ✓ Players · the Batting tab
+  - [x] *kpis* {b.runs} — ✓ Players · the Batting tab
+  - [x] *kpis* Average — ✓ Players · the Batting tab
+  - [x] *kpis* Strike rate — ✓ Players · the Batting tab
+  - [x] *kpis* High score — ✓ Players · the Batting tab
+  - [x] *kpis* 100s / 50s — ✓ Players · the Batting tab
+  - [x] *kpis* {b.hundreds} / {b.fifties} — ✓ Players · the Batting tab
+  - [x] *markdown* **Form: every innings** — ✓ Players · the Batting tab
+  - [x] *explain_list* Grey bars : runs in each innings, oldest on the left. — ✓ Players · the Batting tab
+  - [x] *explain_list* dot — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *explain_list* Blue line : average over the last 10 innings (5 for a shorter career). Rising means in form, falling means out of form. — ✓ Players · the Batting tab
+  - [x] *explain_list* line — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *explain_list* Dashed line : average over every innings shown. — ✓ Players · the Batting tab
+  - [x] *chart_note* {len(inns)} innings. Their last {n_} average {recent_avg} against {fmt(b.average, 1)} overall ({(recent_avg - b.average) / b.average * 100}%). — ✓ Players · the Batting tab
+  - [x] *chart_note* {len(inns)} innings, never dismissed. — ✓ Players · the Batting tab
+  - [x] *chart_note* Shows whether they are in form right now, not just how good they are over the whole career. — ✓ Players · the Batting tab
+  - [x] *markdown* **Season by season · runs** — ✓ Players · the Batting tab
+  - [x] *chart_note* Most runs in {bs_.season}: {bs_.runs} ({bs_.runs / max(ss.runs.sum(), 1) * 100}% of their {ss.runs.sum()} here), average {fmt(bs_.average, 1)}. — ✓ Players · the Batting tab
+  - [x] *chart_note* Shows whether they are getting better or fading, season by season. — ✓ Players · the Batting tab
+  - [x] *markdown* **How they get out** — ✓ Players · the Batting tab
+  - [x] *caption* Never dismissed. — ✓ Players · the Batting tab
+  - [x] *chart_note* {ho.iloc[0] / ho.sum() * 100}% of their {int(ho.sum())} dismissals are {say(ho.index[0]).lower()}. — ✓ Players · the Batting tab
+  - [x] *chart_note* How bowlers get them out: a weakness to work on with your own players, or to attack in an opponent. — ✓ Players · the Bowling tab
+  - [x] *safe_section* danger zones — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **Danger zones** · when they get out (share of their dismissals in each score band) — ✓ Players · the Batting tab
+  - [x] *caption* Never dismissed here. — ✓ Players · the Batting tab
+  - [x] *markdown* ⭐ Got in, out before 50 ({key_label}): {kz.pct}% of their dismissals ({int(kz.outs)} of {dz.attrs['dismissals']}), every batter here {kz.all_pct}% — ✓ Players · the Batting tab
+  - [x] *markdown* · a weak spot — ✓ Players · the Batting tab
+  - [x] *markdown* · better than most — ✓ Players · the Batting tab
+  - [x] *chart_note* {dz.pct.iloc[0]}% of their {dz.attrs['dismissals']} dismissals come before 10 (every batter here: {dz.all_pct.iloc[0]}%). Their most dangerous band compared with others is {worst.zone}: {worst.pct}% against {worst.all_pct}%. — ✓ Players · the Batting tab
+  - [x] *chart_note* Shows when to attack this batter (or when to protect your own): a big share early means they're vulnerable before they're set. The bands follow the format. — ✓ Players · the Batting tab
+  - [x] *safe_section* conversion — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **Conversion** · % of innings reaching each score; the key marks for this format in colour — ✓ Players · the Batting tab
+  - [x] *caption* No innings yet. — ✓ Players · the Batting tab
+  - [x] *chart_note* Shows whether they turn starts into big scores. Key marks: — ✓ Players · the Batting tab
+  - [x] *chart_note* in this format; the grey dots are every batter here. — ✓ Players · the Batting tab
+  - [x] *markdown* **Hundreds, on their own:** {h_} in {fn.attrs['innings']} innings — ✓ Players · the Batting tab
+  - [x] *markdown* · {fn.attrs['fifty_to_100']}% of their {f_} fifties went on to 100 (everyone: {pct(fn.attrs['all_fifty_to_100'])}) — ✓ Players · the Batting tab
+  - [x] *markdown* . In T20 the fifty is the big score, so the chart stops there. — ✓ Players · the Batting tab
+  - [x] *markdown* **Every season in {section}** · the same columns as the table at the top — ✓ Players · the top of the page
+  - [x] *subheader* Average in different situations — ✓ Players · the Batting tab
+  - [x] *caption* Each chart splits the same innings one way. The dashed line is their overall average ({fmt(b.average, 1)}). — ✓ Players · the Batting tab
+  - [x] *markdown* **{title}** — ✓ Players · the Batting tab
+  - [x] *chart_note* average — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *chart_note* innings — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *chart_note* Shows whether they are better at setting a total or chasing one. — ✓ Players · the Batting tab
+  - [x] *chart_note* Shows whether their runs come when the team wins, or when the game is already lost. — ✓ Players · the Batting tab
+  - [x] *chart_note* Shows how much home conditions help them. — ✓ Players · the Batting tab
+  - [x] *chart_note* Shows whether they score against the good sides too, or fill their boots against the weak ones. — ✓ Players · the Batting tab
+  - [x] *markdown* **Stronger and weaker teams** · teams ranked by their win % in this section; the top half are the stronger teams. Stronger half: {', '.join(sorted((t for t, v in strength.items() if v > np.median(list(strength.values()))))) or '–'}. — ✓ Players · the Story tab
+  - [x] *markdown* **Average at each batting position** · compared with the average batter at that position — ✓ Players · the Batting tab
+  - [x] *chart_note* Best position: {top.group}, where they average {fmt(top.average, 1)} against {fmt(top.section_average, 1)} for the average batter there ({edge_pct}%, at least 3 innings). — ✓ Players · the Batting tab
+  - [x] *chart_note* Tells you where to bat them: blue is them, grey the average batter in that position. — ✓ Players · the Batting tab
+  - [x] *chart_note* They have batted in only one position with 3+ innings so far. — ✓ Players · the Batting tab
+  - [x] *subheader* When they came in — ✓ Players · the Batting tab
+  - [x] *markdown* **Average by the situation they walked into** — ✓ Players · the Batting tab
+  - [x] *chart_note* situation — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *chart_note* On average they came in at {ci.came_in_score.mean()} for {fmt(wk, 0 if wk.is_integer() else 1)}. — ✓ Players · the Batting tab
+  - [x] *chart_note* Shows whether they handle pressure. The score comes from the fall of wickets: the number 5 walks in when the 3rd wicket falls. — ✓ Players · the Bowling tab
+  - [x] *markdown* **Best rescue innings** · came in with 3 or more down for {press} or fewer — ✓ Players · the Batting tab
+  - [x] *caption* No innings started in that kind of trouble yet. — ✓ Players · the Batting tab
+  - [x] *dataframe* Came in at — ✓ Players · the Batting tab
+  - [x] *dataframe* Score — ✓ Players · the Batting tab
+  - [x] *dataframe* Balls — ✓ Players · the Batting tab
+  - [x] *dataframe* Against — ✓ Players · the Batting tab
+  - [x] *dataframe* Date — ✓ Players · the Batting tab
+  - [x] *dataframe* {int(s)}/{int(w)} — ✓ Players · the Batting tab
+  - [x] *dataframe* {x}{'' if o else '*'} — ✓ Players · the Batting tab
+  - [x] *markdown* **Consistency** — ✓ Players · the Batting tab
+  - [x] *kpis* {cs['bar']}+ scores — ✓ Players · the Batting tab
+  - [x] *kpis* {cs['past_bar_pct']}% — ✓ Players · the Batting tab
+  - [x] *kpis* Single figures — ✓ Players · the Batting tab
+  - [x] *kpis* {cs['single_figures_pct']}% — ✓ Players · the Batting tab
+  - [x] *kpis* Golden ducks — ✓ Players · the Batting tab
+  - [x] *kpis* {cs['golden_ducks']} — ✓ Players · the Batting tab
+  - [x] *kpis* 50s → 100s — ✓ Players · the Batting tab
+  - [x] *kpis* conversion_pct — ✓ Players · the Batting tab
+  - [x] *kpis* {cs['conversion_pct']}% — ✓ Players · the Batting tab
+  - [x] *caption* '{cs['bar']}+ scores' is how often they pass {cs['bar']}, a decent score in this format. 'Single figures' is how often they're out for under 10. A golden duck is out first ball. '50s → 100s' is how often a fifty is turned into a hundred. — ✓ Players · the Batting tab
+  - [x] *markdown* **Nemesis** · bowlers who have dismissed them most — ✓ Players · the Bowling tab
+  - [x] *caption* No bowler has dismissed them yet. — ✓ Players · the Bowling tab
+  - [x] *chart_note* {n.bowler.iloc[0]} has got them out {_n(n.dismissals.iloc[0], 'time')}, {n.dismissals.iloc[0] / max(outs_, 1) * 100}% of their {outs_} dismissals. — ✓ Players · the Bowling tab
+  - [x] *chart_note* The bowlers who have their number: keep them away from these bowlers, or bring these bowlers on when this batter comes in. — ✓ Players · the Bowling tab
+  - [x] *markdown* **Streaks** · innings in a row — ✓ Players · the Batting tab
+  - [x] *dataframe* Streak — ✓ Players · the Batting tab
+  - [x] *dataframe* Longest — ✓ Players · the Batting tab
+  - [x] *dataframe* Current — ✓ Players · the Batting tab
+  - [x] *dataframe* streak — ✓ Players · the Batting tab
+  - [x] *dataframe* longest — ✓ Players · the Batting tab
+  - [x] *dataframe* current — ✓ Players · the Batting tab
+  - [x] *caption* Current = the run they're on now, counting back from their latest innings here. — ✓ Players · the Batting tab
+  - [x] *markdown* **When chasing** · batting in the last innings of the match — ✓ Players · the Batting tab
+  - [x] *caption* Hasn't batted in a chase here yet. — ✓ Players · the Batting tab
+  - [x] *kpis* Chases won — ✓ Players · the Batting tab
+  - [x] *kpis* {r.won_innings} — ✓ Players · the Batting tab
+  - [x] *kpis* Average in wins — ✓ Players · the Batting tab
+  - [x] *kpis* Chases lost — ✓ Players · the Batting tab
+  - [x] *kpis* {r.lost_innings} — ✓ Players · the Batting tab
+  - [x] *kpis* Average in defeats — ✓ Players · the Batting tab
+  - [x] *caption* Not out at the end of {r.not_out_in_wins} winning chase{'s' if r.not_out_in_wins != 1 else ''}: still there when the runs were knocked off. — ✓ Players · the Batting tab
+  - [x] *markdown* **Against each team** · average — ✓ Players · the Batting tab
+  - [x] *chart_note* opposition — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *chart_note* (teams they have batted against at least twice) — ✓ Players · the Batting tab
+  - [x] *chart_note* Shows which opponents they like and which ones keep them quiet. — ✓ Players · the Batting tab
+  - [x] *safe_section* bowling — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *kpis* {w.wickets} — ✓ Players · the Bowling tab
+  - [x] *kpis* Economy — ✓ Players · the Bowling tab
+  - [x] *kpis* Best — ✓ Players · the Batting tab
+  - [x] *kpis* 4+ hauls — ✓ Players · the Bowling tab
+  - [x] *kpis* {w.hauls} — ✓ Players · the Bowling tab
+  - [x] *markdown* **Form: wickets in every innings bowled** — ✓ Players · the Bowling tab
+  - [x] *explain_list* Grey bars : wickets in each innings bowled. — ✓ Players · the Bowling tab
+  - [x] *explain_list* Blue line : wickets per innings over the last 10 (5 for a shorter career). — ✓ Players · the Bowling tab
+  - [x] *explain_list* Dashed line : wickets per innings over everything shown. — ✓ Players · the Bowling tab
+  - [x] *chart_note* {len(spells)} innings bowled. Their last {n_} average {rw_} wickets an innings against {aw_} overall — ✓ Players · the Bowling tab
+  - [x] *chart_note* ({(rw_ - aw_) / aw_ * 100}%). — ✓ Players · the Batting tab
+  - [x] *chart_note* Shows whether they are taking wickets right now, not just over the whole career. — ✓ Players · the Bowling tab
+  - [x] *markdown* **Season by season · wickets** — ✓ Players · the Bowling tab
+  - [x] *chart_note* Most wickets in {bw_.season}: {int(bw_.wickets)} ({bw_.wickets / max(ss.wickets.sum(), 1) * 100}% of their {int(ss.wickets.sum())} here), economy {fmt(bw_.economy, 2)}. — ✓ Players · the Bowling tab
+  - [x] *markdown* **How they take wickets** — ✓ Players · the Bowling tab
+  - [x] *caption* No wickets yet. — ✓ Players · the Bowling tab
+  - [x] *chart_note* {wt.iloc[0] / wt.sum() * 100}% of their {int(wt.sum())} wickets are {say(wt.index[0]).lower()}. — ✓ Players · the Bowling tab
+  - [x] *chart_note* How they get batters out: bowled and lbw mean they hit the stumps; catches mean they need the fielders, so set the field for them. — ✓ Players · the Bowling tab
+  - [x] *safe_section* match pattern — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **Over a match** · first bowling innings against the second, as the pitch wears — ✓ Players · the Bowling tab
+  - [x] *caption* Hasn't bowled in both innings of a match yet. — ✓ Players · the Bowling tab
+  - [x] *html_table* First innings — ✓ Players · the Batting tab
+  - [x] *html_table* Second innings — ✓ Players · the Batting tab
+  - [x] *html_table* Wickets in both innings — ✓ Players · the Bowling tab
+  - [x] *html_table* {r_.both_pct}% of {r_.matches} matches — ✓ Players · the Batting tab
+  - [x] *html_table* Best match figures — ✓ Players · the Batting tab
+  - [x] *chart_note* Their average is {r_.change}% in the second innings ({fmt(r_.second_avg, 1)} against {fmt(r_.first_avg, 1)}). — ✓ Players · the Batting tab
+  - [x] *chart_note* Shows whether they get better as the pitch wears (lower is better) and how often they strike in both innings: the ones to bowl on a final day. — ✓ Players · the Bowling tab
+  - [x] *safe_section* with and without wickets — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **With and without wickets** · their spells split by whether they took a wicket — ✓ Players · the Bowling tab
+  - [x] *html_table* Took a wicket — ✓ Players · the Bowling tab
+  - [x] *html_table* spells — ✓ Players · the Bowling tab
+  - [x] *html_table* wickets — ✓ Players · the Bowling tab
+  - [x] *html_table* economy — ✓ Players · the Bowling tab
+  - [x] *html_table* maidens_per_10 — ✓ Players · the Bowling tab
+  - [x] *html_table* Wicketless — ✓ Players · the Bowling tab
+  - [x] *html_table* Spells — ✓ Players · the Bowling tab
+  - [x] *html_table* Econ — ✓ Players · the Batting tab
+  - [x] *html_table* Maidens per 10 overs — ✓ Players · the Bowling tab
+  - [x] *chart_note* Economy {fmt(a_['economy'], 2)} in spells with a wicket, {fmt(b_['economy'], 2)} without ({d_}%): {kind_word}. — ✓ Players · the Bowling tab
+  - [x] *chart_note* Tells a strike bowler from a containing one, so you know who to bowl when you must stop the runs. — ✓ Players · the Bowling tab
+  - [x] *chart_note* In Tests, maidens show the control too. — ✓ Players · the Bowling tab
+  - [x] *markdown* **Quality of wickets** · where in the order their victims bat — ✓ Players · the Bowling tab
+  - [x] *chart_note* {q['top_seven_pct']}% of their {q['total']} wickets are specialist batters (positions 1-7): {q['top_order']} top order, {q['middle_order']} middle order, {q['tail']} tail. — ✓ Players · the Bowling tab
+  - [x] *chart_note* Shows whether their wickets are the ones that matter or mostly tail-enders. — ✓ Players · the Bowling tab
+  - [x] *markdown* **Bunnies** · batters they have dismissed most — ✓ Players · the Bowling tab
+  - [x] *chart_note* They have got {bn.player.iloc[0]} out {_n(bn.dismissals.iloc[0], 'time')}, {bn.dismissals.iloc[0] / max(tw_, 1) * 100}% of their {tw_} wickets. — ✓ Players · the Bowling tab
+  - [x] *chart_note* The batters they have the wood on: bring them on when these batters come in. — ✓ Players · the Batting tab
+  - [x] *markdown* **Streaks** · innings bowled in a row — ✓ Players · the Bowling tab
+  - [x] *markdown* **{title}** · economy — ✓ Players · the Bowling tab
+  - [x] *chart_note* overs — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *chart_note* Lower is better. — ✓ Players · the Batting tab
+  - [x] *chart_note* Shows whether they bowl better defending a total or chasing one. — ✓ Players · the Bowling tab
+  - [x] *chart_note* Shows which teams they keep quiet and which ones get after them. — ✓ Players · the Batting tab
+  - [x] *safe_section* fielding — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *kpis* {f.matches} — ✓ Players · the Batting tab
+  - [x] *kpis* Catches — ✓ Players · the Batting tab
+  - [x] *kpis* {f.catches} — ✓ Players · the Batting tab
+  - [x] *kpis* Stumpings — ✓ Players · the Batting tab
+  - [x] *kpis* {f.stumpings} — ✓ Players · the Batting tab
+  - [x] *caption* No fielding record in this section. — ✓ Players · the Fielding tab
+  - [x] *caption* Catches and stumpings are credited under the player's own name, so 'c de Kock' counts for Q de Kock. Run outs aren't credited to fielders because the scorecard doesn't name them. — ✓ Players · the Fielding tab
+  - [x] *safe_section* match impact — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **Match impact** · one number per match in {section} (batting, bowling and fielding together) — ✓ Players · the Story tab
+  - [x] *caption* No matches yet. — ✓ Players · the Batting tab
+  - [x] *chart_note* Average {mine_i.impact.mean()} a match, number {rank_i} of the {len(per_m)} players here with {need_i}+ matches. Best: {best_i.impact} v {best_i.opponent} ({int(best_i.runs)} runs, {_n(best_i.wickets, 'wkt')}). Blue bars are wins. — ✓ Players · the Story tab
+  - [x] *chart_note* Puts batting, bowling and fielding on one scale: runs, plus each wicket worth the section's runs per wicket — ✓ Players · the Fielding tab
+  - [x] *chart_note* kind — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *chart_note* multi — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *chart_note* , with scoring speed and economy counted in white-ball cricket. — ✓ Players · the Bowling tab
+  - [x] *safe_section* rank over time — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **Rank over time** · where they finished in {section} each season — ✓ Players · the Story tab
+  - [x] *caption* No seasons yet. — ✓ Players · the Batting tab
+  - [x] *chart_note* In {r0.season}: — ✓ Players · the Batting tab
+  - [x] *chart_note* no runs or wickets — ✓ Players · the Bowling tab
+  - [x] *chart_note* . Peak: {int(peak)}. — ✓ Players · the Story tab
+  - [x] *chart_note* A career story at a glance: when they peaked and whether they're climbing or fading. — ✓ Players · the Story tab
+  - [x] *safe_section* milestones — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **Milestones** · how many {unit_} it took, and the rank among everyone here who got there — ✓ Players · the Story tab
+  - [x] *caption* No milestone reached here yet. — ✓ Players · the Story tab
+  - [x] *html_table* {r.milestone} {r.what} — ✓ Players · the Story tab
+  - [x] *html_table* {r.taken} {unit_} — ✓ Players · the Batting tab
+  - [x] *html_table* {r.rank} of {int(((fa.what == r.what) & (fa.milestone == r.milestone)).sum())} — ✓ Players · the Story tab
+  - [x] *html_table* {r.date} — ✓ Players · the Batting tab
+  - [x] *html_table* Milestone — ✓ Players · the Story tab
+  - [x] *html_table* Took — ✓ Players · the Batting tab
+  - [x] *html_table* Fastest — ✓ Players · the Batting tab
+  - [x] *html_table* Reached — ✓ Players · the Batting tab
+  - [x] *safe_section* badges — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **Badges** · special feats, with the rules for each format — ✓ Players · the Story tab
+  - [x] *caption* No badges yet: a T20 hundred, a five-for, a Test double hundred or ten in a match earns one. — ✓ Players · the Story tab
+  - [x] *html_table* 🏅 {r.badge} — ✓ Players · the Story tab
+  - [x] *html_table* Badge — ✓ Players · the Story tab
+  - [x] *html_table* Match — ✓ Players · the Batting tab
+  - [x] *safe_section* career firsts — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **Career firsts** · every competition — ✓ Players · the Story tab
+  - [x] *caption* Nothing yet. — ✓ Players · the Batting tab
+  - [x] *html_table* v {r.against} — ✓ Players · the Batting tab
+  - [x] *safe_section* team wins — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **When {player} fires** · their team's win % in {section}{'' if season == 'All seasons' else ' ' + season} — ✓ Players · the Story tab
+  - [x] *html_table* Times — ✓ Players · the Batting tab
+  - [x] *html_table* Win % then — ✓ Players · the Batting tab
+  - [x] *html_table* Win % otherwise — ✓ Players · the Batting tab
+  - [x] *caption* No {wb.attrs.get('big', 50)}+ scores or {ww.attrs.get('haul', 3)}-wicket hauls here yet. — ✓ Players · the Bowling tab
+  - [x] *safe_section* quirks — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **Odd ones** — ✓ Players · the Story tab
+  - [x] *markdown* Nothing unusual yet. — ✓ Players · the Story tab
+  - [x] *safe_section* compare seasons — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **Compare two seasons** · {section} — ✓ Players · the Story tab
+  - [x] *caption* Only one season in this section so far. — ✓ Players · the Batting tab
+  - [x] *selectbox* pl_cmp_a — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *selectbox* pl_cmp_b — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *caption* ✓ marks the better season on each (for bowling average, economy and strike rate, lower is better). — ✓ Players · the Story tab
 - **record_table**
-  - [ ] *NumberColumn* %d
-  - [ ] *dataframe* stretch
+  - [x] *NumberColumn* %d — ✓ Players · the Batting tab
+  - [x] *dataframe* stretch — ✓ code detail (a name inside the old site's code; nothing is shown)
 
 ## Rankings · `views/rankings.py`
 
@@ -4542,98 +4544,98 @@ Everything kept in `Documents\Cricket Captain Stats Pack`. The new site reads an
 **In the code** (every part of the page, including what shows only for some choices)
 
 - **render**
-  - [ ] *info* No matches for {team} yet: this tab fills in after their first game. Add their schedule on the **Fixtures** page meanwhile, and the next match and series previews show up here.
-  - [ ] *safe_section* banner
-  - [ ] *caption* {b['section']}: {b['elo_text']}, {b['rank']} of {b['teams']} in the ratings
-  - [ ] *caption* position
-  - [ ] *caption* , {b['position'][2]} in {b['position'][0]}
-  - [ ] *caption* chances
-  - [ ] *caption* elo_text
-  - [ ] *caption* . ▲▼ = rating change over the last 5 games.
-  - [ ] *caption* Chances: the rest of the season played out 2,000 times (Competitions → Title race).
-  - [ ] *scoreboard* Latest result · {with_stage(shown_name(last.section, last.event), last.stage)} · {last.date}
-  - [ ] *scoreboard* {last.result}
-  - [ ] *scoreboard* · Player of the match: {last.player_of_match}
-  - [ ] *safe_section* after the match
-  - [ ] *markdown* **What changed after the latest game** · v {am['opponent']}, {am['date']}
-  - [ ] *caption* Rating: Elo before and after this game. Table: league position before and after. ▲ a big game for the player (well above their season average before it, or a haul); ▼ a low score after a run of good ones. Next opponent: from your schedule (Fixtures page); preview any side under Rivals below.
-  - [ ] *safe_section* next up
-  - [ ] *selectbox* Section
-  - [ ] *selectbox* mt_sec_{key}
-  - [ ] *selectbox · help* Your team's sections, the one you played most recently first.
-  - [ ] *safe_section* season so far
-  - [ ] *markdown* **{section} {season} so far** · last 5: {form_strip(last5)}
-  - [ ] *html_table* {g}
-  - [ ] *html_table* Report card
-  - [ ] *html_table* Grade
-  - [ ] *html_table* Why
-  - [ ] *caption* Grades against the average team in this section this season: A well above, C about average, E well below.
-  - [ ] *safe_section* stars
-  - [ ] *markdown* **Your stars this season** · ▲▼ form over the last 3 innings
-  - [ ] *caption* No games yet.
-  - [ ] *html_table* Player
-  - [ ] *html_table* Form
-  - [ ] *safe_section* alerts
-  - [ ] *markdown* **Worth a look**
-  - [ ] *safe_section* squad
-  - [ ] *expander* Squad · everyone who has played for {team} in {section} {season}
-  - [ ] *html_table* Games
-  - [ ] *html_table* Runs
-  - [ ] *html_table* Avg
-  - [ ] *html_table* SR
-  - [ ] *html_table* Wkts
-  - [ ] *html_table* Econ
-  - [ ] *html_table* Last 5 scores
-  - [ ] *html_table* dim
-  - [ ] *caption* Greyed out: not in the last 3 games.
-  - [ ] *safe_section* headlines
-  - [ ] *markdown* **📰 {team} headlines**
-  - [ ] *markdown* - {h}
-  - [ ] *caption* Nothing big in your recent games.
-  - [ ] *safe_section* milestones
-  - [ ] *markdown* **Milestones and records in sight**
-  - [ ] *html_table* Chasing
-  - [ ] *caption* Nobody close to a milestone or a record right now.
-  - [ ] *safe_section* how you win
-  - [ ] *markdown* **How you win**
-  - [ ] *markdown* Batting first **{pct(r.bf_win_pct)}** ({int(r.bf_won)} of {int(r.bf_decided)}) · {second} **{pct(r.ch_win_pct)}** ({int(r.ch_won)} of {int(r.ch_decided)}).
-  - [ ] *caption* Your lowest total defended: {int(won.first_score.min())}. Your typical winning total batting first: {int(won.first_score.median())}.
-  - [ ] *safe_section* rivals
-  - [ ] *markdown* **Rivals at a glance** · most-played opponents here
-  - [ ] *html_table* Opponent
-  - [ ] *html_table* Played
-  - [ ] *html_table* Record
-  - [ ] *html_table* Win %
-  - [ ] *selectbox* Next opponent
-  - [ ] *selectbox* mt_next_{key}
-  - [ ] *selectbox* · next match
-  - [ ] *selectbox* · in your schedule
-  - [ ] *selectbox · help* Your scheduled opponents first (Fixtures page), then every side here.
-  - [ ] *button* Preview →
-  - [ ] *button* mt_go_{key}
-  - [ ] *safe_section* trophy cabinet
-  - [ ] *markdown* **🏆 Trophy cabinet**
-  - [ ] *caption* No titles yet.
-  - [ ] *html_table* {r.section} {r.season}
-  - [ ] *html_table* Title
-  - [ ] *html_table* How
-  - [ ] *html_table* Runners-up
-  - [ ] *markdown* **{team} records in {section}**
-  - [ ] *safe_section* history
-  - [ ] *markdown* **Season by season**
-  - [ ] *html_table* {r.season}
-  - [ ] *html_table* {pct(r.win_pct)}
-  - [ ] *html_table* Season
-  - [ ] *html_table* Finished
-  - [ ] *safe_section* notes
-  - [ ] *markdown* **📝 Your match notes**
-  - [ ] *caption* No notes yet. Open any match on the Matches page and write one under the score.
-  - [ ] *html_table* {r.date}
-  - [ ] *html_table* {r.home} v {r.away}
-  - [ ] *html_table* Date
-  - [ ] *html_table* Match
-  - [ ] *html_table* Note
-  - [ ] *markdown* Latest scorecard: {match_link(lg.match_id, f'{lg.home} v {lg.away}, {lg.date:%d %b %Y}')}
+  - [x] *info* No matches for {team} yet: this tab fills in after their first game. Add their schedule on the **Fixtures** page meanwhile, and the next match and series previews show up here. — ✓ My team (said when a team hasn't played yet)
+  - [x] *safe_section* banner — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *caption* {b['section']}: {b['elo_text']}, {b['rank']} of {b['teams']} in the ratings — ✓ My team · format tiles (Elo, rank)
+  - [x] *caption* position — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *caption* , {b['position'][2]} in {b['position'][0]} — ✓ My team · format tiles (table position)
+  - [x] *caption* chances — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *caption* elo_text — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *caption* . ▲▼ = rating change over the last 5 games. — ✓ My team · format tiles (▲▼ the change)
+  - [x] *caption* Chances: the rest of the season played out 2,000 times (Competitions → Title race). — ✓ My team · Next up (the series chances)
+  - [x] *scoreboard* Latest result · {with_stage(shown_name(last.section, last.event), last.stage)} · {last.date} — ✓ My team · Latest result
+  - [x] *scoreboard* {last.result} — ✓ My team · Latest result
+  - [x] *scoreboard* · Player of the match: {last.player_of_match} — ✓ My team · Latest result (player of the match)
+  - [x] *safe_section* after the match — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **What changed after the latest game** · v {am['opponent']}, {am['date']} — ✓ My team · What changed after the latest game
+  - [x] *caption* Rating: Elo before and after this game. Table: league position before and after. ▲ a big game for the player (well above their season average before it, or a haul); ▼ a low score after a run of good ones. Next opponent: from your schedule (Fixtures page); preview any side under Rivals below. — ✓ My team · What changed (its note)
+  - [x] *safe_section* next up — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *selectbox* Section — ✓ My team · the competition buttons
+  - [x] *selectbox* mt_sec_{key} — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *selectbox · help* Your team's sections, the one you played most recently first. — ✓ My team · the competition buttons (latest first)
+  - [x] *safe_section* season so far — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **{section} {season} so far** · last 5: {form_strip(last5)} — ✓ My team · {competition} so far
+  - [x] *html_table* {g} — ✓ My team · the same table (column or cell)
+  - [x] *html_table* Report card — ✓ My team · so far (report card)
+  - [x] *html_table* Grade — ✓ My team · so far (grades)
+  - [x] *html_table* Why — ✓ My team · so far (grades)
+  - [x] *caption* Grades against the average team in this section this season: A well above, C about average, E well below. — ✓ My team · so far (the grades note)
+  - [x] *safe_section* stars — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **Your stars this season** · ▲▼ form over the last 3 innings — ✓ My team · Your stars this season
+  - [x] *caption* No games yet. — ✓ My team · Your stars (said when there are no games)
+  - [x] *html_table* Player — ✓ My team · Your stars
+  - [x] *html_table* Form — ✓ My team · Your stars (form)
+  - [x] *safe_section* alerts — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **Worth a look** — ✓ My team · Your stars · Worth a look
+  - [x] *safe_section* squad — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *expander* Squad · everyone who has played for {team} in {section} {season} — ✓ My team · Squad
+  - [x] *html_table* Games — ✓ My team · the same table (column or cell)
+  - [x] *html_table* Runs — ✓ My team · the same table (column or cell)
+  - [x] *html_table* Avg — ✓ My team · the same table (column or cell)
+  - [x] *html_table* SR — ✓ My team · the same table (column or cell)
+  - [x] *html_table* Wkts — ✓ My team · the same table (column or cell)
+  - [x] *html_table* Econ — ✓ My team · the same table (column or cell)
+  - [x] *html_table* Last 5 scores — ✓ My team · the same table (column or cell)
+  - [x] *html_table* dim — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *caption* Greyed out: not in the last 3 games. — ✓ My team · Squad (greyed-out note)
+  - [x] *safe_section* headlines — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **📰 {team} headlines** — ✓ My team · headlines
+  - [x] *markdown* - {h} — ✓ My team · headlines
+  - [x] *caption* Nothing big in your recent games. — ✓ My team · headlines (said when there's nothing)
+  - [x] *safe_section* milestones — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **Milestones and records in sight** — ✓ My team · Milestones and records in sight
+  - [x] *html_table* Chasing — ✓ My team · Milestones
+  - [x] *caption* Nobody close to a milestone or a record right now. — ✓ My team · Milestones (said when nobody's close)
+  - [x] *safe_section* how you win — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **How you win** — ✓ My team · How you win
+  - [x] *markdown* Batting first **{pct(r.bf_win_pct)}** ({int(r.bf_won)} of {int(r.bf_decided)}) · {second} **{pct(r.ch_win_pct)}** ({int(r.ch_won)} of {int(r.ch_decided)}). — ✓ My team · How you win
+  - [x] *caption* Your lowest total defended: {int(won.first_score.min())}. Your typical winning total batting first: {int(won.first_score.median())}. — ✓ My team · How you win (lowest total defended, typical winning total)
+  - [x] *safe_section* rivals — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **Rivals at a glance** · most-played opponents here — ✓ My team · Rivals at a glance
+  - [x] *html_table* Opponent — ✓ My team · the same table (column or cell)
+  - [x] *html_table* Played — ✓ My team · the same table (column or cell)
+  - [x] *html_table* Record — ✓ My team · the same table (column or cell)
+  - [x] *html_table* Win % — ✓ My team · the same table (column or cell)
+  - [x] *selectbox* Next opponent — ✓ My team · Rivals (next opponent list)
+  - [x] *selectbox* mt_next_{key} — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *selectbox* · next match — ✓ My team · Rivals (next opponent list notes)
+  - [x] *selectbox* · in your schedule — ✓ My team · Rivals (next opponent list notes)
+  - [x] *selectbox · help* Your scheduled opponents first (Fixtures page), then every side here. — ✓ My team · Rivals (scheduled opponents first)
+  - [ ] *button* Preview → — → stage 2: Opponent preview (My team says so beside the list for now)
+  - [x] *button* mt_go_{key} — ✓ code detail (a name inside the old site's code; nothing is shown)
+  - [x] *safe_section* trophy cabinet — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **🏆 Trophy cabinet** — ✓ My team · Trophy cabinet
+  - [x] *caption* No titles yet. — ✓ My team · Trophy cabinet (said when there are none)
+  - [x] *html_table* {r.section} {r.season} — ✓ My team · the same table (column or cell)
+  - [x] *html_table* Title — ✓ My team · the same table (column or cell)
+  - [x] *html_table* How — ✓ My team · the same table (column or cell)
+  - [x] *html_table* Runners-up — ✓ My team · the same table (column or cell)
+  - [x] *markdown* **{team} records in {section}** — ✓ My team · Trophy cabinet ({team} records)
+  - [x] *safe_section* history — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **Season by season** — ✓ My team · Season by season
+  - [x] *html_table* {r.season} — ✓ My team · the same table (column or cell)
+  - [x] *html_table* {pct(r.win_pct)} — ✓ My team · the same table (column or cell)
+  - [x] *html_table* Season — ✓ My team · the same table (column or cell)
+  - [x] *html_table* Finished — ✓ My team · the same table (column or cell)
+  - [x] *safe_section* notes — ✓ each part kept apart on the new site too: one that can't be worked out says so and the rest still shows
+  - [x] *markdown* **📝 Your match notes** — ✓ My team · Your match notes
+  - [x] *caption* No notes yet. Open any match on the Matches page and write one under the score. — ✓ My team · Your match notes (said when there are none)
+  - [x] *html_table* {r.date} — ✓ My team · the same table (column or cell)
+  - [x] *html_table* {r.home} v {r.away} — ✓ My team · the same table (column or cell)
+  - [x] *html_table* Date — ✓ My team · the same table (column or cell)
+  - [x] *html_table* Match — ✓ My team · the same table (column or cell)
+  - [x] *html_table* Note — ✓ My team · the same table (column or cell)
+  - [x] *markdown* Latest scorecard: {match_link(lg.match_id, f'{lg.home} v {lg.away}, {lg.date:%d %b %Y}')} — ✓ My team · notes tile (latest scorecard)
 
 ## ui/pick_folder.py · `ui/pick_folder.py`
 
