@@ -41,10 +41,10 @@ def _figures(career, ids, team: str) -> pd.DataFrame:
     w = career.bowling[career.bowling.match_id.isin(ids) & (career.bowling.team == team)]
     bowl = w.groupby(["match_id", "player"]).agg(balls_bowled=("balls", "sum")).reset_index()
     d = d.merge(bat, on=["match_id", "player"], how="left").merge(bowl, on=["match_id", "player"], how="left")
-    d = d.fillna({"balls_faced": 0, "out": False, "balls_bowled": 0})
+    d = d.fillna({"balls_faced": 0, "balls_bowled": 0})
     d["balls_faced"] = d.balls_faced.astype(int)
     d["balls_bowled"] = d.balls_bowled.astype(int)
-    d["out"] = d.out.astype(bool)
+    d["out"] = d.out.eq(True)   # didn't bat: not out (eq, not fillna: pandas warns about filling a mixed column)
     return d
 
 

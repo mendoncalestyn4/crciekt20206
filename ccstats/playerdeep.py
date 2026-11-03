@@ -456,9 +456,10 @@ def all_formats(career, player: str) -> pd.DataFrame:
         r["sr_vs"] = (r["strike_rate"] / base.strike_rate - 1) * 100 if np.isfinite(r["strike_rate"]) and base.strike_rate else np.nan
         r["bowl_vs"] = ((base.bowl_average / r["bowl_average"] - 1) * 100
                         if np.isfinite(r["bowl_average"]) and r["bowl_average"] and np.isfinite(base.bowl_average) else np.nan)
-        score = np.nanmax([r["bat_vs"] if r["matches"] >= 3 else np.nan,
-                           r["bowl_vs"] if r["wickets"] >= 5 else np.nan]) if (r["matches"] >= 3 or r["wickets"] >= 5) else np.nan
-        r["score"] = score if np.isfinite(score) else np.nan
+        # the better of the two, each only with enough behind it; neither (a player never out, say): no score
+        both = [v for v in (r["bat_vs"] if r["matches"] >= 3 else np.nan, r["bowl_vs"] if r["wickets"] >= 5 else np.nan)
+                if np.isfinite(v)]
+        r["score"] = max(both) if both else np.nan
         rows.append(r)
     d = pd.DataFrame(rows)
     if len(d) and d.score.notna().any():
