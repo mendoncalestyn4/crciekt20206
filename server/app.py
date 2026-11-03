@@ -29,7 +29,7 @@ from ccstats import search as SR
 from ccstats.colours import TEAM_COLOURS
 from ccstats.local import CareerStore
 
-from . import matchpage, myteam, playerpage, styleguide
+from . import matchpage, myteam, playerpage, styleguide, teampage
 from .cache import kept
 from .site import Site
 
@@ -291,6 +291,37 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             return _error("That team hasn't played in this career.", 404)
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
+    # ------------------------------------------------------------------ Teams
+    def _team(c, q) -> dict:
+        """The Teams page: every competition, season and team to pick from, and the picked team's record and one tab.
+        With nothing picked: your team in its most played competition."""
+        ch = teampage.choices(c)
+        if not ch:
+            return dict(choices=[], page=None)
+        every = {t for s in ch for t in s["teams"]}
+        order = [t for t in myteam.teams_by_latest(c, site.my_teams(c)) if t in every]
+        team = q.get("team", "") or (order[0] if order else ch[0]["teams"][0])
+        if team not in every:
+            raise KeyError(team)
+        m = c.matches
+        played = m[(m.home == team) | (m.away == team)].section.value_counts()
+        section = q.get("section", "")
+        if section not in {s["section"] for s in ch}:
+            section = played.index[0] if len(played) else next(s["section"] for s in ch if team in s["teams"])
+        seasons = next(s["seasons"] for s in ch if s["section"] == section)
+        season = q.get("season", "")
+        season = season if season in seasons else "All seasons"
+        venue = {"home": "home", "away": "away"}.get(q.get("venue", "").lower(), "all")
+        return dict(choices=ch, page=teampage.page(c, section, season, team, venue, q.get("tab", ""), q.get("race", "")))
+
+    async def team_(request: Request):
+        q = request.query_params
+        try:
+            data = await _with_career(lambda c: _team(c, q))()
+        except KeyError:
+            return _error("That team hasn't played in this career.", 404)
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
     # ------------------------------------------------------------------ Players
     async def players_(request: Request):
         data = await _with_career(lambda c: kept(c, ("players-landing", tuple(site.my_teams(c))),
@@ -487,6 +518,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/players", players_),
         Route("/api/names", names_),
         Route("/api/scouting", scouting_),
+        Route("/api/team", team_),
         Route("/api/player", player_),
         Route("/api/events", events),
     ]

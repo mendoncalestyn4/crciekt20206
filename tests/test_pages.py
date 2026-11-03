@@ -8,11 +8,15 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from ccstats import analysis as A
 from ccstats import attributes as AT
+from ccstats import catalogue as CAT
 from ccstats import depth as DP
 from ccstats import playerdeep as PD
 from ccstats.loader import Career
+from ccstats.stats import Scope, player_tables
 from server import playerpage as PP
+from server import teampage as TPG
 from server.app import create_app
 from serverkit import FIXTURES, Live, make_pc
 
@@ -319,3 +323,91 @@ def test_my_team_scouting_tab(live):
         same = next(s for s in d["sections"] if s["section"] == my["report"]["section"])
         assert [a["player"] for a in same["advice"]] == [a["player"] for a in my["report"]["advice"]]
     assert live.get("/api/scouting?team=Nobody FC")[0] == 404
+
+
+# ------------------------------------------------------------------ the Teams page (stage 2)
+def test_teams_page_opens_on_your_team_and_every_tab_works(live):
+    """With nothing picked: your team in its most played competition. Every tab, overall, home and away, comes back
+    whole (no part that couldn't be worked out); an unknown team is a 404."""
+    d = live.json("/api/team")
+    p = d["page"]
+    assert p["team"] == "England" and p["tab"] == "Overview" and not p["head"]["none"]
+    counts = [c["matches"] for c in d["choices"]]
+    assert counts == sorted(counts, reverse=True)
+    m = live.json("/api/career")
+    for tab in p["tabs"]:
+        for venue in ("", "home", "away"):
+            x = live.json(f"/api/team?team=England&section={p['section']}&tab={tab}&venue={venue}")["page"]
+            assert x["tab"] == tab
+            if x["head"]["none"]:
+                assert venue, "overall always has a record"
+                continue
+            assert x["body"]["missing"] == {}, (tab, venue, x["body"]["missing"])
+    assert live.get("/api/team?team=Nobody FC")[0] == 404
+    assert m
+
+
+def test_teams_page_numbers_are_the_engines(career):
+    """The record, the table of every team, the top run-scorers, the results and the best XI are what the engine
+    says, in every competition, overall and at home."""
+    from ccstats import seasonal as SN
+    for sec in sorted(career.matches.section.unique()):
+        ids = Scope(sections=[sec]).match_ids(career.matches)
+        tbl = A.team_table(career, ids, "all")
+        for team in list(tbl.team)[:3]:
+            h = TPG.head(career, sec, "All seasons", team, "all")
+            r = tbl.set_index("team").loc[team]
+            kp = {k["k"]: k["v"] for k in h["kpis"]}
+            assert kp["Played"] == str(int(r.played)) and kp["Won–Lost"] == f"{int(r.won)}–{int(r.lost)}"
+            assert kp["Win %"] == f"{r.win_pct:.0f}%"
+            ov = TPG.overview(career, sec, "All seasons", team, "all")
+            assert ov["missing"] == {}, (sec, team, ov["missing"])
+            assert sorted(row[0] for row in ov["every_team"]["rows"]) == sorted(tbl.team)
+            bat = player_tables(career, Scope(sections=[sec]), by_team=True)[0]
+            top = bat[bat.team == team].sort_values("runs", ascending=False).head(6)
+            assert [x["runs"] for x in ov["top_bat"]["rows"]] == [int(v) for v in top.runs if v > 0]
+            res = TPG.results_tab(career, sec, "All seasons", team, "all")["results"]
+            assert len(res["rows"]) == int(r.played) and sum(row[-1] == "W" for row in res["rows"]) == int(r.won)
+            assert len(res["links"]) == len(res["rows"])
+            xi = SN.best_xi(career, ids, team)
+            got = TPG.squad_tab(career, sec, "All seasons", team, "all")["best_xi"]
+            assert [row[2] for row in got.get("rows", [])] == list(xi.player)
+            # home only: the games at home that weren't on neutral ground
+            here = career.matches[career.matches.match_id.isin(ids)]
+            home = here[(here.home == team) & ~here.neutral]
+            hh = TPG.head(career, sec, "All seasons", team, "home")
+            if len(home):
+                assert {k["k"]: k["v"] for k in hh["kpis"]}["Played"] == str(len(home))
+            else:
+                assert hh["none"]
+
+
+def test_teams_page_says_why_when_theres_nothing(career):
+    """Neutral ground has no home games; a team that belongs in a competition but hasn't played there yet is told
+    where it has played."""
+    m = career.matches
+    for sec in m.section.unique():
+        here = m[m.section == sec]
+        every, todo = CAT.section_teams(here, sec, here)
+        if here.neutral.all():
+            h = TPG.head(career, sec, "All seasons", here.home.iloc[0], "home")
+            assert h["none"].startswith(f"{sec} matches are played at neutral venues")
+        for t in sorted(todo)[:1]:
+            h = TPG.head(career, sec, "All seasons", t, "all")
+            assert h["none"].startswith(f"{t} haven't played in {sec} yet")
+
+
+def test_teams_page_league_race_positions(career):
+    """Each league race line holds a position for every match day it played, from 1 to the number of teams."""
+    m = career.matches
+    for sec in m.section.unique():
+        here = m[m.section == sec]
+        for team in sorted(set(here.home))[:2]:
+            r = TPG.season_tab(career, sec, "All seasons", team, "all")["race"]
+            if not r or not r["lines"]:
+                continue
+            n = len(r["lines"])
+            assert team in {line["team"] for line in r["lines"]}
+            for line in r["lines"]:
+                rounds = [x["round"] for x in line["points"]]
+                assert rounds == sorted(rounds) and all(1 <= x["position"] <= n for x in line["points"])

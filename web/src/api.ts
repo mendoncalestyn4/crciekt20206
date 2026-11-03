@@ -278,3 +278,38 @@ export type InboxMsg = { date: string; kind: "result" | "struggling" | "knocking
   series: string; player: string; match: string };
 export type InboxItem = InboxMsg & { id: string; team: string; read: boolean };
 export type InboxPage = { teams: string[]; messages: InboxItem[]; unread: number };
+
+// ------------------------------------------------------------------ Teams (stage 2)
+export type GridT = { cols: string[]; rows: (string | number | null)[][]; num: number[]; hi: boolean[]; links: (string | null)[] };
+export type Noted = { title?: string; right?: string; note?: string; none?: string };
+export type NGrid = GridT & Noted;
+export type SignedBar = { label: string; value: number; text: string; note?: string };
+export type RaceLine = { team: string; points: { round: number; position: number; points: number | null; played: number }[] };
+export type Explained = { shows: string; for_: string };
+export type TeamChoice = { section: string; matches: number; seasons: string[]; teams: string[]; todo: string[]; neutral: boolean };
+export type TeamHead = { none: string; elsewhere?: string[]; kpis?: { k: string; v: string }[]; last5?: string[]; runs?: string;
+  venue_note?: string; ratings?: string; limited?: boolean };
+export type TeamBody = {
+  missing: Record<string, string>;
+  keepers?: { player: string; stumpings: number }[] | null;
+  vs_average?: ({ title: string; right: string; rows: SignedBar[] } & Explained) | null;
+  top_bat?: ({ rows: { player: string; team: string; runs: number; note: string }[] } & Explained) | null;
+  top_bowl?: ({ rows: { player: string; team: string; wickets: number; note: string }[] } & Explained) | null;
+  depth?: ({ rows: Bar[] } & Explained) | null;
+  stands?: ({ rows: Bar[] } & Explained) | null;
+  openers?: GridT | null; collapses?: GridT | null;
+  how_they_play?: ({ rows: SignedBar[]; every: boolean } & Explained) | null;
+  discipline?: ({ rows: { player: string; team: string; extras: number; note: string }[]; every: boolean } & Explained) | null;
+  every_team?: NGrid | null;
+  bat_first?: NGrid | null; close?: (NGrid & { games: GridT | null }) | null; start?: NGrid | null; targets?: NGrid | null;
+  dominance?: NGrid | null; comebacks?: NGrid | null;
+  stages?: GridT | null; bounce?: GridT | null; opponents?: GridT | null; fortress?: NGrid | null; revenge?: GridT | null;
+  race?: ({ options: string[]; picked?: string; none: string; lines: RaceLine[] } & Explained) | null; halves?: GridT | null;
+  has_series?: boolean; multi?: boolean; first_blood?: GridT | null; deciders?: GridT | null; second_innings?: GridT | null;
+  follow_on?: GridT | null;
+  best_xi?: NGrid | null;
+  changes?: { right: string; steps: { title: string; ins: GridT; outs: GridT }[]; none: string; note: string } | null;
+  results?: GridT | null;
+};
+export type TeamPage = { choices: TeamChoice[]; page: { section: string; season: string; team: string; venue: string; tab: string;
+  tabs: string[]; head: TeamHead; body: TeamBody | null } | null };
