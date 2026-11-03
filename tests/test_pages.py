@@ -411,3 +411,106 @@ def test_teams_page_league_race_positions(career):
             for line in r["lines"]:
                 rounds = [x["round"] for x in line["points"]]
                 assert rounds == sorted(rounds) and all(1 <= x["position"] <= n for x in line["points"])
+
+
+# ------------------------------------------------------------------ Team v team (stage 2)
+def test_team_v_team_defaults_and_every_choice(live):
+    """With nothing picked: your team against the side it has met most, their meetings at every ground; every choice
+    of matches and ground comes back whole or with a plain reason."""
+    d = live.json("/api/teamvteam")
+    p = d["page"]
+    assert p["a"] == "England" and p["b"] != "England" and p["which"] in ("each", "any")
+    for which in ("each", "any"):
+        for g in p["grounds"]:
+            x = live.json(f"/api/teamvteam?section={p['section']}&a={p['a']}&b={p['b']}&which={which}&ground={g['key']}")["page"]
+            assert x["which"] == which and x["ground"] == g["key"]
+            assert bool(x["none"]) != bool(x.get("body")), (which, g)
+            if x.get("body"):
+                assert x["body"]["missing"] == {}, (which, g, x["body"]["missing"])
+
+
+def test_team_v_team_numbers_are_the_engines(career):
+    """Against each other: each side's record is the engine's for their meetings, the head to head adds up, and the
+    tale of the tape's ticks go to the better side."""
+    from server import tvtpage as TV
+    m = career.matches
+    done = 0
+    for sec in sorted(m.section.unique()):
+        here = m[m.section == sec]
+        pairs = (here.home + "|" + here.away).value_counts()
+        for pair in pairs.index[:2]:
+            a, b = pair.split("|")
+            d = TV.page(career, sec, "All seasons", a, b, "each", "all", [])
+            if d["none"]:
+                continue
+            body = d["body"]
+            assert body["missing"] == {}, (sec, a, b, body["missing"])
+            meet = here[((here.home == a) & (here.away == b)) | ((here.home == b) & (here.away == a))]
+            rec = A.team_table(career, Scope(sections=[sec], team=a, opponent=b).match_ids(m)).set_index("team").loc[a]
+            figs = {f["k"]: f["v"] for f in body["tiles"][0]["figures"]}
+            assert figs["Played"] == str(int(rec.played)) == str(len(meet))
+            assert len(body["meetings"]["rows"]) == len(meet)
+            aw, bw = int((meet.winner == a).sum()), int((meet.winner == b).sum())
+            assert body["meetings"]["line"].startswith(f"{len(meet)} meeting") and f"{a} {aw} – {bw} {b}" in body["meetings"]["line"]
+            for r in body["tape"]["rows"]:
+                assert not (r["a_better"] and r["b_better"])
+            done += 1
+    assert done >= 3
+
+
+def test_team_v_team_says_why_when_theres_nothing(career):
+    from server import tvtpage as TV
+    m = career.matches
+    for sec in m.section.unique():
+        here = m[m.section == sec]
+        if here.neutral.all():
+            d = TV.page(career, sec, "All seasons", here.home.iloc[0], here.away.iloc[0], "each", "a_home", [])
+            assert d["ground"] == "all" or d["none"].endswith("Choose All venues.")
+
+
+# ------------------------------------------------------------------ Opponent preview (stage 2)
+def test_opponent_preview_opens_on_your_latest_game_and_every_tab_works(live):
+    """No schedule: it opens on your team's latest game; every tab, and both ways of counting who gets whom out, comes
+    back whole."""
+    d = live.json("/api/preview")
+    assert d["mine"] == "England" and d["opp"] and not d["none"]
+    for tab in d["tabs"]:
+        for mu, cur in (("", ""), ("every", "1")):
+            x = live.json(f"/api/preview?section={d['section']}&format={d['format']}&mine={d['mine']}&opp={d['opp']}&tab={tab}&mu={mu}&cur={cur}")
+            assert x["tab"] == tab and x["mu"] == (mu == "every") and x["cur"] == (cur == "1")
+            assert x["head"]["missing"] == {} and x["body"]["missing"] == {}, (tab, x["head"]["missing"], x["body"]["missing"])
+    # no team of yours picked: their side only, and the tabs that need your team say so
+    x = live.json(f"/api/preview?section={d['section']}&format={d['format']}&mine=—&opp={d['opp']}&tab=Side by side")
+    assert x["body"]["none"] == "Pick your team above to compare the two sides." and "predicted" not in x["head"]
+
+
+def test_opponent_preview_numbers_are_the_engines(career):
+    """Their record is the engine's preview record; the meetings add up; the predicted result's three chances add to
+    100 at every ground."""
+    from ccstats import extras as E
+    from ccstats import preview as PV
+    from server import previewpage as PG
+    m = career.matches
+    done = 0
+    for sec in ["Tests", "ODIs", "T20Is"]:
+        here = m[m.section == sec]
+        if here.empty:
+            continue
+        pairs = (here.home + "|" + here.away).value_counts()
+        for pair in pairs.index[:2]:
+            me, opp = pair.split("|")
+            d = PG.page(career, {"section": PG.INTL, "format": sec, "mine": me, "opp": opp}, [me], [me], [])
+            assert not d["none"], d["none"]
+            ids = here.match_id
+            rec = A.team_record(E.opponent_preview(career, ids, opp)["matches"])
+            k = {x["k"]: x["v"] for x in d["head"]["kpis"]}
+            assert k["Played"] == str(rec["played"]) and k["Won–Lost"] == f"{rec['won']}–{rec['lost']}"
+            mt = PV.meetings(career, ids, me, opp)
+            h = d["body"]["h2h"]
+            assert {x["k"]: x["v"] for x in h["kpis"]}["Meetings"] == str(mt["record"]["played"])
+            assert len(h["cards"]) == len(mt["cards"])
+            for where, p in d["head"]["predicted"].items():
+                nums = [float(x.split()[-1].rstrip("%")) for x in p["line"].split(" · ")]
+                assert abs(sum(nums) - 100) <= 2, (where, p["line"])
+            done += 1
+    assert done >= 2

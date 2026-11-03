@@ -13,6 +13,9 @@ import { T } from "../shell/names";
 import { useTheme } from "../theme";
 
 const VENUES: [string, string][] = [["Overall", "all"], ["Home", "home"], ["Away", "away"]];
+/** The Teams section's pages, switched from the top of each. */
+export const TEAM_PAGES = [{ label: "Team record", to: "/teams" }, { label: "Team v team", to: "/teams/vs" },
+  { label: "Opponent preview", to: "/teams/preview" }];
 
 export function Teams() {
   const { career, noCareer, nation } = useShell();
@@ -45,7 +48,8 @@ export function Teams() {
   const vlabel = VENUES.find(([, v]) => v === p.venue)?.[0] ?? "Overall";
   return (
     <>
-      <Head title="Teams" crumb={`Team record · ${p.team}`} />
+      <Head title="Teams" crumb={`Team record · ${p.team}`} chips={TEAM_PAGES.map((x) => x.label)} on={0}
+        onChip={(i) => go(`${TEAM_PAGES[i]!.to}${keep}`)} />
       <div className="grid">
         <Tile span={12} title="Pick a competition and a team">
           <div className="plain">Every comparison is against the average of all the teams in that competition.</div>

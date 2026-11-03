@@ -280,7 +280,7 @@ export type InboxItem = InboxMsg & { id: string; team: string; read: boolean };
 export type InboxPage = { teams: string[]; messages: InboxItem[]; unread: number };
 
 // ------------------------------------------------------------------ Teams (stage 2)
-export type GridT = { cols: string[]; rows: (string | number | null)[][]; num: number[]; hi: boolean[]; links: (string | null)[] };
+export type GridT = { cols: string[]; rows: (string | number | null)[][]; num: number[]; hi: boolean[]; links: (string | null)[]; dim?: boolean[] };
 export type Noted = { title?: string; right?: string; note?: string; none?: string };
 export type NGrid = GridT & Noted;
 export type SignedBar = { label: string; value: number; text: string; note?: string };
@@ -313,3 +313,42 @@ export type TeamBody = {
 };
 export type TeamPage = { choices: TeamChoice[]; page: { section: string; season: string; team: string; venue: string; tab: string;
   tabs: string[]; head: TeamHead; body: TeamBody | null } | null };
+export type TapeRow = { label: string; a: number; b: number; at: string; bt: string; a_better: boolean; b_better: boolean };
+export type Dot = { player: string; team: string; x: number; y: number; note: string[] };
+export type TeamBarRow = { player: string; team: string; value: number; note: string[] };
+export type TvtBody = {
+  missing: Record<string, string>;
+  tiles?: { team: string; sub: string; figures: { k: string; v: string; up: boolean }[] }[] | null;
+  tape?: ({ rows: TapeRow[]; verdict: string } & Explained) | null;
+  meetings?: { none: string; line: string; rows: { id: string; date: string; stage: string; match: string; result: string }[] } | null;
+  bat_dots?: ({ points: Dot[]; slope: number; line: string; x: string; y: string; keys: string[] } & Explained) | null;
+  bowl_dots?: ({ points: Dot[]; slope: number; line: string; x: string; y: string; keys: string[] } & Explained) | null;
+  above?: ({ rows: TeamBarRow[] } & Explained) | null;
+  saved?: ({ rows: TeamBarRow[] } & Explained) | null;
+  top?: GridT | null;
+};
+export type TvtPage = { choices: TeamChoice[]; page: { section: string; season: string; teams: string[]; todo: string[]; a: string; b: string;
+  others?: string[]; which: string; ground: string; grounds: { key: string; label: string }[]; where_help?: string; info: string; none: string;
+  body?: TvtBody } | null };
+export type Fig = { k: string; v: string };
+export type PreviewBody = {
+  missing: Record<string, string>; none?: string;
+  h2h?: { never: string; other?: string; kpis?: Fig[]; last5?: string[]; how?: string; typical?: string;
+    keys?: { title: string; rows: string[][]; dim: boolean[] }[];
+    cards?: { id: string; date: string; event: string; sides: { team: string; score: string; top_bat: string; top_bowl: string }[]; potm: string; story: string }[] } | null;
+  matchups?: (NGrid | { title: string; none: string })[] | null;
+  batters?: ({ rows: { player: string; team: string; runs: number }[]; notes: string[] } & Explained) | null;
+  bowlers?: ({ rows: { player: string; team: string; wickets: number }[]; notes: string[] } & Explained) | null;
+  key_wicket?: GridT | null; weak_spot?: ({ rows: SignedBar[] } & Explained) | null; attack?: NGrid | null; styles?: GridT | null;
+  chase?: (NGrid & { extremes: { label: string; text: string; id: string }[] }) | null;
+  venues?: Record<string, NGrid> | null; big?: GridT | null; trend?: { last: string[]; line: string } | null;
+  how_out?: ({ rows: Bar[] } & Explained) | null; depth?: ({ rows: Bar[] } & Explained) | null;
+  sbs?: NGrid | null;
+  xi?: { title: string; right: string; none: string; bat: GridT | null; bowl: GridT | null; lines: string[]; note?: string } | null;
+};
+export type PreviewPage = { choices: { section: string; matches: number }[]; section: string; formats: string[]; format: string;
+  mine_opts: string[]; mine: string; opp: string; opp_opts: { team: string; label: string }[]; none: string; elsewhere: string[];
+  tabs: string[]; tab: string; mine_note?: string; where_note?: string; mu?: boolean; cur?: boolean;
+  head?: { missing: Record<string, string>; kpis: Fig[]; last5: string[]; caption: string; where_default: string;
+    predicted?: Record<string, { line: string; steps: GridT; note: string }> | null; plan?: string[] | null };
+  body?: PreviewBody };

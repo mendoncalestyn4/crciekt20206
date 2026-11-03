@@ -1,6 +1,7 @@
 # The new Stats Pack website: the plan
 
-**Status:** stage 0 approved (27 October); stage 1 (core pages) built (1 November), waiting for your approval.
+**Status:** stage 0 approved (27 October); stage 1 (core pages) built (1 November), finished and checked (3 November);
+stage 2 started on your word (3 November: "begin stage 2"): see section 16.
 **You said:** build it without waiting for answers; screenshots come at the end of each stage.
 **27 October:** you've stopped using the current site, so it gets no more work (it stays as it is until the
 switch-over). The zip comes once the whole new site is done. Screenshots of other teams' colours go in a set of their
@@ -679,6 +680,41 @@ Tests, one-day with ODIs, T20 with T20Is); the Scouting tab on My team; spin tic
 for stage 6.
 
 ---
+
+**Finished 3 November (your answers of 1 November):** Scouting never brings one man in for two players: when two
+struggling players share a best pick, he goes in for the one he'd improve on by more, and the other is shown their next
+best pick, with a line saying why (it happens in your 2032 save, e.g. Lions in the CSA 4-Day Series). The best format
+on the Player page goes by what a player is picked for in each competition (a batter's batting, a bowler's bowling, an
+all-rounder's better of the two): Gill's star moves from ODIs (six part-time wickets) to the IPL; about 6 in 100
+players' stars move; the line says "46% worse" rather than "-46% better". The Inbox shows only your own players'
+milestones (now locked by a test); What changed keeps everyone's. The pair badge stays. Cleared along the way: two
+warnings in the site's log and eight places that filled an empty number column with text, which pandas 3.1 (your PC)
+warns a later pandas will refuse; each answers exactly as before (463 pages compared on the two saves).
+**Checks, 3 November:** every figure worked out a second way on both saves: 0 problems; 222 and 289 site requests: 0
+problems; every stage 1 page at three widths, dark and light, on both saves: 0 layout problems; the full test suite on
+this machine and on Python 3.14 with pandas 3.1 (your PC's set-up, with any future-pandas warning counted as a
+failure): every test passed; the old site's browser test passes too.
+
+---
+
+## 16. Stage 2: progress
+
+Built so far (each with its numbers checked against the engine in tests, every tab and choice tried on both your
+saves, and the fit check at three widths in dark and light):
+- **Teams · Team record** (`/teams`, a team at `/teams/<name>`): one team in one competition and season, overall, home
+  or away, with every part of the current Teams page in seven tabs: Overview (against the average team, top
+  run-scorers and wicket-takers, batting depth, stands, opening pairs, collapses, how they play, discipline, every
+  team), How they win, Opponents and stages, Season (the league race), Series and Tests, Squad (best XI, who came in and
+  went out) and Results.
+- **Teams · Team v team** (`/teams/vs`): two teams, against each other or each against anyone, at any ground: each
+  side's record, the tale of the tape, every meeting, both sides' batters and bowlers as dots, every player's runs above
+  average and runs saved, the top performers.
+- **Teams · Opponent preview** (`/teams/preview`): opens on your next match (or your latest game): their record and
+  form, the predicted result (home, away or neutral), the game plan, then head to head with who gets whom out, about
+  them, side by side, and your best XI against them.
+
+Still to build in stage 2: Team planner, Rivalries, Competitions, Season, Season review, Honours, and the new pieces
+(who carries the team, your usual score at each wicket, collapses, the score to aim for, your season wrapped).
 
 ## Appendix: technical outline
 

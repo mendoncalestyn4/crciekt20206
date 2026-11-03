@@ -511,3 +511,18 @@ table.rec td .tn { font-size: 15px; }
 .step { padding: 10px 0 14px; border-top: 1px solid var(--edge); }
 .step:first-child { border-top: 0; padding-top: 0; }
 .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+/* Team v team: the meetings list, each opening its match */
+.meets { display: grid; gap: 2px; margin-top: 8px; }
+.meet { display: block; padding: 8px 0; border-top: 1px solid var(--edge); color: var(--ink); text-decoration: none; font-size: 15px; }
+.meet .how { display: block; margin-top: 2px; }
+.meet:hover b { color: var(--led); }
+details summary.lk { cursor: pointer; margin-top: 10px; font-size: 15px; }
+table.c tr.dimrow td { opacity: .45; }
+/* Opponent preview: every meeting as a card */
+.mcards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.mcard { border: 1px solid var(--edge); border-radius: 12px; padding: 12px 14px; background: var(--tile2); }
+.mcard .top { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; color: var(--dim); margin-bottom: 6px; }
+.mcard .side { display: flex; justify-content: space-between; gap: 10px; font: 400 21px 'Bebas Neue'; letter-spacing: .03em; margin-top: 4px; }
+.mcard .who { font-size: 13.5px; color: var(--dim); }
+.mcard .story { font-size: 14.5px; margin-top: 8px; }
+.plan li { margin: 4px 0; }

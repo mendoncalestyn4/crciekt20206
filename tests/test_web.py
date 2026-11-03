@@ -23,7 +23,8 @@ FIT = (Path(__file__).parent / "fit_rules.js").read_text()
 CHROME = next((str(p) for p in [Path("/opt/pw-browsers/chromium"), *sorted(Path("/opt/pw-browsers").glob("chromium-*/chrome-linux*/chrome"))]
                if p.exists()), None) if Path("/opt/pw-browsers").is_dir() else None
 PAGES = ["/", "/inbox", "/style-guide", "/settings", "/players", "/players/J Bethell", "/matches", "/teams", "/teams?tab=How they win", "/teams?tab=Season",
-         "/teams?tab=Squad&venue=home", "/teams/England", "/seasons", "/fixtures", "/leaders", "/insights", "/no-such-page"]
+         "/teams?tab=Squad&venue=home", "/teams/England", "/teams/vs",
+         "/teams/vs?which=any", "/teams/preview", "/teams/preview?tab=About them", "/teams/preview?tab=Your best XI v them", "/seasons", "/fixtures", "/leaders", "/insights", "/no-such-page"]
 
 
 @pytest.fixture(scope="module")

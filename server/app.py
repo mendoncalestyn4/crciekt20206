@@ -29,7 +29,7 @@ from ccstats import search as SR
 from ccstats.colours import TEAM_COLOURS
 from ccstats.local import CareerStore
 
-from . import matchpage, myteam, playerpage, styleguide, teampage
+from . import matchpage, myteam, playerpage, previewpage, styleguide, teampage, tvtpage
 from .cache import kept
 from .site import Site
 
@@ -322,6 +322,40 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             return _error("That team hasn't played in this career.", 404)
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
+    async def teamvteam_(request: Request):
+        """Team vs team: two teams' records side by side, against each other or each against anyone."""
+        q = request.query_params
+
+        def make(c):
+            if c.matches.empty:
+                return dict(choices=[], page=None)
+            ch = teampage.choices(c)
+            mine = myteam.teams_by_latest(c, site.my_teams(c))
+            a = q.get("a", "")
+            section = q.get("section", "")
+            if section not in {x["section"] for x in ch}:
+                team = a or (mine[0] if mine else "")
+                played = c.matches[(c.matches.home == team) | (c.matches.away == team)].section.value_counts()
+                section = played.index[0] if len(played) else ch[0]["section"]
+            return dict(choices=ch, page=tvtpage.page(c, section, q.get("season", ""), a, q.get("b", ""), q.get("which", ""),
+                                                      q.get("ground", ""), mine))
+        data = await _with_career(make)()
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
+    async def preview_(request: Request):
+        """Opponent preview: your team and the team you're about to play (it opens on your next match)."""
+        q = dict(request.query_params)
+
+        def make(c):
+            if c.matches.empty:
+                return None
+            s = site.settings(c.name)
+            sched = list(s.fixtures) if s else []
+            order = myteam.teams_by_latest(c, site.my_teams(c))
+            return previewpage.page(c, q, site.my_teams(c, unplayed=True), order, sched)
+        data = await _with_career(make)()
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
     # ------------------------------------------------------------------ Players
     async def players_(request: Request):
         data = await _with_career(lambda c: kept(c, ("players-landing", tuple(site.my_teams(c))),
@@ -519,6 +553,8 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/names", names_),
         Route("/api/scouting", scouting_),
         Route("/api/team", team_),
+        Route("/api/teamvteam", teamvteam_),
+        Route("/api/preview", preview_),
         Route("/api/player", player_),
         Route("/api/events", events),
     ]
