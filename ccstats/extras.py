@@ -295,7 +295,8 @@ def all_round_matches(career, ids, top: int = 20) -> pd.DataFrame:
     tb = bat.groupby(["match_id", "player", "team"]).agg(runs=("runs", "sum"), scores=("runs", lambda s: " & ".join(map(str, s))),
                                                          outs=("out", "sum")).reset_index()
     tw = bowl.groupby(["match_id", "player", "team"]).agg(wickets=("wickets", "sum"), conceded=("runs", "sum")).reset_index()
-    t = tb.merge(tw, on=["match_id", "player", "team"], how="outer").fillna({"runs": 0, "wickets": 0, "conceded": 0, "scores": ""})
+    t = tb.merge(tw, on=["match_id", "player", "team"], how="outer")
+    t = t.astype({"scores": object}).fillna({"runs": 0, "wickets": 0, "conceded": 0, "scores": ""})
     t = t[(t.runs > 0) & (t.wickets > 0)]  # both bat and ball
     t["score"] = t.runs + t.wickets * rpw
     t = t.merge(m[["match_id", "date", "home", "away", "winner", "section"]], on="match_id")

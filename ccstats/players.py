@@ -743,7 +743,8 @@ def batting_order(career, ids, team: str, min_innings: int = 2) -> pd.DataFrame:
         return d.assign(best=[])
     q = d[d.innings >= min_innings]
     best = q.sort_values("vs_avg", ascending=False).groupby("player").head(1).set_index("player").group
-    d["best"] = d.player.map(best).fillna("")
+    # "" where no group has enough innings (not fillna: with no one qualifying the column is numbers, not text)
+    d["best"] = d.player.map(lambda p: best.get(p, ""))
     d.attrs["base"] = base_rpi.to_dict()
     return d
 

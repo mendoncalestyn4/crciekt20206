@@ -65,7 +65,7 @@ def chances(career, tracked: pd.DataFrame, team: str) -> pd.DataFrame:
     if tracked is None or tracked.empty:
         return pd.DataFrame(columns=cols)
     t = tracked[(tracked.team == team) & tracked.status.isin(["next", "to come"])
-                & (tracked.opponent.fillna("") != "")].sort_values(["anchor", "no"])
+                & (tracked.opponent.astype(object).fillna("") != "")].sort_values(["anchor", "no"])
     rows, memo = [], {}
     for _, r in t.iterrows():
         venue = r["venue"] if r["venue"] in ("home", "away") else "neutral"
@@ -117,7 +117,7 @@ def projection(career, tracked: pd.DataFrame, team: str, start: pd.Timestamp, en
     unknown = 0
     if tracked is not None and len(tracked):
         tt = tracked[(tracked.team == team) & tracked.status.isin(["next", "to come"])
-                     & (tracked.opponent.fillna("") == "") & (tracked.anchor >= start) & (tracked.anchor < end)]
+                     & (tracked.opponent.astype(object).fillna("") == "") & (tracked.anchor >= start) & (tracked.anchor < end)]
         unknown = int(sum(int(x) if pd.notna(x) and x else 1 for x in tt.get("games_left", pd.Series(dtype=float))))
     pw = list(ch.win / 100) if len(ch) else []
     dist = _wins_spread(pw)

@@ -695,7 +695,9 @@ def track(career, fixtures: list[dict], auto=()) -> pd.DataFrame:
     fx = pd.DataFrame(fixtures or [], columns=COLUMNS)
     fx["no"] = pd.to_numeric(fx["no"], errors="coerce").fillna(0).astype(int)
     fx["games"] = pd.to_numeric(fx["games"], errors="coerce").fillna(0).astype(int)
-    fx = fx.fillna("")
+    # the columns with gaps as text first (an empty column comes in as numbers, which pandas won't fill with text)
+    gaps = [c for c in fx.columns if fx[c].dtype != object and fx[c].isna().any()]
+    fx = fx.astype({c: object for c in gaps}).fillna("")
     claimed: set[str] = set()
     hit: dict[str, str] = {}
     extra: dict[tuple, tuple[list, int]] = {}  # (team, series) -> (matches beyond the fixtures, the series' length)
@@ -928,7 +930,7 @@ def upcoming(career, fixtures: list[dict], teams) -> pd.DataFrame:
     t = track(career, fixtures, auto=tuple(teams))
     if t.empty:
         return t
-    t = t[t.team.isin(teams) & t.status.isin(["next", "to come"]) & (t.opponent.fillna("") != "")]
+    t = t[t.team.isin(teams) & t.status.isin(["next", "to come"]) & (t.opponent.astype(object).fillna("") != "")]
     return t.sort_values(["anchor", "no"]).reset_index(drop=True)
 
 

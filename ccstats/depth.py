@@ -96,7 +96,7 @@ def _result(career, team: str, ids) -> dict:
     opp = opp[opp != team]
     return dict(won=won, lost=lost, other=", ".join(f"{n} {k}" for k, n in rest.items()),
                 opp=opp.iloc[0] if len(opp) and opp.nunique() == 1 else "",
-                bilateral=bool((m.series_id.fillna("").astype(str) != "").all()) and len(m) > 0,
+                bilateral=bool((m.series_id.astype(object).fillna("").astype(str) != "").all()) and len(m) > 0,
                 last=str(by_played(career, m).match_id.iloc[-1]) if len(m) else "")
 
 

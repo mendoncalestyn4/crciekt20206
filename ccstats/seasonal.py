@@ -389,7 +389,7 @@ def combined_international(career, what: str = "batting") -> pd.DataFrame:
         num += np.where(ok, d[fmt].fillna(0) * inns, 0)
         den += np.where(ok, inns, 0)
         nf += ok.astype(int)
-        team = team.where(team != "", d[f"{fmt}_team"].fillna(""))
+        team = team.where(team != "", d[f"{fmt}_team"].astype(object).fillna(""))
     d["combined"] = (num / den.replace(0, np.nan)).round()
     d["formats"] = nf
     d["innings"] = den.astype(int)

@@ -43,7 +43,7 @@ COLUMNS = ["series", "team", "player", "games", "value", "settled", "mark", "ran
 def series_key(matches: pd.DataFrame) -> pd.Series:
     """Which series or tournament each match belongs to: its series, or the competition as run that season (a World
     Cup, an IPL season, a Ranji Trophy season)."""
-    sid = matches.series_id.fillna("").astype(str)
+    sid = matches.series_id.astype(object).fillna("").astype(str)
     return sid.where(sid != "", matches.event.astype(str) + " " + matches.season.astype(str))
 
 
