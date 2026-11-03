@@ -266,10 +266,20 @@ def _formats(career, player) -> dict | None:
     best = af[af.best]
     return dict(rows=SG.rows(af, ["section", "matches", "runs", "average", "bat_vs", "strike_rate", "sr_vs", "wickets",
                                   "bowl_average", "bowl_vs", "best"]),
-                shows=(f"Best format: {best.section.iloc[0]}, where they are {best.score.iloc[0]:+.0f}% better than the "
-                       "average player.") if len(best) else "Not enough games in any format yet to compare.",
+                shows=_best_format_line(best.iloc[0]) if len(best) else "Not enough games in any format yet to compare.",
                 for_="Compares formats fairly: a 35 average is great in T20 but ordinary in Tests, so each format is measured "
-                     "against its own average (bowling: lower average is better, so + means better).")
+                     "against its own average (bowling: lower average is better, so + means better). The best format "
+                     "goes by what they're picked for there: a batter's batting, a bowler's bowling, an all-rounder's "
+                     "better of the two.")
+
+
+def _best_format_line(b) -> str:
+    """'Best format: IPL, where they are 112% better than the average batter (judged on what they're picked for).';
+    below average everywhere it says worse, not '-46% better'."""
+    s = round(float(b.score))
+    how = f"{s}% better than" if s > 0 else f"{-s}% worse than" if s < 0 else "level with"
+    return (f"Best format: {b.section}, where they are {how} the average {'bowler' if b.judged == 'bowl' else 'batter'} "
+            "(judged on what they're picked for).")
 
 
 def all_formats(career, player) -> pd.DataFrame:
@@ -289,10 +299,8 @@ def all_formats(career, player) -> pd.DataFrame:
         r["sr_vs"] = (r["strike_rate"] / base.strike_rate - 1) * 100 if np.isfinite(r["strike_rate"]) and base.strike_rate else np.nan
         r["bowl_vs"] = ((base.bowl_average / r["bowl_average"] - 1) * 100
                         if np.isfinite(r["bowl_average"]) and r["bowl_average"] and np.isfinite(base.bowl_average) else np.nan)
-        # the better of the two, each only with enough behind it; neither (a player never out, say): no score
-        both = [v for v in (r["bat_vs"] if r["matches"] >= 3 else np.nan, r["bowl_vs"] if r["wickets"] >= 5 else np.nan)
-                if np.isfinite(v)]
-        r["score"] = max(both) if both else np.nan
+        r["job"] = PD.judged_on(PD.roles_in(career, sec).get(player))
+        r["score"], r["judged"] = PD.format_score(r["job"], r["bat_vs"], r["matches"], r["bowl_vs"], r["wickets"])
         rows.append(r)
     d = pd.DataFrame(rows)
     d["best"] = (d.score == d.score.max()) if len(d) and d.score.notna().any() else False

@@ -437,9 +437,49 @@ def faced(career, ids=None, batter: str = "", bowler: str = "") -> pd.DataFrame:
 # --------------------------------------------------------------------------- #
 
 
+def judged_on(role) -> str:
+    """What a player is judged on in a competition, from their role there: a bowler on bowling, an all-rounder on the
+    better of the two ("both"), every batting role on batting; no role (under 3 matches there) the better of the two."""
+    if role == "Bowler":
+        return "bowl"
+    if role == "All-rounder" or not isinstance(role, str) or not role:
+        return "both"
+    return "bat"
+
+
+def format_score(job: str, bat_vs: float, matches: int, bowl_vs: float, wickets: int) -> tuple[float, str]:
+    """How far above the average player there they are at their job (in %), and which side it came from ("bat" or
+    "bowl"; "" for none). Batting counts from 3 matches, bowling from 5 wickets; "both" takes the better (batting if
+    level)."""
+    bat = bat_vs if matches >= 3 and np.isfinite(bat_vs) else np.nan
+    bowl = bowl_vs if wickets >= 5 and np.isfinite(bowl_vs) else np.nan
+    sides = [(v, k) for v, k in ((bat, "bat"), (bowl, "bowl")) if np.isfinite(v) and (job == "both" or job == k)]
+    return max(sides, key=lambda x: x[0]) if sides else (np.nan, "")
+
+
+def roles_in(career, section: str) -> dict:
+    """Each player's role in one competition (analysis.role_labels on its matches), kept with the career until its
+    matches change."""
+    from .analysis import role_labels
+    stamp = (id(career.matches), len(career.matches))
+    box = getattr(career, "_roles_in", None)
+    if box is None or box.get("_stamp") != stamp:
+        box = {"_stamp": stamp}
+        try:
+            career._roles_in = box
+        except AttributeError:
+            pass
+    if section not in box:
+        m = career.matches[career.matches.section == section]
+        r = role_labels(career, pd.Index(m.match_id), KIND.get(m.format.iloc[0], "multi")) if len(m) else pd.DataFrame()
+        box[section] = dict(zip(r.player, r.role)) if len(r) else {}
+    return box[section]
+
+
 def all_formats(career, player: str) -> pd.DataFrame:
     """One row per section the player has played: batting and bowling against
-    that section's average (so the formats can be compared), and the best one."""
+    that section's average (so the formats can be compared), and the best one,
+    each judged on what they're picked for there (see judged_on)."""
     from .stats import Scope, player_tables
     secs = career.matches[career.matches.match_id.isin(
         set(career.batting[career.batting.player == player].match_id))].section.value_counts().index
@@ -456,10 +496,8 @@ def all_formats(career, player: str) -> pd.DataFrame:
         r["sr_vs"] = (r["strike_rate"] / base.strike_rate - 1) * 100 if np.isfinite(r["strike_rate"]) and base.strike_rate else np.nan
         r["bowl_vs"] = ((base.bowl_average / r["bowl_average"] - 1) * 100
                         if np.isfinite(r["bowl_average"]) and r["bowl_average"] and np.isfinite(base.bowl_average) else np.nan)
-        # the better of the two, each only with enough behind it; neither (a player never out, say): no score
-        both = [v for v in (r["bat_vs"] if r["matches"] >= 3 else np.nan, r["bowl_vs"] if r["wickets"] >= 5 else np.nan)
-                if np.isfinite(v)]
-        r["score"] = max(both) if both else np.nan
+        r["job"] = judged_on(roles_in(career, sec).get(player))
+        r["score"], r["judged"] = format_score(r["job"], r["bat_vs"], r["matches"], r["bowl_vs"], r["wickets"])
         rows.append(r)
     d = pd.DataFrame(rows)
     if len(d) and d.score.notna().any():

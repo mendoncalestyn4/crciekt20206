@@ -35,6 +35,46 @@ def test_every_format_side_by_side_agrees_with_the_engine(career):
         pd.testing.assert_frame_equal(mine.reset_index(drop=True), theirs.reset_index(drop=True), check_dtype=False)
 
 
+def test_the_best_format_goes_by_what_they_are_picked_for():
+    """A batter's few part-time wickets never make their best format (Gill's 6 ODI wickets at +164% once beat his IPL
+    batting at +112%); a bowler is judged on bowling, an all-rounder (or anyone with no role yet) on the better."""
+    assert [PD.judged_on(r) for r in ("Opener", "Middle order", "Tail", "Bowler", "All-rounder", None, "")] == \
+        ["bat", "bat", "bat", "bowl", "both", "both", "both"]
+    assert PD.format_score("bat", 65.0, 53, 164.0, 6) == (65.0, "bat")
+    assert PD.format_score("bowl", 65.0, 53, 164.0, 6) == (164.0, "bowl")
+    assert PD.format_score("both", 65.0, 53, 164.0, 6) == (164.0, "bowl")
+    assert PD.format_score("both", 30.0, 10, 30.0, 9) == (30.0, "bat")        # level: batting
+    # too little behind a side: batting needs 3 matches, bowling 5 wickets
+    assert PD.format_score("both", 80.0, 2, 20.0, 5) == (20.0, "bowl")
+    s, side = PD.format_score("bowl", 50.0, 20, 90.0, 4)
+    assert np.isnan(s) and side == ""
+    s, side = PD.format_score("bat", float("nan"), 12, 10.0, 8)               # never out: no batting average
+    assert np.isnan(s) and side == ""
+
+
+def test_the_best_format_line_in_words():
+    row = lambda s, judged: pd.Series(dict(section="IPL", score=s, judged=judged))   # noqa: E731
+    assert PP._best_format_line(row(112.4, "bat")) == ("Best format: IPL, where they are 112% better than the average "
+                                                       "batter (judged on what they're picked for).")
+    assert "46% worse than the average bowler" in PP._best_format_line(row(-46.2, "bowl"))   # never "-46% better"
+    assert "level with the average batter" in PP._best_format_line(row(0.3, "bat"))
+
+
+def test_the_best_format_is_judged_on_each_players_role_there(career):
+    """On the test scorecards: every row's job comes from the player's role in that competition, and the star sits on
+    the highest score of the side they're judged on."""
+    seen = set()
+    for p in players_by_matches(career, 20):
+        d = PD.all_formats(career, p)
+        for r in d.itertuples():
+            assert r.job == PD.judged_on(PD.roles_in(career, r.section).get(p))
+            assert r.judged in ({"bat", "bowl"} if r.job == "both" else {r.job}) or (r.judged == "" and np.isnan(r.score))
+            seen.add(r.job)
+        if d.score.notna().any():
+            assert list(d.best).count(True) >= 1 and d[d.best].score.iloc[0] == d.score.max()
+    assert {"bat", "bowl"} <= seen
+
+
 def test_the_form_line_as_the_current_site_draws_it():
     """Nothing until a full window; 5 innings for a career under 20, 10 from 20; runs over dismissals."""
     f = PP._form([10, 20, 30, 40, 50, 60], [1, 1, 0, 1, 1, 1])
