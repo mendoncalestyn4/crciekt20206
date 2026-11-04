@@ -89,6 +89,19 @@ def test_white_ball_speed_counts():
     assert v.bowl["t", "I4"] == pytest.approx((60 * rpb - 60) / rpw * took_div)
 
 
+def test_two_players_with_one_name_in_a_match_are_kept_apart():
+    """In a real save, Pakistan's M Rizwan made 13 off 7 and Bangladesh's M Rizwan 0 off 1 in the same T20I: each is
+    valued on their own innings, by team, never the two added together."""
+    b = Book()
+    b.match("r", "2027-08-28", "Pakistan", "Bangladesh", section="T20Is", fmt="T20I")
+    b.inns("r", 1, "Bangladesh", "Pakistan", [("M Rizwan", 0, 1, True), ("B2", 148, 108, True)])
+    b.inns("r", 2, "Pakistan", "Bangladesh", [("M Rizwan", 13, 7, True), ("P2", 136, 98, False)])
+    v = MK.match_values(b.career()).set_index(["team", "player"])
+    rpb = (148 + 149) / (109 + 105)
+    assert v.bat["Pakistan", "M Rizwan"] == pytest.approx((13 + 0.5 * (13 - 7 * rpb)) * 0.5 * (1 / 149 + 1 / 148.5))
+    assert v.bat["Bangladesh", "M Rizwan"] == pytest.approx((0 + 0.5 * (0 - 1 * rpb)) * 0.5 * (1 / 148 + 1 / 148.5))
+
+
 def test_a_rain_game_counts_for_its_overs_and_no_result_not_at_all():
     full, short = values(t20()), values(t20(rain=True, balls=60))
     assert short.weight.iloc[0] == pytest.approx(0.5)
