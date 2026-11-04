@@ -64,6 +64,23 @@ def test_the_right_picture_for_each_name(tmp_path):
     assert b.comp("ODIs") is None and b.comp("T20 Blast") is None
 
 
+def test_a_broken_picture_is_no_picture(tmp_path):
+    """Found by the logo stress test: an empty file, text named .png or a picture cut off while being saved was listed
+    as a logo the site then couldn't draw. Now it counts as no picture: the team takes its other one, or none."""
+    g = game_folder(tmp_path)
+    em = g / "editor" / "emblems"
+    good = png(em / "Warwickshire.png", (200, 0, 0, 255))
+    (em / "warwickshireem.png").write_bytes(good.read_bytes()[:40])          # cut off mid-save
+    (em / "essexem.png").write_bytes(b"")                                     # empty
+    (em / "Essex.png").write_text("not a picture")                            # text named .png
+    jpeg = em / "surreyem.png"                                                # a real picture, saved as JPEG
+    Image.new("RGB", (30, 30), (0, 120, 60)).save(jpeg, "JPEG")
+    b = LG.LogoBook(LG.find([g]))
+    assert b.team("Warwickshire").name == "Warwickshire.png"   # the good one, not the cut-off one
+    assert b.team("Essex") is None
+    assert b.team("Surrey").name == "surreyem.png" and LG.png(b.team("Surrey"), 48)
+
+
 def test_without_the_list_the_games_own_file_names_work(tmp_path):
     g = game_folder(tmp_path)
     (g / "editor" / "editemblems.txt").unlink()

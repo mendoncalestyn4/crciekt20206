@@ -142,13 +142,14 @@ class LogoBook:
             if p is not None:
                 self.styles.setdefault(str(p), look)
 
-    # pictures in a folder, by their name the game's way ('sydneygreenem')
+    # pictures in a folder, by their name the game's way ('sydneygreenem'); only real pictures (see _readable)
     @staticmethod
     def _pictures(d) -> dict[str, Path]:
         if not d:
             return {}
         try:
-            return {key(p.stem): p for p in Path(d).iterdir() if p.suffix.lower() == ".png" and p.is_file()}
+            return {key(p.stem): p for p in Path(d).iterdir()
+                    if p.suffix.lower() == ".png" and p.is_file() and _readable(p)}
         except OSError:
             return {}
 
@@ -293,6 +294,18 @@ STYLES: dict[str, str] = {
 # really the first team's, MD5 of the one that is really the second's). When each team's picture is the other's,
 # they are swapped back; once the files are put right, nothing changes.
 SWAPPED = [("Pamir Legends", "Maiwand Champions", "7c1e859ec9d4fc139500b10c231db7a2", "44f1764c00dff695aad4bbd192e982fc")]
+
+
+def _readable(path) -> bool:
+    """Whether a file opens as a picture. An empty file, text saved as .png, or a picture cut off while it was being
+    saved is no picture at all: its team then takes its other picture (or none), never a logo that can't be drawn."""
+    from PIL import Image
+    try:
+        with Image.open(path) as im:
+            im.verify()
+        return True
+    except Exception:  # noqa: BLE001 - whatever is wrong with the file, it isn't a picture to use
+        return False
 
 
 def _md5(path) -> str:
