@@ -2,10 +2,6 @@
 
 Not part of the site. Each piece goes back in when work resumes.
 
-- **Problems list** (the owner asked 4 November: the site notes every problem it hits, shown in Settings → Problems
-  with a red count in the menu and a "Copy for Claude" report): `problems.py` (new `server/problems.py`) and
-  `problems_list.patch` (its hooks in `server/app.py`). Half-built: the web side (Settings section, menu count,
-  catching page crashes in the browser) and its tests are still to do. Finish this first, as part of stage 1.
 - **Stage 2, Team planner and Rivalries** (stage 2 is stopped until the owner says so): `plannerpage.py`,
   `rivalriespage.py` and `stage2_planner_rivalries.patch` (their addresses, data types and menu entries). Server side
   done and smoke-tested on the 2029 save (375 pages, 0 problems); the pages themselves are still to build.

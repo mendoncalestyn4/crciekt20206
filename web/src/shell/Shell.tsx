@@ -3,10 +3,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useSearchParams } from "react-router";
-import { ApiError, get, type CareerInfo, type InboxPage, type Live, type Theme } from "../api";
+import { ApiError, get, type CareerInfo, type InboxPage, type Live, type ProblemsPage, type Theme } from "../api";
 import { ab, dayY } from "../format";
 import { refit } from "../fit";
 import { ThemeProvider } from "../theme";
+import { Broken } from "./Broken";
 import { Finder } from "./Finder";
 import { NamesProvider } from "./names";
 import { PlayerMenu } from "./PlayerMenu";
@@ -61,6 +62,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const logos = useQuery({ queryKey: ["logos"], queryFn: () => get<{ teams: string[]; comps: string[] }>("/api/logos") });
   // the unread count on the Inbox in the rail (asked again when new matches arrive, like every page's numbers)
   const inbox = useQuery({ queryKey: ["inbox"], queryFn: () => get<InboxPage>("/api/inbox"), enabled: Boolean(career.data), retry: false });
+  // the red count on Settings: problems the site noticed (asked again every half minute, and as soon as a page reports one)
+  const problems = useQuery({ queryKey: ["problems"], queryFn: () => get<ProblemsPage>("/api/problems"), retry: false, refetchInterval: 30_000 });
   const [finder, setFinder] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [watch, setWatch] = useState<{ at: number; folders: number } | null>(null);
@@ -120,11 +123,12 @@ export function Shell({ children }: { children: ReactNode }) {
           {SECTIONS.map((s) => (
             <NavLink key={s.to} to={`${s.to}${keep}`} end={s.to === "/"}
               className={({ isActive }) => `nav ${isActive || (s.to === "/settings" && loc.pathname === "/style-guide") ? "on" : ""}`}>
-              {s.icon}{s.label}{s.to === "/inbox" && (inbox.data?.unread ?? 0) > 0 && <b className="badge">{inbox.data!.unread > 99 ? "99+" : inbox.data!.unread}</b>}</NavLink>))}
+              {s.icon}{s.label}{s.to === "/inbox" && (inbox.data?.unread ?? 0) > 0 && <b className="badge">{inbox.data!.unread > 99 ? "99+" : inbox.data!.unread}</b>}
+              {s.to === "/settings" && (problems.data?.count ?? 0) > 0 && <b className="badge bad" title="Problems the site noticed: see Settings → Problems">{problems.data!.count > 99 ? "99+" : problems.data!.count}</b>}</NavLink>))}
           {watch && watch.folders > 0 && <div className="watch" title={`Watching ${watch.folders} Scorecards folder${watch.folders > 1 ? "s" : ""}; new matches are added by themselves`}>
             <i />Watching<br />{new Date(watch.at * 1000).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</div>}
         </div></nav>
-        <main className="main">{children}</main>
+        <main className="main"><Broken at={loc.pathname + loc.search}>{children}</Broken></main>
         {finder && <Finder close={() => setFinder(false)} keep={keep} />}
         <PlayerMenu keep={keep} />
         {toasts.length > 0 && <div className="toasts">{toasts.map((x) => (

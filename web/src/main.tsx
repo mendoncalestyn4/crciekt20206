@@ -16,8 +16,10 @@ import { NotFound, PLANS, Section } from "./pages/Sections";
 import { Settings } from "./pages/Settings";
 import { StyleGuide } from "./pages/StyleGuide";
 import { Shell } from "./shell/Shell";
+import { watchForProblems } from "./problems";
 
 const queries = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000, refetchOnWindowFocus: false } } });
+watchForProblems(queries);
 
 // Charts measure their words before drawing them: the fonts are loaded first, or the measures would be the stand-in
 // font's and labels would touch (as the mock-ups did it).

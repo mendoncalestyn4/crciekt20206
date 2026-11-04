@@ -482,6 +482,23 @@ table.tv tr.dim td { opacity: .45; }
 .rail a.nav { position: relative; }
 .rail a.nav .badge { position: absolute; top: 4px; right: 14px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px;
   background: var(--led); color: var(--led-ink, #0b1b3d); font: 700 12.5px/22px Inter; text-align: center; }
+.rail a.nav .badge.bad { background: var(--loss); color: #fff; }
+
+/* Settings → Problems */
+.tag.bad { background: var(--loss); color: #fff; }
+.probbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+.probbar .note { margin-top: 0; }
+.btn.sm { padding: 5px 12px; font-size: 14.5px; }
+.btn + .btn.sm { margin-left: 6px; }
+.probs { width: 100%; table-layout: fixed; border-collapse: collapse; margin-top: 14px; }
+.probs td { padding: 10px 8px; border-top: 1px solid var(--edge); vertical-align: top; font: 400 16px/1.45 Inter; color: var(--soft);
+  overflow-wrap: anywhere; }
+.probs td.r { text-align: right; white-space: nowrap; }
+.probs .tag { white-space: normal; }
+.probs .what { color: var(--ink); font-weight: 600; }
+.probs .where, .probs .seen { color: var(--dim); font-size: 14.5px; }
+.probtext { white-space: pre-wrap; overflow-wrap: anywhere; font: 400 13.5px/1.5 ui-monospace, Consolas, monospace; color: var(--soft);
+  background: var(--deep); border: 1px solid var(--edge); border-radius: 10px; padding: 10px 12px; margin: 10px 0 0; }
 
 /* ------------------------------------------------------------------ stage 1: Players */
 .plist { margin-top: 14px; border-top: 1px solid var(--edge); }

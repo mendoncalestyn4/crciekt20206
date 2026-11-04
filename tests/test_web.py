@@ -106,6 +106,46 @@ def test_a_brand_new_career_opens_cleanly(browser, tmp_path_factory, which):
         live.stop()
 
 
+def test_a_page_that_breaks_is_noted_and_shown_in_settings(browser, tmp_path_factory):
+    """Settings → Problems (asked for on 4 November): an error on a page and a promise nobody caught are each noted
+    once, with the page; the menu shows a red count on Settings; the list there gives a report to copy and send; and
+    clearing empties it."""
+    store, folder, _ = make_pc(tmp_path_factory.mktemp("problems"), n=5)
+    live = Live(create_app(store, web=WEB, watch_every=0))
+    try:
+        pg, _ = open_page(browser, (live, folder), "/players")
+        assert pg.locator(".rail .badge.bad").count() == 0
+        pg.evaluate("""() => { setTimeout(() => { throw new TypeError("made-up: x is undefined"); }, 0);
+                              Promise.reject(new RangeError("made-up rejection")); }""")
+        pg.wait_for_function("() => document.querySelector('.rail .badge.bad')?.textContent === '2'", timeout=10000)
+        got = live.json("/api/problems")["problems"]
+        assert sorted(p["what"] for p in got) == ["RangeError: made-up rejection", "TypeError: made-up: x is undefined"]
+        assert {(p["kind"], p["where"], p["career"]) for p in got} == {("page", "/players", "My career")}
+        pg.close()
+
+        pg, said = open_page(browser, (live, folder), "/settings")
+        try:
+            assert said == []
+            assert pg.locator(".grid > .t").first.locator(".tt .tl").text_content() == "Problems"   # at the top
+            assert pg.locator("table.probs tbody tr").count() == 2
+            pg.context.grant_permissions(["clipboard-read", "clipboard-write"], origin=live.url("/").rstrip("/"))
+            pg.locator("button:has-text('Copy for Claude')").click()
+            pg.wait_for_selector(".probbar .note")
+            copied = pg.evaluate("navigator.clipboard.readText()")
+            assert "made-up rejection" in copied and "page: /players" in copied and "career: My career" in copied
+            pg.locator("button:has-text('Show the report')").click()
+            assert pg.locator("pre.probtext").first.text_content() == live.json("/api/problems")["report"]
+            assert fit_problems(pg) == []
+            pg.locator("button:has-text('Clear all')").click()
+            pg.wait_for_function("() => !document.querySelector('table.probs') && !document.querySelector('.rail .badge.bad')",
+                                 timeout=10000)
+            assert live.json("/api/problems")["count"] == 0
+        finally:
+            pg.close()
+    finally:
+        live.stop()
+
+
 @pytest.mark.parametrize("width", [1280, 1366, 1920])
 @pytest.mark.parametrize("nation", ["", "England", "Australia", "none"])
 def test_the_style_guide_fits_every_screen_in_every_colour(browser, site, width, nation):

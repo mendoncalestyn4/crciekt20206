@@ -1,7 +1,8 @@
 """Problems the site noticed while you used it, kept on this PC so you can send them to be fixed: a part of a page that
 couldn't be worked out, a request the server couldn't answer, a page that crashed in the browser. Each is kept once
 (with how many times it happened, and when first and last), newest first, up to LIMIT; Settings shows them, with a
-plain report to copy. Scorecards the site couldn't read come from the career's own load report, not from here."""
+plain report to copy. Scorecards the folder check couldn't read are noted here too (a career keeps only the
+matches it could read, so they'd be lost otherwise)."""
 
 from __future__ import annotations
 
@@ -82,7 +83,8 @@ class Problems:
             self.add("part", where, f"{part}: {why}", career=career)
 
     def note_crash(self, where: str, exc: BaseException, career: str = "") -> None:
-        tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__)[-12:])
+        parts = traceback.format_exception(type(exc), exc, exc.__traceback__)
+        tb = "".join(parts if len(parts) <= 13 else parts[:1] + parts[-12:])   # the heading and the last steps
         self.add("server", where, f"{type(exc).__name__}: {exc}", detail=tb, career=career)
 
 
@@ -103,17 +105,16 @@ def failed_parts(v, where: str = "") -> list[tuple[str, str]]:
     return out
 
 
-def report(items: list[dict], unread: list[dict], version: str = "") -> str:
-    """The plain report to copy and send: every problem with its page, when, how often, and the details."""
+def report(items: list[dict], version: str = "") -> str:
+    """The plain report to copy and send: every problem with its page (or scorecard), when, how often, and the
+    details."""
     lines = [f"Stats Pack: problems the site noticed ({len(items)})" + (f", site version {version}" if version else ""), ""]
     for x in items:
         lines.append(f"- [{x['kind']}] {x['what']}")
-        lines.append(f"  page: {x['where']}" + (f" · career: {x['career']}" if x.get("career") else ""))
+        lines.append(f"  {'file' if x['kind'] == 'scorecard' else 'page'}: {x['where']}"
+                     + (f" · career: {x['career']}" if x.get("career") else ""))
         lines.append(f"  seen {x['count']} time{'s' if x['count'] != 1 else ''}, first {x['first']}, last {x['last']}")
         if x.get("detail"):
             lines += ["  details:"] + [f"    {d}" for d in x["detail"].strip().splitlines()[-14:]]
         lines.append("")
-    if unread:
-        lines.append(f"Scorecards the site couldn't read ({len(unread)}):")
-        lines += [f"- {u['file']}: {u['reason']}" for u in unread]
     return "\n".join(lines).rstrip() + "\n"

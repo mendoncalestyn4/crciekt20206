@@ -352,3 +352,8 @@ export type PreviewPage = { choices: { section: string; matches: number }[]; sec
   head?: { missing: Record<string, string>; kpis: Fig[]; last5: string[]; caption: string; where_default: string;
     predicted?: Record<string, { line: string; steps: GridT; note: string }> | null; plan?: string[] | null };
   body?: PreviewBody };
+
+// ------------------------------------------------------------------ Settings → Problems
+export type Problem = { id: string; kind: "part" | "server" | "page" | "scorecard"; where: string; what: string; detail: string;
+  career: string; first: string; last: string; count: number };
+export type ProblemsPage = { problems: Problem[]; count: number; report: string };
