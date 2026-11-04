@@ -1,0 +1,117 @@
+diff --git a/server/app.py b/server/app.py
+index 815bd10..4426cef 100644
+--- a/server/app.py
++++ b/server/app.py
+@@ -32,6 +32,7 @@ from ccstats.local import CareerStore
+ from . import matchpage, myteam, playerpage, previewpage, styleguide, teampage, tvtpage
+ from .cache import kept
+ from .site import Site
++from .problems import REQUEST, Problems, report as problems_report
+ 
+ WEB = Path(__file__).resolve().parent.parent / "web" / "dist"
+ HOSTS = ["127.0.0.1", "localhost"]
+@@ -68,9 +69,33 @@ class Hub:
+ 
+ 
+ def _json(data, status: int = 200) -> JSONResponse:
++    req = REQUEST.get()
++    if req is not None and status == 200:
++        where, problems, site = req
++        try:
++            problems.note_failed_parts(data, where, site.current() or "")
++        except Exception:  # noqa: BLE001 - noting a problem must never become one
++            pass
+     return JSONResponse(data, status_code=status, headers={"Cache-Control": "no-store"})
+ 
+ 
++class Watch:
++    """For each request: which page is being answered and where to note its problems (read by _json)."""
++
++    def __init__(self, app, problems: Problems, site):
++        self.app, self.problems, self.site = app, problems, site
++
++    async def __call__(self, scope, receive, send):
++        if scope["type"] != "http":
++            return await self.app(scope, receive, send)
++        qs = scope.get("query_string", b"").decode("latin-1")
++        token = REQUEST.set((scope.get("path", "") + (f"?{qs}" if qs else ""), self.problems, self.site))
++        try:
++            await self.app(scope, receive, send)
++        finally:
++            REQUEST.reset(token)
++
++
+ def _error(message: str, status: int) -> JSONResponse:
+     return _json({"error": message}, status)
+ 
+@@ -89,6 +114,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
+     site = Site(store)
+     hub = Hub()
+     web = Path(web) if web else WEB
++    problems = Problems(site.store.root / "problems.json")
+ 
+     # ------------------------------------------------------------------ careers and colours
+     async def health(request: Request):
+@@ -356,6 +382,46 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
+         data = await _with_career(make)()
+         return _json(data) if data is not None else _error("No career is open yet.", 404)
+ 
++    # ------------------------------------------------------------------ problems the site noticed
++    def _unread() -> list[dict]:
++        c = site.career()
++        rep = getattr(c, "report", None) or [] if c is not None else []
++        return [dict(file=r.source, reason=r.message) for r in rep if getattr(r, "status", "") == "failed"]
++
++    async def problems_(request: Request):
++        """GET: everything noticed (newest first), the scorecards the career couldn't read, and a report to copy.
++        POST {"clear": true | [ids]}: clear them (once fixed). POST {"report": {where, what, detail}}: a page that
++        crashed in the browser."""
++        if request.method == "POST":
++            try:
++                body = await _body(request)
++            except ValueError as e:
++                return _error(str(e), 415)
++            if "clear" in body:
++                ids = body["clear"]
++                if ids is not True and not (isinstance(ids, list) and all(isinstance(i, str) for i in ids)):
++                    return _error("Send clear: true, or a list of ids.", 400)
++                problems.clear(None if ids is True else ids)
++            elif isinstance(body.get("report"), dict):
++                r = body["report"]
++                if not isinstance(r.get("what"), str) or not r["what"].strip():
++                    return _error("Say what went wrong.", 400)
++                problems.add("page", str(r.get("where", "")), r["what"], str(r.get("detail", "")), site.current() or "")
++            else:
++                return _error("Send clear or report.", 400)
++        items = await anyio.to_thread.run_sync(problems.items)
++        unread = await anyio.to_thread.run_sync(_unread)
++        return _json(dict(problems=items, unread=unread, count=len(items) + len(unread), report=problems_report(items, unread)))
++
++    async def crashed(request: Request, exc: Exception):
++        """A request the server couldn't answer: noted, and a plain answer instead of a broken one."""
++        try:
++            problems.note_crash(str(request.url.path) + (f"?{request.url.query}" if request.url.query else ""), exc,
++                                site.current() or "")
++        except Exception:  # noqa: BLE001
++            pass
++        return _error("Something went wrong working this out. It's noted in Settings → Problems.", 500)
++
+     # ------------------------------------------------------------------ Players
+     async def players_(request: Request):
+         data = await _with_career(lambda c: kept(c, ("players-landing", tuple(site.my_teams(c))),
+@@ -557,11 +623,13 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
+         Route("/api/preview", preview_),
+         Route("/api/player", player_),
+         Route("/api/events", events),
++        Route("/api/problems", problems_, methods=["GET", "POST"]),
+     ]
+     if (web / "assets").is_dir():   # the website's files, named after their contents: kept by the browser for good
+         routes.append(Mount("/assets", app=StaticFiles(directory=web / "assets")))
+     routes += [Route("/", page), Route("/{path:path}", page)]
+-    app = Starlette(routes=routes, lifespan=lifespan,
+-                    middleware=[Middleware(TrustedHostMiddleware, allowed_hosts=HOSTS)])
++    app = Starlette(routes=routes, lifespan=lifespan, exception_handlers={Exception: crashed},
++                    middleware=[Middleware(TrustedHostMiddleware, allowed_hosts=HOSTS),
++                                Middleware(Watch, problems=problems, site=site)])
+     app.state.site, app.state.hub = site, hub
+     return app

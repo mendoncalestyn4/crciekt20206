@@ -1,0 +1,119 @@
+"""Problems the site noticed while you used it, kept on this PC so you can send them to be fixed: a part of a page that
+couldn't be worked out, a request the server couldn't answer, a page that crashed in the browser. Each is kept once
+(with how many times it happened, and when first and last), newest first, up to LIMIT; Settings shows them, with a
+plain report to copy. Scorecards the site couldn't read come from the career's own load report, not from here."""
+
+from __future__ import annotations
+
+import contextvars
+import json
+import os
+import threading
+import time
+import traceback
+from pathlib import Path
+
+LIMIT = 300          # the most kept; the oldest go first
+TEXT = 2000          # the longest any one piece of text is kept
+FAILED = "Couldn't be worked out"
+
+# the page being answered and the list to note problems on, set for each request (see Watch in app.py)
+REQUEST: contextvars.ContextVar = contextvars.ContextVar("request", default=None)
+
+
+def clip(v, n: int = TEXT) -> str:
+    s = v if isinstance(v, str) else str(v)
+    return s if len(s) <= n else s[: n - 1] + "…"
+
+
+class Problems:
+    def __init__(self, path: Path):
+        self.path = Path(path)
+        self._lock = threading.Lock()
+        self._items = self._read()
+
+    def _read(self) -> list[dict]:
+        try:
+            data = json.loads(self.path.read_text(encoding="utf-8"))
+            return [x for x in data if isinstance(x, dict) and "id" in x] if isinstance(data, list) else []
+        except (OSError, ValueError):
+            return []
+
+    def _write(self) -> None:
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(self._items, ensure_ascii=False, indent=1), encoding="utf-8")
+            os.replace(tmp, self.path)
+        except OSError:
+            pass   # the list still works for this session; it just isn't saved
+
+    def add(self, kind: str, where: str, what: str, detail: str = "", career: str = "") -> dict:
+        """Note a problem; the same one again (same kind, page and message) counts up instead of being listed twice."""
+        kind, where, what, detail, career = clip(kind, 20), clip(where, 500), clip(what), clip(detail, 6000), clip(career, 200)
+        now = time.strftime("%Y-%m-%d %H:%M:%S")
+        with self._lock:
+            for x in self._items:
+                if (x["kind"], x["where"], x["what"]) == (kind, where, what):
+                    x.update(count=x["count"] + 1, last=now, detail=detail or x["detail"], career=career or x["career"])
+                    self._items.remove(x)
+                    self._items.insert(0, x)
+                    break
+            else:
+                x = dict(id=f"{time.time_ns():x}", kind=kind, where=where, what=what, detail=detail, career=career,
+                         first=now, last=now, count=1)
+                self._items.insert(0, x)
+                del self._items[LIMIT:]
+            self._write()
+            return dict(x)
+
+    def items(self) -> list[dict]:
+        with self._lock:
+            return [dict(x) for x in self._items]
+
+    def clear(self, ids: list[str] | None = None) -> None:
+        with self._lock:
+            self._items = [x for x in self._items if ids is not None and x["id"] not in set(ids)]
+            self._write()
+
+    def note_failed_parts(self, data, where: str, career: str = "") -> None:
+        """Every part of an answer that couldn't be worked out ('missing' parts saying so), noted against the page."""
+        for part, why in failed_parts(data):
+            self.add("part", where, f"{part}: {why}", career=career)
+
+    def note_crash(self, where: str, exc: BaseException, career: str = "") -> None:
+        tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__)[-12:])
+        self.add("server", where, f"{type(exc).__name__}: {exc}", detail=tb, career=career)
+
+
+def failed_parts(v, where: str = "") -> list[tuple[str, str]]:
+    """(part, why) for each part of an answer that says it couldn't be worked out."""
+    out = []
+    if isinstance(v, dict):
+        for k, x in v.items():
+            if k == "missing" and isinstance(x, dict):
+                out += [((f"{where}." if where else "") + str(a), str(b)) for a, b in x.items() if FAILED in str(b)]
+            else:
+                out += failed_parts(x, f"{where}.{k}" if where else str(k))
+    elif isinstance(v, list):
+        for i, x in enumerate(v):
+            out += failed_parts(x, f"{where}[{i}]")
+    elif isinstance(v, str) and v.startswith(FAILED):
+        out.append((where or "page", v))
+    return out
+
+
+def report(items: list[dict], unread: list[dict], version: str = "") -> str:
+    """The plain report to copy and send: every problem with its page, when, how often, and the details."""
+    lines = [f"Stats Pack: problems the site noticed ({len(items)})" + (f", site version {version}" if version else ""), ""]
+    for x in items:
+        lines.append(f"- [{x['kind']}] {x['what']}")
+        lines.append(f"  page: {x['where']}" + (f" · career: {x['career']}" if x.get("career") else ""))
+        lines.append(f"  seen {x['count']} time{'s' if x['count'] != 1 else ''}, first {x['first']}, last {x['last']}")
+        if x.get("detail"):
+            lines += ["  details:"] + [f"    {d}" for d in x["detail"].strip().splitlines()[-14:]]
+        lines.append("")
+    if unread:
+        lines.append(f"Scorecards the site couldn't read ({len(unread)}):")
+        lines += [f"- {u['file']}: {u['reason']}" for u in unread]
+    return "\n".join(lines).rstrip() + "\n"
