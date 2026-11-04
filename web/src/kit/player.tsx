@@ -134,6 +134,7 @@ export function RankLines({ rows }: { rows: { season: string; runs_rank: number 
   const t = useTheme();
   const option = useMemo<Option>(() => {
     const L = look(t), most = Math.max(...rows.map((r) => Math.max(r.runs_of ?? 0, r.wickets_of ?? 0)), 2);
+    const pad = Math.max(0.6, (most - 1) * 0.15);   // room for a label above the best rank and below the worst
     // each season's two labels move apart: the higher point's above it, the lower point's below (in a big competition a
     // 6th and a 71st can sit close together)
     const other = (key: "runs_rank" | "wickets_rank") => (key === "runs_rank" ? "wickets_rank" : "runs_rank");
@@ -150,7 +151,8 @@ export function RankLines({ rows }: { rows: { season: string; runs_rank: number 
       grid: { left: 44, right: 20, top: 40, bottom: 34 },
       tooltip: { ...L.TT, trigger: "axis" },
       xAxis: { type: "category", data: rows.map((r) => String(r.season)), ...L.AX, splitLine: { show: false } },
-      yAxis: { type: "value", inverse: true, min: 1, max: most, ...L.AX, axisLine: { show: false }, axisLabel: { ...L.AX.axisLabel, formatter: (v: number) => ord(v) } },
+      yAxis: { type: "value", inverse: true, min: 1 - pad, max: most + pad, ...L.AX, axisLine: { show: false },
+        axisLabel: { ...L.AX.axisLabel, formatter: (v: number) => (Number.isInteger(v) && v >= 1 && v <= most ? ord(v) : "") } },
       series: [...(rows.some((r) => r.runs_rank != null) ? [line("Rank by runs", "runs_rank", t.led, "top")] : []),
         ...(rows.some((r) => r.wickets_rank != null) ? [line("Rank by wickets", "wickets_rank", t.blue, "bottom")] : [])],
     };

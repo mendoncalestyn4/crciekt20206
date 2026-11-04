@@ -368,7 +368,8 @@ input.typed:focus { border-color: var(--led); }
   padding: 8px 6px; border-bottom: 1px solid var(--edge); text-decoration: none; color: var(--ink); }
 .mli:hover { background: var(--tile2); }
 .mli .when { font: 600 15px Inter; color: var(--dim); }
-.mli .pn { overflow: hidden; text-overflow: ellipsis; }
+.mli .cell { min-width: 0; }
+.mli .pn { white-space: normal; line-height: 1.05; min-width: 0; overflow-wrap: anywhere; }
 .mli .how { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mli .res { font: 600 15px Inter; color: var(--soft); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 table.best td { vertical-align: top; }

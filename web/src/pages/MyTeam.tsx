@@ -27,9 +27,12 @@ export function MyTeam() {
   const q = useQuery({ queryKey: ["myteam", team, section, career?.name], enabled: Boolean(career),
     queryFn: () => get<Data>(`/api/myteam?team=${encodeURIComponent(team)}&section=${encodeURIComponent(section)}`), retry: false });
   const box = useInbox();
-  const sc = useQuery({ queryKey: ["scouting", team, career?.name], enabled: Boolean(career) && scouting, retry: false,
-    queryFn: () => get<ScoutingPage>(`/api/scouting?team=${encodeURIComponent(team)}`) });
-  useReady(Boolean(q.data || q.error || noCareer) && (!scouting || Boolean(sc.data || sc.error)), `${team}|${section}|${scouting}`);
+  // Scouting asks for the team My team settled on (yours, or the one picked), and only once there is one: a career
+  // with no matches yet has no team to scout
+  const scTeam = q.data?.missing.everything ? "" : q.data?.team ?? "";
+  const sc = useQuery({ queryKey: ["scouting", scTeam, career?.name], enabled: Boolean(career) && scouting && Boolean(scTeam), retry: false,
+    queryFn: () => get<ScoutingPage>(`/api/scouting?team=${encodeURIComponent(scTeam)}`) });
+  useReady(Boolean(q.data || q.error || noCareer) && (!scouting || !scTeam || Boolean(sc.data || sc.error)), `${team}|${section}|${scouting}`);
   const set = (k: string, v: string) => { const p = new URLSearchParams(params); if (v) p.set(k, v); else p.delete(k); if (k === "team") p.delete("section"); setParams(p); };
   if (noCareer) return <><Head title={greeting()} crumb="No career open yet" /><div className="grid"><Tile span={12} title="No career yet">
     <div className="plain">Add a career on the current site for now (<b>Start Stats Pack.bat</b>): the new site sees it straight away. Adding careers here comes in stage 4.</div></Tile></div></>;

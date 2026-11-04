@@ -78,6 +78,34 @@ def test_every_page_opens_cleanly_and_fits(browser, site, path):
         pg.close()
 
 
+@pytest.mark.parametrize("which", ["empty", "one match"])
+def test_a_brand_new_career_opens_cleanly(browser, tmp_path_factory, which):
+    """Found by the stress test on made-up saves: with no matches, the Scouting tab asked about a team that didn't exist
+    (a failed request and a browser error); with one match, a long match name was cut short and ran into the next
+    column, and a one-season rank label sat on the season's name. Every page must open cleanly and fit."""
+    files = [] if which == "empty" else FIXTURES[:1]
+    store, folder, _ = make_pc(tmp_path_factory.mktemp("new"), team="England" if which == "empty" else "Worcestershire",
+                               files=files)
+    live = Live(create_app(store, web=WEB, watch_every=0))
+    try:
+        paths = ["/", "/?view=scouting", "/inbox", "/players", "/matches", "/settings"]
+        if files:
+            mid = live.json("/api/matches")["matches"][0]["id"]
+            first = live.json("/api/names")["names"]
+            paths += [f"/matches/{mid}", f"/matches/{mid}?view=scorecard", f"/players/{first[0]}?view=story",
+                      f"/players/{first[-1]}?view=story"]
+        for path in paths:
+            for width in (1280, 1920):
+                pg, said = open_page(browser, (live, folder), path, width=width)
+                try:
+                    assert said == [], (path, width, said)
+                    assert fit_problems(pg) == [], (path, width, fit_problems(pg))
+                finally:
+                    pg.close()
+    finally:
+        live.stop()
+
+
 @pytest.mark.parametrize("width", [1280, 1366, 1920])
 @pytest.mark.parametrize("nation", ["", "England", "Australia", "none"])
 def test_the_style_guide_fits_every_screen_in_every_colour(browser, site, width, nation):
