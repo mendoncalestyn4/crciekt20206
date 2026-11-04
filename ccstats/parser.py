@@ -134,9 +134,12 @@ MONTHS = {m: i + 1 for i, m in enumerate(
 
 RULE_RE = re.compile(r"^[\s*=\-_~]+$")
 TEAMS_RE = re.compile(r"^(?P<a>.+?)\s+(?:v|vs\.?|versus)\s+(?P<b>.+?)$")
+# The game pads "Team - 1st Innings" to 42 characters before the batting columns; a longer name ("Trinidad and Tobago
+# Red Force - 1st Innings") gets no gap at all, so the first column runs on: "1st InningsR    B    4s  6s".
+_RUN_ON = r"(?:\b|(?=(?:r|runs|m|mins|b|balls)\b))"
 INNINGS_RE = re.compile(
-    r"^(?P<team>.+?)\s*[-–:]\s*(?P<ord>1st|2nd|first|second)?\s*innings\b(?P<rest>.*)$", re.I)
-SUPER_OVER_RE = re.compile(r"^(?P<team>.+?)\s*[-–:]\s*super\s*over\b(?P<rest>.*)$", re.I)
+    rf"^(?P<team>.+?)\s*[-–:]\s*(?P<ord>1st|2nd|first|second)?\s*innings{_RUN_ON}(?P<rest>.*)$", re.I)
+SUPER_OVER_RE = re.compile(rf"^(?P<team>.+?)\s*[-–:]\s*super\s*over{_RUN_ON}(?P<rest>.*)$", re.I)
 EXTRAS_RE = re.compile(r"^extras\b", re.I)
 TOTAL_RE = re.compile(r"^total\b", re.I)
 FOW_RE = re.compile(r"^fall of wickets?\b", re.I)
@@ -212,7 +215,8 @@ def _to_int(tok: str) -> int:
 
 
 def _header_cols(text: str, vocab: dict[str, str]) -> list[str]:
-    toks = text.lower().split()
+    # split at brackets too: a note before the columns can run on into them the same way ("(following on)R")
+    toks = re.split(r"[\s()]+", text.lower())
     return [vocab[t] for t in toks if t in vocab]
 
 

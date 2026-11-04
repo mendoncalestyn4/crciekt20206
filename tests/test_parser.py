@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import pytest
@@ -185,3 +186,37 @@ def test_cc2025_fc_league_byes_and_tiebreak_result():
 ])
 def test_one_day_cup_and_world_cup_titles(name, title):
     assert load(name).title == title
+
+
+def _long_name(text: str, old: str, new: str) -> str:
+    """The card as the game would print it for a side called `new`: the innings heading padded to 42 characters
+    before the batting columns, with no gap at all once the name is too long for that."""
+    out = []
+    for line in text.split("\n"):
+        h = re.match(r"^(.*?)\s*(R\s+B\s+4s\s+6s)\s*$", line)
+        out.append(h.group(1).replace(old, new).ljust(42) + h.group(2) if h and old in h.group(1)
+                   else line.replace(old, new))
+    return "\n".join(out)
+
+
+@pytest.mark.parametrize("card,old", [("fixtures_super/20_sep_2026-zim_v_aus_3rd_odi.txt", "Zimbabwe"),
+                                      ("fixtures/19_aug_2026-eng_v_pak_1st_tst.txt", "England")])
+def test_a_side_with_a_long_name_is_read_in_full(card, old):
+    """In a real save, every innings of Trinidad and Tobago Red Force was lost: "Trinidad and Tobago Red Force - 1st
+    InningsR    B    4s  6s" has no gap before the columns. The same card with a long name must read exactly the same:
+    every innings and super over, every batter and bowler, every total."""
+    new = "Trinidad and Tobago Red Force"
+    text = (Path(__file__).parent / card).read_text()
+    long = _long_name(text, old, new)
+    assert "InningsR" in long
+    a, b = parse_scorecard(text, "a.txt"), parse_scorecard(long, "b.txt")
+
+    def figures(m, name):
+        rename = lambda t: new if t == name else t   # noqa: E731
+        inns = lambda xs: [(rename(i.team), rename(i.bowling_team), i.total, i.wickets, i.balls, i.extras, i.fow,   # noqa: E731
+                            [(x.player, x.runs, x.balls, x.how_out, x.bowler) for x in i.batting],
+                            [(x.player, x.balls, x.runs, x.wickets) for x in i.bowling]) for i in xs]
+        return (rename(m.team1), rename(m.team2), rename(m.winner), m.result_type, inns(m.innings), inns(m.super_overs))
+
+    assert len(b.innings) == len(a.innings) >= 2
+    assert figures(a, old) == figures(b, new)
