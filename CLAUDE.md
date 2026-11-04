@@ -11,6 +11,10 @@ Read these at the start of every session. They come from the owner and hold unti
   crashes, errors on the new site; crashes on the old one), updating tests that an approved change made outdated,
   fixing layout problems found by the fit check, and running the owner's saves through every page to find bugs.
 - New features always need a yes.
+- **4 November: full authority.** The owner gave all authority to decide and say yes to anything without waiting for
+  approval ("I give you ALL AUTHORITY to say yes to anything u want"). Still report afterwards what was done and why.
+  The one exception: **stage 2 waits for the owner's word** ("I'll tell u when to start stage 2"); until then only
+  stage 1 is finished (stress tests, fixes at the root cause, never a temporary fix).
 
 ## How the owner likes the work done
 - Do it well rather than fast: zero errors, deep checks, and screenshots of what changed.
