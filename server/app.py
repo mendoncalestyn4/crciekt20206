@@ -280,25 +280,24 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
     def _myteam(c, team: str, section: str):
         mine = site.my_teams(c)
         order = myteam.teams_by_latest(c, mine)
+        asked = ""
         if team and team not in order and team not in set(c.matches.home) | set(c.matches.away):
-            raise KeyError(team)
+            # an old link (another career's team, or one you've since changed): your own team instead, and said so
+            asked, team = team, ""
         team = team or (order[0] if order else styleguide.pick_team(c, []) or "")
         if not team:
-            return dict(teams=[], team="", mine=False, missing={"everything": "This career has no matches yet."})
+            return dict(teams=[], team="", mine=False, asked=asked, missing={"everything": "This career has no matches yet."})
         s = site.settings(c.name)
         notes, sched = site.notes(c), list(s.fixtures) if s else []
         # the whole page is kept with the career (and your notes and schedule as they are): a second look, or the
         # warm-up's answer, comes at once
         sig = json.dumps([sorted(notes.items()), sched, mine], sort_keys=True, default=str)
         data = kept(c, ("myteam", team, section, sig), lambda: myteam.page(c, team, section, mine, notes, sched))
-        return {**data, "mine": team in mine}
+        return {**data, "mine": team in mine, "asked": asked}
 
     async def myteam_(request: Request):
         q = request.query_params
-        try:
-            data = await _with_career(lambda c: _myteam(c, q.get("team", ""), q.get("section", "")))()
-        except KeyError:
-            return _error("That team hasn't played in this career.", 404)
+        data = await _with_career(lambda c: _myteam(c, q.get("team", ""), q.get("section", "")))()
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
     async def scouting_(request: Request):

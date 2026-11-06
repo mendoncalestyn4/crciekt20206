@@ -39,7 +39,10 @@ export function MyTeam() {
   if (q.error) return <><Head title={greeting()} crumb="My team" /><div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
   if (!q.data) return <><Head title={greeting()} crumb="Working out your season…" /><div className="empty">Working out your season…</div></>;
   const d = q.data, miss = d.missing;
-  if (miss.everything) return <><Head title={greeting()} crumb={d.team || "My team"} /><div className="grid"><Tile span={12}><Missing why={miss.everything} /></Tile></div></>;
+  // the address named a team that hasn't played in this career (an old link, or another career's team): said so
+  const asked = d.asked ? <Tile span={12} title="Not in this career"><div className="plain"><b>{d.asked}</b> hasn't played in this career (an old
+    link, or a team from another career), so this is {d.team ? <><b>{d.team}</b>'s page</> : "the career as it is"}.</div></Tile> : null;
+  if (miss.everything) return <><Head title={greeting()} crumb={d.team || "My team"} /><div className="grid">{asked}<Tile span={12}><Missing why={miss.everything} /></Tile></div></>;
   const cal = d.season, rs: Result[] = cal?.results ?? [];
   const news = (box.q.data?.messages ?? []).filter((m) => m.team === d.team && !m.read);
   const won = rs.filter((r) => r.outcome === "W").length, lost = rs.filter((r) => r.outcome === "L").length;
@@ -49,11 +52,12 @@ export function MyTeam() {
   const sq = b?.squad ?? [];
   return (
     <>
-      <Head title={greeting()} crumb={`${d.team} · ${d.mine ? "your team" : team ? "not one of your teams" : "the team with the most matches"}${label ? ` · ${label}` : ""}`}
+      <Head title={greeting()} crumb={`${d.team} · ${d.mine ? "your team" : team && !d.asked ? "not one of your teams" : "the team with the most matches"}${label ? ` · ${label}` : ""}`}
         chips={chips} on={chips ? chips.indexOf(d.team) : 0} onChip={chips ? (i) => set("team", chips[i]!) : undefined} />
       <div className="grid">
         <div className="itabs">{["Season", "Scouting"].map((x) => (
           <button key={x} className={(x === "Scouting") === scouting ? "on" : ""} onClick={() => set("view", x === "Scouting" ? "scouting" : "")}>{x}</button>))}</div>
+        {asked}
         {scouting ? <Scouting sc={sc.data} error={sc.error} team={d.team} keep={keep} /> : <>
         {!d.mine && <Tile span={12} title="Pick your team"><div className="plain">You haven't said which teams you play as, so this shows the team
           with the most matches. Pick yours on the current site (My team) for now; the question comes to the new site in stage 4.</div></Tile>}

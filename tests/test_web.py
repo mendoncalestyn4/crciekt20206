@@ -129,6 +129,20 @@ def test_long_team_names_in_the_match_list_are_never_cut_short(browser, site, wi
         pg.close()
 
 
+@pytest.mark.parametrize("path", ["/?team=Nobody FC", "/?view=scouting&team=Nobody FC"])
+def test_an_old_link_to_a_team_not_in_this_career_opens_your_team(browser, site, path):
+    """Found by the stress test (a link to Mumbai Indians in a career without them): your team's page instead of a
+    "not found", with a note saying why, and nothing wrong in the console."""
+    pg, said = open_page(browser, site, path)
+    try:
+        assert said == []
+        assert pg.locator(".tt .tl", has_text="Not in this career").count() == 1
+        assert "Nobody FC" in pg.locator(".t", has_text="Not in this career").text_content()
+        assert fit_problems(pg) == []
+    finally:
+        pg.close()
+
+
 def test_a_page_that_breaks_is_noted_and_shown_in_settings(browser, tmp_path_factory):
     """Settings → Problems (asked for on 4 November): an error on a page and a promise nobody caught are each noted
     once, with the page; the menu shows a red count on Settings; the list there gives a report to copy and send; and

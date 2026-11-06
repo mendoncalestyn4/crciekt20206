@@ -282,6 +282,19 @@ def test_my_team_has_its_squad_depth(live):
     assert w["matches"] > 0 and w["sections"] >= 1 and w["runs"] > w["wickets"] > 0 and isinstance(w["headlines"], list)
 
 
+def test_my_team_for_a_team_not_in_this_career_shows_yours_and_says_so(live):
+    """Found by the stress test: an old link naming a team that hasn't played in this career (another career's team, or
+    one since changed) gave a "not found" and a dead end on the home page. Now it's your own team's page, saying so."""
+    mine = live.json("/api/myteam")
+    d = live.json("/api/myteam?team=Nobody FC")
+    assert (d["team"], d["mine"], d["asked"]) == (mine["team"], True, "Nobody FC") and d["missing"] == {}
+    assert live.json(f"/api/myteam?team={mine['team']}")["asked"] == ""
+    # a team that has played but isn't yours still gets its own page
+    other = next(t for m in live.json("/api/matches")["matches"] for t in (m["home"], m["away"]) if t != mine["team"])
+    o = live.json(f"/api/myteam?team={other}")
+    assert (o["team"], o["mine"], o["asked"]) == (other, False, "")
+
+
 def test_the_best_batting_position_is_settled():
     """Each position on its own, settled with the format's few dismissals at that position's usual level: 2 innings of
     228 and 12 at no. 4 beat 12 ordinary innings at no. 5; the best over a longer run is named too."""
