@@ -1,6 +1,6 @@
 # The new Stats Pack website: the plan
 
-**Status:** stage 0 approved (27 October); stage 1 (core pages) built (1 November), finished and checked (3 November);
+**Status:** stage 0 approved (27 October); stage 1 (core pages) built (1 November), checked (3 November), stress-tested and finished (6 November);
 stage 2 started on your word (3 November: "begin stage 2"): see section 16.
 **You said:** build it without waiting for answers; screenshots come at the end of each stage.
 **27 October:** you've stopped using the current site, so it gets no more work (it stays as it is until the
@@ -694,6 +694,42 @@ warns a later pandas will refuse; each answers exactly as before (463 pages comp
 problems; every stage 1 page at three widths, dark and light, on both saves: 0 layout problems; the full test suite on
 this machine and on Python 3.14 with pandas 3.1 (your PC's set-up, with any future-pandas warning counted as a
 failure): every test passed; the old site's browser test passes too.
+
+---
+
+**The stage 1 stress test (4–6 November), and what it found:** every page of every made-up odd save (empty, one
+match, abandoned games, odd names, county only, IPL only, no team, messy) on the server and in the browser; every page
+of your new career's three seasons (England and London Spirit, then Paarl Royals; New Zealand and Antigua and Barbuda
+Falcons): 530, 892 (twice) and 1,214 matches; on the 2029 and 2032 saves, every player, match and team page, 40 pages
+asked for at once, read pressed 50 times at once, every player in every competition and season, the finder, search
+and junk input; fast clicking through the pages in the browser, dark and light; stage 0's switching, folder bursts,
+live news and every nation's colours and logos. Found and fixed at the root, each with a test:
+- **A side with a long name lost every innings** ("Trinidad and Tobago Red Force - 1st InningsR": the game leaves no
+  gap before the columns once the name is long): 9 matches in season 3, which also left the career's runs 151 short of
+  the batters' runs plus extras. Careers re-read their scorecards on opening, so saved careers correct themselves.
+- **Long names cut short** in Find a match ("Lucknow Super Giants won by 7 wickets" at 1280) and in the search box
+  (at 1366): they wrap now.
+- **My team for a team not in this career** (an old link, or the back button after switching careers) gave "not
+  found" and a dead end on the home page: now it shows your own team, with a note saying why.
+- A Scouting test that had quietly skipped since 30 October now checks every team (and can't skip).
+- Earlier rounds: a broken logo picture listed as a logo; Scouting on an empty career; a long match name running into
+  the next column; a one-season rank label on the year; two warnings; "-46% better".
+Not a fault: two innings where a batter retired hurt and the game's own total counts him as a wicket ("231/9" with 8
+out); the site shows the score as the game prints it.
+**Added (your request, 4 November): Settings → Problems.** Every problem the site hits while you use it (a part of a
+page that couldn't be worked out, a question the server couldn't answer, a page that broke in the browser, a scorecard
+that couldn't be read) is kept once with how often and when, shown at the top of Settings with a red count on Settings
+in the menu, and copied as a plain report with "Copy for Claude".
+**Final checks, 6 November:** every innings of the 5,653 scorecards in your saves added up (batters and extras,
+bowlers, balls, wickets, fall of wickets): all agree, but for 9 innings where the game itself printed no bowlers
+(matches abandoned after a few balls, chases won off the first ball); the longest team and player names through every
+page they're on at 1280, dark and light (298 pages): 0 problems; the 2032 save's round two (every player in every
+competition and season, 5,857 pages, the finder in 28 competitions, search, junk): 0 problems; every test site's
+problems list and log: empty; the full test suite on this machine and on Python 3.14 with pandas 3.1: every test
+passed (1,232, and the Scouting test above now runs too). **Stage 1 is finished.**
+**Noted for the speed work (to-do 1 and 2, and stage 5's speed checks):** the very first player pages after the site
+starts, while it's still working out the season's tables, took up to a minute under the stress test's load; later
+ones come at once.
 
 ---
 
