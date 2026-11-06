@@ -232,12 +232,12 @@ def test_a_candidate_says_where_they_play_now(fixtures_career):
     """Each pick carries the side they last played for and in which competition (read by name: a pandas row's
     .where is a method, which once turned every competition into a blank)."""
     c = fixtures_career
+    checked = 0
     for target in SC.sections(c).index:
-        teams = set(c.matches[c.matches.section == target].home)
-        for team in sorted(teams)[:2]:
-            pool = SC.candidates(c, team, target)
-            if len(pool):
-                who = SC._who(pool.iloc[0])
-                assert who["side"] and who["where"] in set(c.matches.section)
-                return
-    pytest.skip("no candidates in the test scorecards")
+        for team in sorted(set(c.matches[c.matches.section == target].home)):   # every team (only the first two once:
+            pool = SC.candidates(c, team, target)                               # none of them had one, so it skipped)
+            for _, row in pool.head(5).iterrows():
+                who = SC._who(row)
+                assert who["side"] and who["where"] in set(c.matches.section), (target, team, who)
+                checked += 1
+    assert checked >= 50   # 26 teams' competitions have candidates in the test scorecards
