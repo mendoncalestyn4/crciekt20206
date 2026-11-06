@@ -106,6 +106,29 @@ def test_a_brand_new_career_opens_cleanly(browser, tmp_path_factory, which):
         live.stop()
 
 
+@pytest.mark.parametrize("width", [1280, 1366])
+def test_long_team_names_in_the_match_list_are_never_cut_short(browser, site, width):
+    """Found by the stress test on an IPL-only save: at 1280 wide, "Lucknow Super Giants won by 7 wickets" was cut
+    short in Find a match. A long match name or result wraps instead, at every width."""
+    pg, said = open_page(browser, site, "/matches?section=Indian Premier League", width)
+    try:
+        assert said == []
+        res = pg.locator(".mli .res", has_text="Lucknow Super Giants won by")
+        assert res.count() >= 1
+        assert fit_problems(pg) == []
+        assert pg.evaluate("[...document.querySelectorAll('.mli .res, .mli .how')].every(e => e.scrollWidth <= e.clientWidth + 1)")
+        # and in the search box
+        pg.keyboard.press("Control+k")
+        pg.keyboard.type("Lucknow Super Giants v Royal")
+        pg.wait_for_selector(".finder li .what")
+        assert pg.locator(".finder li .what", has_text="Royal Challengers Bengaluru").count() >= 1
+        assert fit_problems(pg) == []
+        assert pg.evaluate("[...document.querySelectorAll('.finder li .what, .finder li .where')]"
+                           ".every(e => e.scrollWidth <= e.clientWidth + 1)")
+    finally:
+        pg.close()
+
+
 def test_a_page_that_breaks_is_noted_and_shown_in_settings(browser, tmp_path_factory):
     """Settings → Problems (asked for on 4 November): an error on a page and a promise nobody caught are each noted
     once, with the page; the menu shows a red count on Settings; the list there gives a report to copy and send; and

@@ -207,9 +207,9 @@ img.lg { vertical-align: middle; flex: none; object-fit: contain; }
   border-radius: 10px; cursor: pointer; }
 .finder li.on { background: var(--tile2); }
 .finder li .kind { font: 400 17px 'Bebas Neue'; letter-spacing: .14em; color: var(--dim); }
-.finder li .what { font: 400 24px 'Bebas Neue'; letter-spacing: .045em; word-spacing: .08em; overflow: hidden;
-  text-overflow: ellipsis; white-space: nowrap; }
-.finder li .where { font: 500 14px Inter; color: var(--dim); white-space: nowrap; }
+/* a long name ("Lucknow Super Giants v Royal Challengers Bengaluru") wraps onto a second line: never cut short */
+.finder li .what { font: 400 24px/1.1 'Bebas Neue'; letter-spacing: .045em; word-spacing: .08em; min-width: 0; overflow-wrap: anywhere; }
+.finder li .where { font: 500 14px/1.3 Inter; color: var(--dim); max-width: 250px; text-align: right; overflow-wrap: anywhere; }
 .finder .none { padding: 14px 22px 22px; color: var(--dim); font-size: 16px; }
 
 /* ------------------------------------------------------------------ news (new matches, records) */
@@ -370,8 +370,9 @@ input.typed:focus { border-color: var(--led); }
 .mli .when { font: 600 15px Inter; color: var(--dim); }
 .mli .cell { min-width: 0; }
 .mli .pn { white-space: normal; line-height: 1.05; min-width: 0; overflow-wrap: anywhere; }
-.mli .how { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mli .res { font: 600 15px Inter; color: var(--soft); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* a long match name or result ("Lucknow Super Giants won by 7 wickets") wraps onto a second line: never cut short */
+.mli .how { margin: 0; min-width: 0; line-height: 1.3; overflow-wrap: anywhere; }
+.mli .res { font: 600 15px/1.3 Inter; color: var(--soft); text-align: right; min-width: 0; overflow-wrap: anywhere; }
 table.best td { vertical-align: top; }
 table.best .rate { font: 700 30px/1 'Space Grotesk'; color: var(--led); text-decoration: none; }
 table.best .why { font: 400 15.4px/1.45 Inter; color: var(--soft); }
