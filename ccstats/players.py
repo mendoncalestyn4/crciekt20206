@@ -827,7 +827,8 @@ def knocking(career, ids, team: str, share: float = 0.4) -> pd.DataFrame:
     rpi = b[b.did_bat].groupby("player").runs.mean()
     wpi = w.groupby("player").wickets.mean()
     regular = games[games >= n * share].index
-    bar_r = rpi.reindex(regular).median()
+    # the regulars who batted (or bowled): one who never did has no figure to set the bar (all their games abandoned)
+    bar_r = rpi.reindex(regular).dropna().median()
     bar_w = wpi.reindex(regular).dropna().median()
     rows = []
     for p, k in games.items():

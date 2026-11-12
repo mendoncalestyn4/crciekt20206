@@ -240,3 +240,20 @@ def test_season_wrapped_with_no_games_is_empty(career):
     from ccstats import wrapped as WR
     w = WR.season_wrapped(career, "ODIs", "1999", "India")
     assert w["matches"] == 0 and not any(k in w for k in WR.SLIDES)
+
+
+def test_knocking_on_the_door_when_the_regulars_never_batted(career):
+    """Every game of a team abandoned before its regulars batted (the odd save of only abandoned games): there's no
+    regulars' figure to beat, so nobody is listed, and nothing is worked out from an empty list."""
+    import warnings
+    from types import SimpleNamespace
+    m = career.matches
+    ids = set(m[m.section == "ODIs"].match_id)
+    team = "England"
+    bat = career.batting.copy()
+    bat.loc[bat.team == team, "did_bat"] = False
+    c = SimpleNamespace(matches=career.matches, batting=bat, bowling=career.bowling.iloc[0:0], innings=career.innings)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        kn = PL.knocking(c, ids, team)
+    assert kn.empty
