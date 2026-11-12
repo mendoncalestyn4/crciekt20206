@@ -13,8 +13,9 @@ Read these at the start of every session. They come from the owner and hold unti
 - New features always need a yes.
 - **4 November: full authority.** The owner gave all authority to decide and say yes to anything without waiting for
   approval ("I give you ALL AUTHORITY to say yes to anything u want"). Still report afterwards what was done and why.
-  The one exception: **stage 2 waits for the owner's word** ("I'll tell u when to start stage 2"); until then only
-  stage 1 is finished (stress tests, fixes at the root cause, never a temporary fix).
+  Stage 1 was finished and stress-tested on 6 November. **12 November: the owner gave the word for stage 2** ("move
+  on to stage 2"). Fixes are always at the root cause, never temporary; every stage gets its own stress test.
+- **No player art** (12 November): no pictures of players behind the pages.
 
 ## How the owner likes the work done
 - Do it well rather than fast: zero errors, deep checks, and screenshots of what changed.
