@@ -13,15 +13,13 @@ from pathlib import Path
 import pytest
 
 from server.app import create_app
-from serverkit import FIXTURES, LATEST, Live, make_pc
+from serverkit import FIXTURES, LATEST, Live, chrome, make_pc
 
 sync_api = pytest.importorskip("playwright.sync_api")
 
 WEB = Path(__file__).parent.parent / "web" / "dist"
 FIT = (Path(__file__).parent / "fit_rules.js").read_text()
-# a Chromium already on this machine (the cloud machines keep one under /opt/pw-browsers, its folder named by version)
-CHROME = next((str(p) for p in [Path("/opt/pw-browsers/chromium"), *sorted(Path("/opt/pw-browsers").glob("chromium-*/chrome-linux*/chrome"))]
-               if p.exists()), None) if Path("/opt/pw-browsers").is_dir() else None
+CHROME = chrome()
 PAGES = ["/", "/inbox", "/style-guide", "/settings", "/players", "/players/J Bethell", "/matches", "/teams", "/teams?tab=How they win", "/teams?tab=Season",
          "/teams?tab=Squad&venue=home", "/teams/England", "/teams/vs",
          "/teams/vs?which=any", "/teams/preview", "/teams/preview?tab=About them", "/teams/preview?tab=Your best XI v them", "/teams/planner", "/teams/planner?tab=Batting order", "/teams/planner?tab=Partnerships", "/teams/rivalries", "/seasons", "/seasons?event=Indian Premier League&season=2026", "/seasons?event=T20 Blast&season=2026", "/seasons/season", "/seasons/season?view=month", "/seasons/season?team=All teams", "/seasons/season?tab=Series tracker", "/seasons/season?tab=Season progress", "/seasons/review", "/seasons/review?points=ipl", "/seasons/honours", "/seasons/honours?tab=Trophy cabinets", "/fixtures", "/leaders", "/insights", "/no-such-page"]

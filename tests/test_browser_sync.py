@@ -12,15 +12,14 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parent))
+from serverkit import chrome  # noqa: E402
 from test_real_names import card  # noqa: E402
 
 from ccstats import local as L  # noqa: E402
 
 ROOT = Path(__file__).parent.parent
-CHROME = os.environ.get("STATS_PACK_CHROME", "/opt/pw-browsers/chromium-1194/chrome-linux/chrome")
+CHROME = chrome()
 playwright = pytest.importorskip("playwright.sync_api")
-if not Path(CHROME).is_file():
-    pytest.skip("no Chromium for the browser tests", allow_module_level=True)
 
 
 def free_port() -> int:
@@ -69,7 +68,10 @@ def site(tmp_path):
 def test_pages_open_as_asked_while_new_matches_arrive(site):
     base, folder = site
     with playwright.sync_playwright() as pw:
-        br = pw.chromium.launch(executable_path=CHROME, args=["--no-sandbox"])
+        try:
+            br = pw.chromium.launch(**({"executable_path": CHROME} if CHROME else {}), args=["--no-sandbox"])
+        except Exception as e:  # noqa: BLE001 - no browser on this machine
+            pytest.skip(f"no Chromium for Playwright: {e}")
         try:
             for n, page in enumerate(("fixtures", "records"), start=2):
                 (folder / f"{page}.txt").write_text(card("T20", "Surrey", "Somerset", "T20 Blast", f"1{n} Jul 2027"),

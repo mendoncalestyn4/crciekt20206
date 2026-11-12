@@ -20,6 +20,17 @@ from server.__main__ import free_port
 FIXTURES = sorted((Path(__file__).parent / "fixtures").glob("*.txt"))
 
 
+def chrome() -> str | None:
+    """The Chromium for the browser tests: STATS_PACK_CHROME if set, else one already on this machine (the cloud
+    machines keep one under /opt/pw-browsers, its folder named by version), else None for Playwright's own."""
+    if os.environ.get("STATS_PACK_CHROME"):
+        return os.environ["STATS_PACK_CHROME"]
+    base = Path("/opt/pw-browsers")
+    if not base.is_dir():
+        return None
+    return next((str(p) for p in [base / "chromium", *sorted(base.glob("chromium-*/chrome-linux*/chrome"))] if p.exists()), None)
+
+
 def png(path, colour):
     path.parent.mkdir(parents=True, exist_ok=True)
     Image.new("RGBA", (40, 30), colour).save(path)
