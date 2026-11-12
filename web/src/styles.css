@@ -569,3 +569,32 @@ table.c tr.dimrow td { opacity: .45; }
 .ko-res { font: 400 13.5px/1.35 Inter; color: var(--dim); margin-top: 4px; }
 .champ { font: 400 30px 'Bebas Neue'; letter-spacing: .06em; color: var(--led); margin-top: 14px; }
 .glabel { font: 600 17px Inter; color: var(--ink); margin: 14px 0 4px; }
+
+/* ------------------------------------------------------------------ stage 2: Season (calendar) */
+.cms { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+.cm { background: var(--tile2); border: 1px solid var(--edge); border-radius: 12px; padding: 12px 14px; min-width: 0; }
+.cm.quiet { opacity: .6; }
+.cm-h { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font: 600 16px Inter; color: var(--ink); }
+.cm-h span { font: 500 13.5px Inter; color: var(--dim); white-space: nowrap; }
+.cm-n { margin: 6px 0 2px; font: 400 13px/1.4 Inter; color: var(--soft); overflow-wrap: anywhere; }
+.cm-n .tocome { color: var(--led); }
+.cm-g { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; margin-top: 8px; }
+.cm-g .dn { font: 600 11px Inter; color: var(--dim); text-align: center; }
+.cd { min-height: 34px; border-radius: 6px; background: var(--track); padding: 2px; display: flex; flex-direction: column; gap: 2px;
+  align-items: stretch; min-width: 0; }
+.cd.today { outline: 2px solid var(--led); }
+.cd .dd { font: 500 10.5px Inter; color: var(--dim); }
+.cd .cl { text-decoration: none; }
+.chip { display: block; border-radius: 4px; padding: 1px 2px; font: 700 10.5px/1.3 Inter; text-align: center; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: clip; }
+.chip.W { background: var(--win); } .chip.L { background: var(--loss); } .chip.D, .chip.T, .chip.NR { background: var(--grey); }
+.chip.N { background: var(--tile); color: var(--ink); border: 1px solid var(--edge); }
+.chip.UP { background: transparent; color: var(--led); border: 1px dashed var(--led); }
+.cm.big .cm-g { gap: 6px; }
+.cm.big .cd { min-height: 96px; padding: 6px; }
+.cm.big .dd { font-size: 13px; }
+.cm.big .chip { font: 600 13px/1.35 Inter; text-align: left; padding: 3px 6px; white-space: normal; overflow-wrap: anywhere; }
+.cd-games { display: flex; flex-direction: column; gap: 3px; }
+.cd-games .chip { text-decoration: none; }
+.prog { height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; min-width: 80px; }
+.prog i { display: block; height: 8px; background: var(--main); }

@@ -385,3 +385,14 @@ export type CompPage = { choices: { event: string; matches: number; seasons: str
   series?: { table: CompGrid; each: { label: string; matches: GridT }[] } | null;
   wtc?: { cycles: { key: string; label: string }[]; cycle: string; tables: Record<string, CompGrid>; note: string } | null;
   race?: { missing: Record<string, string>; race?: CompRace | null } };
+
+// ------------------------------------------------------------------ Seasons · Season (stage 2)
+export type CalChip = { kind: "W" | "L" | "D" | "T" | "NR" | "UP" | "N"; text: string; tip: string; id: string | null; opp?: string;
+  long?: string; event?: string; games?: { id: string; text: string; result: string }[] };
+export type CalMonth = { key: string; year: number; month: number; name: string; first: number; days_in: number;
+  days: Record<string, CalChip[]>; notes: { kind: "played" | "tocome"; text: string }[]; won: number; lost: number; played: number };
+export type SeasonPage = { teams: string[]; team: string; tabs: string[]; tab: string; none: string;
+  calendar?: { view: "season" | "month"; seasons: { key: string; label: string }[]; season: string; months: { key: string; label: string }[];
+    month: string; today: string; grid: CalMonth[]; caption?: string; none?: string };
+  series?: { none: string; live: (GridT & { note?: string }) | null; done: GridT | null; note?: string };
+  progress?: { none: string; rows: { name: string; event: string; season: string; played: string; pct: number | null; stage: string; leader: string }[]; note?: string } };

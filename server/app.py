@@ -29,7 +29,7 @@ from ccstats import search as SR
 from ccstats.colours import TEAM_COLOURS
 from ccstats.local import CareerStore
 
-from . import comppage, matchpage, myteam, plannerpage, playerpage, previewpage, rivalriespage, styleguide, teampage, tvtpage
+from . import comppage, matchpage, myteam, plannerpage, playerpage, previewpage, rivalriespage, seasonpage, styleguide, teampage, tvtpage
 from .cache import kept
 from .site import Site
 from .problems import REQUEST, Problems, report as problems_report
@@ -428,6 +428,16 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         data = await _with_career(lambda c: comppage.page(c, q, myteam.teams_by_latest(c, site.my_teams(c))))()
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
+    async def season_(request: Request):
+        """Season: the calendar (results and your fixtures to come), the series tracker, how far each competition has got."""
+        q = dict(request.query_params)
+
+        def make(c):
+            s = site.settings(c.name)
+            return seasonpage.page(c, q, myteam.teams_by_latest(c, site.my_teams(c)), list(s.fixtures) if s else [])
+        data = await _with_career(make)()
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
     async def rivalries_(request: Request):
         """Rivalries: every pair of teams that have met in a competition, and one of them close up."""
         q = dict(request.query_params)
@@ -642,6 +652,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/planner", planner_),
         Route("/api/rivalries", rivalries_),
         Route("/api/competition", competition_),
+        Route("/api/season", season_),
         Route("/api/player", player_),
         Route("/api/events", events),
         Route("/api/problems", problems_, methods=["GET", "POST"]),

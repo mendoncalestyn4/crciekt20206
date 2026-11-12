@@ -12,6 +12,7 @@ import { Preview } from "./pages/Preview";
 import { Planner } from "./pages/Planner";
 import { Rivalries } from "./pages/Rivalries";
 import { Competitions } from "./pages/Competitions";
+import { Season } from "./pages/Season";
 import { MyTeam } from "./pages/MyTeam";
 import { PlayersHome, PlayerView } from "./pages/Players";
 import { MatchesHome, MatchView } from "./pages/Matches";
@@ -48,6 +49,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/teams/rivalries" element={<Rivalries />} />
             <Route path="/teams/:pick" element={<Teams />} />
             <Route path="/seasons" element={<Competitions />} />
+            <Route path="/seasons/season" element={<Season />} />
             <Route path="/inbox" element={<Inbox />} />
             <Route path="/players" element={<PlayersHome />} />
             <Route path="/players/:pick" element={<PlayerView />} />

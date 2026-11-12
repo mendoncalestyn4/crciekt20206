@@ -613,3 +613,31 @@ def test_the_title_race_takes_its_knobs_and_never_breaks_on_junk(every):
         assert j["event"] in {c["event"] for c in j["choices"]}
         jr = (j.get("race") or {}).get("race")
         assert jr is None or 1 <= jr["games"] <= 60
+
+
+def test_the_season_calendar_series_and_progress(every):
+    """Seasons · Season (stage 2): the team's season month by month (every result on its day, opening its match), one
+    month, every team; the series tracker; how far each competition has got."""
+    c = every.app.state.site.career()
+    m = c.matches
+    d = every.json("/api/season")
+    team = d["team"]
+    cal = d["calendar"]
+    assert cal["view"] == "season" and len(cal["grid"]) == 12 and cal["season"] in {s["key"] for s in cal["seasons"]}
+    y = int(cal["season"])
+    start, end = pd.Timestamp(year=y, month=4, day=1), pd.Timestamp(year=y + 1, month=4, day=1)
+    mine = m[((m.home == team) | (m.away == team)) & (m.date >= start) & (m.date < end)]
+    shown = [ch["id"] for mo in cal["grid"] for v in mo["days"].values() for ch in v if ch["id"]]
+    assert sorted(shown) == sorted(mine.match_id)
+    assert sum(mo["played"] for mo in cal["grid"]) == len(mine)
+    one = every.json(f"/api/season?team={team}&view=month&month={cal['months'][0]['key']}")["calendar"]
+    assert one["view"] == "month" and len(one["grid"]) == 1 and one["grid"][0]["key"] == cal["months"][0]["key"]
+    every_team = every.json("/api/season?team=All teams")["calendar"]
+    yy = int(every_team["season"])
+    n = len(m[(m.date >= pd.Timestamp(year=yy, month=4, day=1)) & (m.date < pd.Timestamp(year=yy + 1, month=4, day=1))])
+    assert sum(mo["played"] for mo in every_team["grid"]) == n
+    sr = every.json(f"/api/season?team={team}&tab=Series tracker")["series"]
+    assert sr["none"] or sr["done"] or sr["live"]
+    pr = every.json("/api/season?team=All teams&tab=Season progress")["progress"]
+    assert pr["rows"] and all(r["pct"] is None or 0 <= r["pct"] <= 100 for r in pr["rows"])
+    assert every.json("/api/season?team=Nobody&tab=zzz&season=x&month=y")["team"] in {"All teams", team}
