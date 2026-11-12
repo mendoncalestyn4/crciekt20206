@@ -121,7 +121,10 @@ The bold styles need full control, which only a website of our own gives. Those 
   **E. Faster: remember the sums between starts** (idea 2, approved). Saved in the career's own folder, with a
   fingerprint of the scorecards, your fixes and the site's code: anything different, or a damaged file, and it's
   rebuilt as today, so old numbers can never show. ½ day. *Waiting on:* Python's built-in format (no new package; my
-  pick) or the pyarrow package.
+  pick) or the pyarrow package. *Seen in the stage 2 stress test (12 November):* the first Competitions page opened
+  after a start takes 5 to 7 seconds on your 2032 save (the honours list, worked out once per career and then shared
+  with Honours and Season review, is 3.6 seconds of it; the title race most of the rest); every visit after is
+  instant. D and E are the cure; the honours sum is left as the old site's until then, so its answers can't change.
 
   Suggested order: B, C, D, E, then A (the tests guard the numbers before the speed changes).
 - **Ask first:** before any extra work that wasn't asked for (checks to be sure, another set-up, anything to make the
