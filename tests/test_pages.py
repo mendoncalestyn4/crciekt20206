@@ -730,8 +730,8 @@ def test_season_wrapped_on_every_season_review(every):
 
 
 def test_every_stage_2_page_answers_on_a_career_with_no_matches(tmp_path):
-    """A career made before any game was played: every Teams and Seasons page says there's nothing yet (or that
-    there's no career to show), never an error."""
+    """A career made before any game was played: every Teams and Seasons page says there's nothing yet, never an
+    error, and never that there's no career."""
     pc = make_pc(tmp_path, files=[])
     web = tmp_path / "dist"
     (web / "assets").mkdir(parents=True)
@@ -742,7 +742,9 @@ def test_every_stage_2_page_answers_on_a_career_with_no_matches(tmp_path):
                      "/api/season", "/api/review", "/api/honours", "/api/honours?tab=Trophy cabinets", "/api/team?team=x",
                      "/api/review?pick=x|1", "/api/season?team=x&view=month"):
             code, _, _ = s.get(path)
-            assert code in (200, 404), (path, code)
+            assert code == 200, (path, code)
         assert "No competition has been decided yet" in s.json("/api/honours")["none"]
+        for path in ("/api/preview", "/api/planner", "/api/rivalries"):   # once "No career is open yet": there is one
+            assert s.json(path)["none"].startswith("No matches yet"), path
     finally:
         s.stop()

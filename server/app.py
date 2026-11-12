@@ -372,8 +372,6 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         q = dict(request.query_params)
 
         def make(c):
-            if c.matches.empty:
-                return None
             s = site.settings(c.name)
             sched = list(s.fixtures) if s else []
             order = myteam.teams_by_latest(c, site.my_teams(c))
@@ -418,7 +416,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
     async def planner_(request: Request):
         """Team planner: qualification, batting order, bowling plan, knocking on the door, partnerships."""
         q = dict(request.query_params)
-        data = await _with_career(lambda c: None if c.matches.empty else plannerpage.page(
+        data = await _with_career(lambda c: plannerpage.page(
             c, q, myteam.teams_by_latest(c, site.my_teams(c))))()
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
@@ -453,7 +451,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
     async def rivalries_(request: Request):
         """Rivalries: every pair of teams that have met in a competition, and one of them close up."""
         q = dict(request.query_params)
-        data = await _with_career(lambda c: None if c.matches.empty else rivalriespage.page(
+        data = await _with_career(lambda c: rivalriespage.page(
             c, q, myteam.teams_by_latest(c, site.my_teams(c))))()
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 

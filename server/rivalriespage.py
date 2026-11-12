@@ -14,6 +14,9 @@ from .teampage import choices, fmt, table
 def page(career, q: dict, mine: list[str]) -> dict:
     m = career.matches
     ch = choices(career)
+    if not ch:   # a career made before any game was played
+        return SG.clean(dict(choices=[], section="", pairs=[], pick="",
+                             none="No matches yet. This page fills in once the first scorecard of the career is in."))
     secs = [c["section"] for c in ch]
     section = q.get("section", "")
     if section not in secs:
