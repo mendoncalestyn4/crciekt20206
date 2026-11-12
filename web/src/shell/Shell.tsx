@@ -43,7 +43,7 @@ export function Head({ title, crumb, chips, on = 0, onChip }: {
   return (
     <div className="head">
       <div><h1>{title}</h1><div className="crumb">{crumb}</div></div>
-      {chips && chips.length > 0 && <div className="chips">{chips.map((c, i) => onChip
+      {chips && chips.length > 0 && <div className={`chips${chips.length > 3 ? " many" : ""}`}>{chips.map((c, i) => onChip
         ? <button key={c} className={i === on ? "on" : ""} onClick={() => onChip(i)}>{c}</button>
         : <span key={c} className={i === on ? "on" : ""}>{c}</span>)}</div>}
       {career?.latest && <span className="clock" title="The date of the latest match in this career">{team ? `${ab(team)} · ` : ""}{dayY(career.latest).toUpperCase()}</span>}

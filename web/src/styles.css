@@ -30,11 +30,17 @@ a { color: inherit; }
 .main { flex: 1; min-width: 0; padding: 26px 30px 40px; }
 
 /* ------------------------------------------------------------------ the page head */
-.head { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
-.head > div:first-child { flex: 1 1 auto; min-width: 0; }
+.head { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-bottom: 18px; container-type: inline-size; }
+/* many page buttons (the Teams pages' five): a row of their own under the title when they don't fit beside it */
+@container (max-width: 1650px) { .chips.many { order: 9; flex: 1 0 100%; justify-content: flex-start; margin: 2px 0 0; }
+  .chips.many ~ .clock { margin-left: auto; } }
+.head > div:first-child { flex: 1 0 auto; max-width: 62%; min-width: 0; }
 .head h1 { font: 400 54.4px/1 'Bebas Neue'; letter-spacing: .03em; }
 .head .crumb { color: var(--dim); font: 400 23.6px 'Bebas Neue'; letter-spacing: .16em; margin-top: 4px; }
-.chips { display: flex; gap: 8px; margin-left: auto; flex: none; white-space: nowrap; }
+/* the page buttons wrap onto a second line when there isn't room for them all (five on the Teams pages at 1280): never
+   over the title or the search box */
+.chips { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-left: auto; flex: 0 1 auto; min-width: 0;
+  white-space: nowrap; }
 .chips span, .chips button { border-radius: 999px; padding: 8px 18px; font: 400 21.7px 'Bebas Neue'; letter-spacing: .12em;
   background: var(--tile); border: 1px solid var(--edge); color: var(--dim); }
 .chips button { cursor: pointer; }

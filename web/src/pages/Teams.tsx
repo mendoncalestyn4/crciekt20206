@@ -15,7 +15,8 @@ import { useTheme } from "../theme";
 const VENUES: [string, string][] = [["Overall", "all"], ["Home", "home"], ["Away", "away"]];
 /** The Teams section's pages, switched from the top of each. */
 export const TEAM_PAGES = [{ label: "Team record", to: "/teams" }, { label: "Team v team", to: "/teams/vs" },
-  { label: "Opponent preview", to: "/teams/preview" }];
+  { label: "Opponent preview", to: "/teams/preview" }, { label: "Planner", to: "/teams/planner" },
+  { label: "Rivalries", to: "/teams/rivalries" }];
 
 export function Teams() {
   const { career, noCareer, nation } = useShell();

@@ -9,6 +9,8 @@ import { Inbox } from "./pages/Inbox";
 import { Teams } from "./pages/Teams";
 import { TeamVsTeam } from "./pages/TeamVsTeam";
 import { Preview } from "./pages/Preview";
+import { Planner } from "./pages/Planner";
+import { Rivalries } from "./pages/Rivalries";
 import { MyTeam } from "./pages/MyTeam";
 import { PlayersHome, PlayerView } from "./pages/Players";
 import { MatchesHome, MatchView } from "./pages/Matches";
@@ -41,6 +43,8 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/teams" element={<Teams />} />
             <Route path="/teams/vs" element={<TeamVsTeam />} />
             <Route path="/teams/preview" element={<Preview />} />
+            <Route path="/teams/planner" element={<Planner />} />
+            <Route path="/teams/rivalries" element={<Rivalries />} />
             <Route path="/teams/:pick" element={<Teams />} />
             <Route path="/inbox" element={<Inbox />} />
             <Route path="/players" element={<PlayersHome />} />

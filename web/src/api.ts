@@ -357,3 +357,16 @@ export type PreviewPage = { choices: { section: string; matches: number }[]; sec
 export type Problem = { id: string; kind: "part" | "server" | "page" | "scorecard"; where: string; what: string; detail: string;
   career: string; first: string; last: string; count: number };
 export type ProblemsPage = { problems: Problem[]; count: number; report: string };
+
+type Noneable<X> = X | { none: string };
+export type PlannerPage = { choices: TeamChoice[]; section: string; season: string; teams: string[]; team: string; tabs: string[]; tab: string;
+  none: string; tip: string;
+  body?: { missing: Record<string, string>; none?: string; recent?: boolean;
+    qualification?: { events: string[]; event: string; games: number; places: number; default_games: number; default_places: number;
+      line: string; table: GridT | null; note: string; none?: string } | null;
+    order?: { none: string; top7?: GridT | null; every?: GridT } | null;
+    plan?: Noneable<NGrid> | null; knocking?: Noneable<NGrid> | null; batting?: Noneable<GridT> | null; bowling?: Noneable<GridT> | null } };
+export type LeaderRow = { player: string; team: string; note: string } & Record<string, string | number>;
+export type RivalriesPage = { choices: TeamChoice[]; section: string; none: string; table?: NGrid; pairs: { key: string; label: string }[]; pick: string;
+  close?: { missing: Record<string, string>; a: string; b: string; runs?: ({ rows: LeaderRow[] } & Explained) | null;
+    wickets?: ({ rows: LeaderRow[] } & Explained) | null; meetings?: GridT | null } };

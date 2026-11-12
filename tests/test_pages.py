@@ -527,3 +527,39 @@ def test_opponent_preview_numbers_are_the_engines(career):
                 assert abs(sum(nums) - 100) <= 2, (where, p["line"])
             done += 1
     assert done >= 2
+
+
+def test_the_team_planner_opens_every_tab_with_the_engines_numbers(live):
+    """Team planner (stage 2): every tab for the team it opens on, each part worked out, and the batting order and
+    bowling plan the engine's own."""
+    from ccstats import players as PL
+    from ccstats.stats import Scope
+    d = live.json("/api/planner")
+    assert d["team"] in d["teams"] and d["tabs"] and d["tab"] == d["tabs"][0]
+    for tab in d["tabs"]:
+        t = live.json(f"/api/planner?section={d['section']}&team={d['team']}&tab={tab}")
+        assert t["tab"] == tab and t["body"]["missing"] == {}, (tab, t["body"]["missing"])
+    c = live.app.state.site.career()
+    ids = Scope(sections=[d["section"]]).match_ids(c.matches)
+    bp = PL.bowling_plan(c, ids, d["team"])
+    plan = live.json(f"/api/planner?section={d['section']}&team={d['team']}&tab=Bowling plan")["body"]["plan"]
+    assert ([r[0] for r in plan["rows"]] == list(bp.player)) if len(bp) else ("none" in plan)
+    every = live.json(f"/api/planner?section={d['section']}&team={d['team']}&tab=Batting order&recent=0")["body"]["order"]
+    order = PL.batting_order(c, ids, d["team"])
+    assert len(every["every"]["rows"]) == len(order)
+
+
+def test_rivalries_every_pair_and_one_close_up(live):
+    """Rivalries (stage 2): the most played pairs as the engine counts them, and the one picked close up."""
+    from ccstats import extras as E
+    from ccstats.stats import Scope
+    d = live.json("/api/rivalries")
+    c = live.app.state.site.career()
+    rv = E.rivalries(c, Scope(sections=[d["section"]]).match_ids(c.matches))
+    assert [p["key"] for p in d["pairs"]] == [f"{a}|{b}" for a, b in zip(rv.team_a, rv.team_b)]
+    assert [r[1] for r in d["table"]["rows"]] == [int(x) for x in rv.played.head(30)]
+    assert d["pick"] in {p["key"] for p in d["pairs"]} and d["close"]["missing"] == {}
+    a, b = d["pick"].split("|")
+    assert all({r[2], r[3]} == {a, b} for r in d["close"]["meetings"]["rows"])
+    other = d["pairs"][-1]["key"]
+    assert live.json(f"/api/rivalries?section={d['section']}&pick={other}")["pick"] == other

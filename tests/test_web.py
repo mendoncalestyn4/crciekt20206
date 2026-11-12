@@ -24,7 +24,7 @@ CHROME = next((str(p) for p in [Path("/opt/pw-browsers/chromium"), *sorted(Path(
                if p.exists()), None) if Path("/opt/pw-browsers").is_dir() else None
 PAGES = ["/", "/inbox", "/style-guide", "/settings", "/players", "/players/J Bethell", "/matches", "/teams", "/teams?tab=How they win", "/teams?tab=Season",
          "/teams?tab=Squad&venue=home", "/teams/England", "/teams/vs",
-         "/teams/vs?which=any", "/teams/preview", "/teams/preview?tab=About them", "/teams/preview?tab=Your best XI v them", "/seasons", "/fixtures", "/leaders", "/insights", "/no-such-page"]
+         "/teams/vs?which=any", "/teams/preview", "/teams/preview?tab=About them", "/teams/preview?tab=Your best XI v them", "/teams/planner", "/teams/planner?tab=Batting order", "/teams/planner?tab=Partnerships", "/teams/rivalries", "/seasons", "/fixtures", "/leaders", "/insights", "/no-such-page"]
 
 
 @pytest.fixture(scope="module")
