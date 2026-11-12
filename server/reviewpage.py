@@ -10,6 +10,7 @@ from __future__ import annotations
 from ccstats import extras as E
 from ccstats import mvp as MV
 from ccstats import seasonal as SN
+from ccstats import wrapped as WR
 
 from . import styleguide as SG
 from .cache import kept
@@ -76,6 +77,8 @@ def review(career, q: dict, mine: list[str]) -> dict:
             pick = keys[0]
     section, season = pick.split("|", 1)
     out.update(pick=pick, section=section, season=season)
+    out["wrapped"] = kept(career, ("wrapped", section, season, q.get("wteam", ""), q.get("wfmt", ""), tuple(mine)),
+                          lambda: _wrapped(career, section, season, q.get("wteam", ""), q.get("wfmt", ""), mine))
     if section == INTL:
         out["year"] = kept(career, ("year-review", season), lambda: _year(career, season))
     else:
@@ -245,3 +248,103 @@ def honours(career, q: dict, mine: list[str]) -> dict:
                                                                              won[won.champion_teams == t].how))]
                                     for t, n in counts.items()], num={1}, hi=[t in mine for t in counts.index])
     return SG.clean(out)
+
+
+def _cap(s: str) -> str:
+    """The first letter a capital, the rest as it is (str.capitalize would lower every team's name after it)."""
+    return s[:1].upper() + s[1:]
+
+
+def _ord(n: int) -> str:
+    return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
+
+
+def _wrapped(career, section, season, asked, fmt_pick, mine) -> dict:
+    """Your season, wrapped: one team's season as ten slides (ccstats.wrapped). International cricket is one format at
+    a time (Tests, ODIs and T20Is are never mixed); the team is yours when you played here, else the side with the
+    most matches."""
+    out, part = _parts()
+
+    def wrapped():
+        team = asked
+        m = career.matches
+        formats, fmt = [], ""
+        sec = section
+        if section == INTL:
+            intl = SN.international_sections(career)
+            sv = _sval(career, season)
+            formats = [f for f, s_ in intl.items() if ((m.section == s_) & (m.season == sv)).any()]
+            if not formats:
+                return dict(none="No international matches this year.", formats=[], format="", teams=[], team="")
+            sv_ = _sval(career, season)
+            yours = [f for f in formats if ((m.section == intl[f]) & (m.season == sv_) & (m.home.isin(mine) | m.away.isin(mine))).any()]
+            fmt = fmt_pick if fmt_pick in formats else (yours or formats)[0]
+            sec = intl[fmt]
+        sv = _sval(career, season)
+        here = m[(m.section == sec) & (m.season == sv)]
+        played = (here.home.value_counts().add(here.away.value_counts(), fill_value=0)).sort_values(ascending=False)
+        teams = sorted(played.index)
+        if not teams:
+            return dict(none="No matches here yet.", formats=formats, format=fmt, teams=[], team="")
+        if team not in teams:
+            yours = [t for t in mine if t in teams]
+            team = yours[0] if yours else sorted(teams, key=lambda t: (-played[t], t))[0]
+        w = WR.season_wrapped(career, sec, sv, team)
+        label = f"{sec} {season}"
+        slides = []
+
+        def add(key, kicker, head, big="", unit="", lines=(), mid=None):
+            slides.append(dict(key=key, kicker=kicker, head=head, big=big, unit=unit, lines=[x for x in lines if x], id=mid))
+
+        r = w.get("record")
+        if r:
+            bits = [f"won {r['won']}", f"lost {r['lost']}"] + ([f"drawn {r['drawn']}"] if r["drawn"] else []) \
+                + ([f"tied {r['tied']}"] if r["tied"] else []) + ([f"no result {r['no_result']}"] if r["no_result"] else [])
+            add("record", "The season", f"{team} · {label}", str(r["played"]), "matches" if r["played"] != 1 else "match",
+                [_cap(", ".join(bits)), f"Win rate {r['win_pct']:.0f}%"])
+        x = w.get("runs")
+        if x:
+            add("runs", "Top run-scorer", x["player"], str(x["runs"]), "runs",
+                [f"{x['innings']} innings" + (f" · average {x['average']:.1f}" if x["average"] is not None else " · never out"),
+                 f"Best: {x['best']}"])
+        x = w.get("wickets")
+        if x:
+            add("wickets", "Top wicket-taker", x["player"], str(x["wickets"]), "wickets",
+                [f"Average {x['average']:.1f}" + (f" · economy {x['economy']:.2f}" if x["economy"] is not None else "")])
+        x = w.get("score")
+        if x:
+            add("score", "Highest score", x["player"], f"{x['runs']}{'*' if x['notout'] else ''}", "runs",
+                [f"off {x['balls']} balls" + (" · not out" if x["notout"] else ""), f"v {x['against']} · {x['date']}"], x["id"])
+        x = w.get("bowling")
+        if x:
+            add("bowling", "Best bowling", x["player"], f"{x['wickets']}/{x['runs']}", "",
+                [f"v {x['against']} · {x['date']}"], x["id"])
+        x = w.get("stand")
+        if x:
+            add("stand", "Biggest stand", x["pair"] or f"{_ord(x['wicket'])} wicket", f"{x['runs']}{'*' if x['unbroken'] else ''}", "runs",
+                [f"for the {_ord(x['wicket'])} wicket" + (" · unbroken" if x["unbroken"] else ""), f"v {x['against']} · {x['date']}"], x["id"])
+        x = w.get("streak")
+        if x:
+            add("streak", "Longest winning run", f"{x['wins']} in a row" if x["wins"] > 1 else "One win at a time",
+                str(x["wins"]), "wins" if x["wins"] != 1 else "win",
+                [f"{x['start']} to {x['end']}" if x["wins"] > 1 else f"No two wins in a row yet · {x['end']}"])
+        x = w.get("win")
+        if x:
+            also = x.get("also")
+            add("win", "Biggest win", f"v {x['against']}", "", "",
+                [x["result"], x["date"]] + ([f"Biggest chasing win: {also['result'].split(' won ', 1)[-1]} v {also['against']}"] if also else []),
+                x["id"])
+        x = w.get("game")
+        if x:
+            add("game", "Best game", x["teams"], f"{x['rating']:.1f}", "out of 10", [x["result"], _cap(x["why"]), x["date"]], x["id"])
+        x = w.get("player")
+        if x:
+            add("player", "Player of the season", x["player"], f"{x['points']:.0f}", "impact points",
+                [f"{x['matches']} match{'es' if x['matches'] != 1 else ''} · batting {x['batting']:.0f}, bowling {x['bowling']:.0f}, fielding {x['fielding']:.0f}"])
+        return dict(none="" if slides else f"{team} haven't played here yet.", formats=formats, format=fmt, teams=teams,
+                    team=team, section=sec, season=season, slides=slides,
+                    note="Every figure is the team's own in this competition and season, from the scorecards as printed. "
+                         "Best game: the excitement rating out of 10 (Matches page). Player of the season: the most impact "
+                         "points (below). * not out or unbroken.")
+    part("wrapped", wrapped)
+    return out

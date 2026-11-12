@@ -598,3 +598,12 @@ table.c tr.dimrow td { opacity: .45; }
 .cd-games .chip { text-decoration: none; }
 .prog { height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; min-width: 80px; }
 .prog i { display: block; height: 8px; background: var(--main); }
+
+/* Your season, wrapped: the slide (a canvas drawn at 1600 x 900) and the bar under it */
+.wrapped canvas { display: block; width: 100%; max-width: 1100px; aspect-ratio: 16 / 9; height: auto; border-radius: 14px; border: 1px solid var(--edge); }
+.wbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; max-width: 1100px; }
+.wbar .wsp { flex: 1 0 0; }
+.wdots { display: flex; gap: 7px; }
+.wdots button { width: 12px; height: 12px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; background: var(--track); }
+.wdots button.on { background: var(--blue); }
+.wbar .btn:disabled { opacity: .45; cursor: default; }

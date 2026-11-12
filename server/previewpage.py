@@ -8,6 +8,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from ccstats import aim as AIM
 from ccstats import analysis as A
 from ccstats import catalogue as CAT
 from ccstats import extras as E
@@ -190,7 +191,59 @@ def _head(career, ids, me, opp, where_note, where_default) -> dict:
             return res
         part("predicted", predicted)
         part("plan", lambda: list(PV.game_plan(career, ids, me, opp)))
+        part("aim", lambda: _aim(career, ids, me, opp))
     return out
+
+
+def _aim(career, ids, me, opp) -> dict:
+    """The score to aim for batting first, at home, away and on a neutral ground (ccstats.aim)."""
+    a = kept(career, ("score_to_aim", tuple(ids), me, opp), lambda: AIM.score_to_aim(career, ids, me, opp))
+    out = dict(none=a["none"], games=a["games"], venues={})
+    if a["none"]:
+        return out
+    for where, v in a["venues"].items():
+        line = f"{v['even']} for an even game · {v['seventy']} for a 70% chance"
+        warn = []
+        if v["beyond"]:
+            warn.append("the 70% total is more than any side has made batting first here, so it's a guess beyond what "
+                        "has been seen")
+        if v["below"]:
+            warn.append("even a total lower than any made here would make it an even game, so it's a guess below what "
+                        "has been seen")
+        if v["they_set"] is not None:
+            they = (f"{opp} set {v['they_set']} batting first against {me} {_ground(where, me)}, in their one game."
+                    if v["they_set_n"] == 1 else
+                    f"{opp} usually set {v['they_set']} batting first against {me} {_ground(where, me)} ({v['they_set_n']} games).")
+        elif v.get("they_usual") is not None:
+            they = (f"{opp} have never batted first against {me} {_ground(where, me)}. Against everyone, {_ground(where, opp, True)}, "
+                    + (f"they set {v['they_usual']} in their one game." if v["they_usual_n"] == 1 else
+                       f"they usually set {v['they_usual']} ({v['they_usual_n']} games)."))
+        else:
+            they = f"{opp} haven't batted first {_ground(where, opp, True)} in these games yet."
+        meet = v["meetings"]
+        out["venues"][where.capitalize()] = dict(
+            line=line, warn=("Careful: " + "; ".join(warn) + ".") if warn else "", they=they,
+            meetings=table(["Date", "Innings", "Result"], [[x["date"], x["first"], x["result"]] for x in meet],
+                           links=[x["id"] for x in meet]) if meet else None)
+    out["note"] = (f"Worked out from all {a['games']} finished games here where a side batted first (rain games, ties and "
+                   "no-results left out), every team, not just these two: how often a side batting first won with each "
+                   "total"
+                   + (", allowing for how strong the two sides were (their ratings before the game) and where it was "
+                      "played. " if a["rated"] else
+                      " and where it was played. The ratings of the two sides are left out here: in these games they "
+                      "didn't help say who won. ")
+                   + "Even game: the total that wins half the time; 70%: the one that wins seven times in ten.")
+    return out
+
+
+def _ground(where: str, team: str, own: bool = False) -> str:
+    """Where a game was, said plainly: from `team`'s side ('when India are at home'), or with `own` for the opponent
+    on their own ('at home', since our away is their home)."""
+    if where == "neutral":
+        return "on neutral grounds"
+    if own:
+        return "at home" if where == "away" else "away from home"
+    return f"when {team} are {'at home' if where == 'home' else 'away'}"
 
 
 def head_to_head(career, ids, me, opp, where_note, mu, cur) -> dict:

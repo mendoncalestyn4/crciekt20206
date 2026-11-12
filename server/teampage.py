@@ -8,6 +8,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from ccstats import aim as AIM
 from ccstats import analysis as A
 from ccstats import catalogue as CAT
 from ccstats import extras as E
@@ -294,6 +295,67 @@ def overview(career, section, season, team, venue) -> dict:
                                                           col.wickets, col.runs, col.total)],
                      links=list(col.match_id) if "match_id" in col.columns else None)
     P("collapses", collapses)
+
+    def carry():
+        sh = AIM.team_shares(career, tm.match_id, team)
+        tr, tw = sh.attrs["team_runs"], sh.attrs["team_wickets"]
+        if sh.empty or not (tr or tw):
+            return None
+        sh = sh.assign(load=sh.run_share + sh.wicket_share)
+        top = sh[(sh.run_share >= 5) | (sh.wicket_share >= 5)].sort_values(["load", "player"], ascending=[False, True]).head(12)
+        if top.empty:
+            top = sh.sort_values(["load", "player"], ascending=[False, True]).head(5)
+        g = table(["Player", "Matches", "Runs", "Share of the runs", "Wickets", "Share of the wickets"],
+                  [[p, int(n), int(r), pct(rs, 1), int(w), pct(ws, 1)]
+                   for p, n, r, rs, w, ws in zip(top.player, top.matches, top.runs, top.run_share, top.wickets, top.wicket_share)],
+                  num={1, 2, 3, 4, 5})
+        bat, bowl = sh.sort_values("runs", ascending=False), sh.sort_values("wickets", ascending=False)
+        bits = []
+        if tr and len(bat) and bat.runs.iloc[0] > 0:
+            three = bat.run_share.head(3).sum()
+            bits.append(f"{bat.player.iloc[0]} makes {bat.run_share.iloc[0]:.0f}% of {poss(team)} runs, and the top three "
+                        f"batters {three:.0f}% between them.")
+        if tw and len(bowl) and bowl.wickets.iloc[0] > 0:
+            bits.append(f"{bowl.player.iloc[0]} takes {bowl.wicket_share.iloc[0]:.0f}% of the wickets.")
+        both = sh[(sh.run_share >= 10) & (sh.wicket_share >= 10)]
+        if len(both):
+            bits.append(f"{' and '.join(both.player.head(2))} {'does' if len(both) == 1 else 'do'} both: at least 10% of "
+                        "the runs and of the wickets.")
+        g.update(shows=" ".join(bits), for_=(f"Shows who {team} lean on. The team's runs are the innings totals as printed "
+                                             f"({tr} here, extras included) and its wickets are those its bowlers took ({tw}), "
+                                             "so a player's share is the same as on their own page. Players with 5% of "
+                                             "either are listed, the biggest load first."))
+        return g
+    P("carry", carry)
+
+    def usual():
+        u = AIM.usual_by_wicket(career, tm.match_id, team)
+        if u.empty:
+            return None
+        rows, gaps = [], []
+        for r in u.itertuples():
+            gap = float(r.usual - r.opp_usual) if pd.notna(r.opp_usual) else np.nan
+            gaps.append(gap)
+            rows.append([f"{ordinal(int(r.wicket))} wicket", int(r.usual), int(r.opp_usual) if pd.notna(r.opp_usual) else "–", signed(gap, 0),
+                         int(r.best), int(r.worst), int(r.innings)])
+        g = table(["Wicket", f"{team} usually", "Their opponents", "Difference", "Highest", "Lowest", "Innings"], rows,
+                  num={1, 2, 3, 4, 5, 6})
+        known = [(i, x) for i, x in enumerate(gaps) if np.isfinite(x)]
+        bits = [f"{poss(team)} {ordinal(int(u.wicket.iloc[0]))} wicket usually falls at {int(u.usual.iloc[0])}"
+                + (f" (their opponents': {int(u.opp_usual.iloc[0])})." if pd.notna(u.opp_usual.iloc[0]) else ".")]
+        if known:
+            i_lo = min(known, key=lambda k: k[1])[0]
+            i_hi = max(known, key=lambda k: k[1])[0]
+            if gaps[i_hi] > 0:
+                bits.append(f"They're furthest ahead at the {ordinal(int(u.wicket.iloc[i_hi]))} wicket ({signed(gaps[i_hi], 0)}).")
+            if gaps[i_lo] < 0:
+                bits.append(f"They're furthest behind at the {ordinal(int(u.wicket.iloc[i_lo]))} wicket ({signed(gaps[i_lo], 0)}).")
+        g.update(shows=" ".join(bits), for_=("Shows where the innings usually stands as each wicket falls, against the "
+                                             "teams they played in the same games: the typical (middle) score, so one "
+                                             "huge stand doesn't pull it about. Only wickets that fell in at least 30% of "
+                                             "their innings are listed."))
+        return g
+    P("usual", usual)
 
     style = kept(career, ("team_style", tuple(ids)), lambda: E.team_style(career, ids))
 

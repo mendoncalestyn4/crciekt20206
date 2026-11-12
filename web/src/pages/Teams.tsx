@@ -134,6 +134,14 @@ function Body({ tab, b, team, keep, race }: { tab: string; b: TeamBody; team: st
         : <Missing why={m.stands} />}</Tile>
     <GridTile g={b.openers} title="Opening pairs" sub="the two players who opened, and their stands" none="No innings yet." keep={keep} missing={m.openers} />
     <GridTile g={b.collapses} title="Collapses" sub="4 or more wickets lost for 30 runs or fewer" none="No collapses. Nice." keep={keep} missing={m.collapses} />
+    <Tile span={12} title="Who carries the team">
+      <div className="how" style={{ marginTop: -4, marginBottom: 6 }}>Each player's share of the team's runs and wickets</div>
+      {m.carry ? <Missing why={m.carry} /> : b.carry ? <><Grid t={b.carry} keep={keep} />{b.carry.shows && <Explain shows={<T>{b.carry.shows}</T>} for_={b.carry.for_} />}</>
+        : <div className="plain">No runs or wickets yet.</div>}</Tile>
+    <Tile span={12} title="The usual score at each wicket">
+      <div className="how" style={{ marginTop: -4, marginBottom: 6 }}>The typical score when each wicket fell, against their opponents in the same games</div>
+      {m.usual ? <Missing why={m.usual} /> : b.usual ? <><Grid t={b.usual} keep={keep} />{b.usual.shows && <Explain shows={<T>{b.usual.shows}</T>} for_={b.usual.for_} />}</>
+        : <div className="plain">No wickets have fallen yet.</div>}</Tile>
     {b.how_they_play !== null && <Tile span={7} title={`How ${team} play`}>
       <div className="how" style={{ marginTop: -4 }}>More (right) or less (left) than the average team, not better or worse{b.how_they_play?.every ? " · every game here" : ""}</div>
       {b.how_they_play ? <><SignedBars rows={b.how_they_play.rows} colour={t.orange} /><Explain shows={<T>{b.how_they_play.shows}</T>} for_={b.how_they_play.for_} /></>

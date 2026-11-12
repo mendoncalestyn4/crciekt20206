@@ -91,6 +91,18 @@ export function Preview() {
           {me && <Tile span={5} title={`📋 Game plan for ${me} v ${d.opp}`}>
             {h.plan ? (h.plan.length ? <ul className="dots plan">{h.plan.map((x) => <li key={x}><Md s={x} /></li>)}</ul>
               : <div className="plain">Nothing stands out yet: not enough games for a clear pattern. Play a few more and it fills in.</div>) : <Missing why={h.missing.plan} />}</Tile>}
+          {me && <Tile span={12} title="🎯 The score to aim for batting first">
+            {h.aim ? (h.aim.none ? <div className="plain">{h.aim.none}</div> : (() => {
+              const a = h.aim.venues[w];
+              return a ? <><div className="field" style={{ marginTop: 0 }}><span className="plain" style={{ flex: 1 }}><b>{a.line}</b></span>
+                <div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>{WHERE.map((x) => (
+                  <button key={x} className={x === w ? "on" : ""} onClick={() => setWhere(x)}>{x}</button>))}</div></div>
+                {a.warn && <div className="plain">⚠️ {a.warn}</div>}
+                <div className="plain"><T>{a.they}</T></div>
+                {a.meetings ? <><div className="glabel">Your games against them here · newest first</div><Grid t={a.meetings} keep={keep} /></>
+                  : <div className="plain">You haven't played them here yet.</div>}
+                <div className="note">{h.aim.note}</div></> : null;
+            })()) : <Missing why={h.missing.aim} />}</Tile>}
           <div className="itabs">{d.tabs.map((x, i) => (
             <button key={x} className={x === d.tab ? "on" : ""} onClick={() => set({ tab: i === 0 ? "" : x })}>{x === "About them" ? `About ${d.opp}` : x}</button>))}</div>
           {!b ? null : b.none ? <Tile span={12}><div className="plain">{b.none}</div></Tile> : <>

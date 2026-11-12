@@ -664,3 +664,66 @@ def test_every_season_review_and_the_honours(every):
     cab = every.json("/api/honours?tab=Trophy cabinets")["cabinet"]
     won = h[~h.how.str.contains("so far")].explode("champion_teams")
     assert sum(r[1] for r in cab["rows"]) == len(won)
+
+
+def test_team_record_carry_usual_and_the_score_to_aim_are_the_engines(every):
+    """Stage 2's new pieces as the pages show them: who carries the team and the usual score at each wicket (Team
+    record, Overview) and the score to aim for (Opponent preview), each the engine's own figures."""
+    from ccstats import aim as AIM
+    c = every.app.state.site.career()
+    m = c.matches
+    for sec, team in (("ODIs", "England"), ("Tests", "England"), ("T20 Blast", sorted(m[m.section == "T20 Blast"].home)[0])):
+        b = every.json(f"/api/team?team={team}&section={sec}")["page"]["body"]
+        assert b["missing"] == {}
+        mids = set(m[(m.section == sec) & ((m.home == team) | (m.away == team))].match_id)
+        sh = AIM.team_shares(c, mids, team)
+        assert all(r[0] in set(sh.player) for r in b["carry"]["rows"]) and b["carry"]["shows"]
+        for r in b["carry"]["rows"]:
+            e = sh[sh.player == r[0]].iloc[0]
+            assert r[1:3] == [e.matches, e.runs] and r[4] == e.wickets and (e.run_share >= 5 or e.wicket_share >= 5)
+        u = AIM.usual_by_wicket(c, mids, team)
+        assert [r[1] for r in b["usual"]["rows"]] == list(u.usual)
+        for r in b["usual"]["rows"]:
+            if r[2] != "–":
+                assert r[3] == f"{r[1] - r[2]:+d}"
+    # the score to aim for: multi-day cricket and mixed formats say why; with enough games, the engine's totals
+    def opp(sec):
+        g = m[(m.section == sec) & ((m.home == "England") | (m.away == "England"))]
+        return next(t for t in list(g.home) + list(g.away) if t != "England")
+    d = every.json(f"/api/preview?section=Internationals&format=Tests&mine=England&opp={opp('Tests')}")
+    assert "multi-day" in d["head"]["aim"]["none"]
+    d = every.json(f"/api/preview?section=Internationals&format=All&mine=England&opp={opp('ODIs')}")
+    assert "Pick one format" in d["head"]["aim"]["none"]
+    d = every.json(f"/api/preview?section=Internationals&format=ODIs&mine=England&opp={opp('ODIs')}")
+    assert d["head"]["missing"] == {} and d["head"]["aim"]["none"].startswith("Not enough finished games")
+
+
+def test_season_wrapped_on_every_season_review(every):
+    """Season review's wrapped slides for every season and every team in it (international years one format at a
+    time), never failing, each slide the engine's figure."""
+    from ccstats import wrapped as WR
+    c = every.app.state.site.career()
+    d = every.json("/api/review")
+    for ch in d["choices"]:
+        x = every.json(f"/api/review?pick={ch['key']}")
+        w = x["wrapped"]
+        assert w["missing"] == {}, (ch, w["missing"])
+        wr = w["wrapped"]
+        for f in (wr["formats"] or [""]):
+            y = every.json(f"/api/review?pick={ch['key']}&wfmt={f}")["wrapped"]["wrapped"]
+            assert y["format"] == f
+            for team in y["teams"]:
+                z = every.json(f"/api/review?pick={ch['key']}&wfmt={f}&wteam={team}")["wrapped"]
+                assert z["missing"] == {} and z["wrapped"]["team"] == team
+                s = {k["key"]: k for k in z["wrapped"]["slides"]}
+                e = WR.season_wrapped(c, z["wrapped"]["section"], next(v for v in c.matches.season.unique() if str(v) == ch["season"]), team)
+                assert list(s) == [k for k in WR.SLIDES if k in e]
+                if "runs" in e:
+                    assert s["runs"]["big"] == str(e["runs"]["runs"]) and s["runs"]["head"] == e["runs"]["player"]
+                if "record" in e:
+                    assert s["record"]["big"] == str(e["record"]["played"])
+                if "bowling" in e:
+                    assert s["bowling"]["big"] == f"{e['bowling']['wickets']}/{e['bowling']['runs']}"
+    # a team not in that season: back to the one it opens on
+    bad = every.json(f"/api/review?pick={d['choices'][0]['key']}&wteam=Nobody FC")["wrapped"]["wrapped"]
+    assert bad["team"] in bad["teams"]

@@ -749,8 +749,34 @@ saves, and the fit check at three widths in dark and light):
   form, the predicted result (home, away or neutral), the game plan, then head to head with who gets whom out, about
   them, side by side, and your best XI against them.
 
-Still to build in stage 2: Team planner, Rivalries, Competitions, Season, Season review, Honours, and the new pieces
-(who carries the team, your usual score at each wicket, collapses, the score to aim for, your season wrapped).
+- **Teams · Team planner** (`/teams/planner`) and **Teams · Rivalries** (`/teams/rivalries`), as the current site's.
+- **Seasons · Competitions** (`/seasons`): one competition in one season: the league table, the title race, the
+  knockouts, every series and the World Test Championship.
+- **Seasons · Season** (`/seasons/season`): the season's calendar, the series tracker (with each side's chance of
+  winning a live series) and how far each competition has got.
+- **Seasons · Season review** (`/seasons/review`) and **Seasons · Honours** (`/seasons/honours`), as the current
+  site's.
+
+The new pieces (section 14), each checked against the scorecards counted by hand in tests:
+- **Who carries the team** (Team record, Overview): each player's share of the team's runs and wickets, counted as on
+  the Player page (checked to agree for every player and season).
+- **The usual score at each wicket** (Team record, Overview): the typical score when each wicket fell, against the
+  opponents in the same games, with the highest and lowest; wickets that fell in at least 30% of innings.
+- **Collapses** were already on Team record's Overview (4 or more wickets for 30 runs or fewer).
+- **The score to aim for** (Opponent preview): batting first, the total for an even game and for a 70% chance, at
+  home, away and on a neutral ground, against the team you're about to play; what they usually set against you there;
+  and your games against them there. Worked out from every finished game in that one competition where a side batted
+  first (formats never mixed; rain games, ties and no-results left out), allowing for the two sides' ratings when
+  those help, and where it was played. It needs 30 such games; not for multi-day cricket, where the first-innings
+  total doesn't decide the match.
+- **Your season, wrapped** (Season review): one team's season in ten slides in the team's colours (the record, the
+  top run-scorer and wicket-taker, the highest score, the best bowling, the biggest stand, the longest winning run,
+  the biggest win, the best game and the player of the season), one at a time or all on one picture, each saved as
+  a picture. International years are one format at a time.
+- The small "where your team ranks" tile was left to stage 3, where every team ranked by runs and wickets up to any
+  date is already planned.
+
+Still to do in stage 2: its stress test.
 
 ## Appendix: technical outline
 

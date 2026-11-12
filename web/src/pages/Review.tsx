@@ -8,6 +8,7 @@ import { Explain, Missing, Num, Tile } from "../kit/base";
 import { LeaderBars } from "../kit/charts";
 import { Grades } from "../kit/myteam";
 import { Grid } from "../kit/teams";
+import { Wrapped } from "../kit/wrapped";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
 import { T } from "../shell/names";
@@ -22,13 +23,14 @@ export function Review() {
   const [params] = useSearchParams();
   const go = useNavigate();
   const keep = nation ? `?nation=${encodeURIComponent(nation)}` : "";
-  const want = { pick: params.get("pick") ?? "", points: params.get("points") ?? "" };
+  const want = { pick: params.get("pick") ?? "", points: params.get("points") ?? "", wteam: params.get("wteam") ?? "", wfmt: params.get("wfmt") ?? "" };
   const qs = Object.entries(want).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
   const q = useQuery({ queryKey: ["review", qs, career?.name], enabled: Boolean(career), retry: false,
     queryFn: () => get<ReviewPage>(`/api/review?${qs}`) });
   useReady(Boolean(q.data || q.error || noCareer), qs);
   const set = (changes: Record<string, string>) => {
     const next: Record<string, string> = { ...want, ...changes };
+    if ("pick" in changes) Object.assign(next, { wteam: "", wfmt: "" });
     if (nation) next.nation = nation;
     go(`/seasons/review?${new URLSearchParams(Object.entries(next).filter(([, v]) => v)).toString()}`);
   };
@@ -38,8 +40,8 @@ export function Review() {
   if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career on the current site for now.</div></Tile></div></>;
   if (q.error) return <>{head}<div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
   if (!q.data) return <>{head}<div className="empty">Reviewing the season…</div></>;
-  const d = q.data, yr = d.year?.year, rv = d.season_review?.review, mv = d.mvp?.mvp;
-  const miss = { ...(d.year?.missing ?? {}), ...(d.season_review?.missing ?? {}), ...(d.mvp?.missing ?? {}) };
+  const d = q.data, yr = d.year?.year, rv = d.season_review?.review, mv = d.mvp?.mvp, wr = d.wrapped?.wrapped;
+  const miss = { ...(d.year?.missing ?? {}), ...(d.season_review?.missing ?? {}), ...(d.mvp?.missing ?? {}), ...(d.wrapped?.missing ?? {}) };
   const mine = career?.my_teams[0] ?? null;
   return (
     <>
@@ -53,6 +55,17 @@ export function Review() {
         </Tile>
         {d.none ? <Tile span={12}><Missing why={d.none} /></Tile> : <>
           {Object.entries(miss).map(([k, v]) => <Tile key={k} span={12} title={k}><Missing why={v} /></Tile>)}
+          {wr && <Tile span={12} title="🎁 Your season, wrapped">
+            <div className="field" style={{ marginTop: 0 }}>
+              <label htmlFor="rv-wteam">Team</label>
+              <select id="rv-wteam" className="pick" value={wr.team} onChange={(e) => set({ wteam: e.target.value })}>
+                {wr.teams.map((t) => <option key={t}>{t}</option>)}</select>
+              {wr.formats.length > 0 && <div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>{wr.formats.map((f) => (
+                <button key={f} className={f === wr.format ? "on" : ""} onClick={() => set({ wfmt: f })}>{f}s</button>))}</div>}
+            </div>
+            {wr.none ? <Missing why={wr.none} /> : <><Wrapped slides={wr.slides ?? []} team={wr.team} section={wr.section ?? ""} season={wr.season ?? ""} keep={keep} />
+              {wr.note && <div className="note">{wr.note}</div>}</>}
+          </Tile>}
           {yr && <>
             <Tile span={12} title={yr.title}><div className="kpis">{yr.counts.map((c) => (
               <div key={c.label}><span>{c.label}</span><Num v={c.value} px={44} /></div>))}</div></Tile>

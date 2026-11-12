@@ -297,7 +297,7 @@ export type TeamBody = {
   top_bowl?: ({ rows: { player: string; team: string; wickets: number; note: string }[] } & Explained) | null;
   depth?: ({ rows: Bar[] } & Explained) | null;
   stands?: ({ rows: Bar[] } & Explained) | null;
-  openers?: GridT | null; collapses?: GridT | null;
+  openers?: GridT | null; collapses?: GridT | null; carry?: (GridT & Explained) | null; usual?: (GridT & Explained) | null;
   how_they_play?: ({ rows: SignedBar[]; every: boolean } & Explained) | null;
   discipline?: ({ rows: { player: string; team: string; extras: number; note: string }[]; every: boolean } & Explained) | null;
   every_team?: NGrid | null;
@@ -350,7 +350,8 @@ export type PreviewPage = { choices: { section: string; matches: number }[]; sec
   mine_opts: string[]; mine: string; opp: string; opp_opts: { team: string; label: string }[]; none: string; elsewhere: string[];
   tabs: string[]; tab: string; mine_note?: string; where_note?: string; mu?: boolean; cur?: boolean;
   head?: { missing: Record<string, string>; kpis: Fig[]; last5: string[]; caption: string; where_default: string;
-    predicted?: Record<string, { line: string; steps: GridT; note: string }> | null; plan?: string[] | null };
+    predicted?: Record<string, { line: string; steps: GridT; note: string }> | null; plan?: string[] | null;
+    aim?: { none: string; games: number; note?: string; venues: Record<string, { line: string; warn: string; they: string; meetings: GridT | null }> } | null };
   body?: PreviewBody };
 
 // ------------------------------------------------------------------ Settings → Problems
@@ -400,7 +401,7 @@ export type SeasonPage = { teams: string[]; team: string; tabs: string[]; tab: s
 // ------------------------------------------------------------------ Seasons · Season review and Honours (stage 2)
 export type XiGrid = (GridT & { title: string; note?: string }) | { title: string; none: string };
 export type ReviewPage = { choices: { key: string; section: string; season: string; label: string }[]; pick: string; section: string;
-  season: string; none: string;
+  season: string; none: string; wrapped?: { missing: Record<string, string>; wrapped?: Wrap | null };
   year?: { missing: Record<string, string>; year?: { title: string; counts: { label: string; value: number }[]; cricketer: GridT | null;
     formats: { format: string; matches: number; player: GridT | null; most: string; xi: XiGrid }[]; note: string } | null };
   season_review?: { missing: Record<string, string>; review?: { title: string; complete: boolean; matches: number; champion: string;
@@ -410,5 +411,8 @@ export type ReviewPage = { choices: { key: string; section: string; season: stri
     report_cards: { team: string; card: { subject: string; grade: string; why: string }[] }[] } | null };
   mvp?: { missing: Record<string, string>; mvp?: { points: "impact" | "ipl"; choose: boolean; table: GridT | null; none?: string;
     bars: { player: string; team: string; value: number; note: string }[]; shows: string; for_: string; note: string } | null } };
+export type WrapSlide = { key: string; kicker: string; head: string; big: string; unit: string; lines: string[]; id: string | null };
+export type Wrap = { none: string; formats: string[]; format: string; teams: string[]; team: string; section?: string; season?: string;
+  slides?: WrapSlide[]; note?: string };
 export type HonoursPage = { tabs: string[]; tab: string; none: string; boards?: (GridT & { title: string })[]; note?: string;
   cabinet?: GridT | null; cabinet_none?: string };
