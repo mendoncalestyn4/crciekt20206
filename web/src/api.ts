@@ -396,3 +396,19 @@ export type SeasonPage = { teams: string[]; team: string; tabs: string[]; tab: s
     month: string; today: string; grid: CalMonth[]; caption?: string; none?: string };
   series?: { none: string; live: (GridT & { note?: string }) | null; done: GridT | null; note?: string };
   progress?: { none: string; rows: { name: string; event: string; season: string; played: string; pct: number | null; stage: string; leader: string }[]; note?: string } };
+
+// ------------------------------------------------------------------ Seasons · Season review and Honours (stage 2)
+export type XiGrid = (GridT & { title: string; note?: string }) | { title: string; none: string };
+export type ReviewPage = { choices: { key: string; section: string; season: string; label: string }[]; pick: string; section: string;
+  season: string; none: string;
+  year?: { missing: Record<string, string>; year?: { title: string; counts: { label: string; value: number }[]; cricketer: GridT | null;
+    formats: { format: string; matches: number; player: GridT | null; most: string; xi: XiGrid }[]; note: string } | null };
+  season_review?: { missing: Record<string, string>; review?: { title: string; complete: boolean; matches: number; champion: string;
+    champions: { team: string; how: string; runners_up: string; section: string }[]; final: { id: string; teams: string; result: string; pom: string } | null;
+    leaders: GridT | null; xi: XiGrid; best: GridT | null; upset: { id: string; text: string; why: string } | "";
+    records: (GridT & { note?: string }) | null; records_none: string;
+    report_cards: { team: string; card: { subject: string; grade: string; why: string }[] }[] } | null };
+  mvp?: { missing: Record<string, string>; mvp?: { points: "impact" | "ipl"; choose: boolean; table: GridT | null; none?: string;
+    bars: { player: string; team: string; value: number; note: string }[]; shows: string; for_: string; note: string } | null } };
+export type HonoursPage = { tabs: string[]; tab: string; none: string; boards?: (GridT & { title: string })[]; note?: string;
+  cabinet?: GridT | null; cabinet_none?: string };

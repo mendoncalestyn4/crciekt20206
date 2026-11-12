@@ -12,7 +12,8 @@ import { Head, useShell } from "../shell/Shell";
 import { T } from "../shell/names";
 
 /** The Seasons section's pages, switched from the top of each. */
-export const SEASON_PAGES = [{ label: "Competitions", to: "/seasons" }, { label: "Season", to: "/seasons/season" }];
+export const SEASON_PAGES = [{ label: "Competitions", to: "/seasons" }, { label: "Season", to: "/seasons/season" },
+  { label: "Season review", to: "/seasons/review" }, { label: "Honours", to: "/seasons/honours" }];
 
 export function Competitions() {
   const { career, noCareer, nation } = useShell();

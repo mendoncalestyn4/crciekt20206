@@ -641,3 +641,26 @@ def test_the_season_calendar_series_and_progress(every):
     pr = every.json("/api/season?team=All teams&tab=Season progress")["progress"]
     assert pr["rows"] and all(r["pct"] is None or 0 <= r["pct"] <= 100 for r in pr["rows"])
     assert every.json("/api/season?team=Nobody&tab=zzz&season=x&month=y")["team"] in {"All teams", team}
+
+
+def test_every_season_review_and_the_honours(every):
+    """Seasons · Season review and Honours (stage 2): every competition's season and international year opens with every
+    part worked out; the honours board is the engine's, champions first; the trophy cabinet counts each title once."""
+    from ccstats import extras as E
+    d = every.json("/api/review")
+    assert d["choices"] and d["pick"] in {c["key"] for c in d["choices"]}
+    for c in d["choices"]:
+        for pts in ("", "ipl"):
+            x = every.json(f"/api/review?pick={c['key']}&points={pts}")
+            parts = [x.get("year"), x.get("season_review"), x.get("mvp")]
+            assert all(p is None or p["missing"] == {} for p in parts), (c["key"], [p["missing"] for p in parts if p])
+            assert (x.get("year") is not None) == (c["section"] == "International cricket")
+    h = E.honours(every.app.state.site.career())
+    board = every.json("/api/honours")
+    assert [b["title"] for b in board["boards"]] == list(h.drop_duplicates("section").section)
+    first = board["boards"][0]
+    g = h[h.section == first["title"]]
+    assert [r[1].replace("🏆 ", "") for r in first["rows"]] == list(g.champions)
+    cab = every.json("/api/honours?tab=Trophy cabinets")["cabinet"]
+    won = h[~h.how.str.contains("so far")].explode("champion_teams")
+    assert sum(r[1] for r in cab["rows"]) == len(won)

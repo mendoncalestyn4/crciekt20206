@@ -13,6 +13,8 @@ import { Planner } from "./pages/Planner";
 import { Rivalries } from "./pages/Rivalries";
 import { Competitions } from "./pages/Competitions";
 import { Season } from "./pages/Season";
+import { Review } from "./pages/Review";
+import { Honours } from "./pages/Honours";
 import { MyTeam } from "./pages/MyTeam";
 import { PlayersHome, PlayerView } from "./pages/Players";
 import { MatchesHome, MatchView } from "./pages/Matches";
@@ -50,6 +52,8 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/teams/:pick" element={<Teams />} />
             <Route path="/seasons" element={<Competitions />} />
             <Route path="/seasons/season" element={<Season />} />
+            <Route path="/seasons/review" element={<Review />} />
+            <Route path="/seasons/honours" element={<Honours />} />
             <Route path="/inbox" element={<Inbox />} />
             <Route path="/players" element={<PlayersHome />} />
             <Route path="/players/:pick" element={<PlayerView />} />

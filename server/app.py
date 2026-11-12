@@ -29,7 +29,7 @@ from ccstats import search as SR
 from ccstats.colours import TEAM_COLOURS
 from ccstats.local import CareerStore
 
-from . import comppage, matchpage, myteam, plannerpage, playerpage, previewpage, rivalriespage, seasonpage, styleguide, teampage, tvtpage
+from . import comppage, matchpage, myteam, plannerpage, playerpage, previewpage, reviewpage, rivalriespage, seasonpage, styleguide, teampage, tvtpage
 from .cache import kept
 from .site import Site
 from .problems import REQUEST, Problems, report as problems_report
@@ -438,6 +438,18 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         data = await _with_career(make)()
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
+    async def review_(request: Request):
+        """Season review: one competition's season (or an international year) in one place, with the MVPs."""
+        q = dict(request.query_params)
+        data = await _with_career(lambda c: reviewpage.review(c, q, myteam.teams_by_latest(c, site.my_teams(c))))()
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
+    async def honours_(request: Request):
+        """Honours: every competition's winners season by season, and each team's trophy cabinet."""
+        q = dict(request.query_params)
+        data = await _with_career(lambda c: reviewpage.honours(c, q, site.my_teams(c)))()
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
     async def rivalries_(request: Request):
         """Rivalries: every pair of teams that have met in a competition, and one of them close up."""
         q = dict(request.query_params)
@@ -653,6 +665,8 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/rivalries", rivalries_),
         Route("/api/competition", competition_),
         Route("/api/season", season_),
+        Route("/api/review", review_),
+        Route("/api/honours", honours_),
         Route("/api/player", player_),
         Route("/api/events", events),
         Route("/api/problems", problems_, methods=["GET", "POST"]),
