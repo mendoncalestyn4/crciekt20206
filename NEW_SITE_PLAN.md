@@ -1,7 +1,8 @@
 # The new Stats Pack website: the plan
 
 **Status:** stage 0 approved (27 October); stage 1 (core pages) built (1 November), checked (3 November), stress-tested and finished (6 November);
-stage 2 started on your word (3 November), stopped on 4 November until stage 1 was finished, and going again on your word (12 November: "move on to stage 2"): see section 16.
+stage 2 started on your word (3 November), stopped on 4 November until stage 1 was finished, and going again on your word (12 November: "move on to stage 2"); stage 2 built, stress-tested and finished
+(12 November): see section 16.
 **You said:** build it without waiting for answers; screenshots come at the end of each stage.
 **27 October:** you've stopped using the current site, so it gets no more work (it stays as it is until the
 switch-over). The zip comes once the whole new site is done. Screenshots of other teams' colours go in a set of their
@@ -121,10 +122,11 @@ The bold styles need full control, which only a website of our own gives. Those 
   **E. Faster: remember the sums between starts** (idea 2, approved). Saved in the career's own folder, with a
   fingerprint of the scorecards, your fixes and the site's code: anything different, or a damaged file, and it's
   rebuilt as today, so old numbers can never show. ½ day. *Waiting on:* Python's built-in format (no new package; my
-  pick) or the pyarrow package. *Seen in the stage 2 stress test (12 November):* the first Competitions page opened
-  after a start takes 5 to 7 seconds on your 2032 save (the honours list, worked out once per career and then shared
-  with Honours and Season review, is 3.6 seconds of it; the title race most of the rest); every visit after is
-  instant. D and E are the cure; the honours sum is left as the old site's until then, so its answers can't change.
+  pick) or the pyarrow package. *Seen in the stage 2 stress test (12 November):* in the first minute after a start,
+  while the site works out your own teams' pages ahead of time, a Competitions page that hasn't been opened yet can
+  take up to about 17 seconds on your 2032 save (Python does one sum at a time, so it waits its turn); once that
+  head start is done it opens in 1 to 2 seconds, and at once after that. E is the cure (no head start needed after
+  the first start).
 
   Suggested order: B, C, D, E, then A (the tests guard the numbers before the speed changes).
 - **Ask first:** before any extra work that wasn't asked for (checks to be sure, another set-up, anything to make the
@@ -779,7 +781,23 @@ The new pieces (section 14), each checked against the scorecards counted by hand
 - The small "where your team ranks" tile was left to stage 3, where every team ranked by runs and wickets up to any
   date is already planned.
 
-Still to do in stage 2: its stress test.
+**Stage 2 stress test (12 November):** every Teams and Seasons page, with every choice it offers (every competition,
+season, team, ground, opponent, format, tab and month; Season wrapped for every team), through the running site:
+your 2029 save (9,090 answers) and 2032 save (13,019), your new career after each season (4,098, 6,064, 6,064 and
+7,189), and eight made-up odd saves (no matches at all, one match, only abandoned games, odd names, county only, IPL
+only, no team picked, a messy folder; about 22,000 answers); the 2029 and 2032 score to aim for for every pair of
+teams (12,662 pairs); the pages in the browser for every odd save, at two widths in dark and light; the stage 2
+pages clicked through fast (every tab, switch and picker, Season wrapped flicked through and saved, back and forward)
+at two widths; the full tests on this machine and on your PC's set-up (Python 3.14, pandas 3.1, pandas' warnings as
+errors): 1,272 passed on each, none skipped; every problems list and server log read. Found and fixed at the root:
+- Honours broke on a career with no matches yet (an empty career's tables had no column types, so a yes/no column
+  picked columns instead of rows; empty careers now get the full career's types, on both pandas versions).
+- Opponent preview, Team planner and Rivalries said "No career is open yet" on a career with no matches; they now say
+  "No matches yet".
+- Knocking on the door worked a typical score out of nothing when all of a team's games were abandoned.
+- In the checks themselves: the run on your PC's set-up wasn't really treating pandas' warnings as errors, and one
+  browser test had been skipping itself; both now do their job.
+Each fix has a test that fails without it. Stage 2 is finished.
 
 ## Appendix: technical outline
 
