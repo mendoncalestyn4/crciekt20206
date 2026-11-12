@@ -120,3 +120,19 @@ def test_a_stage_the_name_already_says_is_not_said_twice():
     assert with_stage("ODIs", "") == with_stage("ODIs", None) == with_stage("ODIs", float("nan")) == "ODIs"
     # "Division 1" inside a longer stage name is still said ("Division 1 play-off" isn't the name's division)
     assert with_stage("County Championship · Division 1", "Division 1 play-off").endswith("· Division 1 play-off")
+
+
+@pytest.mark.parametrize("title,expected", [
+    ("Test Championship Final", ("World Test Championship Final", "Test", "International", "Final", True)),
+    ("Asia Trophy - Group Match", ("Asia Trophy", "ODI", "International", "Group", False)),
+    ("Asia Trophy 20 - Final", ("Asia Trophy 20", "T20I", "International", "Final", True)),
+])
+def test_the_games_own_names_for_icc_style_events(title, expected):
+    """Found in real saves: the game calls the WTC final "Test Championship Final" (it was read as an ordinary Test, so
+    the champions never showed) and the Asia Cup "Asia Trophy" / "Asia Trophy 20" (read as home and away games)."""
+    m = load("19_aug_2026-eng_v_pak_1st_tst.txt" if "Test" in title else "1_oct_2026-ind_v_wi_1st_odi.txt"
+             if "20" not in title else "1_oct_2026-pak_v_sl_1st_20_over_int.txt")
+    m.title = title
+    c = classify(m)
+    assert (c.competition, c.format, c.level, c.stage, c.knockout) == expected
+    assert c.recognised and c.neutral

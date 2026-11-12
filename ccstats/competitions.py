@@ -79,7 +79,13 @@ KNOWN = {
     "champions trophy": ("Champions Trophy", ODI, INTERNATIONAL, ""),
     "world test championship final": ("World Test Championship Final", TEST, INTERNATIONAL, ""),
     "world test championship": ("World Test Championship Final", TEST, INTERNATIONAL, ""),  # "… - Final - date"
+    # the game's own name for it ("Test Championship Final - 26 Jun 2027", file "... (tst chmp - f).txt")
+    "test championship final": ("World Test Championship Final", TEST, INTERNATIONAL, ""),
+    "test championship": ("World Test Championship Final", TEST, INTERNATIONAL, ""),
     "asia cup": ("Asia Cup", "", INTERNATIONAL, ""),
+    # the game's own names for it: one ground for everyone, so a neutral venue (as every ICC-style event)
+    "asia trophy": ("Asia Trophy", ODI, INTERNATIONAL, ""),
+    "asia trophy 20": ("Asia Trophy 20", T20I, INTERNATIONAL, ""),
     # England
     "county championship": ("County Championship", FIRST_CLASS, DOMESTIC, "England"),
     "t20 blast": ("T20 Blast", T20, DOMESTIC, "England"),
