@@ -727,3 +727,22 @@ def test_season_wrapped_on_every_season_review(every):
     # a team not in that season: back to the one it opens on
     bad = every.json(f"/api/review?pick={d['choices'][0]['key']}&wteam=Nobody FC")["wrapped"]["wrapped"]
     assert bad["team"] in bad["teams"]
+
+
+def test_every_stage_2_page_answers_on_a_career_with_no_matches(tmp_path):
+    """A career made before any game was played: every Teams and Seasons page says there's nothing yet (or that
+    there's no career to show), never an error."""
+    pc = make_pc(tmp_path, files=[])
+    web = tmp_path / "dist"
+    (web / "assets").mkdir(parents=True)
+    (web / "index.html").write_text("<!doctype html><title>Stats Pack</title><div id=root></div>")
+    s = Live(create_app(pc[0], web=web, watch_every=0))
+    try:
+        for path in ("/api/team", "/api/teamvteam", "/api/preview", "/api/planner", "/api/rivalries", "/api/competition",
+                     "/api/season", "/api/review", "/api/honours", "/api/honours?tab=Trophy cabinets", "/api/team?team=x",
+                     "/api/review?pick=x|1", "/api/season?team=x&view=month"):
+            code, _, _ = s.get(path)
+            assert code in (200, 404), (path, code)
+        assert "No competition has been decided yet" in s.json("/api/honours")["none"]
+    finally:
+        s.stop()

@@ -123,3 +123,21 @@ def test_a_division_final_is_a_knockout():
     """"D2 Final" (CSA One-Day Cup) is a knockout: out of the points table, under its own name."""
     from ccstats.competitions import STAGES
     assert STAGES["d2 final"] == ("D2 Final", True) and STAGES["d1 final"] == ("D1 Final", True)
+
+
+def test_a_career_with_no_matches_has_the_same_column_types_as_a_full_one():
+    """With no rows every column would be text, and a yes/no column used to pick rows (matches[matches.knockout])
+    would pick columns instead: Honours once broke that way on an empty career."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent))
+    from serverkit import FIXTURES
+
+    from ccstats import extras as E
+    from ccstats.loader import TYPES
+    empty = Career.build("Empty", [])
+    full = Career.build("Full", [(f.name, f.read_bytes()) for f in FIXTURES])
+    for name, types in TYPES.items():
+        for col, kind in types.items():
+            assert str(getattr(empty, name)[col].dtype) == str(getattr(full, name)[col].dtype) == kind, (name, col)
+    assert E.honours(empty).empty
+    assert empty.matches[empty.matches.knockout].shape[1] == empty.matches.shape[1]

@@ -14,6 +14,7 @@ import re
 import time
 import zipfile
 from dataclasses import dataclass, field
+import datetime
 from datetime import timedelta
 from typing import Iterable
 
@@ -511,8 +512,31 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
         fow=pd.DataFrame(FOW, columns=["match_id", "innings_no", "team", "wicket", "score"]),
         problems=pd.DataFrame(P, columns=["match_id", "source", "problem"]),
     )
+    for name, types in TYPES.items():   # a career with no matches yet gets the same column types as a full one
+        if frames[name].empty:
+            frames[name] = frames[name].astype(types)
     _one_row_per_key(frames)
     return frames
+
+
+# The columns that aren't text, by type. With rows, pandas works these out itself; with no rows every column would be
+# text, and a yes/no column used to pick rows (matches[matches.knockout]) would then pick columns instead.
+_B, _I, _F = "bool", "int64", "float64"
+# a match's date is a pd.Timestamp of the day; the column type that makes is pandas' own choice (pandas 2 keeps it to
+# the nanosecond, pandas 3 to the second), so the empty career asks pandas rather than fixing one
+_DATE = str(pd.DataFrame({"d": [pd.Timestamp(datetime.date(2026, 1, 1))]}).d.dtype)
+TYPES = {
+    "matches": dict(date=_DATE, knockout=_B, neutral=_B, recognised=_B, margin_runs=_F, margin_wickets=_F,
+                    innings_win=_B, rain=_B),
+    "innings": dict(innings_no=_I, team_innings=_I, runs=_I, wickets=_I, balls=_I, all_out=_B, declared=_B,
+                    counted_in_balls=_B, extras=_I, byes=_I, leg_byes=_I, wides=_I, no_balls=_I, home=_B,
+                    batting_first=_B),
+    "batting": dict(innings_no=_I, position=_I, did_bat=_B, runs=_I, balls=_I, fours=_I, sixes=_I, out=_B,
+                    fielder_resolved=_B),
+    "bowling": dict(innings_no=_I, balls=_I, runs=_I, wickets=_I, maidens=_F, dots=_F, counted_in_balls=_B),
+    "fielding": dict(innings_no=_I, resolved=_B),
+    "fow": dict(innings_no=_I, wicket=_I, score=_I),
+}
 
 
 # Every page looks rows up by these keys, so each must name exactly one row.
