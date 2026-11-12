@@ -5,10 +5,6 @@ import { useReady } from "../ready";
 import { Head, SECTIONS } from "../shell/Shell";
 
 export const PLANS: Record<string, { stage: string; crumb: string; items: string[]; from: string }> = {
-  "/seasons": { stage: "Stage 2", crumb: "Competitions and seasons",
-    items: ["Points tables, title race and odds, knockout brackets, series, World Test Championship",
-      "Season calendar, series tracker, season progress, season review and MVPs, honours board, trophy cabinets"],
-    from: "Competitions, Season, Season review, Honours board" },
   "/fixtures": { stage: "Stage 4", crumb: "Your schedule",
     items: ["Schedule, add matches, change or delete (with undo), series, calendar", "WTC race, milestones, goals"], from: "Fixtures" },
   "/leaders": { stage: "Stage 3", crumb: "Leaders, records, hall of fame, rankings",

@@ -551,3 +551,21 @@ table.c tr.dimrow td { opacity: .45; }
 .mcard .who { font-size: 13.5px; color: var(--dim); }
 .mcard .story { font-size: 14.5px; margin-top: 8px; }
 .plan li { margin: 4px 0; }
+
+/* ------------------------------------------------------------------ stage 2: Competitions */
+.ko { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 6px; }
+.ko-col { flex: 1 0 230px; display: flex; flex-direction: column; min-width: 0; }
+.ko-round { font: 400 21px 'Bebas Neue'; letter-spacing: .14em; color: var(--dim); margin-bottom: 10px; }
+.ko-cards { display: flex; flex-direction: column; justify-content: space-around; gap: 12px; flex: 1; }
+.ko-card { display: block; background: var(--tile2); border: 1px solid var(--edge); border-radius: 12px; padding: 10px 12px;
+  text-decoration: none; color: var(--ink); }
+.ko-card:hover { border-color: var(--led); }
+.ko-date { font: 500 13px Inter; color: var(--dim); margin-bottom: 4px; }
+.ko-team { display: flex; justify-content: space-between; gap: 10px; font: 500 16px/1.35 Inter; color: var(--soft); }
+.ko-team span { min-width: 0; overflow-wrap: anywhere; }
+.ko-team b { font: 600 16px 'Space Grotesk'; white-space: nowrap; }
+.ko-team.win { color: var(--ink); font-weight: 700; }
+.ko-team.win b { color: var(--led); }
+.ko-res { font: 400 13.5px/1.35 Inter; color: var(--dim); margin-top: 4px; }
+.champ { font: 400 30px 'Bebas Neue'; letter-spacing: .06em; color: var(--led); margin-top: 14px; }
+.glabel { font: 600 17px Inter; color: var(--ink); margin: 14px 0 4px; }

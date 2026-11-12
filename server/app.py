@@ -29,7 +29,7 @@ from ccstats import search as SR
 from ccstats.colours import TEAM_COLOURS
 from ccstats.local import CareerStore
 
-from . import matchpage, myteam, plannerpage, playerpage, previewpage, rivalriespage, styleguide, teampage, tvtpage
+from . import comppage, matchpage, myteam, plannerpage, playerpage, previewpage, rivalriespage, styleguide, teampage, tvtpage
 from .cache import kept
 from .site import Site
 from .problems import REQUEST, Problems, report as problems_report
@@ -422,6 +422,12 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             c, q, myteam.teams_by_latest(c, site.my_teams(c))))()
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
+    async def competition_(request: Request):
+        """Competitions: one competition as it's run in one season: league, title race, knockouts, series, WTC."""
+        q = dict(request.query_params)
+        data = await _with_career(lambda c: comppage.page(c, q, myteam.teams_by_latest(c, site.my_teams(c))))()
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
     async def rivalries_(request: Request):
         """Rivalries: every pair of teams that have met in a competition, and one of them close up."""
         q = dict(request.query_params)
@@ -635,6 +641,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/preview", preview_),
         Route("/api/planner", planner_),
         Route("/api/rivalries", rivalries_),
+        Route("/api/competition", competition_),
         Route("/api/player", player_),
         Route("/api/events", events),
         Route("/api/problems", problems_, methods=["GET", "POST"]),

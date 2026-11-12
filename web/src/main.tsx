@@ -11,6 +11,7 @@ import { TeamVsTeam } from "./pages/TeamVsTeam";
 import { Preview } from "./pages/Preview";
 import { Planner } from "./pages/Planner";
 import { Rivalries } from "./pages/Rivalries";
+import { Competitions } from "./pages/Competitions";
 import { MyTeam } from "./pages/MyTeam";
 import { PlayersHome, PlayerView } from "./pages/Players";
 import { MatchesHome, MatchView } from "./pages/Matches";
@@ -46,6 +47,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/teams/planner" element={<Planner />} />
             <Route path="/teams/rivalries" element={<Rivalries />} />
             <Route path="/teams/:pick" element={<Teams />} />
+            <Route path="/seasons" element={<Competitions />} />
             <Route path="/inbox" element={<Inbox />} />
             <Route path="/players" element={<PlayersHome />} />
             <Route path="/players/:pick" element={<PlayerView />} />

@@ -182,14 +182,16 @@ if leagues and not bilateral and not any(x in event for x in ("World XI", "Tour 
             st.caption("The league stage is over" + (" (see the knockouts below)." if ko_ else "."))
         if len(hist) and hist.date.nunique() > 1:
             st.plotly_chart(odds_chart(hist, col, what, pick), width="stretch", key=f"cp_od_chart_{event}_{season}")
-            mine_h = hist[hist.team == pick].sort_values("date")
+            mine_h = hist[(hist.team == pick) & hist[col].notna()].sort_values("date")
+        if len(hist) and hist.date.nunique() > 1 and len(mine_h):   # (a side with no chance worked out: no line)
             best = mine_h.loc[mine_h[col].idxmax()]
-            fav_days = hist.loc[hist.groupby("date")[col].idxmax()].team.value_counts()
+            known = hist.dropna(subset=[col])
+            fav_days = known.loc[known.groupby("date")[col].idxmax()].team.value_counts()
             decided = now["state"] != "open" and mine_h[col].iloc[-1] in (0, 100)
             chart_note(f"{pick}: {chance(mine_h[col].iloc[0])} after the first match day, at best {chance(best[col])} "
                        f"(after {best.date:%d %b}), {chance(mine_h[col].iloc[-1])} "
                        f"{'at the end' if decided else 'now'}. {fav_days.index[0]} were the "
-                       f"favourites most often ({fav_days.iloc[0]} of {hist.date.nunique()} match days).",
+                       f"favourites most often ({fav_days.iloc[0]} of {known.date.nunique()} match days).",
                        f"See when the race for {what} turned, and how much each result moved a side's chances.")
         st.caption("How it's worked out: each game still to play is decided by the two sides' team ratings (the Elo on "
                    "the Rankings page), with this competition's share of " + ("no results" if limited else "draws")

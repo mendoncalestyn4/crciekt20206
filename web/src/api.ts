@@ -370,3 +370,18 @@ export type LeaderRow = { player: string; team: string; note: string } & Record<
 export type RivalriesPage = { choices: TeamChoice[]; section: string; none: string; table?: NGrid; pairs: { key: string; label: string }[]; pick: string;
   close?: { missing: Record<string, string>; a: string; b: string; runs?: ({ rows: LeaderRow[] } & Explained) | null;
     wickets?: ({ rows: LeaderRow[] } & Explained) | null; meetings?: GridT | null } };
+
+// ------------------------------------------------------------------ Seasons · Competitions (stage 2)
+export type CompGrid = GridT & { note?: string; label?: string; teams?: string[]; heading?: string };
+export type OddsLine = { team: string; points: { date: string; chance: number }[] };
+export type KoCard = { id: string; date: string; result: string; teams: { team: string; score: string; won: boolean }[] };
+export type CompRace = { knockouts: boolean; many: boolean; games: number; places: number; extra: number; default_games: number;
+  default_places: number; default_extra: number; state: string; what: string; teams: string[]; pick: string; groups: CompGrid[];
+  lines: OddsLine[]; shows: string; for_?: string; note: string; caption?: string };
+export type CompPage = { choices: { event: string; matches: number; seasons: string[] }[]; event: string; season: string; none: string;
+  missing?: Record<string, string>; bilateral?: boolean; race_on?: boolean;
+  league?: { title: string; groups: CompGrid[]; note: string } | null;
+  knockouts?: { rounds: { round: string; cards: KoCard[] }[]; champion: string } | null;
+  series?: { table: CompGrid; each: { label: string; matches: GridT }[] } | null;
+  wtc?: { cycles: { key: string; label: string }[]; cycle: string; tables: Record<string, CompGrid>; note: string } | null;
+  race?: { missing: Record<string, string>; race?: CompRace | null } };

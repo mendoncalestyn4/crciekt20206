@@ -563,3 +563,53 @@ def test_rivalries_every_pair_and_one_close_up(live):
     assert all({r[2], r[3]} == {a, b} for r in d["close"]["meetings"]["rows"])
     other = d["pairs"][-1]["key"]
     assert live.json(f"/api/rivalries?section={d['section']}&pick={other}")["pick"] == other
+
+
+@pytest.fixture(scope="module")
+def every(tmp_path_factory):
+    """The stats server with a career of every test scorecard (the IPL's playoffs and final among them)."""
+    tmp = tmp_path_factory.mktemp("every")
+    pc = make_pc(tmp, files=FIXTURES)
+    web = tmp / "dist"
+    (web / "assets").mkdir(parents=True)
+    (web / "index.html").write_text("<!doctype html><title>Stats Pack</title><div id=root></div>")
+    s = Live(create_app(pc[0], web=web, watch_every=0))
+    yield s
+    s.stop()
+
+
+def test_competitions_every_competition_and_season(every):
+    """Seasons · Competitions (stage 2): every competition as it's run, in every season, opens with every part worked
+    out; the league table is the engine's; the IPL final's winners are named champions."""
+    from ccstats import tables as TB
+    d = every.json("/api/competition")
+    assert d["choices"] and d["event"] in {c["event"] for c in d["choices"]}
+    c = every.app.state.site.career()
+    m = c.matches
+    for ch in d["choices"]:
+        for s in ch["seasons"]:
+            x = every.json(f"/api/competition?event={ch['event']}&season={s}")
+            assert (x["event"], x["season"]) == (ch["event"], s)
+            assert x["missing"] == {} and (x.get("race") or {}).get("missing", {}) == {}, (ch["event"], s)
+            assert x["league"] or x["knockouts"] or x["series"] or x["wtc"]
+            if x["league"]:
+                ids = m[(m.event == ch["event"]) & (m.season.astype(str) == s)].match_id
+                lt = TB.league_tables(c, ids)
+                assert [g["teams"] for g in x["league"]["groups"]] == [list(t.team) for _, t, _ in lt]
+    ipl = every.json("/api/competition?event=Indian Premier League&season=2026")
+    assert ipl["knockouts"]["champion"] == "🏆 Gujarat Titans · Indian Premier League 2026 champions"
+    final = ipl["knockouts"]["rounds"][-1]
+    assert final["round"] == "Final" and [x["won"] for x in final["cards"][0]["teams"]].count(True) == 1
+
+
+def test_the_title_race_takes_its_knobs_and_never_breaks_on_junk(every):
+    d = every.json("/api/competition?event=Indian Premier League&season=2026")
+    r = d["race"]["race"]
+    assert r and r["teams"] and r["pick"] in r["teams"]
+    other = every.json(f"/api/competition?event=Indian Premier League&season=2026&games=20&places=2&pick={r['teams'][-1]}")
+    assert (other["race"]["race"]["games"], other["race"]["race"]["places"], other["race"]["race"]["pick"]) == (20, 2, r["teams"][-1])
+    for junk in ["-5", "zzz", "9999"]:
+        j = every.json(f"/api/competition?event={junk}&season={junk}&games={junk}&places={junk}")
+        assert j["event"] in {c["event"] for c in j["choices"]}
+        jr = (j.get("race") or {}).get("race")
+        assert jr is None or 1 <= jr["games"] <= 60
