@@ -189,7 +189,7 @@ export function RingList({ items, centre, sub }: { items: [string, number, strin
       data: items.filter(([, v]) => v > 0).map(([n, v, c]) => ({ name: n, value: v, itemStyle: { color: c } })) }],
   }), [t, items, centre, sub]);
   return (
-    <div className="dlw"><div className="dl"><div className="dl-ring"><EChart option={option} height={180} label={`${centre} ${sub}`} /></div>
+    <div className="dlw" data-chart><div className="dl"><div className="dl-ring"><EChart option={option} height={180} label={`${centre} ${sub}`} /></div>
       <div className="dl-list">{shown.map(([n, v, c]) => (
         <div className="dl-row" key={n}><i style={{ background: c }} /><span className="pn" style={{ fontSize: ts(15) }}>{n}</span>
           <span className="v"><b>{v}</b><small>{rnd((v / tot) * 100)}%</small></span>

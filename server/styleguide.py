@@ -278,10 +278,43 @@ def series_of(career, sid: str, team: str) -> dict:
     last = played[-1]
     before = progress[-2] if len(progress) > 1 else None
     decider = bool(before and before["won"] == before["lost"] and last["of"] and last["no"] == last["of"])
-    return dict(id=sid, section=m[m.series_id == sid].section.iloc[0], team=team, opp=story["opponent"], story=story,
+    opp = story["opponent"]
+    return dict(id=sid, section=m[m.series_id == sid].section.iloc[0], team=team, opp=opp, story=story,
                 matches=played, progress=progress, decider=decider,
+                shows=_series_shows(team, opp, played, progress, decider, bool(story["complete"])),
+                for_="How the series swung: the score after every match, so you can see when it was won or lost and "
+                     "whether it went to a decider.",
                 most_runs=rows(sb, ["player", "team", "runs", "balls", "inns", "outs", "hs"]),
                 most_wickets=rows(sw, ["player", "team", "wickets", "runs", "balls", "economy"]))
+
+
+def _series_shows(team: str, opp: str, played: list[dict], progress: list[dict], decider: bool, done: bool) -> str:
+    """"India won the series 3–1 against West Indies (1 drawn). The 5th match was the decider." from the ladder."""
+    won, lost, n, of = progress[-1]["won"], progress[-1]["lost"], len(played), played[-1]["of"]
+    other = n - won - lost
+    if done:
+        head = (f"{team} won the series {won}–{lost} against {opp}" if won > lost else
+                f"{team} lost the series {won}–{lost} to {opp}" if won < lost else f"The series with {opp} was level, {won}–{lost}")
+    else:   # under way: how far through, when the game says how many there are
+        head = (f"{team} lead {opp} {won}–{lost}" if won > lost else f"{team} trail {opp} {won}–{lost}" if won < lost
+                else f"{team} and {opp} are level, {won}–{lost}") + (f" after {n} of {of} matches" if of else f" after {n}")
+    extra = f" ({other} {'match' if other == 1 else 'matches'} drawn, tied or with no result)" if other else ""
+    out = head + extra + "."
+    if decider:
+        out += f" The last match, the {_ordinal(n)}, was the decider."
+    else:   # when it was settled: the first match after which the other side could no longer catch up
+        if done and of and won != lost:
+            for i, p in enumerate(progress):
+                lead, behind = max(p["won"], p["lost"]), min(p["won"], p["lost"])
+                if lead > behind + (of - i - 1):
+                    if i + 1 < n:
+                        out += f" It was settled after the {_ordinal(i + 1)} match."
+                    break
+    return out
+
+
+def _ordinal(n: int) -> str:
+    return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
 
 
 def season_start(d) -> int:
@@ -442,11 +475,38 @@ def bat_first(career, team: str, ids) -> dict:
     return out
 
 
-def scores(rs: list[dict]) -> dict:
-    """Our score and theirs: the average first innings each way (one-innings games, rain left out), won and lost."""
+def scores(rs: list[dict], team: str | None = None, where: str | None = None) -> dict:
+    """Our score and theirs: the average first innings each way (one-innings games, rain left out), won and lost; with
+    `team`, the chart's "What it shows" line too (`where`: how it starts, "In these 14 matches" unless given).
+    Formats are never mixed: the averages (and the highest total) are given only when the matches are all one
+    competition; across several (My team's season), each competition's averages are in the line instead."""
     one = [r for r in rs if r["ours"] and r["theirs"] and not r["rain"] and len(r["ours"]) == 1]
-    avg = lambda k: round(sum(r[k][0]["runs"] for r in one) / len(one)) if one else None  # noqa: E731
-    return dict(avg_made=avg("ours"), avg_conceded=avg("theirs"), **_record(rs))
+    secs = sorted({r["section"] for r in rs})
+    avg = lambda k, x: round(sum(r[k][0]["runs"] for r in x) / len(x)) if x else None  # noqa: E731
+    single = len(secs) <= 1
+    out = dict(avg_made=avg("ours", one) if single else None, avg_conceded=avg("theirs", one) if single else None, **_record(rs))
+    if team is not None and rs:
+        rec = f"won {out['won']} and lost {out['lost']}" + (f", drew {out['drawn']}" if out["drawn"] else "") + \
+            (f", {out['other']} tied or with no result" if out["other"] else "")
+        shows = f"{where or f'In these {len(rs)} matches'} {team} {rec}."
+        if single:
+            if out["avg_made"] is not None:
+                shows += (f" Leaving out games shortened by rain, they averaged {out['avg_made']} and the other side "
+                          f"{out['avg_conceded']}.")
+            best = max(((x["runs"], r) for r in rs for x in r["ours"]), key=lambda t: t[0], default=None)
+            if best:
+                shows += f" Their highest total: {best[0]} v {best[1]['opp']}."
+        else:
+            each = []
+            for sec in secs:
+                x = [r for r in one if r["section"] == sec]
+                if x:
+                    each.append(f"{sec} {avg('ours', x)} to {avg('theirs', x)}")
+            if each:
+                shows += " Their average score to the other side's, each competition apart (rain left out): " + "; ".join(each) + "."
+        out.update(shows=shows, for_="Whether the totals are winning ones: how far ahead or behind the other side's "
+                                     "score each game finished, and where the gap was too much.")
+    return out
 
 
 def match_winners(rs: list[dict], team: str) -> dict:
@@ -457,8 +517,22 @@ def match_winners(rs: list[dict], team: str) -> dict:
             by.setdefault(r["pom"], []).append(dict(id=r["id"], date=r["date"], section=r["section"], opp=r["opp"],
                                                     headline=r["headline"]))
     wins = sum(r["outcome"] == "W" for r in rs)
-    return dict(players=[dict(player=p, matches=x) for p, x in sorted(by.items(), key=lambda kv: (-len(kv[1]), kv[0]))],
-                wins=wins, others=wins - sum(len(x) for x in by.values()))
+    players = [dict(player=p, matches=x) for p, x in sorted(by.items(), key=lambda kv: (-len(kv[1]), kv[0]))]
+    others = wins - sum(len(x) for x in by.values())
+    if players:
+        top = [p for p in players if len(p["matches"]) == len(players[0]["matches"])]
+        n = len(top[0]["matches"])
+        who = top[0]["player"] if len(top) == 1 else " and ".join([", ".join(p["player"] for p in top[:-1]), top[-1]["player"]])
+        shows = (f"{who} {'was' if len(top) == 1 else 'were each'} player of the match in {n} of {team}'s {wins} "
+                 f"win{'' if wins == 1 else 's'} ({n / wins * 100:.0f}%); {len(players)} "
+                 f"player{' has' if len(players) == 1 else 's have'} won at least one.")
+        if others:
+            shows += (f" {others} win{' was' if others == 1 else 's were'} without a player of the match from {team} "
+                      f"(the award went to the other side, or wasn't given).")
+    else:
+        shows = f"{team} have no wins with a player of the match yet."
+    return dict(players=players, wins=wins, others=others, shows=shows,
+                for_="Who wins the games: one player carrying the side, or the wins shared around.")
 
 
 def ratings(career, section: str) -> dict:

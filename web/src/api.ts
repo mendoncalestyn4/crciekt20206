@@ -75,9 +75,9 @@ export type Strength = { id: string; date: string; section: string; opp: string;
 export type Brief = { score: number; opp: string; date: string; result: string } | null;
 export type BatFirst = { first: { played: number; won: number; lost: number }; chase: { played: number; won: number; lost: number };
   multi: boolean; avg_set?: number | null; lowest_defended?: Brief; highest_lost?: Brief; highest_chased?: Brief; lowest_missed?: Brief };
-export type Scores = Record_ & { avg_made: number | null; avg_conceded: number | null };
+export type Scores = Record_ & { avg_made: number | null; avg_conceded: number | null; shows?: string; for_?: string };
 export type Winners = { players: { player: string; matches: { id: string; date: string; section: string; opp: string; headline: string }[] }[];
-  wins: number; others: number };
+  wins: number; others: number; shows?: string; for_?: string; line?: string };
 export type BatRow = { player: string; position: number; did_bat: boolean; how_out: string; dismissal: string; runs: number;
   balls: number; fours: number; sixes: number; out: boolean };
 export type BowlRow = { player: string; balls: number; maidens: number | null; runs: number; wickets: number; dots: number | null };
@@ -111,7 +111,7 @@ export type Series = {
   id: string; section: string; team?: string; opp: string;
   story: { headline: string; deck: string; flow: string; won: number; lost: number; opponent: string; complete: boolean;
     results: Outcome[]; player_of_series: { player: string; team: string; runs: number; wickets: number; matches: number } | null };
-  matches: Result[]; progress: { won: number; lost: number }[]; decider: boolean;
+  matches: Result[]; progress: { won: number; lost: number }[]; decider: boolean; shows?: string; for_?: string;
   most_runs: { player: string; team: string; runs: number; balls: number; inns: number; outs: number; hs: number }[];
   most_wickets: { player: string; team: string; wickets: number; runs: number; balls: number; economy: number }[];
 };
@@ -215,7 +215,7 @@ export type PlayersLanding = {
 export type Batting = {
   kpis: { innings: number; runs: number; average: number | null; strike_rate: number | null; high_score: string; hundreds: number; fifties: number };
   form: FormT; compare: { pool: number; values: Record<string, number> } | null;
-  runs_from: { fours: number; sixes: number; running: number; n4: number; n6: number };
+  runs_from: { fours: number; sixes: number; running: number; n4: number; n6: number; shows?: string; for_?: string };
   seasons: Split; how_out: Split | null;
   danger: { key: string; rows: Pair[]; shows: string; for_: string } | null;
   funnel: { rows: { mark: number; pct: number | null; all_pct: number | null; highlight: boolean }[]; extra: string; shows: string; for_: string } | null;
@@ -435,7 +435,7 @@ export type SeasonPage = { teams: string[]; team: string; tabs: string[]; tab: s
   ranks?: { season: string; note?: string; rows: { section: string; teams: number; matches: number; runs: number; wickets: number;
     runs_rank: number; wickets_rank: number; runs_top: string; wickets_top: string }[] };
   calendar?: { view: "season" | "month"; seasons: { key: string; label: string }[]; season: string; months: { key: string; label: string }[];
-    month: string; today: string; grid: CalMonth[]; caption?: string; none?: string };
+    month: string; today: string; grid: CalMonth[]; caption?: string; shows?: string; for_?: string; none?: string };
   series?: { none: string; live: (GridT & { note?: string }) | null; done: GridT | null; note?: string; tugs?: (Series & { title: string })[] };
   progress?: { none: string; rows: { name: string; event: string; season: string; played: string; pct: number | null; stage: string; leader: string }[]; note?: string } };
 

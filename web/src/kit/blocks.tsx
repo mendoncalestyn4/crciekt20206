@@ -58,7 +58,7 @@ export function Ticker({ results, team }: { results: Result[]; team: string }) {
 export function TopList({ rows, value, gold }: { rows: ({ player: string } & Record<string, unknown>)[]; value: string; gold?: boolean }) {
   const top = Math.max(...rows.map((r) => Number(r[value] ?? 0)), 1);
   return (
-    <div className="list">{rows.map((p) => (
+    <div className="list" data-chart>{rows.map((p) => (
       <div className="li" key={String(p.player)}><span className="av">{initials(String(p.player))}</span>
         <div><PName p={String(p.player)} px={22} /><div className="bar"><i style={{ width: `${(Number(p[value] ?? 0) / top) * 100}%`,
           ...(gold ? { background: "var(--gold)" } : {}) }} /></div></div>

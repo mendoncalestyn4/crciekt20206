@@ -72,7 +72,8 @@ export function MatchesHome() {
         <Tile span={12} title={`Our score v theirs${d.scores ? ` · ${d.scores.team} · ${d.section}` : ""}`} right={d.scores ? `the latest ${d.scores.results.length}, newest at the bottom` : undefined}>
           {d.scores ? <><ScoreRows results={d.scores.results} scores={d.scores.summary} />
             <div className="note">Both totals on one line for each match: {d.scores.team}'s in gold, the other side's in blue, joined in green when they won and
-              red when they lost; a Test's innings each on its own line. Games shortened by rain are left out of the averages.</div></>
+              red when they lost; a Test's innings each on its own line. Games shortened by rain are left out of the averages.</div>
+            {d.scores.summary.shows && <Explain shows={d.scores.summary.shows} for_={d.scores.summary.for_} />}</>
             : <div className="plain">{all ? "Pick one competition and a team to see their totals against the other side's, match by match (formats are never mixed)."
               : "Pick a team to see its totals against the other side's, match by match."}</div>}
         </Tile>

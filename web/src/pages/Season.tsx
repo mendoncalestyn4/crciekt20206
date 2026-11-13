@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { get, type SeasonPage } from "../api";
-import { Missing, Num, Tile } from "../kit/base";
+import { Explain, Missing, Num, Tile } from "../kit/base";
 import { f0, ord } from "../format";
 import { MonthGrid } from "../kit/calendar";
 import { TugOfWar } from "../kit/charts";
@@ -71,9 +71,10 @@ export function Season() {
                   <select id="se-month" className="pick" value={cal.month} onChange={(e) => set({ month: e.target.value })}>
                     {cal.months.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}</select></>}
             </div>
-            {cal.view === "season" ? <div className="cms">{cal.grid.map((mo) => <MonthGrid key={mo.key} mo={mo} keep={keep} today={cal.today} />)}</div>
-              : cal.grid[0] && <MonthGrid mo={cal.grid[0]} big keep={keep} today={cal.today} />}
+            {cal.view === "season" ? <div className="cms" data-chart>{cal.grid.map((mo) => <MonthGrid key={mo.key} mo={mo} keep={keep} today={cal.today} />)}</div>
+              : cal.grid[0] && <div data-chart><MonthGrid mo={cal.grid[0]} big keep={keep} today={cal.today} /></div>}
             {cal.caption && <div className="note">{cal.caption}</div>}
+            {cal.shows && <Explain shows={cal.shows} for_={cal.for_} />}
           </Tile>)}
           {sr && (sr.none ? <Tile span={12}><Missing why={sr.none} /></Tile> : <>
             {sr.live && <Tile span={12} title="Still going · each side's chance of winning the series"><Grid t={sr.live} />
@@ -81,7 +82,8 @@ export function Season() {
             {(sr.tugs ?? []).map((tg) => <Tile key={tg.id} span={6} title={`${tg.section} · ${tg.team} v ${tg.opp}`}
               right={tg.story.complete ? "finished" : "under way"}>
               <TugOfWar matches={tg.matches} progress={tg.progress} team={tg.team ?? ""} opp={tg.opp} height={280} />
-              <div className="note">Above the line {tg.team} lead, below it {tg.opp} do. <T>{tg.title}</T></div></Tile>)}
+              <div className="note">Above the line {tg.team} lead, below it {tg.opp} do. <T>{tg.title}</T></div>
+              {tg.shows && <Explain shows={tg.shows} for_={tg.for_} />}</Tile>)}
             <Tile span={12} title="Finished series · newest first">
               {sr.done ? <Grid t={sr.done} /> : <div className="plain">None finished yet.</div>}
               {sr.note && <div className="note">{sr.note}</div>}</Tile>

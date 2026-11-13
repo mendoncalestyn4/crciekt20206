@@ -152,8 +152,22 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
 
 ## 10. Every chart
 
-- [ ] "Save picture" on each chart, shown when you point at it (14)
-- [ ] "What it shows / What it's for" under every new chart (section 5)
+- [x] "Save picture" on each chart, shown when you point at it (14) — ✓ every tile holding a chart (each chart marks
+      itself `data-chart`: the drawn charts, the calendars, the ladder, the runs strip, the rings and bar lists): a small
+      tab on the tile's top edge when you point at it, clear of the title and its hint; saves the tile as a PNG at twice
+      its size, with the page's fonts, colours, badges and notes (`web/src/kit/savepic.ts`, `Tile` in
+      `web/src/kit/base.tsx`); checked in `tests/test_web.py` (shown on chart tiles only, clear of the title row, a
+      real PNG of the tile at twice its size) and by eye on five saved pictures of the 2032 save
+- [x] "What it shows / What it's for" under every new chart (section 5) — ✓ every fix-round chart: the series tug of
+      war (My team, Season's series tracker) and ladder (Competitions) in `series_of`, match-winners (My team, Players,
+      Season review), our score v theirs (Matches, My team), the season calendar (Season, all three views), and
+      Players' "Where the runs come from" (missing since stage 1); written by the server with the numbers, each checked
+      another way in `tests/test_pages.py::test_the_new_charts_say_their_numbers_counted_another_way`; a browser scan
+      of every page on the 2032 save finds no fix-round chart without them. Season wrapped's slides each say their own
+      numbers. My team's stage 1 charts (form, runs of results, home and away, rank, top scorers, the mini calendar)
+      have none, as approved in stage 1: brought to you
+      - Found and fixed on the way: My team's "Our score v theirs" averaged T20I and ODI totals together (formats
+        mixed); averages are now only worked out within one competition, and each competition's own are in the line
 
 ## 11. How it's built and checked (sections 5, 7, 9, 10)
 

@@ -132,7 +132,7 @@ export function Wrapped({ slides, team, section, season, keep }: { slides: WrapS
   const s = slides[k]!;
   return (
     <div className="wrapped">
-      <canvas ref={ref} width={W} height={H} role="img" aria-label={`${s.kicker}: ${s.head} ${s.big} ${s.unit}. ${s.lines.join(". ")}`} />
+      <canvas ref={ref} width={W} height={H} data-chart role="img" aria-label={`${s.kicker}: ${s.head} ${s.big} ${s.unit}. ${s.lines.join(". ")}`} />
       <div className="wbar">
         <button className="btn quiet sm" disabled={k === 0} onClick={() => setI(k - 1)} aria-label="Previous slide">‹ Back</button>
         <div className="wdots">{slides.map((x, j) => <button key={x.key} className={j === k ? "on" : ""} title={x.kicker} aria-label={x.kicker} onClick={() => setI(j)} />)}</div>

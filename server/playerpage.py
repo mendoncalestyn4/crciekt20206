@@ -401,7 +401,8 @@ def _winners(career, player, my_matches, team_of) -> dict:
     wins = int(sum(team_of.get(mid) == w for mid, w in zip(my_matches.match_id, my_matches.winner) if w))
     return dict(players=[dict(player=player, matches=won)] if won else [], wins=wins, others=0,
                 line=(f"Player of the match in {count(len(won), 'win')} of the {count(wins, 'win')} their side had in the games "
-                      f"they played ({len(won) / wins * 100:.0f}%)." if wins else "Their side hasn't won a game they played yet."))
+                      f"they played ({len(won) / wins * 100:.0f}%)." if wins else "Their side hasn't won a game they played yet."),
+                for_="How often they win games on their own: the matches their side won with them as player of the match.")
 
 
 def _marks(career, player) -> list[dict]:
@@ -432,7 +433,12 @@ def _batting(career, player, section, season, ids, inns, bat_t, kind) -> dict:
                                                          for k, v in stats.items() if v in pool and pd.notna(me[v].iloc[0])})
                       if len(pool) >= 8 and len(me) else None)
     n4, n6 = int(inns.fours.sum()), int(inns.sixes.sum())
-    out["runs_from"] = dict(fours=n4 * 4, sixes=n6 * 6, running=int(inns.runs.sum()) - n4 * 4 - n6 * 6, n4=n4, n6=n6)
+    rf = dict(fours=n4 * 4, sixes=n6 * 6, running=int(inns.runs.sum()) - n4 * 4 - n6 * 6, n4=n4, n6=n6)
+    tot = rf["fours"] + rf["sixes"] + rf["running"]
+    rf["shows"] = (f"{rf['fours'] / tot * 100:.0f}% of their {tot:,} runs came in fours, {rf['sixes'] / tot * 100:.0f}% in sixes "
+                   f"and {rf['running'] / tot * 100:.0f}% from running between the wickets." if tot > 0 else "No runs yet.")
+    rf["for_"] = "How they score: a boundary hitter, or someone who works the ones and twos."
+    out["runs_from"] = rf
     ss = A.split_batting(inns, "season").sort_values("season", ascending=False)
     top = ss.sort_values("runs", ascending=False).iloc[0]
     out["seasons"] = dict(rows=bars(ss, "season", "runs", [f"{i} innings · average {fmt(a)}" for i, a in zip(ss.innings, ss.average)]),

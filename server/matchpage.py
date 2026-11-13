@@ -49,7 +49,7 @@ def finder(career, section: str = "", team: str = "", mine: list[str] | None = N
     scores = None
     if team and team != "All teams" and section != "All sections" and len(pool):
         rs = SG.in_played_order(career, SG.results(career, team, pool.match_id))[-14:]
-        scores = dict(results=rs, summary=SG.scores(rs), team=team)
+        scores = dict(results=rs, summary=SG.scores(rs, team), team=team)
     return dict(section=section, team=team or "All teams", sections=["All sections"] + sections,
                 teams=["All teams"] + teams, scores=scores,
                 matches=[dict(id=r.match_id, label=label(r), date=SG.clean(r.date), home=r.home, away=r.away,

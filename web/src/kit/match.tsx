@@ -87,7 +87,7 @@ export function WicketClimb({ inn, par, height = 330 }: { inn: Wickets["innings"
 export function ExcitementPanel({ ex, section }: { ex: Excitement; section: string }) {
   const parts: [string, number, number][] = [["The finish", ex.finish, 7], ["A comeback", ex.comeback, 2], ["The stakes", ex.stakes, 1], ["Big moments", ex.show, 0.5]];
   return (
-    <div className="exc">
+    <div className="exc" data-chart>
       <div className="exc-n"><Num v={f1(ex.rating)} px={64} /><span className="of">/ 10</span>
         <div className="s"><b>{ord(ex.rank)}</b> of {ex.of} in {section}</div></div>
       <div className="exc-parts">{parts.map(([k, v, max]) => (

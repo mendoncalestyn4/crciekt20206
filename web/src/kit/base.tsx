@@ -1,7 +1,8 @@
 // The page's building blocks: tiles, the hero panel, numbers and names in their fonts, won / lost lamps, logos.
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { Outcome } from "../api";
 import { useShell } from "../shell/Shell";
+import { savePicture, slugOf } from "./savepic";
 import { useTheme } from "../theme";
 import { sc, ts } from "./look";
 import { T } from "../shell/names";
@@ -36,8 +37,18 @@ export function Lamps({ seq }: { seq: Outcome[] }) {
 export function Tile({ span, rows, title, right, className, style, children }: {
   span: number; rows?: number; title?: ReactNode; right?: ReactNode; className?: string; style?: CSSProperties; children?: ReactNode;
 }) {
+  const box = useRef<HTMLDivElement>(null);
+  const [saving, setSaving] = useState(false);
+  // "save picture": on every tile that holds a chart (the styles show it only there, when you point at the tile)
+  const save = () => {
+    const el = box.current;
+    if (!el || saving) return;
+    setSaving(true);
+    savePicture(el, slugOf(el.querySelector(".tl")?.textContent ?? "chart")).catch(() => null).finally(() => setSaving(false));
+  };
   return (
-    <div className={`t ${className ?? ""}`} style={{ gridColumn: `span ${span}`, ...(rows ? { gridRow: `span ${rows}` } : {}), ...style }}>
+    <div ref={box} className={`t ${className ?? ""}`} style={{ gridColumn: `span ${span}`, ...(rows ? { gridRow: `span ${rows}` } : {}), ...style }}>
+      <button className="savepic" onClick={save} title="Save this tile as a picture" aria-label="Save picture">{saving ? "Saving…" : "⤓ Save picture"}</button>
       {title != null && <div className="tt"><span className="tl">{title}</span>{right != null && <span className="tr">{right}</span>}</div>}
       {children}
     </div>

@@ -1190,3 +1190,74 @@ def test_matches_front_page_our_score_v_theirs(every):
             mine = here[(here.home == team) | (here.away == team)]
             want = [r["id"] for r in SG.in_played_order(c, SG.results(c, team, mine.match_id))][-14:]
             assert [r["id"] for r in sc["results"]] == want and sc["team"] == team
+
+
+def test_the_new_charts_say_their_numbers_counted_another_way(every):
+    """"What it shows" under the fix round's charts, each number counted again from the scorecards: the series score
+    (tug of war and ladder), our score v theirs (one competition: the averages; My team's season over several: none,
+    each competition's own in the line, formats never mixed), match-winners and the season calendar."""
+    c = every.app.state.site.career()
+    m = c.matches.set_index("match_id")
+    inns = c.innings
+    # the series: the final score from the winners
+    seen = 0
+    for team in sorted(set(c.matches.home) | set(c.matches.away))[:10]:
+        for tg in every.json(f"/api/season?team={team}&tab=Series tracker")["series"].get("tugs", []):
+            ids = [r["id"] for r in tg["matches"]]
+            w = int(sum(m.winner[i] == tg["team"] for i in ids))
+            lo = int(sum(m.winner[i] not in ("", tg["team"]) for i in ids))
+            assert f"{w}–{lo}" in tg["shows"] and tg["opp"] in tg["shows"] and tg["for_"]
+            assert ("decider" in tg["shows"]) == tg["decider"]
+            seen += 1
+    assert seen >= 3
+    # our score v theirs, one competition: won, lost and the averages from the innings table
+    averaged = 0
+    for sec in ("ODIs", "Indian Premier League"):
+        here = c.matches[c.matches.section == sec]
+        for team in sorted(set(here.home) | set(here.away))[:4]:
+            sc = every.json(f"/api/matches?section={sec}&team={team}")["scores"]
+            ids = [r["id"] for r in sc["results"]]
+            w = sum(m.winner[i] == team for i in ids)
+            lo = sum(m.winner[i] not in ("", team) and m.result_type[i] not in ("tie", "no result", "abandoned") for i in ids)
+            s = sc["summary"]
+            assert (s["won"], s["lost"]) == (w, lo) and f"won {w} and lost {lo}" in s["shows"]
+            dry = [i for i in ids if not m.rain[i]]
+            ours = inns[inns.match_id.isin(dry) & (inns.team == team)].groupby("match_id").runs.sum()
+            theirs = inns[inns.match_id.isin(dry) & (inns.team != team)].groupby("match_id").runs.sum()
+            both = ours.index.intersection(theirs.index)
+            if len(both):
+                assert s["avg_made"] == round(ours[both].mean()) and s["avg_conceded"] == round(theirs[both].mean())
+                assert f"averaged {s['avg_made']} and the other side {s['avg_conceded']}" in s["shows"]
+                averaged += 1
+    assert averaged >= 4
+    # My team's season across several competitions: no averages mixing formats; each competition's own in the line
+    from server import styleguide as SG
+    two = c.matches[((c.matches.home == "India") | (c.matches.away == "India")) & c.matches.section.isin(["ODIs", "T20Is"])]
+    assert set(two.section) == {"ODIs", "T20Is"}
+    mixed = SG.scores(SG.results(c, "India", two.match_id), "India", "This season")
+    assert mixed["avg_made"] is None and mixed["avg_conceded"] is None and mixed["shows"].startswith("This season India won")
+    for sec in ("ODIs", "T20Is"):
+        dry = [i for i in two[two.section == sec].match_id if not m.rain[i]]
+        ours = inns[inns.match_id.isin(dry) & (inns.team == "India")].groupby("match_id").runs.sum()
+        theirs = inns[inns.match_id.isin(dry) & (inns.team != "India")].groupby("match_id").runs.sum()
+        both = ours.index.intersection(theirs.index)
+        assert f"{sec} {round(ours[both].mean())} to {round(theirs[both].mean())}" in mixed["shows"]
+    d = every.json("/api/myteam")
+    assert d["scores"]["shows"].startswith("This season")
+    # match-winners: the team's wins with its own player of the match
+    team = d["team"]
+    rs = d["season"]["results"]
+    wins = [r for r in rs if m.winner[r["id"]] == team]
+    pom = {}
+    for r in wins:
+        p = m.player_of_match[r["id"]]
+        if p and r.get("pom_team", team) == team:
+            pom[p] = pom.get(p, 0) + 1
+    wn = d["winners"]
+    assert wn["wins"] == len(wins) and len(wins) > 0 and f"of {team}'s {len(wins)} win" in wn["shows"]
+    assert {p["player"]: len(p["matches"]) for p in wn["players"]}.items() <= pom.items()
+    # the season calendar: played, won and lost in the season shown
+    cal = every.json(f"/api/season?team={team}")["calendar"]
+    played = sum(mo["played"] for mo in cal["grid"])
+    won = sum(mo["won"] for mo in cal["grid"])
+    assert f"played {played}, won {won}," in cal["shows"] and cal["for_"]

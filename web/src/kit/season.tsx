@@ -32,7 +32,7 @@ export function MonthTiles({ cal }: { cal: Calendar }) {
   const t = useTheme(), col = formatColours(t, cal.formats);
   return (
     <>
-      <div className="mts">{cal.months.map((mo, i) => {
+      <div className="mts" data-chart>{cal.months.map((mo, i) => {
         const first = (new Date(Date.UTC(mo.year, mo.month - 1, 1)).getUTCDay() + 6) % 7, days = new Date(Date.UTC(mo.year, mo.month, 0)).getUTCDate();
         const prefix = `${mo.year}-${String(mo.month).padStart(2, "0")}-`;
         return (
@@ -107,7 +107,7 @@ const marginText = (r: Result) => {
 export function Ladder({ s, team }: { s: Series; team: string }) {
   const t = useTheme(), n = s.matches.length;
   return (
-    <div className="lad" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
+    <div className="lad" data-chart style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
       {s.matches.map((r, i) => { const p = s.progress[i] ?? { won: 0, lost: 0 };
         return <div key={`s${r.id}`}><div className="lad-score">{p.won}–{p.lost}<small>{p.won > p.lost ? `${ab(team)} lead` : p.won < p.lost ? `${ab(s.opp)} lead` : "level"}</small></div></div>; })}
       {s.matches.map((r) => <div className="lad-line" key={`l${r.id}`} />)}
@@ -173,7 +173,7 @@ export function Streaks({ cal }: { cal: Pick<Calendar, "results" | "streaks"> })
   return (
     <>
       <div className="trio">{card("The run you're on", cur, "No matches yet.")}{card("Longest winning run", lw, "No wins yet.")}{card("Longest losing run", ll, "No defeats yet.")}</div>
-      <div className="strip" ref={strip} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+      <div className="strip" data-chart ref={strip} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
         {segs.map((s, i) => <div className="brk" key={i} style={{ left: s.left, width: s.width, top: s.top, borderColor: s.colour }}>
           {s.text && <span style={{ color: s.colour }}>{s.text}</span>}</div>)}
         {rs.map((r) => <div className="cellx" key={r.id}><Lamp o={r.outcome} /><small className="f">{fmtOf(r.section)}</small><small>{ab(r.opp)}</small><small>{day(r.date)}</small>{multi && <small>’{r.date.slice(2, 4)}</small>}</div>)}
@@ -219,7 +219,7 @@ export function ScoreRows({ results, scores, narrow }: { results: Result[]; scor
       : <span className="v" style={{ left: `calc(${pos}% + 14px)`, color: colour }}>{text}</span>;
   };
   return (
-    <div ref={box}>
+    <div ref={box} data-chart>
       {scores && <div className="db-sum">{scores.avg_made != null && <div>Average made<b style={{ color: t.led }}>{scores.avg_made}</b></div>}
         {scores.avg_conceded != null && <div>Average conceded<b style={{ color: t.blue }}>{scores.avg_conceded}</b></div>}
         <div>Won<b style={{ color: t.win }}>{scores.won}</b></div><div>Lost<b style={{ color: t.loss }}>{scores.lost}</b></div></div>}
@@ -263,7 +263,7 @@ export function BatFirstSides({ bf, who }: { bf: BatFirst; who?: string }) {
   const they = who ? "they" : "you";
   return (
     <>
-      <div className="bf"><Side title="Batting first" rec={a}><Fact label="Lowest total defended" b={bf.lowest_defended} /><Fact label={`Highest total ${they} lost with`} b={bf.highest_lost} /></Side>
+      <div className="bf" data-chart><Side title="Batting first" rec={a}><Fact label="Lowest total defended" b={bf.lowest_defended} /><Fact label={`Highest total ${they} lost with`} b={bf.highest_lost} /></Side>
         <Side title={bf.multi ? "Batting second" : "Chasing"} rec={c}><Fact label="Highest total chased down" b={bf.highest_chased} /><Fact label={`Lowest total ${they} failed to chase`} b={bf.lowest_missed} /></Side></div>
       {bf.avg_set != null && <div className="fact" style={{ border: 0, marginTop: 8 }}><span>Average score batting first</span><b>{bf.avg_set}</b></div>}
       {better && <div className="verdict">{who ?? "You"} win more often <span>{better}</span>: {pct(c.won, c.played)} {bf.multi ? "batting second" : "chasing"}, {pct(a.won, a.played)} batting first.</div>}
@@ -280,7 +280,7 @@ export function StrengthPanel({ rows, lanes }: { rows: Strength[]; lanes: string
   const worst = rows.filter((r) => r.outcome === "L" && r.gap < 0).sort((a, b) => a.gap - b.gap)[0];
   return (
     <>
-      <div className="trio"><Side title="V stronger sides" rec={rec(above)} sub="Rated above you before the match" />
+      <div className="trio" data-chart><Side title="V stronger sides" rec={rec(above)} sub="Rated above you before the match" />
         <Side title="Level" rec={rec(level)} sub="First meetings, both still at the starting rating" />
         <Side title="V weaker sides" rec={rec(below)} sub="Rated below you before the match" /></div>
       <div style={{ marginTop: 14 }}><StrengthDots rows={rows} lanes={lanes} /></div>
@@ -300,7 +300,7 @@ export function VenueRecord({ v, team, who }: { v: Venues; team: string; who?: b
       <div className="trio"><Side title="Home" rec={v.home} sub={v.nation ? `In ${team}` : who ? "On their own ground" : "On your own ground"} />
         <Side title="Away" rec={v.away} sub={v.nation ? "In the other side's country" : "On the other side's ground"} />
         <Side title="Neutral" rec={v.neutral} sub="World Cups, finals and the like" /></div>
-      <div className="ctys" style={{ marginTop: 16 }}>{v.hosts.map((h) => (
+      <div className="ctys" data-chart style={{ marginTop: 16 }}>{v.hosts.map((h) => (
         <div className="cty" key={h.host || "neutral"}><span className="row2" style={{ gap: 10 }}>{slot && <span className="slot">{h.host && <Logo team={h.host} size={30} />}</span>}<Name p={name(h)} px={17} /></span>
           <div><div className="stack" style={{ width: `${(h.played / top) * 100}%` }}>{h.outcomes.map((o, i) => <i key={i} style={{ background: colourOf(t, o) === t.dim ? t.grey : colourOf(t, o) }} />)}</div></div>
           <span className="r">{h.won}–{h.lost}<small>{h.played}</small></span></div>))}</div>
@@ -312,7 +312,7 @@ export function VenueRecord({ v, team, who }: { v: Venues; team: string; who?: b
 export function MatchWinners({ w }: { w: Winners }) {
   const most = w.players[0]?.matches.length ?? 1;
   return <>{w.players.map(({ player, matches }) => (
-    <div className="mw" key={player}><span className="n">{matches.length}<small>{matches.length > 1 ? "wins" : "win"}</small></span>
+    <div className="mw" data-chart key={player}><span className="n">{matches.length}<small>{matches.length > 1 ? "wins" : "win"}</small></span>
       <div><PName p={player} px={22} /><div className="bar" style={{ marginTop: 8 }}><i style={{ width: `${(matches.length / most) * 100}%` }} /></div></div>
       <div className="hls">{matches.map((x) => <span key={x.id}><b>{fmtOf(x.section)} v {ab(x.opp)} · {day(x.date)}</b>{x.headline}</span>)}</div></div>))}
     {w.others > 0 && <div className="note">{plural(w.others, "other win")}: the player of the match was on the other side, or none was named.</div>}</>;

@@ -138,7 +138,7 @@ export function PlayerView() {
           <div className="note">Their runs out of all the runs the team's batters made that season there (off the bat: extras are no one's), and their
             wickets out of all the wickets the team took; matches: theirs of the team's.</div></Tile>}
         {d.winners ? <Tile span={12} title="Match-winners" right="player of the match in a win, and what they did">
-          {d.winners.players.length ? <MatchWinners w={d.winners} /> : null}<div className="note">{d.winners.line}</div></Tile>
+          {d.winners.players.length ? <MatchWinners w={d.winners} /> : null}<Explain shows={d.winners.line} for_={d.winners.for_} /></Tile>
           : d.missing.winners ? <Tile span={12} title="Match-winners"><Missing why={d.missing.winners} /></Tile> : null}
         <Tile span={7} title={`🏟️ ${d.countries?.nation === false ? "Ground by ground" : "Country by country"}`} right={`${fmtOf(d.section)} · every season`}>
           {d.countries ? <Grid t={d.countries} /> : d.missing.countries ? <Missing why={d.missing.countries} /> : <div className="plain">No games here yet.</div>}
@@ -198,7 +198,8 @@ export function PlayerView() {
           {b.compare && <Box span={7} title={`How they compare · v ${b.compare.pool} batters here`}><PercentileBars values={b.compare.values} />
             <div className="note">Percentiles among the batters here with 3+ innings: 100 = the best, 50 = the middle of the pack.</div></Box>}
           <Box span={b.compare ? 5 : 6} title="Where the runs come from"><RingList items={[["Fours", b.runs_from.fours, pal[0]!], ["Sixes", b.runs_from.sixes, pal[1]!], ["Running", b.runs_from.running, pal[2]!]]}
-            centre={String(b.kpis.runs)} sub="runs" /><div className="note">{plural(b.runs_from.n4, "four")} and {plural(b.runs_from.n6, "six", "sixes")}.</div></Box>
+            centre={String(b.kpis.runs)} sub="runs" /><div className="note">{plural(b.runs_from.n4, "four")} and {plural(b.runs_from.n6, "six", "sixes")}.</div>
+            {b.runs_from.shows && <Explain shows={b.runs_from.shows} for_={b.runs_from.for_} />}</Box>
           <Box title="Season by season · runs"><Sp s={b.seasons} dec={0} /></Box>
           <Box title="How they get out">{b.how_out ? <><RingList items={b.how_out.rows.map((r, i) => [r.label, r.value ?? 0, pal[i % pal.length]!])} centre={String(b.how_out.rows.reduce((a, r) => a + (r.value ?? 0), 0))} sub="dismissals" />
             <Explain shows={b.how_out.shows} for_={b.how_out.for_} /></> : <div className="note">Never dismissed.</div>}</Box>

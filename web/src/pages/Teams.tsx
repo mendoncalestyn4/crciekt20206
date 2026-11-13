@@ -131,7 +131,7 @@ function Contributions({ c }: { c: NonNullable<TeamBody["contribution"]> }) {
   const topR = Math.max(...c.rows.map((r) => r.run_share), 1), topW = Math.max(...c.rows.map((r) => r.wicket_share), 1);
   const bar = (v: number, top: number) => <span className="sharecell"><span className="bar"><i style={{ width: `${(v / top) * 100}%` }} /></span><span className="tn dimn">{fx(v, 1)}%</span></span>;
   return <>
-    <div className="contrib">
+    <div className="contrib" data-chart>
       <div><div className="k3" style={{ marginTop: 0 }}>The runs off the bat</div><RingList items={ring} centre={String(c.team_runs)} sub="runs" /></div>
       <div><table className="c"><thead><tr>{th("player", "Player", false)}{th("matches", "Matches")}{th("runs", "Runs")}<th>Of the runs</th>{th("wickets", "Wickets")}<th>Of the wickets</th></tr></thead>
         <tbody>{shown.map((r) => <tr key={r.player}><td><T>{r.player}</T></td><td className="r"><span className="tn dimn">{r.matches}</span></td>

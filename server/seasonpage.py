@@ -151,12 +151,21 @@ def _calendar(career, team, q, sched) -> dict:
     if team != ALL:
         w = int((span.winner == team).sum())
         lost = int(((span.winner != team) & (span.winner != "")).sum())
-        out["caption"] = (f"{team} in {when}: played {len(span)}, won {w}, lost {lost}. Green: won · red: lost · grey: drawn, "
-                          "tied or no result · dashed: still to come (from your schedule; a series without dates is listed at "
-                          "the top of its month). T = Test, O = ODI, 20 = T20. Click a result for its scorecard.")
+        out["caption"] = ("Green: won · red: lost · grey: drawn, tied or no result · dashed: still to come (from your schedule; "
+                          "a series without dates is listed at the top of its month). T = Test, O = ODI, 20 = T20. Click a "
+                          "result for its scorecard.")
+        shows = f"{team} in {when}: played {len(span)}, won {w}, lost {lost}."
+        best = next((mo for mo in out.get("grid", []) if mo.get("best")), None)
+        if best and out["view"] == "season":
+            shows += f" The best month: {best['name']} {best['year']}, {best['won']} won and {best['lost']} lost."
+        out["shows"] = shows
+        out["for_"] = "When the season's cricket falls: the busy months and the quiet ones, and which went well."
     else:
-        out["caption"] = (f"{len(span)} matches in {when}. Hover a day for its games; pick a team to see its results and "
-                          "fixtures to come.")
+        out["caption"] = "Hover a day for its games; pick a team to see its results and fixtures to come."
+        busiest = max(out.get("grid", []), key=lambda mo: mo["played"], default=None) if out["view"] == "season" else None
+        out["shows"] = f"{len(span)} matches in {when}." + (
+            f" The busiest month: {busiest['name']} {busiest['year']}, {busiest['played']} matches." if busiest and busiest["played"] else "")
+        out["for_"] = "When the season's cricket falls: the busy months and the quiet ones."
     return out
 
 

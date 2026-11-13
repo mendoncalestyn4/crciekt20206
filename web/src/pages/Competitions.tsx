@@ -104,7 +104,8 @@ export function Competitions() {
               {(() => { const e = d.series!.each[d.series_pick ?? 0], one = d.series_one, l = one?.ladder;
                 if (!e) return null;
                 return <>
-                  {l ? <><div className="glabel">The series score after each match{l.decider ? " · the decider marked" : ""}</div><Ladder s={l} team={one!.team} /></>
+                  {l ? <><div className="glabel">The series score after each match{l.decider ? " · the decider marked" : ""}</div><Ladder s={l} team={one!.team} />
+                    {l.shows && <Explain shows={l.shows} for_={l.for_} />}</>
                     : one?.missing.ladder ? <Missing why={one.missing.ladder} /> : null}
                   <div className="glabel" style={{ marginTop: 16 }}>Every match</div><Grid t={e.matches} keep={keep} />
                 </>; })()}

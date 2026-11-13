@@ -120,5 +120,5 @@ export function EChart({ option, height, width, label }: { option: Option; heigh
     const t = window.setTimeout(finish, 3000);   // never wait for ever
     return () => { c.off("finished", finish); window.clearTimeout(t); finish(); };
   }, [option, w, height]);
-  return <div ref={el} role="img" aria-label={label} style={{ height, width: width ?? "100%" }} />;
+  return <div ref={el} data-chart role="img" aria-label={label} style={{ height, width: width ?? "100%" }} />;
 }

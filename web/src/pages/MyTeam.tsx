@@ -5,7 +5,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
 import { get, type MyTeam as Data, type Result, type ScoutingPage } from "../api";
-import { Lamps, Logo, Missing, Name, Num, PName, Tile } from "../kit/base";
+import { Explain, Lamps, Logo, Missing, Name, Num, PName, Tile } from "../kit/base";
 import { SquadTable, Story, Ticker, TopList } from "../kit/blocks";
 import { RankTrack, Ring , TugOfWar } from "../kit/charts";
 import { DepthRow, Msg } from "../kit/fm";
@@ -122,7 +122,8 @@ export function MyTeam() {
           <div className="note">Every match in order; the longest runs marked; the run you're on at the end.</div></Tile>}
         {rs.length > 0 && <Tile span={7} rows={2} title="Our score v theirs" right="this season">
           <ScoreRows results={rs.slice(-14)} scores={d.scores} />
-          <div className="note">Both totals on one line for each match (the latest {Math.min(14, rs.length)}); green won, red lost; a Test's innings each on its own line.</div></Tile>}
+          <div className="note">Both totals on one line for each match (the latest {Math.min(14, rs.length)}); green won, red lost; a Test's innings each on its own line.</div>
+          {d.scores?.shows && <Explain shows={d.scores.shows} for_={d.scores.for_} />}</Tile>}
         {d.venues && <Tile span={5} title="Home, away and neutral"><VenueRecord v={d.venues} team={d.team} /></Tile>}
         {d.series && <Tile span={5} title="Series this season">
           <div className="list">{d.series.slice(0, 6).map((s) => (
@@ -132,8 +133,10 @@ export function MyTeam() {
         </Tile>}
         {d.tug && <Tile span={7} title={`Series score · v ${d.tug.opp}`} right={d.tug.story.complete ? "finished" : "under way"}>
           <TugOfWar matches={d.tug.matches} progress={d.tug.progress} team={d.team} opp={d.tug.opp} height={300} />
-          <div className="note">Above the line {d.team} lead, below it {d.tug.opp} do.</div></Tile>}
-        {d.winners && <Tile span={12} title="Match-winners" right="your players of the match in your wins"><MatchWinners w={d.winners} /></Tile>}
+          <div className="note">Above the line {d.team} lead, below it {d.tug.opp} do.</div>
+          {d.tug.shows && <Explain shows={d.tug.shows} for_={d.tug.for_} />}</Tile>}
+        {d.winners && <Tile span={12} title="Match-winners" right="your players of the match in your wins"><MatchWinners w={d.winners} />
+          {d.winners.shows && <Explain shows={d.winners.shows} for_={d.winners.for_} />}</Tile>}
         {tiles.some((t) => t.rank != null) && <Tile span={12} title={`Where ${d.team} rank · team rating (Elo)`}>
           <RankTrack banner={tiles} height={Math.max(150, 80 + tiles.length * 60)} /></Tile>}
 

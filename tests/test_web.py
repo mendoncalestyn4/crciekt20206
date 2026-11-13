@@ -339,3 +339,43 @@ def test_a_page_opened_by_its_address_and_the_colours_preview(browser, site):
         assert said == []
     finally:
         pg.close()
+
+
+def test_a_chart_tile_saves_itself_as_a_picture(browser, site, tmp_path):
+    """Pointing at a tile with a chart shows "Save picture" (a tab on its top edge, clear of the title); a tile without
+    a chart never shows it; the saved file is a PNG of the tile at twice its size."""
+    import struct
+    live, _ = site
+    pg = browser.new_page(viewport={"width": 1440, "height": 900}, accept_downloads=True)
+    said: list[str] = []
+    pg.on("pageerror", lambda e: said.append(f"error: {e}"))
+    pg.on("console", lambda m: said.append(f"{m.type}: {m.text}") if m.type == "error" else None)
+    pg.goto(live.url("/teams"), wait_until="networkidle")
+    pg.wait_for_selector("body[data-ready='1']", timeout=30000)
+    charts = pg.locator(".t:has([data-chart])")
+    plain = pg.locator(".t:not(:has([data-chart]))")
+    assert charts.count() >= 3 and plain.count() >= 1
+    p = plain.first
+    p.evaluate("t => t.scrollIntoView({ block: 'center' })")
+    p.hover(position={"x": 30, "y": 10})
+    assert not p.locator("> .savepic").is_visible()
+    tile = charts.first
+    tile.evaluate("t => t.scrollIntoView({ block: 'center' })")
+    tile.hover(position={"x": 30, "y": 10})
+    btn = tile.locator("> .savepic")
+    assert btn.is_visible()
+    clear = tile.evaluate("""t => { const b = t.querySelector(':scope > .savepic').getBoundingClientRect(),
+        h = t.querySelector(':scope > .tt'); return !h || b.bottom <= h.getBoundingClientRect().top + 0.5; }""")
+    assert clear, "the button covers the tile's title row"
+    w, h = tile.evaluate("t => { const r = t.getBoundingClientRect(); return [Math.ceil(r.width), Math.ceil(r.height)]; }")
+    with pg.expect_download() as dl:
+        btn.click()
+    d = dl.value
+    assert d.suggested_filename.endswith(".png") and re.fullmatch(r"[a-z0-9-]+\.png", d.suggested_filename)
+    out = tmp_path / d.suggested_filename
+    d.save_as(out)
+    head = out.read_bytes()[:24]
+    assert head[:8] == b"\x89PNG\r\n\x1a\n"
+    assert struct.unpack(">II", head[16:24]) == (w * 2, h * 2)
+    assert not said, said
+    pg.close()

@@ -121,6 +121,7 @@ export function Review() {
           {d.winners?.winners && d.winners.winners.players.length > 0 && <Tile span={12} title={`Match-winners · ${d.winners.winners.team}`}
             right={`${d.winners.winners.wins} wins · the player of the match in each`}>
             <MatchWinners w={d.winners.winners} />
+            {d.winners.winners.shows && <Explain shows={d.winners.winners.shows} for_={d.winners.winners.for_} />}
             {!d.winners.winners.yours && <div className="note">Your team didn't play here, so it's the side with the most wins.</div>}</Tile>}
           {d.winners?.missing.winners && <Tile span={12} title="Match-winners"><Missing why={d.winners.missing.winners} /></Tile>}
         </>}

@@ -645,3 +645,12 @@ table.c th.sortable { cursor: pointer; user-select: none; } table.c th.sortable.
 .ranks { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
 .ranks .rk { display: flex; gap: 22px; flex-wrap: wrap; } .ranks .rk > span { display: flex; flex-direction: column; }
 .ranks .rk small { color: var(--dim); font: 500 12px Inter; }
+
+/* "Save picture": the button on every tile that holds a chart, shown when you point at the tile (and never saved in
+   the picture itself) */
+/* a small tab hanging from the tile's top edge, inside the 20px of empty space above the title (19px tall): it covers
+   nothing, not even the hint on the right of the title */
+.savepic { display: none; position: absolute; top: 0; right: 22px; z-index: 3; font: 600 11px/12px Inter; padding: 3px 10px;
+  border-radius: 0 0 8px 8px; border: 1px solid var(--edge); border-top: 0; background: var(--tile2); color: var(--ink); cursor: pointer; }
+.savepic:hover { border-color: var(--led); color: var(--led); }
+.t:has([data-chart]):hover > .savepic { display: block; }   /* every chart marks its box with data-chart */

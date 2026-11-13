@@ -341,7 +341,7 @@ def page(career, team: str, section: str, mine: list[str], notes: dict, sched: l
     piece("tug", lambda: _tug(career, rs, team))
     piece("venues", lambda: SG.venues(rs, team))
     piece("winners", lambda: SG.match_winners(rs, team))
-    piece("scores", lambda: SG.scores(rs))
+    piece("scores", lambda: SG.scores(rs, team, "This season"))
     piece("history", lambda: SG.rows(MT.history(career, team), ["season", "section", "played", "won", "lost", "drawn",
                                                                 "tied", "no_result", "win_pct", "finish"]))
 
