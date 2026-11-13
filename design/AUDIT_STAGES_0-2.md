@@ -164,3 +164,11 @@ How it was checked:
     see last season; them only, not your team beside them.** The questions as first asked: against the
     usual for that competition or that format (my pick: competition); whole career or recent seasons (my pick: whole
     career with a "this season" switch); them only, or your team beside them (my pick: them only).
+
+27. **Who carries the team: its order is fine (your word, 13 November). New: every player's contribution** on Team
+    record (Teams): all the team's players in that competition and season, each with their share of the team's runs
+    and of its wickets (not only those with 5% of either, as "Who carries the team" shows). Open questions (asked 13
+    November): where (my pick: its own tile under "Who carries the team" on the Overview tab); one table with both
+    shares, sortable by runs or wickets, or two lists (my pick: one table, sortable by clicking a column); runs off the
+    bat only (as agreed for Team leaders, so a share is the same everywhere; my pick: yes, and "Who carries the team"
+    and the Player page switch at the same time, pulled forward from stage 3).
