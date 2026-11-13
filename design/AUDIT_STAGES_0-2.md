@@ -212,3 +212,7 @@ in the every-player table; our score v theirs on the Matches front page; the mat
 place of the "Matches they won" table; the "where your team ranks" tile at the top of the Season page.
 
 **14 (13 November):** to-dos B to E come after stage 3, as planned.
+
+**13 (13 November):** the 477-match test career and the 89 real scorecards aren't on this machine any more; your zip
+of 322 scorecards (2 April 2028 to 9 July 2029) takes their place as the real-data test for this round ("use only
+this zip, it's enough"). A full new set of your scorecards comes after stage 6.
