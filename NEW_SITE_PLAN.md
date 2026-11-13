@@ -615,10 +615,11 @@ what the scorecards record (no overs for wickets, no grounds, no toss).
 **Stage 3: your answers (13 November, asked before building, as your rule asks).**
 1. Every team ranked by runs and wickets up to any date: a **tab on Rankings** (next to Team Elo).
 2. Insights and Analytics stay **two pages**.
-3. Player stories' 15 tabs: asked again in plainer words (keep all 15, or group them under 4).
+3. Player stories: **all 15 tabs kept, in the same order** (asked again in plainer words; "do what you feel is best").
 4. Team runs in that ranking: **off the bat** (extras left out).
 5. Beside the totals: **matches, and runs and wickets per match**.
-6. Picking the date: asked again in plainer words (a calendar, with or without "end of season" buttons).
+6. Picking the date: **a calendar opening on the latest match, plus "End of 2029 season"-style buttons** (asked again
+   in plainer words; "do what you feel is best").
 7. The score to aim for in Insights: **your team (or any team picked) against every opponent**, home, away and
    neutral, even game and 70%; Tests the totals that won, drew and lost.
 8. Records: **the best stand for each wicket**, with "show top 5" to open each.
