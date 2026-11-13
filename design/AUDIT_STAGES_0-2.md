@@ -151,16 +151,16 @@ How it was checked:
     you say go). The scorecards hold no overs (no over a wicket fell in, no runs per over), so it reads the game
     through the score at each wicket, the batting order, each batter's runs, balls, fours and sixes, and the order
     the bowlers came on:
-    - **Bowling:** when they take wickets (the usual score at their 1st, 2nd and 3rd wicket against the usual
-      here); how often they have a side 3 down cheaply and how often they bowl sides out; the new-ball bowlers'
+    - **Bowling:** when they take wickets (the usual score at their 1st, 2nd and 3rd wicket); how often they have a side 3 down cheaply and how often they bowl sides out; the new-ball bowlers'
       share of the wickets against those who come on later; the share of their wickets that are top-order batters;
       attack or squeeze (wicket-taking against runs given, and dot balls in T20 where the cards print them).
     - **Batting:** strike rate and boundary share for the openers, the top order, the middle order and the lower
-      order against the usual ("blast from the start", or "build, then blast"); how much comes in fours and sixes,
-      and from where; their usual score at each wicket against the usual here (fast start and fade, or slow start
-      and strong finish).
+      order ("blast from the start", or "build, then blast"); how much comes in fours and sixes, and from where;
+      their usual score at each wicket (fast start and fade, or slow start and strong finish).
     - A short summary in plain words at the top.
-    **Your answers (13 November): yes, in the stage 2 fix round; at the top of the "About them" tab.** Still open:
-    against the
+    **Your answers (13 November): yes, in the stage 2 fix round; at the top of the "About them" tab; a preview of
+    them only, with no "against the usual" comparisons (their own figures, read in plain words); this season by
+    default, and when this season has too few games for it (fewer than 5 matches, my rule), a note and a button to
+    see last season; them only, not your team beside them.** The questions as first asked: against the
     usual for that competition or that format (my pick: competition); whole career or recent seasons (my pick: whole
     career with a "this season" switch); them only, or your team beside them (my pick: them only).
