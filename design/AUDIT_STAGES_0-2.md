@@ -160,6 +160,7 @@ How it was checked:
       and from where; their usual score at each wicket against the usual here (fast start and fade, or slow start
       and strong finish).
     - A short summary in plain words at the top.
-    Open questions (asked 13 November): where on the page (my pick: the top of the "About them" tab); against the
+    **Your answers (13 November): yes, in the stage 2 fix round; at the top of the "About them" tab.** Still open:
+    against the
     usual for that competition or that format (my pick: competition); whole career or recent seasons (my pick: whole
     career with a "this season" switch); them only, or your team beside them (my pick: them only).
