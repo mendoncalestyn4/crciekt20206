@@ -9,11 +9,17 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
 
 ## 1. First: the nothing-lost checklist (the hard gate)
 
-- [ ] Every open line of `design/INVENTORY.md` for Teams, Opponent preview, Team vs team, Team planner, Season review,
+- [x] Every open line of `design/INVENTORY.md` for Teams, Opponent preview, Team vs team, Team planner, Season review,
       Competitions, Season, Rivalries and Honours ticked with where it is now, or marked with the stage it goes to (15)
-- [ ] The 10 lines stage 1 left for stage 2 (the table of every competition, Opponent preview) ticked (15)
-- [ ] The shared parts ticked: the charts' texts, team of the XI, logos, search, colours, the menu, saved data (15)
-- [ ] Anything found missing is built in this round, or brought to you for a yes before being left out
+      — ✓ 1,226 lines, 13 November (each placed from a crawl of every page, tab and option, the rest by hand)
+- [x] The 10 lines stage 1 left for stage 2 (the table of every competition, Opponent preview) ticked (15) — ✓ 11
+- [x] The shared parts ticked: the charts' texts, team of the XI, logos, search, colours, the menu, saved data (15)
+      — ✓ 401 placed (stage 3 and 4 ones marked with their stage)
+- [x] Anything found missing is built in this round, or brought to you for a yes before being left out — ✓ 7 found,
+      all built (13 November): the table of every competition (Competitions, in the engine, with a parity test);
+      "Preview →" from My team's Next up; Rivalries' opening line; Season review's note on its rules; the planner's
+      pair tables saying who qualifies; the "no matches yet" message with how to get matches in (every page); and the
+      remembered picks: every page opens on the section, season, team and competition you last picked
 
 ## 2. Opponent preview
 
