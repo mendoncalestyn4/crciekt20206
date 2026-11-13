@@ -37,6 +37,18 @@ def choices(career) -> list[dict]:
             for e, n in counts.items()]
 
 
+def _every(career) -> dict:
+    """Every section of the career at a glance (the current site's "Sections" table, from My team)."""
+    sec = T.every_section(career.matches)
+    t = table(["Section", "Matches", "Seasons", "First match", "Latest match", "Format", "Level"],
+              [[r.section, int(r.matches), r.seasons, f"{r.first:%d %b %Y}", f"{r.last:%d %b %Y}", r.format, r.level]
+               for r in sec.itertuples()], num={1})
+    t["note"] = ("A section is how the matches are grouped everywhere on the site: international matches by format (all "
+                 "Tests, all ODIs, all T20Is, World Cups included), everything else, like the IPL, the T20 Blast and each "
+                 "County Championship division, on its own.")
+    return t
+
+
 def page(career, q: dict, mine: list[str]) -> dict:
     m = career.matches
     ch = choices(career)
@@ -44,6 +56,7 @@ def page(career, q: dict, mine: list[str]) -> dict:
     if not ch:
         out["none"] = "No matches in this career yet."
         return out
+    out["every"] = kept(career, ("every_section",), lambda: _every(career))
     events = [c["event"] for c in ch]
     event = q.get("event", "")
     if event not in events:   # the competition your team played in last, else the one with the most matches

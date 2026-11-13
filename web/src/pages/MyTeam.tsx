@@ -86,7 +86,7 @@ export function MyTeam() {
         {d.banner?.caption && <div className="note" style={{ gridColumn: "span 12", marginTop: -4 }}>{d.banner.caption}</div>}
 
         <Tile span={6} title="What changed after the latest game">{d.after ? <AfterLines a={d.after} keep={keep} /> : <Missing why={miss.after ?? "No match yet."} />}</Tile>
-        <Tile span={6} title="Next up">{d.next_up ? <NextUp n={d.next_up} />
+        <Tile span={6} title="Next up">{d.next_up ? <NextUp n={d.next_up} keep={keep} />
           : <div className="plain">No schedule for {d.team} yet. Your next match and series chances show here once there's one (Fixtures, stage 4; the current site has it now).</div>}</Tile>
 
         {news.length > 0 && <Tile span={12} title={`📬 Inbox · ${news.length} new for ${d.team}`} right={<Link className="lk" to={`/inbox${keep}`}>Open the inbox →</Link>}>

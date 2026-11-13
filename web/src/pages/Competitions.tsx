@@ -112,6 +112,8 @@ export function Competitions() {
           </Tile>}
           {!shown && <Tile span={12}><Missing why="No league, knockout or series matches in this competition and season yet." /></Tile>}
         </>}
+        {d.every && d.every.rows.length > 0 && <Tile span={12} title="Every competition in this career">
+          <Grid t={d.every} />{d.every.note && <div className="note">{d.every.note}</div>}</Tile>}
       </div>
     </>
   );

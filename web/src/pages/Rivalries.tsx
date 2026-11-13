@@ -46,6 +46,7 @@ export function Rivalries() {
       {head}
       <div className="grid">
         <Tile span={12} title="Pick a competition">
+          <div className="plain">Every pair of teams that have met, the record between them, and who has done best in those games.</div>
           <div className="field">
             <label htmlFor="rv-sec">Competition</label>
             <select id="rv-sec" className="pick" value={d.section} onChange={(e) => set({ section: e.target.value })}>

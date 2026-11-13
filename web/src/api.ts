@@ -380,6 +380,7 @@ export type CompRace = { knockouts: boolean; many: boolean; games: number; place
   default_places: number; default_extra: number; state: string; what: string; teams: string[]; pick: string; groups: CompGrid[];
   lines: OddsLine[]; shows: string; for_?: string; note: string; caption?: string };
 export type CompPage = { choices: { event: string; matches: number; seasons: string[] }[]; event: string; season: string; none: string;
+  every?: GridT & { note?: string };
   missing?: Record<string, string>; bilateral?: boolean; race_on?: boolean;
   league?: { title: string; groups: CompGrid[]; note: string } | null;
   knockouts?: { rounds: { round: string; cards: KoCard[] }[]; champion: string } | null;

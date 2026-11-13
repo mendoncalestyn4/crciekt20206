@@ -64,13 +64,14 @@ export function AfterLines({ a, keep }: { a: NonNullable<MyTeam["after"]>; keep:
   );
 }
 
-export function NextUp({ n }: { n: NonNullable<MyTeam["next_up"]> }) {
+export function NextUp({ n, keep = "" }: { n: NonNullable<MyTeam["next_up"]>; keep?: string }) {
   const x = n.next;
   return (
     <>
       <div className="plain">📅 Your schedule: <b>{n.played}</b> of <b>{n.total}</b> played.</div>
       {x && <div className="plain">⏭ Next: <b>{x.what}</b>{x.venue ? ` · ${x.venue}` : ""} · {x.when}
-        {x.chance && <> · 🔮 win <b>{pct(x.chance.win)}</b>{x.chance.draw != null ? `, draw ${pct(x.chance.draw)}` : ""}, {x.opponent} {pct(x.chance.lose)}</>}</div>}
+        {x.chance && <> · 🔮 win <b>{pct(x.chance.win)}</b>{x.chance.draw != null ? `, draw ${pct(x.chance.draw)}` : ""}, {x.opponent} {pct(x.chance.lose)}</>}
+        {" · "}<Link className="lk" to={`/teams/preview${keep}`}>Preview →</Link></div>}
       {n.under_way.map((u) => <div className="plain" key={u}>🔴 {u}</div>)}
       <div className="note">From your schedule (Fixtures); adding and changing fixtures arrives on the new site in stage 4.</div>
     </>

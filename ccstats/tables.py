@@ -14,6 +14,19 @@ LIMITED = {"T20", "T20I", "ODI", "List A", "The Hundred"}
 KNOCKOUT_ORDER = ["Quarter-final", "Qualifier 1", "Eliminator", "Qualifier 2", "Semi-final", "Final"]
 
 
+def every_section(matches: pd.DataFrame) -> pd.DataFrame:
+    """Every section of the career, most matches first: its matches, its seasons (A to Z), the first and latest
+    match, its format and level (the current site's "Sections" table on My team, worked out here for both sites)."""
+    cols = ["section", "matches", "seasons", "first", "last", "format", "level"]
+    if matches.empty:
+        return pd.DataFrame(columns=cols)
+    sec = (matches.groupby("section")
+           .agg(matches=("match_id", "size"), seasons=("season", lambda s: ", ".join(sorted(set(map(str, s))))),
+                first=("date", "min"), last=("date", "max"), format=("format", "first"), level=("level", "first"))
+           .sort_values("matches", ascending=False, kind="stable").reset_index())
+    return sec[cols]
+
+
 def points_rule(competition: str, fmt: str) -> tuple[str, dict]:
     """(description shown on the page, points per result).  Limited-overs leagues
     all use 2 for a win and 1 for a tie or no result.  First-class leagues only

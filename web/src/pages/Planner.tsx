@@ -13,9 +13,10 @@ import { TEAM_PAGES } from "./Teams";
 
 type Maybe = (GridT & { note?: string }) | { none: string } | null | undefined;
 
-function Part({ title, t, why, span = 12 }: { title: string; t: Maybe; why?: string; span?: number }) {
+function Part({ title, t, why, span = 12, sub }: { title: string; t: Maybe; why?: string; span?: number; sub?: string }) {
   return (
     <Tile span={span} title={title}>
+      {sub && <div className="how" style={{ marginTop: -4, marginBottom: 6 }}>{sub[0]!.toUpperCase() + sub.slice(1)}</div>}
       {why ? <Missing why={why} /> : !t ? <Missing /> : "none" in t ? <div className="plain"><T>{t.none}</T></div>
         : <><Grid t={t} />{t.note && <div className="note"><T>{t.note}</T></div>}</>}
     </Tile>
@@ -104,8 +105,8 @@ export function Planner() {
           {d.tab === "Bowling plan" && b && <Part title="Bowling plan" t={b.plan} why={m.plan} />}
           {d.tab === "Knocking on the door" && b && <Part title="Knocking on the door" t={b.knocking} why={m.knocking} />}
           {d.tab === "Partnerships" && b && <>
-            <Part span={6} title="Batting pairs" t={b.batting} why={m.batting} />
-            <Part span={6} title="Bowling pairs" t={b.bowling} why={m.bowling} />
+            <Part span={6} title="Batting pairs" sub="2+ stands together" t={b.batting} why={m.batting} />
+            <Part span={6} title="Bowling pairs" sub="bowled in the same innings 3+ times" t={b.bowling} why={m.bowling} />
           </>}
         </>}
       </div>

@@ -102,6 +102,7 @@ export function Review() {
             </Tile>
             {rv.report_cards.map((r) => <Tile key={r.team} span={12} title={`📋 ${r.team} report card`}>
               <Grades card={r.card} /><div className="note">Grades against the average team this season: A well above, C about average, E well below.</div></Tile>)}
+            <Tile span={12}><div className="note">Team of the Season, best matches and upsets use the same rules as the Teams, Matches and Player stories pages.</div></Tile>
           </>}
           {mv && <Tile span={12} title={`🏅 Most valuable players${rv && !rv.complete ? " · so far" : ""}`}
             right={mv.choose ? <div className="itabs" style={{ margin: 0 }}>{([["impact", "Impact points"], ["ipl", "IPL MVP points"]] as const).map(([v, l]) => (
