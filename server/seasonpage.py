@@ -47,6 +47,8 @@ def page(career, q: dict, mine: list[str], sched: list[dict]) -> dict:
     if m.empty:
         out["none"] = SG.NO_MATCHES
         return out
+    if team != ALL:
+        out["ranks"] = kept(career, ("season-ranks", team), lambda: _ranks(career, team))
     if tab == "Calendar":
         out["calendar"] = _calendar(career, team, q, sched)
     elif tab == "Series tracker":
@@ -54,6 +56,30 @@ def page(career, q: dict, mine: list[str], sched: list[dict]) -> dict:
     else:
         out["progress"] = kept(career, ("season-progress", team), lambda: _progress(career, team))
     return SG.clean(out)
+
+
+def _ranks(career, team) -> dict:
+    """Where the team ranks this season (its latest April-to-March season) in each format it has played: by runs
+    scored off the bat and by wickets taken, among every team in that competition this season (the stage 3 ranking,
+    counted to the latest match)."""
+    m = career.matches
+    year_of = kept(career, ("april_seasons",), lambda: SN.april_seasons(m))
+    mine = m[(m.home == team) | (m.away == team)]
+    if mine.empty:
+        return dict(rows=[], season="")
+    y = int(year_of[mine.sort_values("date").match_id.iloc[-1]])
+    here = m[m.match_id.map(year_of) == y]
+    rows = []
+    for sec, n in mine[mine.match_id.map(year_of) == y].section.value_counts().items():
+        t = R.team_totals(career, here[here.section == sec].match_id)
+        r = t[t.team == team].iloc[0]
+        rows.append(dict(section=sec, teams=len(t), matches=int(r.matches), runs=int(r.runs), wickets=int(r.wickets),
+                         runs_rank=int(r.runs_rank), wickets_rank=int(r.wickets_rank),
+                         runs_top=t.team.iloc[0], wickets_top=t.sort_values(["wickets", "team"], ascending=[False, True]).team.iloc[0]))
+    return dict(rows=rows, season=season_label(y),
+                note=("Every team in each competition this season, ranked by runs scored off the bat and wickets taken "
+                      "(run-outs included), to the latest match. A side that has played more games can be higher on "
+                      "totals: the matches are shown beside them."))
 
 
 def _tracked(career, team, sched):

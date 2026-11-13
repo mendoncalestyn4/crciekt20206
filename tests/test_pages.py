@@ -1126,3 +1126,21 @@ def test_series_tug_of_war_on_the_season_tracker_and_my_team(every):
                 assert tg["team"] == team
             seen += 1
     assert seen >= 3
+
+
+def test_season_where_your_team_ranks(every):
+    from ccstats import rankings as R
+    from ccstats import seasonal as SN
+    c = every.app.state.site.career()
+    m = c.matches
+    year_of = SN.april_seasons(m)
+    for team in sorted(set(m.home) | set(m.away))[:12]:
+        rk = every.json(f"/api/season?team={team}")["ranks"]
+        mine = m[(m.home == team) | (m.away == team)]
+        y = int(year_of[mine.sort_values("date").match_id.iloc[-1]])
+        secs = set(mine[mine.match_id.map(year_of) == y].section)
+        assert {r["section"] for r in rk["rows"]} == secs
+        for r in rk["rows"]:
+            t = R.team_totals(c, m[(m.section == r["section"]) & (m.match_id.map(year_of) == y)].match_id)
+            x = t[t.team == team].iloc[0]
+            assert (r["runs_rank"], r["wickets_rank"], r["runs"], r["teams"]) == (x.runs_rank, x.wickets_rank, x.runs, len(t))

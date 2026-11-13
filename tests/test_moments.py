@@ -173,3 +173,24 @@ def test_every_rivalry_run_counted_by_hand(career):
                 prev = w
                 best = max(best, run)
             assert r.longest_n == best
+
+
+def test_every_team_ranked_by_runs_and_wickets_counted_by_hand(career):
+    """Every team in a competition: matches, runs off the bat and wickets taken (its opponents' wickets), with the
+    ranks (equal totals share one), up to a date too."""
+    from ccstats import rankings as R
+    m = career.matches
+    for sec in m.section.unique():
+        here = m[m.section == sec]
+        for upto in (None, here.date.median()):
+            t = R.team_totals(career, here.match_id, upto)
+            g = here if upto is None else here[here.date <= upto]
+            for r in t.itertuples():
+                mine = g[(g.home == r.team) | (g.away == r.team)]
+                assert r.matches == len(mine)
+                b = career.batting[career.batting.match_id.isin(mine.match_id) & (career.batting.team == r.team) & career.batting.did_bat]
+                assert r.runs == b.runs.sum()
+                i = career.innings[career.innings.match_id.isin(mine.match_id) & (career.innings.team != r.team)]
+                assert r.wickets == i.wickets.sum()
+                assert r.runs_rank == 1 + int((t.runs > r.runs).sum())
+                assert r.wickets_rank == 1 + int((t.wickets > r.wickets).sum())

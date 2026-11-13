@@ -431,6 +431,8 @@ export type CalMonth = { key: string; year: number; month: number; name: string;
   days: Record<string, CalChip[]>; notes: { kind: "played" | "tocome"; text: string }[]; won: number; lost: number; played: number;
   extra?: CalChip[]; mark?: string; best?: boolean };
 export type SeasonPage = { teams: string[]; team: string; tabs: string[]; tab: string; none: string;
+  ranks?: { season: string; note?: string; rows: { section: string; teams: number; matches: number; runs: number; wickets: number;
+    runs_rank: number; wickets_rank: number; runs_top: string; wickets_top: string }[] };
   calendar?: { view: "season" | "month"; seasons: { key: string; label: string }[]; season: string; months: { key: string; label: string }[];
     month: string; today: string; grid: CalMonth[]; caption?: string; none?: string };
   series?: { none: string; live: (GridT & { note?: string }) | null; done: GridT | null; note?: string; tugs?: (Series & { title: string })[] };

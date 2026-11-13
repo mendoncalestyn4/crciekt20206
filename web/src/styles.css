@@ -640,3 +640,8 @@ table.c th.sortable { cursor: pointer; user-select: none; } table.c th.sortable.
   padding: 2px 8px; border-radius: 8px; letter-spacing: .02em; }
 .cm-mark { font: 600 11px Inter; color: var(--led); border: 1px solid var(--led); border-radius: 6px; padding: 0 5px; margin-left: 6px; }
 .cm-x { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 6px; } .cm-x .chip { font-size: 11px; }
+
+/* Season · where your team ranks: one card per format */
+.ranks { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.ranks .rk { display: flex; gap: 22px; flex-wrap: wrap; } .ranks .rk > span { display: flex; flex-direction: column; }
+.ranks .rk small { color: var(--dim); font: 500 12px Inter; }

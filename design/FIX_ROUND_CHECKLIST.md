@@ -113,8 +113,9 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
       (its line and record counting it too), one month kept; every game of every season checked to appear once
 - [x] The series tug of war on the series tracker (4, G) — ✓ Seasons · Season · Series tracker: every series still going and
       your team's latest finished one, from your side; every score checked
-- [ ] **"Where your team ranks"** at the top: your rank by runs scored and wickets taken in each format this season,
-      from the ranking of every team up to any date (stage 3's sums built now) (9, 12)
+- [x] **"Where your team ranks"** at the top: your rank by runs scored and wickets taken in each format this season,
+      from the ranking of every team up to any date (stage 3's sums built now) (9, 12) — ✓ Seasons · Season, at the top (`ccstats/rankings.py`
+      team_totals: stage 3's ranking, to any date); counted again by hand for every team of every competition
 
 ## 7. Season review
 

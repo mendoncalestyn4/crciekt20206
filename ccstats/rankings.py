@@ -132,3 +132,32 @@ def team_elo(career, section: str) -> tuple[pd.DataFrame, pd.DataFrame]:
                          columns=["team", "elo", "played", "peak"]).sort_values("elo", ascending=False).reset_index(drop=True)
     table.index = table.index + 1
     return table, pd.DataFrame(hist, columns=["match_id", "date", "team", "before", "after", "opponent", "result"])
+
+
+# --------------------------------------------------------------------------- every team by runs and wickets
+TOTAL_COLUMNS = ["team", "matches", "runs", "wickets", "runs_per_match", "wickets_per_match", "runs_rank", "wickets_rank"]
+
+
+def team_totals(career, ids, upto=None) -> pd.DataFrame:
+    """Every team in these matches (up to a date, that day included, when given): matches played, runs scored off the
+    bat (extras are no one's, as in every share on the site), wickets taken (every wicket that fell to them, run-outs
+    included), each per match, and the rank by each (1 the most; equal totals share a rank)."""
+    m = career.matches[career.matches.match_id.isin(ids)]
+    if upto is not None:
+        m = m[m.date <= pd.Timestamp(upto)]
+    if m.empty:
+        return pd.DataFrame(columns=TOTAL_COLUMNS)
+    mids = set(m.match_id)
+    played = pd.concat([m.home, m.away]).value_counts()
+    b = career.batting[career.batting.match_id.isin(mids) & career.batting.did_bat]
+    runs = b.groupby("team").runs.sum()
+    inn = career.innings[career.innings.match_id.isin(mids)]
+    wkts = inn.groupby("opposition").wickets.sum()      # the wickets each side took: its opponents' innings
+    d = pd.DataFrame({"team": played.index, "matches": played.values.astype(int)})
+    d["runs"] = d.team.map(runs).fillna(0).astype(int)
+    d["wickets"] = d.team.map(wkts).fillna(0).astype(int)
+    d["runs_per_match"] = d.runs / d.matches
+    d["wickets_per_match"] = d.wickets / d.matches
+    d["runs_rank"] = d.runs.rank(method="min", ascending=False).astype(int)
+    d["wickets_rank"] = d.wickets.rank(method="min", ascending=False).astype(int)
+    return d.sort_values(["runs", "team"], ascending=[False, True]).reset_index(drop=True)[TOTAL_COLUMNS]

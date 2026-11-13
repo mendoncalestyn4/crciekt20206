@@ -3,7 +3,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { get, type SeasonPage } from "../api";
-import { Missing, Tile } from "../kit/base";
+import { Missing, Num, Tile } from "../kit/base";
+import { f0, ord } from "../format";
 import { MonthGrid } from "../kit/calendar";
 import { TugOfWar } from "../kit/charts";
 import { Grid } from "../kit/teams";
@@ -48,6 +49,15 @@ export function Season() {
               {d.teams.map((t) => <option key={t}>{t}</option>)}</select></div>
         </Tile>
         {d.none ? <Tile span={12}><Missing why={d.none} /></Tile> : <>
+          {d.ranks && d.ranks.rows.length > 0 && <Tile span={12} title={`Where ${d.team} rank`} right={`this season · ${d.ranks.season}`}>
+            <div className="ranks">{d.ranks.rows.map((r) => (
+              <div key={r.section} className="bf-side"><div className="k">{r.section}</div>
+                <div className="rk"><span><Num v={ord(r.runs_rank)} px={40} /><small>of {r.teams} teams by runs ({f0(r.runs)})</small>
+                    {r.runs_rank > 1 && <small>most: {r.runs_top}</small>}</span>
+                  <span><Num v={ord(r.wickets_rank)} px={40} /><small>of {r.teams} by wickets ({r.wickets})</small>
+                    {r.wickets_rank > 1 && <small>most: {r.wickets_top}</small>}</span></div>
+                <div className="note" style={{ marginTop: 4 }}>{r.matches} matches</div></div>))}</div>
+            {d.ranks.note && <div className="note">{d.ranks.note}</div>}</Tile>}
           <div className="itabs">{d.tabs.map((x, i) => (
             <button key={x} className={x === d.tab ? "on" : ""} onClick={() => set({ tab: i === 0 ? "" : x })}>{x}</button>))}</div>
           {cal && (cal.none ? <Tile span={12}><Missing why={cal.none} /></Tile> : <Tile span={12} title={cal.view === "season" ? "The season" : "One month"}
