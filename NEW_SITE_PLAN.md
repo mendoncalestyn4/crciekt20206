@@ -612,6 +612,28 @@ what the scorecards record (no overs for wickets, no grounds, no toss).
      the team" on Team record change to match, so a player's share is the same on every page (wickets unchanged).
      The old site is left as it is.
 
+**Stage 3: your answers (13 November, asked before building, as your rule asks).**
+1. Every team ranked by runs and wickets up to any date: a **tab on Rankings** (next to Team Elo).
+2. Insights and Analytics stay **two pages**.
+3. Player stories' 15 tabs: asked again in plainer words (keep all 15, or group them under 4).
+4. Team runs in that ranking: **off the bat** (extras left out).
+5. Beside the totals: **matches, and runs and wickets per match**.
+6. Picking the date: asked again in plainer words (a calendar, with or without "end of season" buttons).
+7. The score to aim for in Insights: **your team (or any team picked) against every opponent**, home, away and
+   neutral, even game and 70%; Tests the totals that won, drew and lost.
+8. Records: **the best stand for each wicket**, with "show top 5" to open each.
+9. Records: **the best games ever** (the new excitement rating), per competition, with the Top 5/10/20 picker.
+10. Records: **one team's streaks chart** (opening on yours) and every team's longest runs as a table.
+11. Stat by stat: **"Combine sections" goes**. Every competition stays apart: the IPL apart, the Blast apart, each
+    domestic competition apart (as Tests, ODIs and T20Is are).
+12. Compare players: clicking a "plays like" player **adds them to the comparison** (up to 4).
+13. Team leaders with "All teams": **your team first, then A to Z**.
+14. Charts: **stronger and weaker sides on Rankings and Insights; batting first v chasing on Insights; the
+    match-winners chart on Analytics**.
+Everything else as in stages 1 and 2 (remembered picks, nothing lost, What it shows / What it's for, save picture,
+badges, donuts for shares, parity tests, sums in the engine, layout checks, stress test, screenshots). Stage 3 starts
+once the stage 0-2 fix round is approved.
+
 On hold: the scouting shortlist (you have another plan for it; it waits in the README under "Ideas on hold").
 Dropped: fantasy points, how hard your players have worked, the career quiz, "on this day", a team "nemesis" list.
 
