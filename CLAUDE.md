@@ -29,6 +29,17 @@ Read these at the start of every session. They come from the owner and hold unti
   what section 5 asks of every page), and `design/INVENTORY.md` for its pages. Build exactly what was agreed. Before
   saying a page or stage is finished, go through those sections again point by point and tick its checklist lines;
   anything that differs is either put right or brought to the owner.
+- **Safeguards so nothing agreed is missed** (13 November, the owner: "save 4-6 in your memory always"):
+  1. **A written checklist for each stage, made before building starts:** every promise the plan makes for the stage
+     (each feature and chart and the page it goes on, each logo, every nothing-lost line, the parity tests, the test
+     data the plan names, the screenshots). Show it to the owner before starting; at the end tick every item with
+     where it is on the site, and show it again with the screenshots.
+  2. **Checks that block calling a page finished:** a page isn't finished while any of its nothing-lost lines is
+     unticked, while a chart or piece the plan puts on it is missing, or without its parity test (its numbers equal
+     to the old site's). The owner said not to build the automatic tests for this yet (13 November): until told, do
+     these three checks by hand, every time, before saying a page or stage is finished.
+  3. **Each stage's "what was built" section in the plan has a line for every promise:** built, where, and how it was
+     checked.
 - Explain in plain words, not code words.
 - Commit and push after every finished piece (on the branch you were told to use), so a machine reset loses nothing.
   No pull request unless asked.
