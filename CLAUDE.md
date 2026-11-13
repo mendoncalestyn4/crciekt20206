@@ -23,6 +23,12 @@ Read these at the start of every session. They come from the owner and hold unti
   building the next stages I want it perfect"): before each stage, page or feature, go through it deeply and ask
   about everything that is the owner's choice (what it shows, edge cases, defaults, names, where it lives), say which
   smaller things you'll decide yourself and how, and wait for the answers and a "go".
+- **Read the plan before building, and check against it before calling anything finished** (13 November, after
+  stage 2 was found to differ from it): before each stage, page or feature, read `NEW_SITE_PLAN.md` in full for it
+  (its row in section 8, the recipe in section 9, the checks in section 10, everything section 14 says about it, and
+  what section 5 asks of every page), and `design/INVENTORY.md` for its pages. Build exactly what was agreed. Before
+  saying a page or stage is finished, go through those sections again point by point and tick its checklist lines;
+  anything that differs is either put right or brought to the owner.
 - Explain in plain words, not code words.
 - Commit and push after every finished piece (on the branch you were told to use), so a machine reset loses nothing.
   No pull request unless asked.
