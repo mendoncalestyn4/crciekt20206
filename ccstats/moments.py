@@ -47,11 +47,12 @@ def _bowl(w: pd.DataFrame) -> dict:
                 economy=runs / balls * 6 if balls else None)
 
 
-def big_match(career, ids, players=None, team: str = "") -> pd.DataFrame:
+def big_match(career, ids, players=None, team: str = "", big: set | None = None) -> pd.DataFrame:
     """One row per player with BIG_MIN or more big games here: big games and ordinary games, batting and bowling in
-    each (runs, average, strike rate; wickets, average, economy). `players` / `team` narrow it down."""
+    each (runs, average, strike rate; wickets, average, economy). `players` / `team` narrow it down; `big`, the big
+    games if already worked out."""
     cols = ["player", "team", "big", "ordinary", "big_bat", "ord_bat", "big_bowl", "ord_bowl"]
-    big = big_match_ids(career, ids)
+    big = big_match_ids(career, ids) if big is None else big
     xi = career.batting[career.batting.match_id.isin(ids)]
     if team:
         xi = xi[xi.team == team]

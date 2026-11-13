@@ -261,9 +261,10 @@ def _bowl_text(x: dict) -> str:
 def _big(career, player, section, ids) -> dict | None:
     """Big-match player: their finals, semi-finals, qualifiers, eliminators and other knockouts and their series
     deciders here, against every other game (from 3 big games)."""
-    bm = MO.big_match(career, ids, players=[player])
+    big = kept(career, ("big_games", section), lambda: MO.big_match_ids(career, ids))
+    bm = MO.big_match(career, ids, players=[player], big=big)
     if bm.empty:
-        n = len(MO.big_match_ids(career, ids) & set(career.batting[career.batting.match_id.isin(ids)
+        n = len(big & set(career.batting[career.batting.match_id.isin(ids)
                                                                    & (career.batting.player == player)].match_id))
         return dict(none=f"{count(n, 'big game')} in {section} so far (knockouts and series deciders): the comparison shows "
                          f"from {MO.BIG_MIN}.")

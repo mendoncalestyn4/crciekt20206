@@ -523,7 +523,8 @@ def _big_players(career, ids, opp, where_note) -> dict | None:
     if not _one_section(career, ids):
         return dict(none="Pick one format to see this: formats are never mixed.")
     now = _current(career, ids, opp)
-    bm = MO.big_match(career, ids, players=now, team=opp)
+    big = kept(career, ("big_games", tuple(sorted(ids))), lambda: MO.big_match_ids(career, ids))
+    bm = MO.big_match(career, ids, players=now, team=opp, big=big)
     if bm.empty:
         return dict(none=f"None of {poss(opp)} current players has played {MO.BIG_MIN} or more big games (knockouts and "
                          f"series deciders) in {where_note} yet.")
