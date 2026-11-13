@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { get, type TvtPage } from "../api";
+import { get, type TvtPage, remember } from "../api";
 import { Explain, Logo, Missing, Num, Tile } from "../kit/base";
 import { Grid, TapeBars, TeamBars, TwoScatter } from "../kit/teams";
 import { dayY, NO_MATCHES } from "../format";
@@ -25,6 +25,7 @@ export function TeamVsTeam() {
     queryFn: () => get<TvtPage>(`/api/teamvteam?${qs}`) });
   useReady(Boolean(q.data || q.error || noCareer), qs);
   const set = (changes: Record<string, string>) => {
+    remember(changes);
     const next: Record<string, string> = { ...want, ...changes };
     if ("section" in changes) Object.assign(next, { season: "", a: want.a, b: "", which: "", ground: "" });
     if ("a" in changes || "b" in changes || "season" in changes) Object.assign(next, { which: "", ground: "" });

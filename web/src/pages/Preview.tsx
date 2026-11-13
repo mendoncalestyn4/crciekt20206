@@ -4,7 +4,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { get, type NGrid, type Outcome, type PreviewPage } from "../api";
+import { get, type NGrid, type Outcome, type PreviewPage, remember } from "../api";
 import { Explain, Lamps, Logo, Missing, Num, Tile } from "../kit/base";
 import { LeaderBars } from "../kit/charts";
 import { SplitBars } from "../kit/player";
@@ -31,6 +31,8 @@ export function Preview() {
   const d = q.data;
   // once a page is open, keep its picks in the address so a change of one keeps the others
   const set = (changes: Record<string, string>) => {
+    remember({ ...(changes.section && changes.section !== "International cricket" ? { section: changes.section } : {}),
+      ...(changes.format && changes.format !== "All" ? { format: changes.format } : {}) }, { format: "section" });
     const base = d ? { section: d.section, format: d.format, mine: d.mine, opp: d.opp, tab: d.tab === d.tabs[0] ? "" : d.tab,
       mu: d.mu ? "every" : "", cur: d.cur ? "1" : "" } : want;
     const next: Record<string, string> = { ...base, ...changes };

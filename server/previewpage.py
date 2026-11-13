@@ -34,7 +34,7 @@ def _sig(career, ids):
     return tuple(ids)
 
 
-def page(career, q: dict, mine_all: list[str], mine_order: list[str], sched: list) -> dict:
+def page(career, q: dict, mine_all: list[str], mine_order: list[str], sched: list, remembered: dict | None = None) -> dict:
     """The pickers (with the defaults), the top of the page and one tab, or a plain reason there's nothing."""
     m = career.matches
     if m.empty:   # a career made before any game was played
@@ -57,15 +57,19 @@ def page(career, q: dict, mine_all: list[str], mine_order: list[str], sched: lis
     where_default = "Neutral"
     if pick not in choices:   # first look: your next match, else your latest game
         start = None
+        last_pick = (remembered or {}).get("section", "")
         if nxt is not None:
             start = (nxt["team"], nxt["format"], nxt["opponent"])
+        elif last_pick in intl or last_pick in choices:   # no next match: the competition you last picked anywhere
+            pick, fmt_pick = (INTL, last_pick) if last_pick in intl else (last_pick, "")
         elif mine_order:
             last_ = m[m.home.isin(mine_order) | m.away.isin(mine_order)].sort_values("date")
             if len(last_):
                 r_ = last_.iloc[-1]
                 me_ = r_.home if r_.home in mine_order else r_.away
                 start = (me_, r_.format, r_.away if r_.home == me_ else r_.home)
-        pick = choices[0]
+        if pick not in choices:
+            pick = choices[0]
         if start is not None:
             sec_, fmt_ = place_of(start[0], start[1])
             if sec_ in choices:

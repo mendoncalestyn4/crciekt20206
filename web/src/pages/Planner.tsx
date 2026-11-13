@@ -3,7 +3,7 @@
 // partnerships work.
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router";
-import { get, type GridT, type PlannerPage } from "../api";
+import { get, type GridT, type PlannerPage, remember } from "../api";
 import { Missing, Tile } from "../kit/base";
 import { Grid } from "../kit/teams";
 import { useReady } from "../ready";
@@ -36,6 +36,7 @@ export function Planner() {
     queryFn: () => get<PlannerPage>(`/api/planner?${qs}`) });
   useReady(Boolean(q.data || q.error || noCareer), qs);
   const set = (changes: Record<string, string>) => {
+    remember(changes);
     const next: Record<string, string> = { ...want, ...changes };
     if ("section" in changes) Object.assign(next, { season: "", team: want.team, event: "", games: "", places: "" });
     if ("team" in changes || "season" in changes) Object.assign(next, { event: "", games: "", places: "" });

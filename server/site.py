@@ -132,6 +132,32 @@ class Site:
             self.store.save_settings(s)
         return text
 
+    # ------------------------------------------------------------------ remembered picks
+    REMEMBERED = ("section", "season", "team", "event")
+
+    def remembered(self, career: Career | None = None) -> dict:
+        """The section, season, team and competition you last picked on any page (the current site's "remembered",
+        ui/state.py): every page opens on them when they're among its choices."""
+        career = career if career is not None else self.career()
+        s = self.settings(career.name) if career is not None else None
+        r = dict(s.remembered) if s is not None else {}
+        return {k: str(v) for k, v in r.items() if k in self.REMEMBERED and v is not None}
+
+    def remember(self, kind: str, value: str) -> dict:
+        """Keep a pick for every page, saved with the career on this PC (the current site reads the same file)."""
+        if kind not in self.REMEMBERED:
+            raise ValueError(kind)
+        name = self.current()
+        if not name:
+            raise KeyError("no career")
+        with self._lock:
+            _, s = self.store.load_settings(name, fresh=True)
+            r = dict(s.remembered or {})
+            r[kind] = value
+            s.remembered = r
+            self.store.save_settings(s)
+        return r
+
     def inbox_state(self, career: Career | None = None) -> dict:
         """Which inbox messages you have read and removed: {"read": set, "removed": set}."""
         career = career if career is not None else self.career()

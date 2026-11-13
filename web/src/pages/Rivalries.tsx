@@ -2,7 +2,7 @@
 // best in those games, as the current site's Rivalries page shows it.
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router";
-import { get, type LeaderRow, type RivalriesPage } from "../api";
+import { get, type LeaderRow, type RivalriesPage, remember } from "../api";
 import { Explain, Missing, PName, Tile } from "../kit/base";
 import { Grid } from "../kit/teams";
 import { useReady } from "../ready";
@@ -30,6 +30,7 @@ export function Rivalries() {
     queryFn: () => get<RivalriesPage>(`/api/rivalries?${qs}`) });
   useReady(Boolean(q.data || q.error || noCareer), qs);
   const set = (changes: Record<string, string>) => {
+    remember(changes);
     const next: Record<string, string> = { ...want, ...changes };
     if ("section" in changes) next.pick = "";
     if (nation) next.nation = nation;

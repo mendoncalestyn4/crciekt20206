@@ -4,7 +4,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
-import { get, type BestGames, type Finder, type MatchPage } from "../api";
+import { get, type BestGames, type Finder, type MatchPage, remember } from "../api";
 import { Explain, Logo, Missing, Name, PName, Tile } from "../kit/base";
 import { MatchSummary, Scorecard } from "../kit/blocks";
 import { BestTable, ExcitementPanel, NoteBox, WicketClimb, WinChanceChart } from "../kit/match";
@@ -29,6 +29,7 @@ export function MatchesHome() {
     get<BestGames>(`/api/matches/best?section=${encodeURIComponent(sec)}&team=${encodeURIComponent(team)}`) });
   useReady(Boolean((f.data && best.data) || f.error || best.error), `${sec}|${team}`);
   const set = (k: string, v: string) => {
+    remember({ [k]: v });
     const p = new URLSearchParams(params);
     if (v) p.set(k, v); else p.delete(k);
     if (k === "section") p.delete("team");

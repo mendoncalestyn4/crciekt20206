@@ -5,7 +5,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
-import { get, type ByInnings, type InningsCol, type InningsMarks, type PlayerPage, type PlayersLanding, type Split } from "../api";
+import { get, type ByInnings, type InningsCol, type InningsMarks, type PlayerPage, type PlayersLanding, type Split, remember } from "../api";
 import { Explain, Hero, Logo, Missing, Name, Num, PName, Sub, Tile } from "../kit/base";
 import { PercentileBars } from "../kit/blocks";
 import { RingList } from "../kit/charts";
@@ -84,7 +84,7 @@ export function PlayerView() {
   const q = useQuery({ queryKey: ["player", pick, section, season], retry: false,
     queryFn: () => get<PlayerPage>(`/api/player?name=${encodeURIComponent(pick)}&section=${encodeURIComponent(section)}&season=${encodeURIComponent(season)}`) });
   useReady(Boolean(q.data || q.error), `${pick}|${section}|${season}|${view}`);
-  const set = (k: string, v: string) => { const p = new URLSearchParams(params); if (v) p.set(k, v); else p.delete(k); if (k === "section") p.delete("season"); setParams(p); };
+  const set = (k: string, v: string) => { remember({ [k]: v }); const p = new URLSearchParams(params); if (v) p.set(k, v); else p.delete(k); if (k === "section") p.delete("season"); setParams(p); };
   if (q.error) return <><Head title="Players" crumb={pick} /><div className="grid"><Tile span={12}><Missing why={String(q.error)} />
     <Link className="btn quiet" to={`/players${keep}`}>Find a player</Link></Tile></div></>;
   if (!q.data) return <><Head title="Players" crumb={`${pick} · working out the numbers…`} /><div className="empty">Working out {pick}'s numbers…</div></>;

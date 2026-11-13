@@ -33,7 +33,7 @@ Everything kept in `Documents\Cricket Captain Stats Pack`. The new site reads an
 - [x] *career setting* `updated` — ✓ read by the new site (Settings · Careers on this PC)
 - [x] *career setting* `my_teams`: the teams you play as (the "My team" page) — ✓ read by every page of the new site (choosing them comes in stage 4)
 - [x] *career setting* `notes`: match journal: scorecard file name -> your note — ✓ Matches · each match's note, saved the same way
-- [ ] *career setting* `remembered`: last section / season / team picked, so every page opens on it
+- [x] *career setting* `remembered`: last section / season / team picked, so every page opens on it — ✓ the new site saves each pick in the same place (Teams, Team v team, Opponent preview, Team planner, Rivalries, Competitions, Matches, the Player page) and every page opens on it when it's among its choices; Season review opens on the last competition and season (added 13 November)
 - [x] *career setting* `fixtures`: your schedule (the Fixtures page) — ✓ read by My team (Next up) and Seasons · Season (the calendar); changing them comes with Fixtures (stage 4)
 - [ ] *career setting* `goals`: season goals (the Fixtures page) — → stage 4: Fixtures
 - [ ] *career setting* `teams_asked`: the "which teams do you play as?" question was answered (or turned off) — → stage 4: the first-start question

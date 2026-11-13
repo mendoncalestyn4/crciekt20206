@@ -750,3 +750,50 @@ def test_every_stage_2_page_answers_on_a_career_with_no_matches(tmp_path):
         assert s.json("/api/myteam")["missing"]["everything"] == NO_MATCHES
     finally:
         s.stop()
+
+
+def test_every_page_opens_on_the_picks_you_last_made(tmp_path):
+    """The current site's remembered picks (ui/state.py): a section, season, team or competition picked on one page is
+    saved with the career (the same file the current site reads), and every page opens on it when it's among its
+    choices; one that isn't is passed over for the page's usual first choice."""
+    import json as J
+    pc = make_pc(tmp_path, files=FIXTURES)
+    web = tmp_path / "dist"
+    (web / "assets").mkdir(parents=True)
+    (web / "index.html").write_text("<!doctype html><title>Stats Pack</title><div id=root></div>")
+    s = Live(create_app(pc[0], web=web, watch_every=0))
+    try:
+        def post(kind, value):
+            code, _, _ = s.request("/api/remember", data=J.dumps(dict(kind=kind, value=value)).encode(), ctype="application/json")
+            return code
+        before = s.json("/api/team")["page"]
+        assert post("section", "T20 Blast") == 200 and post("team", "Somerset") == 200
+        assert pc[0].load_settings("My career")[1].remembered == {"section": "T20 Blast", "team": "Somerset"}
+        p = s.json("/api/team")["page"]
+        assert (p["team"], p["section"]) == ("Somerset", "T20 Blast")
+        assert s.json("/api/team?team=England")["page"]["section"] != "T20 Blast"   # England never played there
+        assert s.json("/api/rivalries")["section"] == "T20 Blast"
+        assert s.json("/api/teamvteam")["page"]["section"] == "T20 Blast"
+        f = s.json("/api/matches")
+        assert (f["section"], f["team"]) == ("T20 Blast", "Somerset")
+        assert s.json("/api/matches?section=ODIs")["team"] == "All teams"   # a section asked for: no remembered team
+        # Opponent preview: no next match in this career, so the remembered competition (an international format
+        # opens international cricket on it)
+        assert s.json("/api/preview")["section"] == "T20 Blast"
+        assert post("section", "ODIs") == 200
+        d = s.json("/api/preview")
+        assert (d["section"], d["format"]) == ("Internationals", "ODIs")
+        # Competitions and Season review
+        ev = s.json("/api/competition")["choices"][-1]
+        assert post("event", ev["event"]) == 200 and post("season", ev["seasons"][0]) == 200
+        c = s.json("/api/competition")
+        assert (c["event"], c["season"]) == (ev["event"], ev["seasons"][0])
+        rv = s.json("/api/review")
+        assert rv["pick"] in [x["key"] for x in rv["choices"]]
+        # junk is refused, and a remembered pick that's no longer a choice is passed over
+        assert post("colour", "red") == 400 and post("section", "") == 400 and post("team", "x" * 300) == 400
+        assert post("team", "Nobody FC") == 200 and post("section", "Nowhere") == 200
+        assert s.json("/api/team")["page"]["team"] == before["team"]
+        assert s.json("/api/rivalries")["section"] in [x["section"] for x in s.json("/api/rivalries")["choices"]]
+    finally:
+        s.stop()

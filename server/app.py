@@ -234,8 +234,13 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
 
     async def matches_(request: Request):
         q = request.query_params
-        data = await _with_career(lambda c: matchpage.finder(c, q.get("section", ""), q.get("team", ""),
-                                                             site.my_teams(c)))()
+        def make(c):
+            r, m = site.remembered(c), c.matches
+            section = q.get("section", "") or (r["section"] if r.get("section") in set(m.section) else "")
+            pool = m if section in ("", "All sections") else m[m.section == section]
+            team = q.get("team", "") or (r["team"] if not q.get("section") and r.get("team") in set(pool.home) | set(pool.away) else "")
+            return matchpage.finder(c, section, team, site.my_teams(c))
+        data = await _with_career(make)()
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
     async def best_(request: Request):
@@ -316,6 +321,31 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             return _error("That team hasn't played in this career.", 404)
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
+    # ------------------------------------------------------------------ remembered picks
+    def _with_memory(c, q, kinds) -> dict:
+        """The page's own choices, with the section, season, team or competition you last picked on any page as the
+        default for each one it wasn't asked for (the page then keeps it only if it's one of its choices)."""
+        out = dict(q)
+        r = site.remembered(c)
+        for k in kinds:
+            if not out.get(k) and r.get(k):
+                out[k] = r[k]
+        return out
+
+    async def remember_(request: Request):
+        try:
+            body = await _body(request)
+        except ValueError as e:
+            return _error(str(e), 415)
+        kind, value = str(body.get("kind", "")), str(body.get("value", ""))
+        if kind not in site.REMEMBERED or not value or len(value) > 200:
+            return _error("Send the kind (section, season, team or event) and the value picked.", 400)
+        try:
+            await anyio.to_thread.run_sync(site.remember, kind, value)
+        except KeyError:
+            return _error("No career is open yet.", 404)
+        return _json({"ok": True})
+
     # ------------------------------------------------------------------ Teams
     def _team(c, q) -> dict:
         """The Teams page: every competition, season and team to pick from, and the picked team's record and one tab.
@@ -325,16 +355,17 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             return dict(choices=[], page=None)
         every = {t for s in ch for t in s["teams"]}
         order = [t for t in myteam.teams_by_latest(c, site.my_teams(c)) if t in every]
-        team = q.get("team", "") or (order[0] if order else ch[0]["teams"][0])
+        r = site.remembered(c)
+        team = q.get("team", "") or (r["team"] if r.get("team") in every else "") or (order[0] if order else ch[0]["teams"][0])
         if team not in every:
             raise KeyError(team)
         m = c.matches
         played = m[(m.home == team) | (m.away == team)].section.value_counts()
-        section = q.get("section", "")
+        section = q.get("section", "") or (r["section"] if r.get("section") in played.index else "")
         if section not in {s["section"] for s in ch}:
             section = played.index[0] if len(played) else next(s["section"] for s in ch if team in s["teams"])
         seasons = next(s["seasons"] for s in ch if s["section"] == section)
-        season = q.get("season", "")
+        season = q.get("season", "") or r.get("season", "")
         season = season if season in seasons else "All seasons"
         venue = {"home": "home", "away": "away"}.get(q.get("venue", "").lower(), "all")
         return dict(choices=ch, page=teampage.page(c, section, season, team, venue, q.get("tab", ""), q.get("race", "")))
@@ -356,13 +387,14 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                 return dict(choices=[], page=None)
             ch = teampage.choices(c)
             mine = myteam.teams_by_latest(c, site.my_teams(c))
+            qq = _with_memory(c, q, ("section", "season"))
             a = q.get("a", "")
-            section = q.get("section", "")
+            section = qq.get("section", "")
             if section not in {x["section"] for x in ch}:
                 team = a or (mine[0] if mine else "")
                 played = c.matches[(c.matches.home == team) | (c.matches.away == team)].section.value_counts()
                 section = played.index[0] if len(played) else ch[0]["section"]
-            return dict(choices=ch, page=tvtpage.page(c, section, q.get("season", ""), a, q.get("b", ""), q.get("which", ""),
+            return dict(choices=ch, page=tvtpage.page(c, section, qq.get("season", ""), a, q.get("b", ""), q.get("which", ""),
                                                       q.get("ground", ""), mine))
         data = await _with_career(make)()
         return _json(data) if data is not None else _error("No career is open yet.", 404)
@@ -375,7 +407,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             s = site.settings(c.name)
             sched = list(s.fixtures) if s else []
             order = myteam.teams_by_latest(c, site.my_teams(c))
-            return previewpage.page(c, q, site.my_teams(c, unplayed=True), order, sched)
+            return previewpage.page(c, q, site.my_teams(c, unplayed=True), order, sched, site.remembered(c))
         data = await _with_career(make)()
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
@@ -417,13 +449,15 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         """Team planner: qualification, batting order, bowling plan, knocking on the door, partnerships."""
         q = dict(request.query_params)
         data = await _with_career(lambda c: plannerpage.page(
-            c, q, myteam.teams_by_latest(c, site.my_teams(c))))()
+            c, _with_memory(c, q, ("season",) if site.my_teams(c) else ("section", "season")),
+            myteam.teams_by_latest(c, site.my_teams(c))))()
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
     async def competition_(request: Request):
         """Competitions: one competition as it's run in one season: league, title race, knockouts, series, WTC."""
         q = dict(request.query_params)
-        data = await _with_career(lambda c: comppage.page(c, q, myteam.teams_by_latest(c, site.my_teams(c))))()
+        data = await _with_career(lambda c: comppage.page(c, _with_memory(c, q, ("event", "season")),
+                                                          myteam.teams_by_latest(c, site.my_teams(c))))()
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
     async def season_(request: Request):
@@ -439,7 +473,13 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
     async def review_(request: Request):
         """Season review: one competition's season (or an international year) in one place, with the MVPs."""
         q = dict(request.query_params)
-        data = await _with_career(lambda c: reviewpage.review(c, q, myteam.teams_by_latest(c, site.my_teams(c))))()
+        def make(c):
+            r = site.remembered(c)
+            qq = dict(q)
+            if not qq.get("pick") and r.get("section") and r.get("season"):
+                qq["pick"] = f"{r['section']}|{r['season']}"
+            return reviewpage.review(c, qq, myteam.teams_by_latest(c, site.my_teams(c)))
+        data = await _with_career(make)()
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
     async def honours_(request: Request):
@@ -452,7 +492,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         """Rivalries: every pair of teams that have met in a competition, and one of them close up."""
         q = dict(request.query_params)
         data = await _with_career(lambda c: rivalriespage.page(
-            c, q, myteam.teams_by_latest(c, site.my_teams(c))))()
+            c, _with_memory(c, q, ("section",)), myteam.teams_by_latest(c, site.my_teams(c))))()
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
     # ------------------------------------------------------------------ Players
@@ -469,10 +509,14 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
 
     async def player_(request: Request):
         q = request.query_params
-        name, section, season = q.get("name", ""), q.get("section", ""), q.get("season", "")
+        name = q.get("name", "")
+
+        def picks(c):
+            qq = _with_memory(c, q, ("section", "season"))
+            return qq.get("section", ""), qq.get("season", "")
         try:
-            data = await _with_career(lambda c: kept(c, ("player", name, section, season),
-                                                     lambda: playerpage.page(c, name, section, season)))()
+            data = await _with_career(lambda c: kept(c, ("player", name) + picks(c),
+                                                     lambda: playerpage.page(c, name, *picks(c))))()
         except KeyError:
             return _error(f"{name or 'That player'} hasn't batted or bowled in this career.", 404)
         return _json(data) if data is not None else _error("No career is open yet.", 404)
@@ -668,6 +712,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/player", player_),
         Route("/api/events", events),
         Route("/api/problems", problems_, methods=["GET", "POST"]),
+        Route("/api/remember", remember_, methods=["POST"]),
     ]
     if (web / "assets").is_dir():   # the website's files, named after their contents: kept by the browser for good
         routes.append(Mount("/assets", app=StaticFiles(directory=web / "assets")))

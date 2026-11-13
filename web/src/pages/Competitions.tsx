@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { get, type CompPage } from "../api";
+import { get, type CompPage, remember } from "../api";
 import { Explain, Logo, Missing, Tile } from "../kit/base";
 import { Bracket, OddsRace } from "../kit/comp";
 import { Grid } from "../kit/teams";
@@ -29,6 +29,7 @@ export function Competitions() {
     queryFn: () => get<CompPage>(`/api/competition?${qs}`) });
   useReady(Boolean(q.data || q.error || noCareer), `${qs}|${series}|${cycle}`);
   const set = (changes: Record<string, string>) => {
+    remember(changes);
     const next: Record<string, string> = { ...want, ...changes };
     if ("event" in changes) Object.assign(next, { season: "", games: "", places: "", extra: "", pick: "" });
     if ("season" in changes) Object.assign(next, { games: "", places: "", extra: "" });

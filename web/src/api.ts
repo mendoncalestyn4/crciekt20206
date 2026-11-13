@@ -21,6 +21,16 @@ export async function get<T>(path: string): Promise<T> {
   return (await r.json()) as T;
 }
 
+/** Keep the section, season, team or competition you just picked, so every page opens on it (the current site's
+ * remembered picks). `as` renames a page's own key (e.g. Opponent preview's format is a section). */
+const KINDS = new Set(["section", "season", "team", "event"]);
+export function remember(changes: Record<string, string>, as: Record<string, string> = {}) {
+  for (const [k, v] of Object.entries(changes)) {
+    const kind = as[k] ?? k;
+    if (KINDS.has(kind) && v) void post("/api/remember", { kind, value: v }).catch(() => undefined);
+  }
+}
+
 export async function post<T>(path: string, body: unknown): Promise<T> {
   const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   if (!r.ok) throw new ApiError(r.status, ((await r.json().catch(() => ({}))) as { error?: string }).error ?? `The server said ${r.status}.`);

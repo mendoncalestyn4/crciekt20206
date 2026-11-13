@@ -2,7 +2,7 @@
 // current site's Teams page in its seven tabs. The pickers sit at the top; the search opens a team at /teams/<name>.
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import { get, type GridT, type NGrid, type Outcome, type TeamBody, type TeamPage } from "../api";
+import { get, type GridT, type NGrid, type Outcome, type TeamBody, type TeamPage, remember } from "../api";
 import { Explain, Lamps, Logo, Missing, Num, Tile } from "../kit/base";
 import { LeaderBars } from "../kit/charts";
 import { SplitBars } from "../kit/player";
@@ -32,6 +32,7 @@ export function Teams() {
     queryFn: () => get<TeamPage>(`/api/team?${qs}`) });
   useReady(Boolean(q.data || q.error || noCareer), qs);
   const set = (changes: Record<string, string>) => {
+    remember(changes);
     const next = { ...want, ...changes };
     if ("team" in changes || "section" in changes) { next.race = ""; }
     if ("section" in changes) next.season = "";
