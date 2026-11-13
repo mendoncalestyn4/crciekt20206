@@ -10,6 +10,7 @@ import pandas as pd
 
 from ccstats import fixtures as FX
 from ccstats import rankings as R
+from ccstats import seasonal as SN
 from ccstats import tables as T
 from ccstats import winprob as WP
 from ccstats.competitions import shown_name
@@ -69,8 +70,10 @@ def _calendar(career, team, q, sched) -> dict:
     m = career.matches
     games = m if team == ALL else m[(m.home == team) | (m.away == team)]
     todo = _tracked(career, team, sched)
-    dates = list(games.date) + (list(todo.anchor.dropna()) if todo is not None and "anchor" in todo else [])
-    seasons = sorted({season_of(d) for d in dates if pd.notna(d)}, reverse=True)
+    year_of = kept(career, ("april_seasons",), lambda: SN.april_seasons(m))   # a tournament whole to its season
+    seasons = sorted({int(year_of[i]) for i in games.match_id}
+                     | ({season_of(d) for d in todo.anchor.dropna()} if todo is not None and "anchor" in todo else set()),
+                     reverse=True)
     out: dict = dict(view="month" if q.get("view") == "month" else "season", seasons=[
         dict(key=str(y), label=season_label(y)) for y in seasons], season="", months=[], month="", today="")
     if not seasons:
@@ -78,7 +81,8 @@ def _calendar(career, team, q, sched) -> dict:
         return out
     latest = games.date.max() if len(games) else None
     nxt = todo.anchor.min() if todo is not None and len(todo) and todo.anchor.notna().any() else None
-    now = season_of(nxt) if nxt is not None else season_of(latest) if latest is not None else seasons[0]
+    last_id = games.sort_values("date").match_id.iloc[-1] if len(games) else None
+    now = season_of(nxt) if nxt is not None else int(year_of[last_id]) if last_id is not None else seasons[0]
     y = int(q["season"]) if str(q.get("season", "")).isdigit() and int(q["season"]) in seasons else (now if now in seasons else seasons[0])
     out["season"] = str(y)
     if pd.notna(m.date.max()):
@@ -93,9 +97,29 @@ def _calendar(career, team, q, sched) -> dict:
         yy, mm = int(mk[:4]), int(mk[5:])
         out["grid"] = [_month(career, team, games, todo, yy, mm)]
     else:
-        out["grid"] = [_month(career, team, games, todo, yy, mm) for yy, mm in
-                       [(y if mo >= 4 else y + 1, mo) for mo in SEASON_MONTHS]]
-    span = games[games.date.map(lambda d: season_of(d) == y)] if out["view"] == "season" else \
+        mine = games[games.match_id.map(year_of) == y]      # this season's games, a tournament kept whole
+        # a tournament of this season started before April (the IPL on 29 March) or ran past March: its games go in
+        # April's (or March's) tile, listed at the top with their dates, so its record matches its points table
+        before = mine[mine.date < pd.Timestamp(f"{y}-04-01")].sort_values("date")
+        after = mine[mine.date > pd.Timestamp(f"{y + 1}-03-31")].sort_values("date")
+        months = [(y if mo >= 4 else y + 1, mo) for mo in SEASON_MONTHS]
+        out["grid"] = [_month(career, team, mine, todo, yy, mm, also=before if i == 0 else after if i == 11 else None)
+                       for i, (yy, mm) in enumerate(months)]
+        for idx, extra in ((0, before), (11, after)):
+            if len(extra):
+                mo = out["grid"][idx]
+                mo["extra"] = [_chip(r, team) for r in extra.itertuples()]
+                mo["mark"] = f"{extra.date.iloc[0]:%d %b}" if idx == 0 else f"to {extra.date.iloc[-1]:%d %b}"
+                played = [c for c in mo["extra"] if c["kind"] in ("W", "L", "D", "T", "NR")]
+                mo["won"] += sum(c["kind"] == "W" for c in played)
+                mo["lost"] += sum(c["kind"] == "L" for c in played)
+                mo["played"] += len(played) if team != ALL else len(extra)
+        if team != ALL:   # the best month lit up: the most wins over defeats (more games first among equals)
+            busy = [i for i, mo in enumerate(out["grid"]) if mo["played"]]
+            if busy:
+                best = max(busy, key=lambda i: (out["grid"][i]["won"] - out["grid"][i]["lost"], out["grid"][i]["played"], -i))
+                out["grid"][best]["best"] = True
+    span = games[games.match_id.map(year_of) == y] if out["view"] == "season" else \
         games[(games.date.dt.year == int(out["month"][:4])) & (games.date.dt.month == int(out["month"][5:]))]
     when = season_label(y) if out["view"] == "season" else CAL.month_name[int(out["month"][5:])] + " " + out["month"][:4]
     if team != ALL:
@@ -110,7 +134,16 @@ def _calendar(career, team, q, sched) -> dict:
     return out
 
 
-def _month(career, team, games, todo, yy: int, mm: int) -> dict:
+def _chip(r, team) -> dict:
+    """A game played just outside the season's twelve months but part of it (the IPL's 29 March start)."""
+    if team == ALL:
+        return dict(kind="N", text=f"{r.date:%d %b} · {r.home} v {r.away}", tip=r.result, id=r.match_id)
+    opp = r.away if r.home == team else r.home
+    o = FX._outcome(r, team)
+    return dict(kind=o, text=f"{r.date:%d %b} · {o} v {opp}", tip=f"v {opp} · {r.format} · {r.result}", id=r.match_id)
+
+
+def _month(career, team, games, todo, yy: int, mm: int, also=None) -> dict:
     """One month: each day's chips (a result, a game to come, or for every team a count) and the month's notes."""
     g = games[(games.date.dt.year == yy) & (games.date.dt.month == mm)].sort_values(["date", "match_id"])
     days: dict[int, list[dict]] = {}
@@ -133,7 +166,8 @@ def _month(career, team, games, todo, yy: int, mm: int) -> dict:
                 long=f"{o} v {opp}", event=shown_name(r.section, r.event)))
         # who they played that month: "v Afghanistan · Tests 0–1", "Indian Premier League 5–3"
         parts: dict = {}
-        for r in g.itertuples():
+        # the month's line counts the tournament's games just outside the season's months too (also), as its record does
+        for r in (pd.concat([also, g]) if also is not None and len(also) else g).itertuples():
             opp = r.away if r.home == team else r.home
             bilateral = r.competition in ("Test", "ODI", "T20I") or r.series_id
             who = f"v {opp}" if bilateral else shown_name(r.section, r.event)

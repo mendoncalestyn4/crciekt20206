@@ -107,8 +107,10 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
 
 ## 6. Season
 
-- [ ] The agreed twelve month tiles, April to March: every match on its day, each month's record, the best month lit
-      up, the "29 Mar" mark for an IPL that starts in March; the "one month" big view kept (3)
+- [x] The agreed twelve month tiles, April to March: every match on its day, each month's record, the best month lit
+      up, the "29 Mar" mark for an IPL that starts in March; the "one month" big view kept (3) — ✓ Seasons · Season · calendar: each month's record,
+      the best month lit up, the IPL's 29 March start kept whole in its season with a "29 Mar" mark at the top of April
+      (its line and record counting it too), one month kept; every game of every season checked to appear once
 - [ ] The series tug of war on the series tracker (4, G)
 - [ ] **"Where your team ranks"** at the top: your rank by runs scored and wickets taken in each format this season,
       from the ranking of every team up to any date (stage 3's sums built now) (9, 12)

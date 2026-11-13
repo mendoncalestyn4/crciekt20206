@@ -8,8 +8,13 @@ const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export function MonthGrid({ mo, big, keep, today }: { mo: CalMonth; big?: boolean; keep: string; today?: string }) {
   return (
-    <div className={`cm${big ? " big" : ""}${mo.played ? "" : " quiet"}`}>
-      <div className="cm-h"><b>{mo.name} {mo.year}</b>{mo.played > 0 && <span>{mo.won || mo.lost ? `${mo.won}–${mo.lost} · ` : ""}{mo.played} played</span>}</div>
+    <div className={`cm${big ? " big" : ""}${mo.played ? "" : " quiet"}${mo.best ? " best" : ""}`}>
+      {mo.best && <span className="cm-tag">best month</span>}
+      <div className="cm-h"><b>{mo.name} {mo.year}</b>{mo.mark && <span className="cm-mark" title="Part of this season's tournament, played just outside its months">{mo.mark}</span>}
+        {mo.played > 0 && <span>{mo.won || mo.lost ? `${mo.won}–${mo.lost} · ` : ""}{mo.played} played</span>}</div>
+      {mo.extra && mo.extra.length > 0 && <div className="cm-x">{mo.extra.map((c) => (
+        c.id ? <Link key={c.id} to={`/matches/${c.id}${keep}`} className="cl"><span className={`chip ${c.kind}`} title={c.tip}>{c.text}</span></Link>
+          : <span key={c.text} className={`chip ${c.kind}`} title={c.tip}>{c.text}</span>))}</div>}
       {mo.notes.length > 0 && <div className="cm-n">{mo.notes.map((n, i) => <div key={i} className={n.kind}>{n.text}</div>)}</div>}
       <div className="cm-g">{DAYS.map((d) => <span key={d} className="dn">{big ? d : d[0]}</span>)}
         {Array.from({ length: mo.first }, (_, k) => <span key={`e${k}`} />)}

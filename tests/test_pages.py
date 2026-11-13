@@ -1051,3 +1051,58 @@ def test_competitions_series_ladder_leaders_team_of_the_series_and_badges(every)
                     assert xi_players <= set(c.batting[c.batting.match_id.isin(ids)].player)
                 seen += 1
     assert seen >= 3
+
+
+def test_season_calendar_keeps_each_tournament_whole_and_lights_the_best_month(every):
+    """Seasons · Season: each team's season, April to March, holds every game of that season once (a tournament whole
+    to the season most of it is played in, its games just outside the twelve months in April's or March's tile with
+    their dates), the months' records add up, and the best month is the one with the most wins over defeats."""
+    from ccstats import seasonal as SN
+    c = every.app.state.site.career()
+    m = c.matches
+    year_of = SN.april_seasons(m)
+    done = 0
+    for team in sorted(set(m.home) | set(m.away))[:12]:
+        mine = m[(m.home == team) | (m.away == team)]
+        for y in sorted({int(year_of[i]) for i in mine.match_id}):
+            cal = every.json(f"/api/season?team={team}&season={y}")["calendar"]
+            assert cal["season"] == str(y)
+            want = set(mine[mine.match_id.map(year_of) == y].match_id)
+            got = [ch["id"] for mo in cal["grid"] for chips in mo["days"].values() for ch in chips if ch.get("id")]
+            got += [ch["id"] for mo in cal["grid"] for ch in mo.get("extra", [])]
+            assert sorted(got) == sorted(want), (team, y)
+            g = m[m.match_id.isin(want)]
+            assert sum(mo["won"] for mo in cal["grid"]) == int((g.winner == team).sum())
+            assert sum(mo["lost"] for mo in cal["grid"]) == int(((g.winner != team) & (g.winner != "")).sum())
+            busy = [mo for mo in cal["grid"] if mo["played"]]
+            best = [mo for mo in cal["grid"] if mo.get("best")]
+            assert len(best) == (1 if busy else 0)
+            if best:
+                top = max((mo["won"] - mo["lost"], mo["played"]) for mo in busy)
+                assert (best[0]["won"] - best[0]["lost"], best[0]["played"]) == top
+            done += 1
+    assert done >= 12
+
+
+def test_a_tournament_goes_whole_to_its_season():
+    import pandas as pd
+    from ccstats import seasonal as SN
+    d = pd.to_datetime(["2029-03-29", "2029-03-31", "2029-04-02", "2029-04-20", "2029-05-26", "2029-03-10", "2029-03-12"])
+    m = pd.DataFrame(dict(match_id=list("abcdefg"), date=d, series_id=["", "", "", "", "", "s1", "s1"],
+                          event=["IPL"] * 5 + ["ODIs"] * 2, season=["2029"] * 5 + ["2028/29"] * 2))
+    y = SN.april_seasons(m)
+    assert list(y[list("abcde")]) == [2029] * 5        # the IPL's 29 March start stays with its season
+    assert list(y[["f", "g"]]) == [2028, 2028]          # a March series is the season before
+
+
+def test_season_month_lines_add_up_to_the_month(every):
+    """Each month's line ("Indian Premier League 2–6") counts the same games as the month's record."""
+    import re
+    c = every.app.state.site.career()
+    m = c.matches
+    for team in sorted(set(m.home) | set(m.away))[:12]:
+        cal = every.json(f"/api/season?team={team}")["calendar"]
+        for mo in cal["grid"]:
+            w = sum(int(x.group(1)) for n in mo["notes"] if n["kind"] == "played" for x in [re.search(r"(\d+)–(\d+)", n["text"])] if x)
+            lo = sum(int(x.group(2)) for n in mo["notes"] if n["kind"] == "played" for x in [re.search(r"(\d+)–(\d+)", n["text"])] if x)
+            assert (w, lo) == (mo["won"], mo["lost"]), (team, mo["key"], mo["notes"])

@@ -428,7 +428,8 @@ export type CompPage = { choices: { event: string; matches: number; seasons: str
 export type CalChip = { kind: "W" | "L" | "D" | "T" | "NR" | "UP" | "N"; text: string; tip: string; id: string | null; opp?: string;
   long?: string; event?: string; games?: { id: string; text: string; result: string }[] };
 export type CalMonth = { key: string; year: number; month: number; name: string; first: number; days_in: number;
-  days: Record<string, CalChip[]>; notes: { kind: "played" | "tocome"; text: string }[]; won: number; lost: number; played: number };
+  days: Record<string, CalChip[]>; notes: { kind: "played" | "tocome"; text: string }[]; won: number; lost: number; played: number;
+  extra?: CalChip[]; mark?: string; best?: boolean };
 export type SeasonPage = { teams: string[]; team: string; tabs: string[]; tab: string; none: string;
   calendar?: { view: "season" | "month"; seasons: { key: string; label: string }[]; season: string; months: { key: string; label: string }[];
     month: string; today: string; grid: CalMonth[]; caption?: string; none?: string };
