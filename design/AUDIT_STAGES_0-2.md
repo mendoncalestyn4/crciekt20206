@@ -186,3 +186,18 @@ How it was checked:
 - The series score (tug of war) on My team's "series this season" and on the Season page's series tracker.
 - Saving a chart as a picture: a small "save picture" button on each chart when you point at it.
 - The order: the checklist first, then every fix and new piece, then a full stress test and screenshots.
+
+## H. New ideas you picked (13 November), each to be asked about in full before building
+
+Of the three ideas parked on 31 October, you picked Team of the series and Team of the season; player cards and board
+confidence with season awards were not picked. Of the new ideas offered the same day, you picked all five.
+28. **Team of the series** (and Team of the season, already on Season review): the best XI after every series, picked
+    the way the Team of the Season is.
+29. **Big-match players:** each player in knockouts, finals and series deciders against ordinary games (Player page
+    and Opponent preview).
+30. **Their danger men right now:** on Opponent preview, their three most dangerous players this season, each with
+    their last five innings or spells.
+31. **Player record by country:** each player's runs and wickets in each host country (Player page and Opponent
+    preview).
+32. **Rivalry streaks:** the current run in each rivalry and the longest ever (Rivalries).
+33. **Bounce-back by player:** how each player does in the game after a duck or a poor game (Player page).
