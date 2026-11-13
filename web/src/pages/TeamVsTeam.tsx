@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { get, type TvtPage, remember } from "../api";
 import { Explain, Logo, Missing, Num, Tile } from "../kit/base";
+import { BatFirstSides } from "../kit/season";
 import { Grid, TapeBars, TeamBars, TwoScatter } from "../kit/teams";
 import { dayY, NO_MATCHES } from "../format";
 import { useReady } from "../ready";
@@ -97,6 +98,12 @@ export function TeamVsTeam() {
                     <span className="how">{r.result}</span></Link>))}</div>
                 : <button className="btn quiet" style={{ marginTop: 10 }} onClick={() => setAll(true)}>All {b.meetings.rows.length} meetings</button>)}</>}
           </Tile>
+          {b.bat_first ? b.bat_first.sides.map((x, i) => (
+            <Tile key={x.team} span={6} title={`${x.team}: batting first or ${x.multi ? "batting second" : "chasing"}`} className={i === 0 ? "tvA" : "tvB"}>
+              <BatFirstSides bf={x} who={x.team} />
+              {i === 0 ? <div className="note">Games shortened by rain are left out of the totals.</div> : null}
+              <Explain shows={<T>{b.bat_first!.shows}</T>} for_={b.bat_first!.for_} /></Tile>))
+            : <Tile span={12} title="Batting first or chasing"><Missing why={m.bat_first} /></Tile>}
           <div className="part"><span className="tl2">Player by player</span></div>
           {([["bat_dots", "Batters: runs v balls faced"], ["bowl_dots", "Bowlers: wickets v balls bowled"]] as const).map(([k, title]) => {
             const s = b[k];

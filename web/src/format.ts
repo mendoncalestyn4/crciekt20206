@@ -1,9 +1,23 @@
 // How numbers, dates and names are written on the site (as on the current site: en-GB, '–' for nothing).
 
-export const f0 = (v: number | null | undefined) => (v == null || Number.isNaN(v) ? "–" : Math.round(v).toLocaleString("en-GB"));
-export const f1 = (v: number | null | undefined) => (v == null || Number.isNaN(v) ? "–" : (+v).toFixed(1));
-export const f2 = (v: number | null | undefined) => (v == null || Number.isNaN(v) ? "–" : (+v).toFixed(2));
-export const pct = (v: number | null | undefined) => (v == null || Number.isNaN(v) ? "–" : `${Math.round(v)}%`);
+/** Rounds the way the server does (Python: an exact half goes to the even whole number, so 62.5 is 62 and 63.5 is 64),
+ *  so a number worked out on the page and the same number from the server always read the same. */
+export const rnd = (v: number) => (v - Math.floor(v) === 0.5 ? (Math.floor(v) % 2 === 0 ? Math.floor(v) : Math.floor(v) + 1) : Math.round(v));
+export const f0 = (v: number | null | undefined) => (v == null || Number.isNaN(v) ? "–" : rnd(v).toLocaleString("en-GB"));
+/** `d` decimal places the way the server writes them (an exact half to the even last digit: 30.25 is 30.2, 30.35 is
+ *  30.4), where the browser's own way would take every half up. */
+export const fx = (v: number, d: number) => {
+  const exact = Math.abs(v).toFixed(Math.min(100, d + 30));   // the number's own digits, far enough to see a tie
+  const [whole, frac = ""] = exact.split(".");
+  if (!/^50*$/.test(frac.slice(d))) { const t = (+v).toFixed(d); return Number(t) === 0 ? t.replace("-", "") : t; }
+  const cut = d ? `${whole}.${frac.slice(0, d)}` : whole!;
+  const odd = Number(cut.slice(-1)) % 2 === 1;
+  const out = odd ? (Number(cut) + 10 ** -d).toFixed(d) : cut;
+  return (v < 0 && Number(out) !== 0 ? "-" : "") + out;
+};
+export const f1 = (v: number | null | undefined) => (v == null || Number.isNaN(v) ? "–" : fx(+v, 1));
+export const f2 = (v: number | null | undefined) => (v == null || Number.isNaN(v) ? "–" : fx(+v, 2));
+export const pct = (v: number | null | undefined) => (v == null || Number.isNaN(v) ? "–" : `${rnd(v)}%`);
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 /** '12 Mar' */

@@ -47,14 +47,14 @@ def test_every_players_share_is_the_same_as_on_their_own_page(career):
 
 
 def test_the_shares_add_up_to_the_team(career):
-    """Every wicket the team's bowlers took is someone's, and the runs fall short of the totals by the extras only."""
+    """Every wicket the team's bowlers took is someone's, and every run off the bat too (the totals less the extras)."""
     for sec in career.matches.section.unique():
         ids = ids_of(career, sec)
         for team in sorted(set(career.matches[career.matches.match_id.isin(ids)].home)):
             t = A.team_shares(career, ids, team)
             mids = set(career.matches[career.matches.match_id.isin(ids) & ((career.matches.home == team) | (career.matches.away == team))].match_id)
             inn = career.innings[career.innings.match_id.isin(mids) & (career.innings.team == team)]
-            assert t.runs.sum() == t.attrs["team_runs"] - inn.extras.sum()
+            assert t.runs.sum() == t.attrs["team_runs"] == inn.runs.sum() - inn.extras.sum()
             assert t.wickets.sum() == t.attrs["team_wickets"]
             assert list(t.runs) == sorted(t.runs, reverse=True)
 
@@ -97,87 +97,191 @@ def test_the_usual_score_at_each_wicket_counted_by_hand(career):
 
 # --------------------------------------------------------------------------- the score to aim for
 def test_the_fit_finds_a_known_answer():
-    """Made-up games where the chance of winning batting first is known exactly: the fit gets close to it, and the
-    total it gives for a chance gives that chance back."""
+    """Made-up games where the chance of winning is known exactly (one slope, a level for each of three competitions):
+    the fit gets close to all four."""
     rng = np.random.default_rng(7)
-    n = 6000
-    runs = rng.normal(160, 25, n)
-    elo = rng.normal(0, 100, n)
-    venue = rng.choice(["home", "away", "neutral"], n)
-    z = -0.2 + 1.1 * (runs - 160) / 25 + 0.5 * elo / 100 + 0.3 * (venue == "home") - 0.3 * (venue == "away")
-    won = (rng.random(n) < 1 / (1 + np.exp(-z))).astype(float)
-    mu, sd = runs.mean(), runs.std(ddof=1)
-    X = np.column_stack([np.ones(n), (runs - mu) / sd, elo / 100, venue == "home", venue == "away"]).astype(float)
-    w = A._fit(X, won, ridge=0.0)
-    fit = dict(w=w, mu=mu, sd=sd)
-    assert w[1] * 25 / sd == pytest.approx(1.1, abs=0.12)
-    assert w[2] == pytest.approx(0.5, abs=0.1)
-    assert w[3] - w[4] == pytest.approx(0.6, abs=0.15)
-    for venue_ in A.VENUES:
-        for p in (0.5, 0.7):
-            t = A.total_for(fit, p, 40.0, venue_)
-            assert A.chance(fit, t, 40.0, venue_) == pytest.approx(p * 100)
-    # the true total for an even game at home with a 40-point edge: 160 + 25 * (0.2 - 0.2 - 0.3) / 1.1
-    assert A.total_for(fit, 0.5, 40.0, "home") == pytest.approx(160 + 25 * (0.2 - 0.2 - 0.3) / 1.1, abs=4)
+    n = 9000
+    z = rng.normal(0, 1, n)
+    sec = rng.integers(0, 3, n)
+    level = np.array([-0.4, 0.0, 0.5])
+    y = (rng.random(n) < 1 / (1 + np.exp(-(1.3 * z + level[sec])))).astype(float)
+    w = A._fit(z, sec, 3, y, ridge=0.0)
+    assert w[0] == pytest.approx(1.3, abs=0.08)
+    assert w[1:] == pytest.approx(level, abs=0.1)
+    # started from the answer, it stays there (what the leave-one-out refits rely on)
+    assert A._fit(z, sec, 3, y, start=w, ridge=0.0) == pytest.approx(w, abs=1e-6)
 
 
-def test_the_ridge_keeps_a_lonely_term_near_nought():
-    """Three away games among hundreds: their term stays small instead of running off to whatever fits them."""
+def test_the_ridge_keeps_a_lonely_competition_near_nought():
+    """Three games of one competition, all won, among hundreds: its level stays small instead of running off."""
     rng = np.random.default_rng(3)
     n = 400
-    runs = rng.normal(0, 1, n)
-    away = np.zeros(n)
-    away[:3] = 1
-    won = (rng.random(n) < 1 / (1 + np.exp(-runs))).astype(float)
-    won[:3] = 1.0
-    X = np.column_stack([np.ones(n), runs, away])
+    z = rng.normal(0, 1, n)
+    sec = np.zeros(n, int)
+    sec[:3] = 1
+    y = (rng.random(n) < 1 / (1 + np.exp(-z))).astype(float)
+    y[:3] = 1.0
     with np.errstate(over="ignore"):
-        loose = A._fit(X, won, ridge=0.01)[2]
-    assert abs(A._fit(X, won)[2]) < 1.5 < abs(loose)
+        loose = A._fit(z, sec, 2, y, ridge=1e-4)[2]
+    assert abs(A._fit(z, sec, 2, y)[2]) < 1.5 < abs(loose)
+
+
+def test_the_strengths_counted_by_hand(career):
+    """The usual total, each team's batting and bowling (pulled to the usual: n / (n + 5)) and what home is worth
+    (n / (n + 30)), from the finished first innings counted again by hand."""
+    d = A._first_innings_all(career)
+    st = A._strengths(d)
+    m = career.matches.set_index("match_id")
+    checked = 0
+    for sec in d.section.unique():
+        rows = []
+        for r in career.innings[(career.innings.innings_no == 1)].itertuples():
+            x = m.loc[r.match_id]
+            if (x.section != sec or x.result_type != "win" or bool(x.rain)
+                    or A.LENGTH.get(x.format) == "multi"):
+                continue
+            opp = x.away if r.team == x.home else x.home
+            venue = "neutral" if x.neutral else "home" if r.team == x.home else "away"
+            rows.append((r.team, opp, venue, float(r.runs)))
+        usual = sum(t[3] for t in rows) / len(rows)
+        s = st[sec]
+        assert s["usual"] == pytest.approx(usual)
+        for team in {t[0] for t in rows}:
+            mine = [t[3] - usual for t in rows if t[0] == team]
+            assert s["bat"][team] == (pytest.approx(sum(mine) / (len(mine) + 5)), len(mine))
+        for team in {t[1] for t in rows}:
+            theirs = [t[3] - usual for t in rows if t[1] == team]
+            assert s["bowl"][team] == (pytest.approx(sum(theirs) / (len(theirs) + 5)), len(theirs))
+        h = [t[3] - usual for t in rows if t[2] == "home"]
+        aw = [t[3] - usual for t in rows if t[2] == "away"]
+        raw = (sum(h) / len(h) - sum(aw) / len(aw)) / 2 if h and aw else 0.0
+        assert s["home"] == pytest.approx(raw * (len(h) + len(aw)) / (len(h) + len(aw) + 30) if h and aw else 0.0)
+        checked += 1
+    assert checked >= 5
+
+
+def test_the_targets_give_the_chances_back(career):
+    """Put the even total and the 70% total back through the fitted curve, adjusted the same way as every game: they
+    come out at 50% and 70%."""
+    done = 0
+    for length in ("t20", "one"):
+        fit = A.model(career, length)
+        if fit is None:
+            continue
+        for sec, i in fit["secs"].items():
+            s = fit["st"][sec]
+            teams = sorted(set(s["bat"]) | set(s["bowl"]))
+            for me in teams:
+                for opp in teams:
+                    if me == opp:
+                        continue
+                    for venue in A.VENUES:
+                        t = A.targets(fit, sec, me, opp, venue)
+                        v = 1 if venue == "home" else -1 if venue == "away" else 0
+                        for total, p in ((t["even"], 0.5), (t["seventy"], 0.7)):
+                            adj = total - s["bowl"].get(me, (0.0, 0))[0] - s["bat"].get(opp, (0.0, 0))[0] + v * s["home"]
+                            zz = (adj - s["usual"]) / fit["sd"]
+                            assert 1 / (1 + math.exp(-(fit["w"][0] * zz + fit["w"][1 + i]))) == pytest.approx(p)
+                        assert t["even"] < t["seventy"]
+                        done += 1
+    assert done > 50
+
+
+def test_how_often_it_calls_games_right_is_each_game_judged_from_the_others(career):
+    """'It would have called X% right': each game refitted without it, counted again by hand for one length."""
+    fit = A.model(career, "t20")
+    d = A._first_innings_all(career)
+    d = d[d.length == "t20"].reset_index(drop=True)
+    st = A._strengths(d)
+    secs = sorted(d.section.unique())
+    sec = d.section.map({s: i for i, s in enumerate(secs)}).to_numpy()
+    mean_s = d.groupby("section").runs.transform("mean").to_numpy()
+    z = (A._adjusted(d, st) - mean_s) / fit["sd"]
+    y = d.won.to_numpy()
+    right = []
+    for i in range(len(d)):
+        keep = np.arange(len(d)) != i
+        w = A._fit(z[keep], sec[keep], len(secs), y[keep])
+        right.append(((w[0] * z[i] + w[1 + sec[i]]) > 0) == (y[i] == 1))
+    d["right"] = right
+    for s, g in d.groupby("section"):
+        assert fit["right"][s] == pytest.approx(g.right.mean(), abs=1e-9)
+        assert fit["games"][s] == len(g)
 
 
 def test_the_score_to_aim_says_why_when_it_cant_be_given(career):
-    assert "multi-day" in A.score_to_aim(career, ids_of(career, "Tests"), "India", "England")["none"]
     both = ids_of(career, "ODIs") | ids_of(career, "T20Is")
     assert "Pick one format" in A.score_to_aim(career, both, "India", "England")["none"]
-    few = A.score_to_aim(career, ids_of(career, "ODIs"), "India", "England")
-    assert few["none"].startswith("Not enough finished games") and str(A.MIN_GAMES) in few["none"]
+    assert A.score_to_aim(career, set(), "India", "England")["none"]
 
 
-def test_the_score_to_aim_from_the_games_themselves(career, monkeypatch):
-    """With the bar lowered so the few test games are enough: the even total is below the 70% one everywhere, the
-    games used are the finished first innings, and the opponent's score and the meetings are the real ones."""
-    monkeypatch.setattr(A, "MIN_GAMES", 5)
-    done = 0
-    for sec in ("T20 Blast", "Indian Premier League", "ODIs"):
+def test_the_score_to_aim_from_the_games_themselves(career):
+    """Every pair of teams in each one-day and T20 competition: the even total below the 70% one, the games it rests on
+    the finished first innings, and the opponent's score and the meetings the real ones."""
+    done, kept = 0, {}
+    fits = lambda n: kept.setdefault(n, A.model(career, n))  # noqa: E731 - the slow fit once per length, as the site keeps it
+    for sec in ("T20 Blast", "Indian Premier League", "ODIs", "T20Is", "The Hundred", "Vijay Hazare Trophy"):
         ids = ids_of(career, sec)
-        fit = A.model(career, ids)
-        if fit is None:
-            continue
-        d = A._games(career, ids)
-        assert fit["games"] == len(d) and set(d.outcome) <= {"won", "lost"}
         m = career.matches[career.matches.match_id.isin(ids)]
-        assert not set(d.match_id) & set(m[m.rain.astype(bool) | (m.result_type != "win")].match_id)
+        d = A.first_innings(career, ids)
+        fin = d[d.outcome.isin(["won", "lost"])]
+        teams = sorted(set(m.home) | set(m.away))
+        for me in teams:
+            for opp in teams:
+                if me == opp:
+                    continue
+                a = A.score_to_aim(career, ids, me, opp, fits)
+                assert a == A.score_to_aim(career, ids, me, opp) if done == 0 else True
+                assert not a["none"] and a["kind"] == "limited" and a["section"] == sec
+                assert a["games"] == len(fin)
+                for venue, v in a["venues"].items():
+                    assert v["even"] < v["seventy"]
+                    assert v["few"] == (min(v["my_bowling_n"], v["their_batting_n"], a["games"]) < A.FEW)
+                    assert v["their_batting_n"] == int((fin.team == opp).sum())
+                    met = m[((m.home == me) & (m.away == opp)) | ((m.home == opp) & (m.away == me))]
+                    here = [x for x in met.itertuples() if (("neutral" if x.neutral else "home" if x.home == me else "away") == venue)]
+                    assert sorted(x["id"] for x in v["meetings"]) == sorted(x.match_id for x in here)
+                    set_ = [r.runs for r in d.itertuples() if r.team == opp and r.match_id in {x.match_id for x in here}]
+                    assert v["they_set_n"] == len(set_)
+                    if set_:
+                        assert v["they_set"] == int(round(float(np.median(set_))))
+                done += 1
+    assert done > 20
+
+
+def test_the_score_to_aim_in_multi_day_cricket_counted_by_hand(career):
+    """Tests and first-class: India's first-innings totals against each side, home, away and neutral, split by won,
+    drawn and lost, with the typical (middle) one of each."""
+    done = 0
+    for sec in ("Tests", "Ranji Trophy", "County Championship · Division 1"):
+        ids = ids_of(career, sec)
+        m = career.matches[career.matches.match_id.isin(ids)]
         teams = sorted(set(m.home) | set(m.away))
         for me in teams:
             for opp in teams:
                 if me == opp:
                     continue
                 a = A.score_to_aim(career, ids, me, opp)
-                assert not a["none"]
+                assert a["kind"] == "multi" and not a["none"]
                 for venue, v in a["venues"].items():
-                    assert v["even"] < v["seventy"]
-                    met = m[((m.home == me) & (m.away == opp)) | ((m.home == opp) & (m.away == me))]
-                    here = [x for x in met.itertuples() if (("neutral" if x.neutral else "home" if x.home == me else "away") == venue)]
-                    assert sorted(x["id"] for x in v["meetings"]) == sorted(x.match_id for x in here)
-                    first = career.innings[career.innings.match_id.isin([x.match_id for x in here]) & (career.innings.innings_no == 1)]
-                    set_ = [r.runs for r in first.itertuples() if r.team == opp and r.match_id in set(d.match_id) | set(
-                        A.first_innings(career, ids).match_id)]
-                    assert v["they_set_n"] == len(set_)
-                    if set_:
-                        assert v["they_set"] == int(round(float(np.median(set_))))
-                done += 1
-    assert done > 20
+                    by = {"won": [], "drawn": [], "lost": []}
+                    for x in m.itertuples():
+                        if {x.home, x.away} != {me, opp} or x.result_type == "no result":
+                            continue
+                        if ("neutral" if x.neutral else "home" if x.home == me else "away") != venue:
+                            continue
+                        first = career.innings[(career.innings.match_id == x.match_id) & (career.innings.team == me)
+                                               & (career.innings.team_innings == 1)]
+                        if first.empty:
+                            continue
+                        res = "won" if x.winner == me else "lost" if x.winner == opp else "drawn" if x.result_type == "draw" else ""
+                        if res:
+                            by[res].append(int(first.runs.iloc[0]))
+                    for res, xs in by.items():
+                        assert v["typical"][res]["n"] == len(xs)
+                        assert v["typical"][res]["typical"] == (int(round(float(np.median(xs)))) if xs else None)
+                    done += 1
+    assert done > 5
 
 
 # --------------------------------------------------------------------------- your season, wrapped
@@ -257,3 +361,27 @@ def test_knocking_on_the_door_when_the_regulars_never_batted(career):
         warnings.simplefilter("error")
         kn = PL.knocking(c, ids, team)
     assert kn.empty
+
+
+def test_my_teams_next_up_shows_the_same_score_to_aim(career):
+    """My team's "next up" line: the same totals as Opponent preview for that opponent, format and ground; in Tests
+    the first-innings total that usually beat them there."""
+    from ccstats import fixtures as F
+    from server import myteam as MY
+    x = MY.next_up(career, "India", F.make_series("India", "West Indies", "ODI", 3, "home"))["next"]
+    assert (x["opponent"], x["venue"]) == ("West Indies", "home")
+    v = A.score_to_aim(career, set(F.format_ids(career, "India", "ODI")), "India", "West Indies")["venues"]["home"]
+    assert x["aim"] == f"v West Indies, home, ODI: {v['even']} for an even game, {v['seventy']} for 70%" + (
+        " (few games, treat with care)" if v["few"] else "")
+    done = 0
+    m = career.matches[career.matches.format == "Test"]
+    for r in m.itertuples():
+        for team, opp in ((r.home, r.away), (r.away, r.home)):
+            for venue in A.VENUES:
+                line = MY._aim_line(career, team, dict(format="Test", venue=venue if venue != "neutral" else "", opponent=opp))
+                won = A.score_to_aim(career, set(F.format_ids(career, team, "Test")), team, opp)["venues"][venue]["typical"]["won"]
+                where = "on a neutral ground" if venue == "neutral" else venue
+                assert line == (f"v {opp}, {where}, Test: first-innings totals that beat them there were usually "
+                                f"{won['typical']} ({won['n']} game{'s' if won['n'] != 1 else ''})" if won["n"] else "")
+                done += bool(line)
+    assert done

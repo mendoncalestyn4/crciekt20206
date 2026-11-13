@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router";
 import type { Dot, GridT, RaceLine, SignedBar, TapeRow, TeamBarRow } from "../api";
-import { ab } from "../format";
+import { ab, fx } from "../format";
 import { T } from "../shell/names";
 import { useTheme } from "../theme";
 import { alpha } from "./charts";
@@ -155,7 +155,7 @@ export function TeamBars({ rows, a }: { rows: TeamBarRow[]; a: string }) {
       tooltip: { ...L.TT, formatter: (p: { dataIndex: number }) => { const r = rows[p.dataIndex]; return r ? `<b>${r.player}</b> · ${r.team}<br/>${r.note.join("<br/>")}` : ""; } },
       series: [{ type: "bar", barWidth: "62%",
         data: rows.map((r) => ({ value: r.value, itemStyle: { borderRadius: 0, color: r.team === a ? t.led : t.blue }, label: { position: r.value >= 0 ? "right" : "left" } })),
-        label: { show: true, ...L.VAL(12), color: t.ink, formatter: (p: { value: number }) => `${p.value > 0 ? "+" : ""}${(+p.value).toFixed(1)}` },
+        label: { show: true, ...L.VAL(12), color: t.ink, formatter: (p: { value: number }) => `${p.value > 0 ? "+" : ""}${fx(+p.value, 1)}` },
         markLine: { silent: true, symbol: "none", label: { show: false }, lineStyle: { color: t.dim, width: 1.5 }, data: [{ xAxis: 0 }] } }],
     };
   }, [t, rows, a]);

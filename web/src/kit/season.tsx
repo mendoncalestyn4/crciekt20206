@@ -3,13 +3,13 @@
 // sides, home and away, and the match-winners. Every number comes from the server (server/styleguide.py).
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { BatFirst, Brief, Calendar, Form, Innings, Outcome, Result, Run, Scores, Series, Strength, Venues, Winners } from "../api";
-import { ab, day, fmtOf, ord, plural } from "../format";
+import { ab, day, dayer, fmtOf, ord, plural, rnd } from "../format";
 import { useTheme } from "../theme";
 import { Lamp, Logo, Name, Num, PName } from "./base";
 import { FormLine, StrengthDots } from "./charts";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const pct = (w: number, n: number) => (n ? `${Math.round((w / n) * 100)}%` : "–");
+const pct = (w: number, n: number) => (n ? `${rnd((w / n) * 100)}%` : "–");
 const colourOf = (t: ReturnType<typeof useTheme>, o: Outcome) => (o === "W" ? t.win : o === "L" ? t.loss : t.dim);
 
 /** The line under each match in the calendar: one colour per format (longest game first: cream, blue, gold, then
@@ -127,11 +127,12 @@ const wordOf = (r: Run) => WORD[r.o][lenOf(r) > 1 ? 1 : 0];
 
 /** Every match of the season in order, the longest winning and losing runs marked over their matches, and the run
  *  the team is on now. */
-export function Streaks({ cal }: { cal: Calendar }) {
+export function Streaks({ cal }: { cal: Pick<Calendar, "results" | "streaks"> }) {
   const t = useTheme(), rs = cal.results, runs = cal.streaks;
   const longest = (o: Outcome) => [...runs].filter((r) => r.o === o).sort((a, b) => lenOf(b) - lenOf(a))[0];
   const cur = runs[runs.length - 1], lw = longest("W"), ll = longest("L");
-  const span = (r: Run) => (r.start === r.end ? day(rs[r.start]!.date) : `${day(rs[r.start]!.date)} – ${day(rs[r.end]!.date)}`);
+  const multi = new Set(rs.map((x) => x.date.slice(0, 4))).size > 1, dd = dayer(rs.map((x) => x.date));   // years shown when it runs over more than one
+  const span = (r: Run) => (r.start === r.end ? dd(rs[r.start]!.date) : `${dd(rs[r.start]!.date)} – ${dd(rs[r.end]!.date)}`);
   const who = (r: Run) => [...new Set(rs.slice(r.start, r.end + 1).map((x) => ab(x.opp)))].join(", ");
   const card = (title: string, r: Run | undefined, none: string) => (
     <div className="bf-side"><div className="k">{title}</div>
@@ -174,7 +175,7 @@ export function Streaks({ cal }: { cal: Calendar }) {
       <div className="strip" ref={strip} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
         {segs.map((s, i) => <div className="brk" key={i} style={{ left: s.left, width: s.width, top: s.top, borderColor: s.colour }}>
           {s.text && <span style={{ color: s.colour }}>{s.text}</span>}</div>)}
-        {rs.map((r) => <div className="cellx" key={r.id}><Lamp o={r.outcome} /><small className="f">{fmtOf(r.section)}</small><small>{ab(r.opp)}</small><small>{day(r.date)}</small></div>)}
+        {rs.map((r) => <div className="cellx" key={r.id}><Lamp o={r.outcome} /><small className="f">{fmtOf(r.section)}</small><small>{ab(r.opp)}</small><small>{day(r.date)}</small>{multi && <small>’{r.date.slice(2, 4)}</small>}</div>)}
       </div>
     </>
   );
@@ -253,16 +254,18 @@ function Fact({ label, b }: { label: string; b: Brief | undefined }) {
   return <div className="fact"><span>{label}</span><b>{b.score}<small>v {ab(b.opp)} · {day(b.date)}</small></b></div>;
 }
 
-/** Batting first or chasing: the record each way, with the totals defended, lost with, chased down and not chased. */
-export function BatFirstSides({ bf }: { bf: BatFirst }) {
+/** Batting first or chasing: the record each way, with the totals defended, lost with, chased down and not chased.
+ *  `who` names the side when it isn't yours (Opponent preview: their own record). */
+export function BatFirstSides({ bf, who }: { bf: BatFirst; who?: string }) {
   const a = bf.first, c = bf.chase, rate = (x: typeof a) => (x.played ? x.won / x.played : 0);
   const better = !a.played || !c.played || pct(a.won, a.played) === pct(c.won, c.played) ? "" : rate(a) > rate(c) ? "batting first" : bf.multi ? "batting second" : "chasing";
+  const they = who ? "they" : "you";
   return (
     <>
-      <div className="bf"><Side title="Batting first" rec={a}><Fact label="Lowest total defended" b={bf.lowest_defended} /><Fact label="Highest total you lost with" b={bf.highest_lost} /></Side>
-        <Side title={bf.multi ? "Batting second" : "Chasing"} rec={c}><Fact label="Highest total chased down" b={bf.highest_chased} /><Fact label="Lowest total you failed to chase" b={bf.lowest_missed} /></Side></div>
+      <div className="bf"><Side title="Batting first" rec={a}><Fact label="Lowest total defended" b={bf.lowest_defended} /><Fact label={`Highest total ${they} lost with`} b={bf.highest_lost} /></Side>
+        <Side title={bf.multi ? "Batting second" : "Chasing"} rec={c}><Fact label="Highest total chased down" b={bf.highest_chased} /><Fact label={`Lowest total ${they} failed to chase`} b={bf.lowest_missed} /></Side></div>
       {bf.avg_set != null && <div className="fact" style={{ border: 0, marginTop: 8 }}><span>Average score batting first</span><b>{bf.avg_set}</b></div>}
-      {better && <div className="verdict">You win more often <span>{better}</span>: {pct(c.won, c.played)} {bf.multi ? "batting second" : "chasing"}, {pct(a.won, a.played)} batting first.</div>}
+      {better && <div className="verdict">{who ?? "You"} win more often <span>{better}</span>: {pct(c.won, c.played)} {bf.multi ? "batting second" : "chasing"}, {pct(a.won, a.played)} batting first.</div>}
     </>
   );
 }
@@ -287,12 +290,12 @@ export function StrengthPanel({ rows, lanes }: { rows: Strength[]; lanes: string
 }
 
 /** Home, away and neutral, then host by host (by country for a national side). */
-export function VenueRecord({ v, team }: { v: Venues; team: string }) {
+export function VenueRecord({ v, team, who }: { v: Venues; team: string; who?: boolean }) {
   const t = useTheme(), top = Math.max(...v.hosts.map((h) => h.played), 1);
   const name = (h: Venues["hosts"][number]) => (h.venue === "neutral" ? "Neutral grounds" : h.venue === "home" ? (v.nation ? `In ${team} (home)` : "At home") : `${v.nation ? "In" : "At"} ${h.host}`);
   return (
     <>
-      <div className="trio"><Side title="Home" rec={v.home} sub={v.nation ? `In ${team}` : "On your own ground"} />
+      <div className="trio"><Side title="Home" rec={v.home} sub={v.nation ? `In ${team}` : who ? "On their own ground" : "On your own ground"} />
         <Side title="Away" rec={v.away} sub={v.nation ? "In the other side's country" : "On the other side's ground"} />
         <Side title="Neutral" rec={v.neutral} sub="World Cups, finals and the like" /></div>
       <div style={{ marginTop: 16 }}>{v.hosts.map((h) => (

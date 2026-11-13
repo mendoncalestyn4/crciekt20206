@@ -316,12 +316,13 @@ def collapses(career, ids, team: str, wickets: int = 4, runs: int = 30) -> pd.Da
 
 
 def batting_depth(career, ids, team: str) -> pd.DataFrame:
-    """Share of the team's bat runs from the top order (1-3), middle (4-7) and tail (8-11)."""
+    """Share of the team's bat runs from the top order (1-3), middle (4-7) and tail (8-11); no share at all (not 0%)
+    for a team without a run here, so it never pulls down an average of teams."""
     b = career.batting[career.batting.match_id.isin(ids) & (career.batting.team == team) & career.batting.did_bat]
     group = pd.cut(b.position, [0, 3, 7, 11], labels=["Top order (1-3)", "Middle order (4-7)", "Tail (8-11)"])
     t = b.groupby(group, observed=False).runs.sum()
     return pd.DataFrame({"group": t.index.astype(str), "runs": t.values,
-                         "share": (t / t.sum() * 100).values if t.sum() else 0})
+                         "share": (t / t.sum() * 100).values if t.sum() else np.nan})
 
 
 STRENGTH_PRIOR = 4  # games: every side starts as if it had won 2 and lost 2

@@ -5,10 +5,14 @@ same words; it opens on your next match (from your schedule, or the rest of a se
 
 from __future__ import annotations
 
+import functools
+
 import numpy as np
 import pandas as pd
 
 from ccstats import aim as AIM
+from ccstats import howtheyplay as HP
+from ccstats import moments as MO
 from ccstats import analysis as A
 from ccstats import catalogue as CAT
 from ccstats import extras as E
@@ -21,7 +25,7 @@ from ccstats.competitions import with_stage
 from ccstats.stats import ordinal, poss
 
 from . import styleguide as SG
-from .cache import kept
+from .cache import aim_fits, kept
 from .teampage import _n, fmt, pct, say, signed, table
 
 INTL = "Internationals"
@@ -149,9 +153,11 @@ def page(career, q: dict, mine_all: list[str], mine_order: list[str], sched: lis
     tab = out["tab"]
     mu = q.get("mu", "") == "every"
     cur = q.get("cur", "") == "1"
-    out["body"] = kept(career, ("preview_tab", tab, mu, cur) + key,
-                       lambda: TAB_FN[tab](career, ids, me, opp, where_note, mu, cur))
-    out["mu"], out["cur"] = mu, cur
+    last = tab == "About them" and q.get("htp", "") == "last"
+    out["body"] = kept(career, ("preview_tab", tab, mu, cur, last) + key,
+                       lambda: (functools.partial(about_them, last=last) if tab == "About them" else TAB_FN[tab])(
+                           career, ids, me, opp, where_note, mu, cur))
+    out["mu"], out["cur"], out["htp"] = mu, cur, "last" if last else ""
     return SG.clean(out)
 
 
@@ -203,10 +209,29 @@ def _head(career, ids, me, opp, where_note, where_default) -> dict:
 
 
 def _aim(career, ids, me, opp) -> dict:
-    """The score to aim for batting first, at home, away and on a neutral ground (ccstats.aim)."""
-    a = kept(career, ("score_to_aim", tuple(ids), me, opp), lambda: AIM.score_to_aim(career, ids, me, opp))
-    out = dict(none=a["none"], games=a["games"], venues={})
+    """The score to aim for batting first, at home, away and on a neutral ground (ccstats.aim); in multi-day cricket the
+    first-innings totals that won, drew and lost against them instead."""
+    a = kept(career, ("score_to_aim", tuple(ids), me, opp), lambda: AIM.score_to_aim(career, ids, me, opp, aim_fits(career)))
+    out = dict(none=a["none"], kind=a.get("kind", ""), venues={})
     if a["none"]:
+        return out
+    if a["kind"] == "multi":
+        said = {"won": "won", "drawn": "drew", "lost": "lost"}
+        for where, v in a["venues"].items():
+            t, g = v["typical"], v["games"]
+            got = [f"when they {said[r]}, usually {t[r]['typical']} ({_n(t[r]['n'], 'game')})"
+                   for r in ("won", "drawn", "lost") if t[r]["n"]]
+            out["venues"][where.capitalize()] = dict(
+                line=(f"{poss(me)} first-innings total against {opp}: " + "; ".join(got) + ".") if got else "",
+                none="" if g else f"{me} haven't played {opp} {_ground(where, me)} yet.",
+                games=table(["Date", f"{poss(me)} first innings", "Result"],
+                            [[x["date"], f"{x['total']}" + ("" if x["all_out"] else f"/{x['wickets']}"
+                                                            + (" dec" if x["declared"] else "")), x["text"]] for x in g],
+                            links=[x["id"] for x in g]) if g else None)
+        out["note"] = ("In multi-day cricket the first-innings total doesn't decide the match on its own (declarations, the "
+                       "follow-on and draws do), so instead of one target this shows the first-innings totals that won, "
+                       "drew and lost against them, at home, away and on neutral grounds: the typical (middle) one of each, "
+                       "and every game under it.")
         return out
     for where, v in a["venues"].items():
         line = f"{v['even']} for an even game · {v['seventy']} for a 70% chance"
@@ -232,15 +257,30 @@ def _aim(career, ids, me, opp) -> dict:
             line=line, warn=("Careful: " + "; ".join(warn) + ".") if warn else "", they=they,
             meetings=table(["Date", "Innings", "Result"], [[x["date"], x["first"], x["result"]] for x in meet],
                            links=[x["id"] for x in meet]) if meet else None)
-    out["note"] = (f"Worked out from all {a['games']} finished games here where a side batted first (rain games, ties and "
-                   "no-results left out), every team, not just these two: how often a side batting first won with each "
-                   "total"
-                   + (", allowing for how strong the two sides were (their ratings before the game) and where it was "
-                      "played. " if a["rated"] else
-                      " and where it was played. The ratings of the two sides are left out here: in these games they "
-                      "didn't help say who won. ")
-                   + "Even game: the total that wins half the time; 70%: the one that wins seven times in ten.")
+    home = a["home"]
+    v = next(iter(a["venues"].values()))      # their batting and your bowling are the same wherever it is
+    out["rests"] = (f"Rests on {a['games']} finished games in {a['section']}. {opp} batting first make "
+                    f"{_runs(v['their_batting'])} the usual ({_n(v['their_batting_n'], 'game')}); sides batting first "
+                    f"against {me} make {_runs(v['my_bowling'])} the usual ({_n(v['my_bowling_n'], 'game')}).")
+    out["few"] = "Few games, treat with care: fewer than 10 games behind part of this." if v["few"] else ""
+    out["sure"] = (f"Judged from all the others, it would have called {a['right']:.0f}% of the {a['games']} finished games "
+                   f"in {a['section']} right (going by the total alone: {a['right_alone']:.0f}%).")
+    out["note"] = ("Worked out from every finished game where a side batted first (rain games, ties and no-results left "
+                   "out), every team, not just these two: how the chance of winning rises with the total is learned from all "
+                   "cricket of this length, and this competition keeps its own level of totals; playing at home is worth "
+                   + (f"about {_n(round(home), 'run')} here" if round(home) >= 1 else
+                      f"about {_n(round(-home), 'run')} less than playing away here" if round(home) <= -1 else
+                      "almost nothing here")
+                   + " (it starts near nothing and grows only as the games show it); and how well they bat and you bowl, in "
+                   "runs against the usual, counts more the more games there are (5 games count half). Even game: the total "
+                   "that wins half the time; 70%: the one that wins seven times in ten.")
     return out
+
+
+def _runs(x: float) -> str:
+    """'+12 runs on' / '8 runs under' / 'level with' the usual."""
+    r = int(round(x))
+    return "level with" if r == 0 else f"{abs(r)} run{'s' if abs(r) != 1 else ''} {'above' if r > 0 else 'below'}"
 
 
 def _ground(where: str, team: str, own: bool = False) -> str:
@@ -253,12 +293,52 @@ def _ground(where: str, team: str, own: bool = False) -> str:
     return f"when {team} are {'at home' if where == 'home' else 'away'}"
 
 
+def _their_record(career, ids, opp, where_note, part) -> None:
+    """Under the head-to-head record: the opponent's own record batting first and chasing, and at home, away and on
+    neutral grounds then country by country, in this competition against every side (the style guide's charts)."""
+    m = career.matches
+    one = m[m.match_id.isin(ids)].section.nunique() == 1
+    mixed = "Pick one format to see this: formats are never mixed."
+
+    def bat_first():
+        """Their own record batting first and chasing in this competition, against everyone (the style guide's chart)."""
+        if not one:
+            return dict(none=mixed)
+        rs = SG.results(career, opp, ids)
+        if not rs:
+            return dict(none=f"{opp} haven't played here yet.")
+        x = SG.bat_first(career, opp, ids)
+        second = "batting second" if x["multi"] else "chasing"
+        x.update(who=opp, shows=f"{poss(opp)} own record batting first and {second} in {where_note}, against every side "
+                                f"(not only you), with the totals they defended, lost with, chased down and failed to chase.",
+                 for_=f"Whether they would rather set a total or chase one, and the totals that have been enough against "
+                      f"them: think about it at the toss.")
+        return x
+    part("bat_first", bat_first)
+
+    def where():
+        """Their own record at home, away and on neutral grounds, then country by country (or ground by ground)."""
+        if not one:
+            return dict(none=mixed)
+        rs = SG.results(career, opp, ids)
+        if not rs:
+            return dict(none=f"{opp} haven't played here yet.")
+        v = SG.venues(rs, opp)
+        v.update(who=opp, shows=f"{poss(opp)} own record in {where_note}, against every side: at home, away and on neutral "
+                                f"grounds, then {'country' if v['nation'] else 'ground'} by {'country' if v['nation'] else 'ground'} "
+                                f"(each bar every match there in order, green won, red lost).",
+                 for_="How much they rely on home, and how they travel: where your match is decides which record counts.")
+        return v
+    part("where", where)
+
+
 def head_to_head(career, ids, me, opp, where_note, mu, cur) -> dict:
     out, part = _parts()
-    if not me:
-        out["none"] = "Pick your team above to see your history against them."
-        return out
     m = career.matches
+    _their_record(career, ids, opp, where_note, part)   # theirs alone, so it shows with no team of yours picked
+    if not me:
+        out["h2h"] = dict(never="Pick your team above to see your history against them.", other="")
+        return out
 
     def h2h():
         mt = PV.meetings(career, ids, me, opp)
@@ -296,7 +376,6 @@ def head_to_head(career, ids, me, opp, where_note, mu, cur) -> dict:
                     typical=f"Typical first-innings score: {me} {fmt(ty[me], 0)}, {opp} {fmt(ty[opp], 0)}.",
                     keys=keys, cards=cards)
     part("h2h", h2h)
-
     def matchups():
         mm = PV.matchups(career, ids, me, opp, everywhere=mu, current_only=cur)
         sides = []
@@ -316,9 +395,192 @@ def head_to_head(career, ids, me, opp, where_note, mu, cur) -> dict:
     return out
 
 
-def about_them(career, ids, me, opp, where_note, mu, cur) -> dict:
+def _how_they_play(career, ids, opp, where_note, last: bool) -> dict:
+    """How they play, at the top of About them: their bowling and batting this season, read in plain words (their own
+    figures only); last season instead when asked, offered when this season has fewer than 5 matches."""
+    m = career.matches[career.matches.match_id.isin(ids)]
+    if m.section.nunique() != 1:
+        return dict(none="Pick one format to see how they play: formats are never mixed.")
+    this, before, n = HP.seasons(career, ids, opp)
+    season = before if last and before else this
+    few = n.get(this, 0) < HP.MIN_MATCHES
+    sids = m[m.season == season].match_id
+    out = dict(season=season, this=this, last=before if (few or last) and before else "", showing_last=season != this,
+               matches=n.get(season, 0), none="")
+    if few and season == this:
+        other = (f"See last season ({before}, {_n(n[before], 'match', 'matches')}) instead." if before else
+                 "There's no earlier season of theirs here.")
+        out["note"] = (other if not n.get(this, 0) else
+                       f"{opp} have played {_n(n[this], 'match', 'matches')} in {where_note} this season ({this}): too few to "
+                       f"read much from. " + other)
+    if not n.get(season, 0):
+        out["none"] = f"{opp} haven't played in {where_note} in {season} yet."
+        return out
+    h = HP.how_they_play(career, sids, opp)
+    bw, bt, kind = h["bowling"], h["batting"], h["kind"]
+    one = lambda x: f"{x:.0f}"  # noqa: E731
+    # ---- bowling, in words
+    at = bw["at"]
+    falls = [f"{'their ' if w == 1 else 'the '}{ordinal(w)}{' wicket' if w == 1 else ''} at {a['usual']}"
+             for w, a in at.items() if a["usual"] is not None]
+    bowl = []
+    if falls:
+        bowl.append("Opponents usually lose " + (", ".join(falls[:-1]) + " and " + falls[-1] if len(falls) > 1 else falls[0]) + ".")
+    if bw["innings"]:
+        bowl.append(f"They had sides 3 down for {bw['cheap_line']} or fewer in {bw['cheap']} of {bw['innings']} innings, and "
+                    f"bowled them out in {bw['bowled_out']}.")
+    if bw["wickets"]:
+        bowl.append(f"The new-ball pair (the first two bowlers on) took {one(bw['new_ball_share'])}% of the wickets "
+                    f"({bw['new_ball']} of {bw['wickets']}); {one(bw['top_order_share'])}% of the batters they got out "
+                    f"were top-order (1-3).")
+    style = ("attack and squeeze" if bw["attack"] and bw["squeeze"] else "attack" if bw["attack"] else
+             "squeeze" if bw["squeeze"] else "neither attack nor squeeze")
+    if bw["balls_per_wicket"]:
+        bowl.append(f"They {style}: a wicket every {bw['balls_per_wicket']:.0f} balls, {bw['economy']:.2f} runs an over"
+                    + (f", {bw['dot_pct']:.0f}% dot balls" if bw["dot_pct"] is not None else "") + ".")
+    # ---- batting, in words
+    shape = {"blast": "blast from the start: the openers score fastest", "build": "build, then blast: the middle order "
+             "scores faster than the openers", "steady": "keep much the same pace through the order"}.get(bt["shape"], "")
+    bat = []
+    if shape:
+        bat.append(f"They {shape}.")
+    if bt["runs"]:
+        bat.append(f"{one(bt['four_share'])}% of their runs come in fours and {one(bt['six_share'])}% in sixes"
+                   + (f"; the {bt['most_sixes'].split(' (')[0].lower()} hit the most sixes ({bt['most_sixes_n']})."
+                      if bt["most_sixes"] else "."))
+    if bt["usual"]:
+        u = bt["usual"]
+        first, next_ = (u[3], u[6] - u[3]) if 3 in u and 6 in u else (None, None)
+        pace = {"fade": f" The big stands come early: the first three wickets usually put on {first}, the next three {next_}.",
+                "finish": f" The big stands come later: the first three wickets usually put on {first}, the next three {next_}.",
+                "even": f" The stands are much the same: the first three wickets usually put on {first}, the next three "
+                        f"{next_}."}.get(bt["pace"], "")
+        bat.append("Their usual score at each wicket: " + ", ".join(f"{v}/{w}" for w, v in bt["usual"].items()) + "." + pace)
+    parts = table(["Part of the order", "Runs", "Balls", "Strike rate", "In fours and sixes", "4s", "6s"],
+                  [[p["part"], p["runs"], p["balls"], fmt(p["strike_rate"], 1), pct(p["boundary_share"], 0), p["fours"], p["sixes"]]
+                   for p in bt["parts"] if p["balls"]], num={1, 2, 3, 4, 5, 6})
+    lead = []
+    if style and bw["balls_per_wicket"]:
+        times = {0: "", 1: "once", 2: "twice"}.get(bw["cheap"], f"{bw['cheap']} times")
+        lead.append(f"With the ball they {style}" + ((f", and have had sides 3 down cheaply {times} in {bw['innings']} innings"
+                                                       if bw["cheap"] else f", and haven't had a side 3 down cheaply in "
+                                                       f"{bw['innings']} innings") if bw["innings"] else "") + ".")
+    if shape:
+        lead.append(f"With the bat they {shape.split(':')[0]}.")
+    out.update(summary=" ".join(lead), bowling=bowl, batting=bat, parts=parts, matches=h["matches"],
+               rules=(f"Read by fixed rules, the same for every team (no overs on a scorecard): 3 down cheaply is the 3rd "
+                      f"wicket by {bw['cheap_line']}; attacking is a wicket every {bw['attack_line']} balls or fewer; "
+                      f"squeezing is under {bw['squeeze_line']} an over; the new-ball pair is the first two bowlers on the "
+                      f"card; blasting from the start is openers scoring 10% faster than the middle order (5-7), and the "
+                      f"other way round is building, then blasting."))
+    return out
+
+
+def _current(career, ids, team: str, last: int = 10) -> list[str]:
+    """The team's players in its last `last` matches here, most matches first: the side as it is now."""
+    m = career.matches[career.matches.match_id.isin(ids) & ((career.matches.home == team) | (career.matches.away == team))]
+    recent = set(m.sort_values("date").match_id.tail(last))
+    xi = career.batting[career.batting.match_id.isin(recent) & (career.batting.team == team)]
+    return list(xi.player.value_counts().index)
+
+
+def _one_section(career, ids) -> bool:
+    return career.matches[career.matches.match_id.isin(ids)].section.nunique() == 1
+
+
+def _danger_men(career, ids, opp, where_note) -> dict:
+    """Their three most dangerous players right now: the most impact points this season (last season when this one
+    has fewer than 5 matches), each with their last five innings or spells."""
+    if not _one_section(career, ids):
+        return dict(none="Pick one format to see their danger men: formats are never mixed.", men=[])
+    section = career.matches[career.matches.match_id.isin(ids)].section.iloc[0]
+    this, before, n = HP.seasons(career, ids, opp)
+    season, note = this, ""
+    if n.get(this, 0) < HP.MIN_MATCHES and before:
+        season = before
+        note = (f"{opp} have played {_n(n.get(this, 0), 'match', 'matches')} here this season ({this}), so these are last "
+                f"season's ({before}, {_n(n[before], 'match', 'matches')}).")
+    men = MO.danger_men(career, section, season, opp)
+    if not men:
+        return dict(none=f"{opp} haven't played in {where_note} in {season} yet.", men=[])
+    for x in men:
+        x["innings"] = [dict(i, date=f"{i['date']:%d %b %y}", text=f"{i['runs']}{'' if i['out'] else '*'} ({i['balls']})")
+                        for i in x["innings"]]
+        x["spells"] = [dict(w, date=f"{w['date']:%d %b %y}", text=f"{w['wickets']}-{w['runs']}") for w in x["spells"]]
+        x["line"] = (f"{x['points']:.0f} impact points in {_n(x['matches'], 'match', 'matches')} "
+                     f"({x['batting']:.0f} batting, {x['bowling']:.0f} bowling"
+                     + (f", {x['fielding']:.0f} fielding" if round(x["fielding"]) else "") + ")")
+    return dict(none="", season=season, note=note, men=men,
+                shows=f"{poss(opp)} three players with the most impact points in {where_note} in {season} (the points "
+                      f"of Season review's MVPs: runs and wickets, and how fast or cheaply they came), each with their "
+                      f"last five innings and spells here.",
+                for_="The players to plan for: who is hurting sides right now, and how they've gone lately.")
+
+
+def _big_players(career, ids, opp, where_note) -> dict | None:
+    """Their players in big games (every knockout and series decider) against their ordinary games, from 3 big
+    games."""
+    if not _one_section(career, ids):
+        return dict(none="Pick one format to see this: formats are never mixed.")
+    now = _current(career, ids, opp)
+    bm = MO.big_match(career, ids, players=now, team=opp)
+    if bm.empty:
+        return dict(none=f"None of {poss(opp)} current players has played {MO.BIG_MIN} or more big games (knockouts and "
+                         f"series deciders) in {where_note} yet.")
+    rows = []
+    for r in bm.itertuples():
+        bb, ob, bw, ow = r.big_bat, r.ord_bat, r.big_bowl, r.ord_bowl
+        rows.append([r.player, r.big, f"{bb['runs']} at {fmt(bb['average'], 1)}" if bb["innings"] else "–",
+                     f"{ob['runs']} at {fmt(ob['average'], 1)}" if ob["innings"] else "–",
+                     f"{bw['wickets']} at {fmt(bw['average'], 1)}" if bw["spells"] else "–",
+                     f"{ow['wickets']} at {fmt(ow['average'], 1)}" if ow["spells"] else "–"])
+    t = table(["Player", "Big games", "Runs in big games", "Runs otherwise", "Wickets in big games", "Wickets otherwise"],
+              rows, num={1})
+    t.update(none="", shows=f"{poss(opp)} current players with {MO.BIG_MIN} or more big games in {where_note}: runs and "
+                            f"wickets (with their average) in knockouts and series deciders, next to every other game.",
+             for_="Who rises to the big occasion and who shrinks: the ones to fear in a final or a decider.")
+    return t
+
+
+def _by_country(career, ids, me, opp, where_note) -> dict:
+    """Their current players' record where the match is: with you at home (in your country), away (in theirs) or on
+    neutral grounds."""
+    if not _one_section(career, ids):
+        return dict(none="Pick one format to see this: formats are never mixed.", venues={})
+    now = _current(career, ids, opp)
+    bh = MO.by_host(career, ids, players=now, team=opp)
+    nation = opp in FX.NATIONS
+    hosts = {"Home": me, "Away": opp, "Neutral": ""} if me else {"Away": opp, "Neutral": ""}
+    out = dict(none="", venues={})
+    for where, host in hosts.items():
+        x = bh[bh.host == host] if host is not None else bh.iloc[0:0]
+        place = ("on neutral grounds" if not host else (f"in {host}" if nation else f"at {poss(host)} ground"))
+        if x.empty:
+            out["venues"][where] = dict(none=f"None of {poss(opp)} current players has played {place} in {where_note} yet.",
+                                        place=place)
+            continue
+        x = x.assign(order=x.player.map({p: i for i, p in enumerate(now)})).sort_values(["matches", "order"],
+                                                                                         ascending=[False, True])
+        t = table(["Player", "Matches", "Runs", "Average", "Strike rate", "Wickets", "Average", "Economy"],
+                  [[r.player, int(r.matches), r.bat["runs"], fmt(r.bat["average"], 1), fmt(r.bat["strike_rate"], 1),
+                    r.bowl["wickets"], fmt(r.bowl["average"], 1), fmt(r.bowl["economy"], 2)] for r in x.itertuples()],
+                  num={1, 2, 3, 4, 5, 6, 7})
+        t.update(none="", place=place)
+        out["venues"][where] = t
+    out.update(shows=f"{poss(opp)} current players (those in their last 10 games here) {'in each country' if nation else 'at each ground'} "
+                     f"in {where_note}: with you at home it's your {'country' if nation else 'ground'}, away theirs.",
+               for_="Who is at home in the conditions of your match, and who has never played there.")
+    return out
+
+
+
+def about_them(career, ids, me, opp, where_note, mu, cur, last=False) -> dict:
     out, part = _parts()
     pv = _pv(career, ids, opp)
+    part("how", lambda: _how_they_play(career, ids, opp, where_note, last))
+    part("danger", lambda: _danger_men(career, ids, opp, where_note))
+    part("big_players", lambda: _big_players(career, ids, opp, where_note))
+    part("by_country", lambda: _by_country(career, ids, me, opp, where_note))
 
     def in_form(which):
         top = pv[which].head(6)
@@ -400,7 +662,7 @@ def about_them(career, ids, me, opp, where_note, mu, cur) -> dict:
         links = []
         if ce["best_chase"]:
             r_, w_, mid, o_ = ce["best_chase"]
-            links.append(dict(label="Highest chase", text=f"{r_}/{w_} v {o_}", id=mid))
+            links.append(dict(label="Highest winning chase (their score)", text=f"{r_}/{w_} v {o_}", id=mid))
         if ce["low_defend"]:
             r_, w_, mid, o_, allout = ce["low_defend"]
             links.append(dict(label="Lowest total defended", text=(f"{r_}" if allout else f"{r_}/{w_}") + f" v {o_}", id=mid))
@@ -443,7 +705,8 @@ def about_them(career, ids, me, opp, where_note, mu, cur) -> dict:
         how = pv["how_out"]
         if how.empty:
             return None
-        return dict(rows=[dict(label=say(h), value=float(v)) for h, v in how.items()],
+        n = pv["how_out_n"]
+        return dict(rows=[dict(label=say(h), value=float(v), n=int(n[h])) for h, v in how.items()], outs=int(n.sum()),
                     shows=f"{how.iloc[0]:.0f}% of their dismissals are {say(how.index[0]).lower()}"
                           + (f" and {how.iloc[1]:.0f}% {say(how.index[1]).lower()}" if len(how) > 1 else "") + ".",
                     for_="How to get them out: a high bowled or lbw share means attacking the stumps works; a high caught "
@@ -452,7 +715,9 @@ def about_them(career, ids, me, opp, where_note, mu, cur) -> dict:
 
     def depth():
         dep = pv["depth"]
-        out_ = dict(rows=[dict(label=g, value=s, note=f"{r} runs") for g, s, r in zip(dep.group, dep.share, dep.runs)],
+        if not dep.runs.sum():
+            return None
+        out_ = dict(rows=[dict(label=g, value=s, note=f"{r} runs", runs=int(r)) for g, s, r in zip(dep.group, dep.share, dep.runs)],
                     shows="", for_="")
         if len(dep):
             d0 = dep.sort_values("share", ascending=False).iloc[0]

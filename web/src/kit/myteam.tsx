@@ -2,7 +2,7 @@
 // what's next, the report card's grades.
 import { Link } from "react-router";
 import type { Advice, MyTeam, ReportCard } from "../api";
-import { dayY, pct } from "../format";
+import { dayY, pct, rnd } from "../format";
 import { useTheme } from "../theme";
 import { Name, PName } from "./base";
 import { T } from "../shell/names";
@@ -43,7 +43,7 @@ export function AdviceList({ items }: { items: Advice[]; keep?: string }) {
             <span className="tagx">{p.role}{p.capped ? " · capped" : ""}{p.spinner ? " · spin" : ""}{p.unsure ? " · country a guess" : ""}</span>
             <div className="how">At this level: {[p.bat, p.bowl].filter(Boolean).join(" · ")}</div>
             <div className="how">Domestic, last two seasons, as it is{p.side ? ` (now at ${p.side})` : ""}: {[p.raw_bat, p.raw_bowl].filter(Boolean).join(" · ")}</div></div>
-          <span className="gain">{p.gain >= 0 ? "+" : ""}{Math.round(p.gain * 100)}%</span></div>))}
+          <span className="gain">{p.gain >= 0 ? "+" : ""}{rnd(p.gain * 100)}%</span></div>))}
     </div>))}</>;
 }
 
@@ -72,6 +72,7 @@ export function NextUp({ n, keep = "" }: { n: NonNullable<MyTeam["next_up"]>; ke
       {x && <div className="plain">⏭ Next: <b>{x.what}</b>{x.venue ? ` · ${x.venue}` : ""} · {x.when}
         {x.chance && <> · 🔮 win <b>{pct(x.chance.win)}</b>{x.chance.draw != null ? `, draw ${pct(x.chance.draw)}` : ""}, {x.opponent} {pct(x.chance.lose)}</>}
         {" · "}<Link className="lk" to={`/teams/preview${keep}`}>Preview →</Link></div>}
+      {x?.aim && <div className="plain">🎯 Batting first {x.aim}</div>}
       {n.under_way.map((u) => <div className="plain" key={u}>🔴 {u}</div>)}
       <div className="note">From your schedule (Fixtures); adding and changing fixtures arrives on the new site in stage 4.</div>
     </>

@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from ccstats import aim as AIM
+from ccstats import partnerships as PS
 from ccstats import analysis as A
 from ccstats import catalogue as CAT
 from ccstats import extras as E
@@ -242,11 +243,13 @@ def overview(career, section, season, team, venue) -> dict:
 
     def depth():
         dep = A.batting_depth(career, tm.match_id, team)
+        if not dep.runs.sum():
+            return None
         all_dep = kept(career, ("all_depth", tuple(ids), tuple(teams)),
                        lambda: pd.concat([A.batting_depth(career, ids, t).assign(team=t) for t in teams]))
         ref = all_dep.groupby("group", sort=False).share.mean()
-        out = dict(rows=[dict(label=g, value=s, note=f"{r} runs · average team {ref.get(g, 0):.0f}%")
-                         for g, s, r in zip(dep.group, dep.share, dep.runs)], shows="", for_="")
+        out = dict(rows=[dict(label=g, value=s, note=f"{r} runs · average team {ref.get(g, 0):.0f}%", runs=int(r),
+                              ref=float(ref.get(g, 0))) for g, s, r in zip(dep.group, dep.share, dep.runs)], shows="", for_="")
         if len(dep) and dep.runs.sum():
             top_g = dep.sort_values("share", ascending=False).iloc[0]
             out["shows"] = (f"{top_g.share:.0f}% of {poss(team)} runs come from the {top_g.group.lower()} (the average "
@@ -296,6 +299,61 @@ def overview(career, section, season, team, venue) -> dict:
                      links=list(col.match_id) if "match_id" in col.columns else None)
     P("collapses", collapses)
 
+    def big_stands():
+        """The team's biggest partnerships here, next to the collapses."""
+        bs = PS.big_stands(career, tm.match_id, team)
+        if bs.empty:
+            return None
+        def pair(a, b):
+            return f"{a} & {b}" if a and b else "– (the scorecard can't tell who)"
+        return table(["Date", "Against", "Wicket", "Stand", "Batters"],
+                     [[f"{d:%d %b %y}", o, ordinal(int(w)), f"{int(r)}{'*' if u else ''}", pair(a, b)]
+                      for d, o, w, r, u, a, b in zip(bs.date, bs.opposition, bs.wicket, bs.runs, bs.unbroken, bs.batter1, bs.batter2)],
+                     num={3}, links=list(bs.match_id))
+    P("big_stands", big_stands)
+
+    rs = SG.in_played_order(career, SG.results(career, team, tm.match_id))
+    scope_words = f"{section}" + ("" if season in ("", "All seasons") else f" in {season}")
+
+    def strength():
+        """Against stronger and weaker sides: every match placed by both sides' rating (Elo) just before it."""
+        rows = SG.strength(career, team, rs)
+        if not rows:
+            return None
+        up = [r for r in rows if r["gap"] > 0]
+        down = [r for r in rows if r["gap"] < 0]
+        def rec(x, word):
+            return (f"against sides rated {word} them they won {sum(r['outcome'] == 'W' for r in x)} of {len(x)}" if x else
+                    f"they haven't played a side rated {word} them")
+        return dict(rows=rows, lanes=[section],
+                    shows=f"In {scope_words}, {rec(up, 'above')}; {rec(down, 'below')}. Each dot is a match, placed by how "
+                          f"much stronger (right) or weaker (left) the other side was rated just before it.",
+                    for_="Whether they beat the strong sides or only the weak ones, and their best win and worst defeat by "
+                         "the ratings.")
+    P("strength", strength)
+
+    def venues_():
+        """Home, away and neutral, then country by country (or ground by ground)."""
+        if not rs:
+            return None
+        v = SG.venues(rs, team)
+        unit = "country" if v["nation"] else "ground"
+        v.update(shows=f"{poss(team)} record at home, away and on neutral grounds in {scope_words}, then {unit} by {unit}: "
+                       f"each bar every match there in order, green won, red lost.",
+                 for_="How much they rely on home, and where they travel well or badly.")
+        return v
+    P("venues", venues_)
+
+    def streaks():
+        """Every match in order, the longest runs marked, and the run they're on."""
+        if not rs:
+            return None
+        return dict(results=rs, streaks=SG.runs_of([r["outcome"] for r in rs]),
+                    shows=f"Every {team} match in {scope_words} in the order played, with the longest winning and losing "
+                          f"runs marked, and the run they're on now.",
+                    for_="Form at a glance: whether they're on a run, and how long their best and worst runs lasted.")
+    P("streaks", streaks)
+
     def carry():
         sh = AIM.team_shares(career, tm.match_id, team)
         tr, tw = sh.attrs["team_runs"], sh.attrs["team_wickets"]
@@ -321,12 +379,30 @@ def overview(career, section, season, team, venue) -> dict:
         if len(both):
             bits.append(f"{' and '.join(both.player.head(2))} {'does' if len(both) == 1 else 'do'} both: at least 10% of "
                         "the runs and of the wickets.")
-        g.update(shows=" ".join(bits), for_=(f"Shows who {team} lean on. The team's runs are the innings totals as printed "
-                                             f"({tr} here, extras included) and its wickets are those its bowlers took ({tw}), "
-                                             "so a player's share is the same as on their own page. Players with 5% of "
-                                             "either are listed, the biggest load first."))
+        g.update(shows=" ".join(bits), for_=(f"Shows who {team} lean on. The team's runs are the runs its batters made off "
+                                             f"the bat ({tr} here: extras are no one's) and its wickets are those its bowlers "
+                                             f"took ({tw}), so a player's share is the same as on their own page. Players "
+                                             "with 5% of either are listed, the biggest load first."))
         return g
     P("carry", carry)
+
+    def contribution():
+        """Every player of the team here: their share of its runs off the bat and of its wickets (sorted on the page)."""
+        sh = AIM.team_shares(career, tm.match_id, team)
+        tr, tw = sh.attrs["team_runs"], sh.attrs["team_wickets"]
+        if sh.empty or not (tr or tw):
+            return None
+        # the shares to one place here, once (as "Who carries the team" writes them), so the page never rounds twice
+        rows = [dict(player=p, matches=int(n), runs=int(r), run_share=round(float(rs), 1), wickets=int(w),
+                     wicket_share=round(float(ws), 1))
+                for p, n, r, rs, w, ws in zip(sh.player, sh.matches, sh.runs, sh.run_share, sh.wickets, sh.wicket_share)]
+        top = sh.head(5)
+        return dict(rows=rows, team_runs=int(tr), team_wickets=int(tw),
+                    shows=f"All {len(sh)} players {team} used in {scope_words}: {tr} runs off the bat and {tw} wickets "
+                          f"between them. The top five run-scorers make {top.run_share.sum():.0f}% of the runs.",
+                    for_="Everyone's part, not only the main players: who chips in, and how much rests on a few. Click a "
+                         "column to sort by it.")
+    P("contribution", contribution)
 
     def usual():
         u = AIM.usual_by_wicket(career, tm.match_id, team)
@@ -350,6 +426,16 @@ def overview(career, section, season, team, venue) -> dict:
                 bits.append(f"They're furthest ahead at the {ordinal(int(u.wicket.iloc[i_hi]))} wicket ({signed(gaps[i_hi], 0)}).")
             if gaps[i_lo] < 0:
                 bits.append(f"They're furthest behind at the {ordinal(int(u.wicket.iloc[i_lo]))} wicket ({signed(gaps[i_lo], 0)}).")
+        rising = []      # the line stops where the usual score would dip (each wicket's middle score is of other innings)
+        for r in u.itertuples():
+            if rising and int(r.usual) <= rising[-1][1]:
+                break
+            rising.append((int(r.wicket), int(r.usual)))
+        g["line"] = (f"In {scope_words} {team} are usually "
+                     + ", ".join(f"{v}/{w}" for w, v in rising) + ("…" if rising[-1][0] < 10 else "")
+                     + (" (their opponents " + ", ".join(f"{int(r.opp_usual)}/{int(r.wicket)}" for r in u.itertuples()
+                                                         if pd.notna(r.opp_usual) and int(r.wicket) <= rising[-1][0]) + ")"
+                        if u.opp_usual.notna().any() else ""))
         g.update(shows=" ".join(bits), for_=("Shows where the innings usually stands as each wicket falls, against the "
                                              "teams they played in the same games: the typical (middle) score, so one "
                                              "huge stand doesn't pull it about. Only wickets that fell in at least 30% of "

@@ -2,7 +2,7 @@
 // depth rows and inbox messages. Used on the Player page, My team and the Inbox.
 import { Link } from "react-router";
 import type { Attr, Attributes, DepthPlayer, InboxMsg, ScoutReport } from "../api";
-import { dayY } from "../format";
+import { dayY, rnd } from "../format";
 import { PName } from "./base";
 import { Mark } from "./myteam";
 import { T } from "../shell/names";
@@ -46,8 +46,8 @@ export function ScoutText({ r }: { r: ScoutReport }) {
 export function DepthRow({ p }: { p: DepthPlayer }) {
   return (
     <div className={`drow ${p.starts ? "st" : ""}`}>
-      <span className={`av ${p.rating == null ? "" : band(Math.round(p.rating))}`} title={p.rating == null ? "Not enough cricket here yet for a rating" : `Rating ${p.rating} out of 20`}>
-        {p.rating == null ? "–" : Math.round(p.rating)}</span>
+      <span className={`av ${p.rating == null ? "" : band(rnd(p.rating))}`} title={p.rating == null ? "Not enough cricket here yet for a rating" : `Rating ${p.rating} out of 20`}>
+        {p.rating == null ? "–" : rnd(p.rating)}</span>
       <PName p={p.player} px={19} />
       <span className="dm">{p.marks.map((m, i) => <Mark key={i} v={m} />)}</span>
     </div>);

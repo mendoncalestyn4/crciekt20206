@@ -206,6 +206,16 @@ def _body(career, here, base_scope, scope_for, a, b, ids_a, ids_b, venue_a, venu
                           for r in show.itertuples()])
     part("meetings", meetings)
 
+    def bat_first():
+        """Both sides batting first and chasing, in the games picked above (the style guide's chart)."""
+        sides = [dict(team=t, **SG.bat_first(career, t, ids_)) for t, ids_ in ((a, ids_a), (b, ids_b))]
+        second = "batting second" if sides[0]["multi"] else "chasing"
+        what = f"their meetings in {where_scope}" if h2h else f"each side's own games against anyone in {where_scope}"
+        return dict(sides=sides, shows=f"Each side's record batting first and {second}, in {what}, with the totals defended, "
+                                       f"lost with, chased down and failed to chase.",
+                    for_="Which side is happier setting a total and which chasing one: think about it at the toss.")
+    part("bat_first", bat_first)
+
     _, _, _, base = kept(career, ("player_tables", repr(base_scope)), lambda: player_tables(career, base_scope))
     ta = kept(career, ("player_tables_by_team", repr(scope_for(a, b))), lambda: player_tables(career, scope_for(a, b), by_team=True))
     tb = kept(career, ("player_tables_by_team", repr(scope_for(b, a))), lambda: player_tables(career, scope_for(b, a), by_team=True))

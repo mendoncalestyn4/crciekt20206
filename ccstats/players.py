@@ -366,7 +366,7 @@ def form_is_real(career, ids, last: int = 8, min_innings: int = 12) -> pd.DataFr
 
 def team_share(career, player: str) -> pd.DataFrame:
     """The player's share of their team in each competition and season they played, newest first: their matches out
-    of the team's, their runs out of all the team's runs (the totals as printed, extras included) and their wickets
+    of the team's, their runs out of all the runs the team's batters made (off the bat: extras are no one's) and their wickets
     out of all the wickets the team's bowlers took. Columns: section, season, team, matches, team_matches, runs,
     team_runs, run_share, wickets, team_wickets, wicket_share (shares in %)."""
     cols = ["section", "season", "team", "matches", "team_matches", "runs", "team_runs", "run_share", "wickets",
@@ -387,7 +387,8 @@ def team_share(career, player: str) -> pd.DataFrame:
         bowl = career.bowling[career.bowling.match_id.isin(ids) & (career.bowling.team == team)]
         mine_b = b[b.match_id.isin(ids) & (b.team == team) & b.did_bat]
         mine_w = bowl[bowl.player == player]
-        team_runs, team_wkts = int(inn.runs.sum()), int(bowl.wickets.sum())
+        bat_t = career.batting[career.batting.match_id.isin(ids) & (career.batting.team == team) & career.batting.did_bat]
+        team_runs, team_wkts = int(bat_t.runs.sum()), int(bowl.wickets.sum())
         runs, wkts = int(mine_b.runs.sum()), int(mine_w.wickets.sum())
         out.append(dict(section=section, season=season, team=team, matches=int(g.match_id.nunique()),
                         team_matches=len(ids), runs=runs, team_runs=team_runs,

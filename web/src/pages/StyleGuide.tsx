@@ -8,7 +8,7 @@ import { Hero, Lamps, Logo, Missing, Name, Num, Sub, Tile } from "../kit/base";
 import { KeepScores, MatchRows, MatchSummary, PercentileBars, PomCard, Scorecard, SquadTable, Story, TopList, TvTable, Ticker } from "../kit/blocks";
 import { EloLines, InningsBars, LeaderBars, RankRace, RankTrack, Ring, RingList, TugOfWar } from "../kit/charts";
 import { BatFirstSides, FormBig, FormCard, Goes, Ladder, MatchWinners, MonthTiles, ScoreRows, StrengthPanel, Streaks, VenueRecord } from "../kit/season";
-import { ab, cap, day, dayY, f0, f1, f2, fmtOf, ord, overs, plural } from "../format";
+import { ab, cap, day, dayY, f0, f1, f2, fmtOf, ord, overs, plural, rnd } from "../format";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
 import { useTheme } from "../theme";
@@ -61,7 +61,7 @@ export function StyleGuide() {
         {!d.banner?.length && <Tile span={12} title="Season tiles"><Missing why={miss.banner} /></Tile>}
         <Tile span={4} title="Season" rows={2}>
           <div className="row2"><Logo team={team} size={124} /><div><Num v={`${won}–${lost}`} px={48} />
-            <div className="s"><b>{season.length}</b> matches · won <b>{won + lost ? `${Math.round((won / (won + lost)) * 100)}%` : "–"}</b></div></div></div>
+            <div className="s"><b>{season.length}</b> matches · won <b>{won + lost ? `${rnd((won / (won + lost)) * 100)}%` : "–"}</b></div></div></div>
           {season.length ? <Ring won={won} lost={lost} other={season.length - won - lost} /> : <Missing why={miss.this_season} />}
           <Used on="My team" />
         </Tile>

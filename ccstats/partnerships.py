@@ -155,6 +155,18 @@ def _all_stands(career) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=STAND_COLUMNS)
 
 
+def big_stands(career, ids, team: str, n: int = 10) -> pd.DataFrame:
+    """The team's biggest partnerships in these matches, biggest first (an unbroken one first among equals, then the
+    earlier), with the date, the opponents and the two batters (blank when the scorecard can't tell)."""
+    s = stands(career, ids)
+    s = s[s.team == team]
+    if s.empty:
+        return s.assign(date=pd.Series(dtype="datetime64[ns]"))
+    m = career.matches.set_index("match_id")
+    s = s.assign(date=s.match_id.map(m.date))
+    return s.sort_values(["runs", "unbroken", "date"], ascending=[False, False, True]).head(n).reset_index(drop=True)
+
+
 def by_wicket(s: pd.DataFrame) -> pd.DataFrame:
     """Stands (from `stands`) summed up for each wicket, the way cricket counts them: an unbroken stand's runs count
     and it can be the best (best_unbroken: shown with a *), and the average is the runs over the stands that were

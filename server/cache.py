@@ -27,3 +27,10 @@ def kept(career, key, make):
         if key not in box["values"]:
             box["values"][key] = make()
         return box["values"][key]
+
+
+def aim_fits(career):
+    """The score to aim for's fit for each length of game, kept with the career (the slow part, shared by Opponent
+    preview and My team)."""
+    from ccstats import aim as AIM
+    return lambda length: kept(career, ("aim_model", length), lambda: AIM.model(career, length))

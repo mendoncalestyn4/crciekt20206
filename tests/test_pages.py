@@ -686,16 +686,33 @@ def test_team_record_carry_usual_and_the_score_to_aim_are_the_engines(every):
         for r in b["usual"]["rows"]:
             if r[2] != "–":
                 assert r[3] == f"{r[1] - r[2]:+d}"
-    # the score to aim for: multi-day cricket and mixed formats say why; with enough games, the engine's totals
+    # the score to aim for: mixed formats say why; Tests show the first-innings totals that won, drew and lost; one-day
+    # and T20 cricket the engine's totals, how sure it is and the meetings
     def opp(sec):
         g = m[(m.section == sec) & ((m.home == "England") | (m.away == "England"))]
         return next(t for t in list(g.home) + list(g.away) if t != "England")
-    d = every.json(f"/api/preview?section=Internationals&format=Tests&mine=England&opp={opp('Tests')}")
-    assert "multi-day" in d["head"]["aim"]["none"]
     d = every.json(f"/api/preview?section=Internationals&format=All&mine=England&opp={opp('ODIs')}")
     assert "Pick one format" in d["head"]["aim"]["none"]
-    d = every.json(f"/api/preview?section=Internationals&format=ODIs&mine=England&opp={opp('ODIs')}")
-    assert d["head"]["missing"] == {} and d["head"]["aim"]["none"].startswith("Not enough finished games")
+    for fmt, kind in (("Tests", "multi"), ("ODIs", "limited"), ("T20Is", "limited")):
+        o = opp(fmt)
+        d = every.json(f"/api/preview?section=Internationals&format={fmt}&mine=England&opp={o}")
+        a = d["head"]["aim"]
+        assert d["head"]["missing"] == {} and not a["none"] and a["kind"] == kind and a["note"]
+        e = AIM.score_to_aim(c, set(m[m.section == fmt].match_id), "England", o)
+        assert set(a["venues"]) == {"Home", "Away", "Neutral"}
+        for venue, v in a["venues"].items():
+            x = e["venues"][venue.lower()]
+            if kind == "multi":
+                assert bool(v["games"]) == bool(x["games"]) and (not x["games"] or len(v["games"]["rows"]) == len(x["games"]))
+                for res, word in (("won", "won"), ("drawn", "drew"), ("lost", "lost")):
+                    t = x["typical"][res]
+                    assert (f"when they {word}, usually {t['typical']}" in v["line"]) == bool(t["n"])
+            else:
+                assert v["line"] == f"{x['even']} for an even game · {x['seventy']} for a 70% chance"
+                assert (v["meetings"] is None) == (not x["meetings"])
+        if kind == "limited":
+            assert f"{e['games']} finished games" in a["rests"] and f"{e['right']:.0f}%" in a["sure"]
+            assert bool(a.get("few")) == e["venues"]["home"]["few"]
 
 
 def test_season_wrapped_on_every_season_review(every):
@@ -797,3 +814,194 @@ def test_every_page_opens_on_the_picks_you_last_made(tmp_path):
         assert s.json("/api/rivalries")["section"] in [x["section"] for x in s.json("/api/rivalries")["choices"]]
     finally:
         s.stop()
+
+
+def test_opponent_preview_shows_their_own_record_batting_first_and_where(every):
+    """Under the head-to-head record: the opponent's own record batting first and chasing, and home, away and neutral
+    then host by host, against every side in that competition, counted again from the scorecards."""
+    c = every.app.state.site.career()
+    m, inn = c.matches, c.innings
+    done = 0
+    for section, fmt, me in (("Internationals", "ODIs", "England"), ("Internationals", "Tests", "England"),
+                             ("Indian Premier League", "", "")):
+        q = f"/api/preview?section={section}" + (f"&format={fmt}" if fmt else "")
+        d = every.json(q)
+        me = me or d["mine"]
+        sec = fmt or section
+        mm = m[m.section == sec]
+        for o in [x["team"] for x in d["opp_opts"] if "yet)" not in x["label"]][:6]:
+            b = every.json(q + f"&mine={me}&opp={o}")["body"]
+            assert b["missing"] == {}, b["missing"]
+            mine = mm[(mm.home == o) | (mm.away == o)]
+            first = inn[inn.innings_no == 1].set_index("match_id").team
+            rec = {"first": [0, 0, 0], "chase": [0, 0, 0]}
+            for x in mine.itertuples():
+                if x.result_type == "no result":
+                    continue
+                k = "first" if first.get(x.match_id) == o else "chase"
+                rec[k][0] += 1
+                rec[k][1] += x.winner == o
+                rec[k][2] += x.winner not in ("", o)
+            assert "bat_first" in b, (sec, me, o, b)
+            bf = b["bat_first"]
+            assert [bf["first"]["played"], bf["first"]["won"], bf["first"]["lost"]] == rec["first"], (o, sec)
+            assert [bf["chase"]["played"], bf["chase"]["won"], bf["chase"]["lost"]] == rec["chase"], (o, sec)
+            assert bf["who"] == o and bf["shows"] and bf["for_"]
+            w = b["where"]
+            for venue in ("home", "away", "neutral"):
+                here = [x for x in mine.itertuples() if ("neutral" if x.neutral else "home" if x.home == o else "away") == venue]
+                assert w[venue]["played"] == len(here)
+                assert w[venue]["won"] == sum(x.winner == o for x in here)
+            assert sum(h["played"] for h in w["hosts"]) == len(mine)
+            done += 1
+    assert done >= 8
+
+
+def test_team_v_team_batting_first_or_chasing_counted_by_hand(every):
+    """Team v team: each side's record batting first and chasing in the games picked (their meetings, or each side's
+    own games against anyone), counted again from the scorecards."""
+    c = every.app.state.site.career()
+    m, inn = c.matches, c.innings
+    first = inn[inn.innings_no == 1].set_index("match_id").team
+    done = 0
+    for ch in every.json("/api/teamvteam")["choices"]:
+        p = every.json(f"/api/teamvteam?section={ch['section']}")["page"]
+        if not p or p.get("none"):
+            continue
+        for which in ("each", "any"):
+            x = every.json(f"/api/teamvteam?section={p['section']}&a={p['a']}&b={p['b']}&which={which}")["page"]
+            if x.get("none"):
+                continue
+            b = x["body"]
+            assert b["missing"] == {}, b["missing"]
+            here = m[m.section == x["section"]]
+            for side in b["bat_first"]["sides"]:
+                t, o = side["team"], x["b"] if side["team"] == x["a"] else x["a"]
+                g = here[(here.home == t) | (here.away == t)]
+                if which == "each":
+                    g = g[(g.home == o) | (g.away == o)]
+                g = g[g.result_type != "no result"]
+                for key, bat in (("first", True), ("chase", False)):
+                    gg = g[(g.match_id.map(first) == t) == bat]
+                    assert side[key] == dict(played=len(gg), won=int((gg.winner == t).sum()),
+                                             lost=int(((gg.winner != t) & (gg.winner != "")).sum())), (x["section"], t, which, key)
+            done += 1
+    assert done >= 6
+
+
+def test_team_record_overview_charts_counted_by_hand(every):
+    """Teams · Overview: runs of results (every match in order), against stronger and weaker sides (both ratings just
+    before each match) and home, away and neutral then host by host, counted again from the scorecards."""
+    from ccstats.rankings import team_elo
+    c = every.app.state.site.career()
+    m = c.matches
+    done = 0
+    for sec in ("ODIs", "Tests", "T20 Blast", "Indian Premier League"):
+        here = m[m.section == sec]
+        elo = team_elo(c, sec)[1].set_index(["match_id", "team"]).before
+        for team in sorted(set(here.home) | set(here.away))[:4]:
+            b = every.json(f"/api/team?team={team}&section={sec}")["page"]["body"]
+            assert b["missing"] == {}, b["missing"]
+            mine = here[(here.home == team) | (here.away == team)]
+            out = {r.match_id: ("W" if r.winner == team else "L" if r.winner else "D" if r.result_type == "draw" else
+                                "T" if r.result_type == "tie" else "N") for r in mine.itertuples()}
+            res = b["streaks"]["results"]
+            assert sorted(r["id"] for r in res) == sorted(out) and all(r["outcome"] == out[r["id"]] for r in res)
+            # the runs: each a stretch of one result, together every match once, next runs never alike
+            runs = b["streaks"]["streaks"]
+            assert runs[0]["start"] == 0 and runs[-1]["end"] == len(res) - 1
+            for r0, r1 in zip(runs, runs[1:]):
+                assert r1["start"] == r0["end"] + 1 and r1["o"] != r0["o"]
+            for r in runs:
+                assert {x["outcome"] for x in res[r["start"]: r["end"] + 1]} == {r["o"]}
+            st = b["strength"]["rows"]
+            for r in st:
+                opp = r["opp"]
+                assert (r["me"], r["them"]) == (round(elo[(r["id"], team)]), round(elo[(r["id"], opp)]))
+                assert r["gap"] == round(elo[(r["id"], opp)] - elo[(r["id"], team)])
+            assert {r["id"] for r in st} == {k for k, o in out.items() if (k, team) in elo.index}
+            v = b["venues"]
+            for venue in ("home", "away", "neutral"):
+                g = [x for x in mine.itertuples() if ("neutral" if x.neutral else "home" if x.home == team else "away") == venue]
+                assert (v[venue]["played"], v[venue]["won"]) == (len(g), sum(out[x.match_id] == "W" for x in g))
+            assert sum(h["played"] for h in v["hosts"]) == len(mine)
+            for h in v["hosts"]:
+                g = [x for x in mine.itertuples() if (not x.neutral and x.home == h["host"]) or (x.neutral and not h["host"])]
+                assert h["played"] == len(g), (team, h)
+            done += 1
+    assert done >= 12
+
+
+def test_team_record_big_stands_contribution_and_the_usual_line(every):
+    """Teams · Overview: big stands (the team's biggest partnerships, from every stand counted again), every player's
+    contribution (all of them, runs off the bat, the same as the engine's and adding up to the team's) and the
+    usual-score line (the same numbers as the table under it)."""
+    from ccstats import aim as AIM
+    from ccstats import partnerships as PS
+    c = every.app.state.site.career()
+    m = c.matches
+    done = 0
+    for sec in ("ODIs", "Tests", "T20 Blast", "Indian Premier League"):
+        here = m[m.section == sec]
+        for team in sorted(set(here.home) | set(here.away))[:4]:
+            b = every.json(f"/api/team?team={team}&section={sec}")["page"]["body"]
+            assert b["missing"] == {}, b["missing"]
+            mids = set(here[(here.home == team) | (here.away == team)].match_id)
+            st = PS.stands(c, mids)
+            st = st[st.team == team]
+            bs = b["big_stands"]
+            runs = [int(r[3].rstrip("*")) for r in bs["rows"]]
+            assert runs == sorted(st.runs, reverse=True)[:10] and len(runs) == min(10, len(st))
+            assert all(r[3].endswith("*") == bool(x.unbroken) for r, x in zip(bs["rows"], PS.big_stands(c, mids, team).itertuples()))
+            sh = AIM.team_shares(c, mids, team)
+            co = b["contribution"]
+            assert [x["player"] for x in co["rows"]] == list(sh.player) and [x["runs"] for x in co["rows"]] == list(sh.runs)
+            bat = c.batting[c.batting.match_id.isin(mids) & (c.batting.team == team) & c.batting.did_bat]
+            assert co["team_runs"] == int(bat.runs.sum()) == sum(x["runs"] for x in co["rows"])
+            # each share written once, the same as "Who carries the team" writes it
+            carry = {r[0]: r[3] for r in b["carry"]["rows"]}
+            for x in co["rows"]:
+                assert x["run_share"] == round(x["runs"] / co["team_runs"] * 100, 1)
+                if x["player"] in carry:
+                    assert carry[x["player"]] == f"{x['run_share']:.1f}%"
+            assert sum(x["run_share"] for x in co["rows"]) == pytest.approx(100.0, abs=0.05 * len(co["rows"]))   # each sent to 1 place
+            # batting depth: the average team's shares are of teams that batted, so they add up to 100% (a team without
+            # a run used to count as 0% and pull them down)
+            assert sum(r["ref"] for r in b["depth"]["rows"]) == pytest.approx(100.0, abs=0.1)
+            assert sum(r["runs"] for r in b["depth"]["rows"]) == co["team_runs"]
+            u = b["usual"]
+            prev = -1
+            for r in u["rows"]:    # the line runs while the usual score keeps rising
+                if r[1] <= prev:
+                    break
+                assert f"{r[1]}/{int(r[0].split()[0][:-2])}" in u["line"]
+                prev = r[1]
+            done += 1
+    assert done >= 12
+
+
+def test_player_page_match_winners_countries_big_games_and_bounce_back(every):
+    """The Player page's new pieces for players who have played 4 or more matches, in each competition they
+    played: never failing, each the engine's figures (the match-winners chart is their wins as player of the match;
+    every match is in exactly one row of country by country)."""
+    from ccstats import moments as MO
+    c = every.app.state.site.career()
+    m = c.matches
+    counts = c.batting.groupby("player").match_id.nunique()
+    done = 0
+    for p in sorted(counts[counts >= 4].index)[:40]:
+        d = every.json(f"/api/player?name={p}")
+        for sec in d["sections"][:3]:
+            x = every.json(f"/api/player?name={p}&section={sec}")
+            for k in ("winners", "big", "countries", "bounce"):
+                assert k not in x["missing"], (p, sec, x["missing"])
+            w = x["winners"]
+            assert [y["id"] for y in (w["players"][0]["matches"] if w["players"] else [])] == [y["id"] for y in x["won"]]
+            ids = set(m[m.section == sec].match_id)
+            played = c.batting[c.batting.match_id.isin(ids) & (c.batting.player == p)].match_id.nunique()
+            if x["countries"]:
+                assert sum(r[1] for r in x["countries"]["rows"]) == played
+            bm = MO.big_match(c, ids, players=[p])
+            assert bool(x["big"].get("rows")) == (not bm.empty)
+            done += 1
+    assert done >= 40

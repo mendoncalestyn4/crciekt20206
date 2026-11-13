@@ -15,13 +15,15 @@ from ccstats import analysis as A
 from ccstats import attributes as AT
 from ccstats import byinnings as BI
 from ccstats import extras as E
+from ccstats import fixtures as FX
 from ccstats import marks as MK
+from ccstats import moments as MO
 from ccstats import players as PL
 from ccstats import playerdeep as PD
 from ccstats import teamdeep as TD
 from ccstats.matchstory import pom_headline
 from ccstats.records import by_played
-from ccstats.stats import Scope, bars_for, player_tables
+from ccstats.stats import Scope, bars_for, player_tables, poss
 
 from . import myteam
 from . import styleguide as SG
@@ -211,6 +213,7 @@ def page(career, player: str, section: str = "", season: str = "") -> dict:
     piece("share", lambda: SG.rows(PL.team_share(career, player), ["section", "season", "team", "matches", "team_matches", "runs",
                                                                    "team_runs", "run_share", "wickets", "team_wickets", "wicket_share"]))
     piece("won", lambda: _won(career, player, my_matches, team_of))
+    piece("winners", lambda: _winners(career, player, my_matches, team_of))
     piece("marks", lambda: _marks(career, player))
     piece("journey", lambda: SG.rows(E.journey(career, player), ["first", "last", "team", "section", "season", "matches", "runs", "wickets"]))
 
@@ -239,6 +242,80 @@ def page(career, player: str, section: str = "", season: str = "") -> dict:
     piece("story", lambda: _story(career, player, section, season, ids, kind, my_matches))
     # attributes and the scout report: for the competition (every season of it), not one season
     piece("profile", lambda: kept(career, ("profile", section, player), lambda: AT.profile(career, section, player)))
+    # the moments that matter, in the competition (every season of it): big games, each country, after a poor game
+    sec_ids = set(m[m.section == section].match_id)
+    piece("big", lambda: _big(career, player, section, sec_ids))
+    piece("countries", lambda: _countries(career, player, section, sec_ids))
+    piece("bounce", lambda: _bounce(career, player, section, sec_ids))
+    return out
+
+
+def _bat_text(x: dict) -> str:
+    return f"{x['runs']} runs at {fmt(x['average'])}" if x["innings"] else "–"
+
+
+def _bowl_text(x: dict) -> str:
+    return f"{x['wickets']} wickets at {fmt(x['average'])}" if x["spells"] else "–"
+
+
+def _big(career, player, section, ids) -> dict | None:
+    """Big-match player: their finals, semi-finals, qualifiers, eliminators and other knockouts and their series
+    deciders here, against every other game (from 3 big games)."""
+    bm = MO.big_match(career, ids, players=[player])
+    if bm.empty:
+        n = len(MO.big_match_ids(career, ids) & set(career.batting[career.batting.match_id.isin(ids)
+                                                                   & (career.batting.player == player)].match_id))
+        return dict(none=f"{count(n, 'big game')} in {section} so far (knockouts and series deciders): the comparison shows "
+                         f"from {MO.BIG_MIN}.")
+    rows = []
+    for r in bm.itertuples():
+        rows.append(dict(team=r.team, big=int(r.big), ordinary=int(r.ordinary), big_bat=_bat_text(r.big_bat),
+                         ord_bat=_bat_text(r.ord_bat), big_bowl=_bowl_text(r.big_bowl), ord_bowl=_bowl_text(r.ord_bowl),
+                         big_sr=fmt(r.big_bat["strike_rate"]), ord_sr=fmt(r.ord_bat["strike_rate"]),
+                         big_econ=fmt(r.big_bowl["economy"], 2), ord_econ=fmt(r.ord_bowl["economy"], 2)))
+    return dict(none="", rows=rows, section=section)
+
+
+def _countries(career, player, section, ids) -> dict | None:
+    """Their record in each country (a national side's) or at each ground (a franchise's or county's): neutral
+    grounds a row of their own."""
+    bh = MO.by_host(career, ids, players=[player])
+    if bh.empty:
+        return None
+    nation = bool(len(bh)) and all(t in FX.NATIONS for t in bh.team)
+    rows = []
+    for r in bh.sort_values(["matches", "host"], ascending=[False, True]).itertuples():
+        place = "Neutral grounds" if not r.host else (r.host if nation else f"{poss(r.host)} ground")
+        home = bool(r.host) and r.host == r.team
+        rows.append([place + (" (home)" if home else ""), int(r.matches), r.bat["runs"], fmt(r.bat["average"]),
+                     fmt(r.bat["strike_rate"]), r.bowl["wickets"], fmt(r.bowl["average"]), fmt(r.bowl["economy"], 2)])
+    return dict(cols=["Where", "Matches", "Runs", "Average", "Strike rate", "Wickets", "Average", "Economy"], rows=rows,
+                num=[1, 2, 3, 4, 5, 6, 7], hi=[], links=[], nation=nation)
+
+
+def _bounce(career, player, section, ids) -> dict:
+    """Bounce-back: the game after a poor one (out for a duck or under 10; no wicket for 30 or more), against their
+    usual, from 3 poor games."""
+    bb = MO.bounce_back(career, ids, player)
+    out = {}
+    b = bb["bat"]
+    if b["poor"]:
+        out["bat"] = dict(shown=b["shown"], poor=b["poor"], followed=b["followed"],
+                          after=_bat_text(b["after"]), usual=_bat_text(b["usual"]),
+                          after_avg=b["after"]["average"], usual_avg=b["usual"]["average"],
+                          line=(f"After their {count(b['poor'], 'innings', 'innings')} out for under {MO.LOW} in {section}, their "
+                                f"next game brought {_bat_text(b['after'])} (their usual: {_bat_text(b['usual'])})."
+                                if b["shown"] else f"{count(b['poor'], 'poor innings', 'poor innings')} so far (out for under "
+                                f"{MO.LOW}): this shows from {MO.BOUNCE_MIN}."))
+    w = bb["bowl"]
+    if w["poor"]:
+        out["bowl"] = dict(shown=w["shown"], poor=w["poor"], followed=w["followed"],
+                           after=_bowl_text(w["after"]), usual=_bowl_text(w["usual"]),
+                           after_avg=w["after"]["average"], usual_avg=w["usual"]["average"],
+                           line=(f"After their {count(w['poor'], 'spell')} without a wicket for {MO.DEAR} or more in {section}, "
+                                 f"their next game brought {_bowl_text(w['after'])} (their usual: {_bowl_text(w['usual'])})."
+                                 if w["shown"] else f"{count(w['poor'], 'expensive spell')} so far (no wicket for {MO.DEAR} "
+                                 f"or more): this shows from {MO.BOUNCE_MIN}."))
     return out
 
 
@@ -314,6 +391,16 @@ def _won(career, player, my_matches, team_of) -> list[dict]:
     w = by_played(career, w)[::-1]
     return [dict(id=r.match_id, section=r.section, opp=r.away if team_of.get(r.match_id) == r.home else r.home,
                  date=SG.clean(r.date), headline=pom_headline(career, r.match_id)) for r in w.itertuples()]
+
+
+def _winners(career, player, my_matches, team_of) -> dict:
+    """The match-winners chart for one player (in place of the "Matches they won" list): the wins they were player of
+    the match in, what they did each time, out of all their team's wins in the games they played."""
+    won = _won(career, player, my_matches, team_of)
+    wins = int(sum(team_of.get(mid) == w for mid, w in zip(my_matches.match_id, my_matches.winner) if w))
+    return dict(players=[dict(player=player, matches=won)] if won else [], wins=wins, others=0,
+                line=(f"Player of the match in {count(len(won), 'win')} of the {count(wins, 'win')} their side had in the games "
+                      f"they played ({len(won) / wins * 100:.0f}%)." if wins else "Their side hasn't won a game they played yet."))
 
 
 def _marks(career, player) -> list[dict]:

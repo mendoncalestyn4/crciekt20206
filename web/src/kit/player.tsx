@@ -3,7 +3,7 @@
 // over time, and the standard batting and bowling tables (the same columns in every competition).
 import { useMemo } from "react";
 import type { Bar, FormT, Pair, RecordTableT } from "../api";
-import { f1, ord } from "../format";
+import { f1, ord, rnd, fx } from "../format";
 import { useTheme } from "../theme";
 import { Name } from "./base";
 import { alpha } from "./charts";
@@ -25,10 +25,10 @@ export function SplitBars({ rows, reference, dec = 1, height, unit = "", lowBett
       xAxis: { show: false, max: Math.max(...vals, reference ?? 0, 1) * 1.05 },
       yAxis: { type: "category", inverse: true, data: shown.map((r) => r.label), axisLine: { show: false }, axisTick: { show: false },
         axisLabel: { color: t.ink, fontFamily: "Bebas Neue", fontSize: ts(15), margin: 10 } },
-      tooltip: { ...L.TT, formatter: (p: { dataIndex: number }) => { const r = shown[p.dataIndex]; return r ? `${r.label}: ${r.value == null ? "–" : (+r.value).toFixed(dec)}${unit}${r.note ? `<br/><span style="opacity:.75">${r.note}</span>` : ""}` : ""; } },
+      tooltip: { ...L.TT, formatter: (p: { dataIndex: number }) => { const r = shown[p.dataIndex]; return r ? `${r.label}: ${r.value == null ? "–" : fx(+r.value, dec)}${unit}${r.note ? `<br/><span style="opacity:.75">${r.note}</span>` : ""}` : ""; } },
       series: [{ type: "bar", barWidth: "58%",
         data: shown.map((r) => ({ value: r.value, itemStyle: { color: r.value === best && shown.length > 1 ? t.led : alpha(t.led, 0.55), borderRadius: 0 } })),
-        label: { show: true, position: "right", ...L.VAL(17), formatter: (p: { value: number }) => (+p.value).toFixed(dec) + unit },
+        label: { show: true, position: "right", ...L.VAL(17), formatter: (p: { value: number }) => fx(+p.value, dec) + unit },
         ...(reference != null ? { markLine: { silent: true, symbol: "none", label: { show: false }, lineStyle: { color: t.ink, type: "dashed", width: 1.5, opacity: 0.6 },
           data: [{ xAxis: reference }] } } : {}) }],
     };
@@ -50,12 +50,12 @@ export function PairedBars({ rows, me, unit = "", dec = 1, others = "Everyone he
         axisLabel: { color: t.ink, fontFamily: "Bebas Neue", fontSize: ts(15), margin: 10 } },
       tooltip: { ...L.TT, trigger: "axis", axisPointer: { type: "shadow" }, formatter: (ps: { dataIndex: number }[]) => {
         const r = rows[ps[0]?.dataIndex ?? 0];
-        return r ? `${r.label}<br/>${me}: <b>${r.me == null ? "–" : (+r.me).toFixed(dec)}${unit}</b><br/>${others}: ${r.all == null ? "–" : (+r.all).toFixed(dec)}${unit}${r.note ? `<br/><span style="opacity:.75">${r.note}</span>` : ""}` : ""; } },
+        return r ? `${r.label}<br/>${me}: <b>${r.me == null ? "–" : fx(+r.me, dec)}${unit}</b><br/>${others}: ${r.all == null ? "–" : fx(+r.all, dec)}${unit}${r.note ? `<br/><span style="opacity:.75">${r.note}</span>` : ""}` : ""; } },
       series: [
         { type: "bar", name: me, data: rows.map((r) => r.me), barGap: "15%", itemStyle: { color: t.led, borderRadius: 0 },
-          label: { show: true, position: "right", ...L.VAL(15), formatter: (p: { value: number | null }) => (p.value == null ? "" : `${(+p.value).toFixed(dec)}${unit}`) } },
+          label: { show: true, position: "right", ...L.VAL(15), formatter: (p: { value: number | null }) => (p.value == null ? "" : `${fx(+p.value, dec)}${unit}`) } },
         { type: "bar", name: others, data: rows.map((r) => r.all), itemStyle: { color: t.grey, borderRadius: 0 },
-          label: { show: true, position: "right", color: t.dim, fontFamily: "Inter", fontSize: 12, formatter: (p: { value: number | null }) => (p.value == null ? "" : `${(+p.value).toFixed(dec)}${unit}`) } },
+          label: { show: true, position: "right", color: t.dim, fontFamily: "Inter", fontSize: 12, formatter: (p: { value: number | null }) => (p.value == null ? "" : `${fx(+p.value, dec)}${unit}`) } },
       ],
     };
   }, [t, rows, me, unit, dec, others]);
@@ -73,7 +73,7 @@ export function FormBars({ f, unit }: { f: FormT; unit: "runs" | "wickets" }) {
       grid: { left: 36, right: 14, top: 18, bottom: 22 },
       tooltip: { ...L.TT, trigger: "axis", axisPointer: { type: "shadow" }, formatter: (ps: { dataIndex: number }[]) => {
         const i = ps[0]?.dataIndex ?? 0, r = f.rolling[i];
-        return `${f.labels[i] ?? ""}${r != null ? `<br/><span style="opacity:.75">${unit === "runs" ? "average" : "wickets an innings"} over the last ${f.window}: ${unit === "runs" ? f1(r) : r.toFixed(2)}</span>` : ""}`; } },
+        return `${f.labels[i] ?? ""}${r != null ? `<br/><span style="opacity:.75">${unit === "runs" ? "average" : "wickets an innings"} over the last ${f.window}: ${unit === "runs" ? f1(r) : fx(r, 2)}</span>` : ""}`; } },
       xAxis: { type: "category", data: f.values.map((_, i) => String(i + 1)), ...L.AX, splitLine: { show: false },
         axisLabel: { ...L.AX.axisLabel, interval: n > 40 ? Math.ceil(n / 20) - 1 : n > 20 ? 1 : 0 } },
       yAxis: { ...L.AX, axisLine: { show: false }, minInterval: 1 },
@@ -98,13 +98,13 @@ export function Funnel({ rows }: { rows: { mark: number; pct: number | null; all
       grid: { left: 44, right: 16, top: 30, bottom: 26 },
       legend: { top: 0, right: 0, textStyle: { color: t.ink, fontFamily: "Bebas Neue", fontSize: ts(14) }, itemWidth: 16, itemHeight: 10 },
       tooltip: { ...L.TT, trigger: "axis", formatter: (ps: { dataIndex: number }[]) => { const r = rows[ps[0]?.dataIndex ?? 0];
-        return r ? `${r.mark}+: <b>${r.pct == null ? "–" : Math.round(r.pct)}%</b> of their innings<br/>everyone here: ${r.all_pct == null ? "–" : Math.round(r.all_pct)}%` : ""; } },
+        return r ? `${r.mark}+: <b>${r.pct == null ? "–" : rnd(r.pct)}%</b> of their innings<br/>everyone here: ${r.all_pct == null ? "–" : rnd(r.all_pct)}%` : ""; } },
       xAxis: { type: "category", data: rows.map((r) => `${r.mark}+`), ...L.AX, splitLine: { show: false } },
       yAxis: { type: "value", min: 0, max: 100, ...L.AX, axisLine: { show: false }, axisLabel: { ...L.AX.axisLabel, formatter: (v: number) => `${v}%` } },
       series: [
         { type: "line", name: "This player", data: rows.map((r) => ({ value: r.pct, symbolSize: r.highlight ? 13 : 7 })), symbol: "circle",
           lineStyle: { color: t.led, width: 3 }, itemStyle: { color: t.led },
-          label: { show: true, position: "top", ...L.VAL(14), formatter: (p: { value: number | null; dataIndex: number }) => (rows[p.dataIndex]?.highlight && p.value != null ? `${Math.round(p.value)}%` : "") } },
+          label: { show: true, position: "top", ...L.VAL(14), formatter: (p: { value: number | null; dataIndex: number }) => (rows[p.dataIndex]?.highlight && p.value != null ? `${rnd(p.value)}%` : "") } },
         { type: "scatter", name: "Every batter here", data: rows.map((r) => r.all_pct), symbolSize: 10, itemStyle: { color: t.grey } },
       ],
     };

@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { post, type BestGame, type Excitement, type WinChance, type Wickets } from "../api";
-import { ab, dayY, f1, ord } from "../format";
+import { ab, dayY, f1, ord, rnd } from "../format";
 import { useTheme } from "../theme";
 import { Logo, Name, Num } from "./base";
 import { alpha } from "./charts";
@@ -22,7 +22,7 @@ export function WinChanceChart({ win, mine, height = 330 }: { win: WinChance; mi
     const first = !mine.includes(win.team2) || mine.includes(win.team1), c1 = first ? t.led : t.blue, c2 = first ? t.blue : t.led;
     const tip = (i: number, what: string, v: number | null) => {
       const p = pts[i];
-      return p ? `${p.label}<br/><b>${v == null ? "–" : Math.round(v)}%</b> ${what} <span style="opacity:.7">(${p.note})</span>` : "";
+      return p ? `${p.label}<br/><b>${v == null ? "–" : rnd(v)}%</b> ${what} <span style="opacity:.7">(${p.note})</span>` : "";
     };
     const starts = { silent: true, symbol: "none", lineStyle: { color: t.dim, type: "dotted", width: 1.5 }, label: { show: false },
       data: win.starts.map((s) => ({ xAxis: String(s) })) };
@@ -45,7 +45,7 @@ export function WinChanceChart({ win, mine, height = 330 }: { win: WinChance; mi
       legend: { top: 0, left: 0, textStyle: { color: t.ink, fontFamily: "Bebas Neue", fontSize: ts(15) }, itemWidth: 18, itemHeight: 12 },
       tooltip: { ...L.TT, trigger: "axis", formatter: (ps: { dataIndex: number; seriesName: string; value: number }[]) => {
         const i = ps[0]?.dataIndex ?? 0, p = pts[i];
-        return p ? `${p.label}<br/>${ps.map((s) => `${s.seriesName}: <b>${s.value == null ? "–" : Math.round(s.value)}%</b>`).join("<br/>")}<br/><span style="opacity:.7">${p.note}</span>` : ""; } },
+        return p ? `${p.label}<br/>${ps.map((s) => `${s.seriesName}: <b>${s.value == null ? "–" : rnd(s.value)}%</b>`).join("<br/>")}<br/><span style="opacity:.7">${p.note}</span>` : ""; } },
       series: [{ ...band("W", `${win.team1} win`, c1), markLine: starts }, band("D", "Draw", t.grey), band("L", `${win.team2} win`, c2)],
     };
   }, [t, win, mine]);
@@ -68,7 +68,7 @@ export function WicketClimb({ inn, par, height = 330 }: { inn: Wickets["innings"
         if (!s) return "";
         const head = s.unbroken ? `${s.score}* at the end: ${who(s)} added ${s.stand}, unbroken` : `${s.wicket}-${s.score}: ${who(s)} added ${s.stand}`;
         const p = parAt.get(s.wicket);
-        return head + (p != null && !s.unbroken ? `<br/><span style="opacity:.7">par at the ${ord(s.wicket)} wicket: ${Math.round(p)}</span>` : ""); } },
+        return head + (p != null && !s.unbroken ? `<br/><span style="opacity:.7">par at the ${ord(s.wicket)} wicket: ${rnd(p)}</span>` : ""); } },
       xAxis: { type: "category", data: cats, ...L.AX, splitLine: { show: false }, axisLabel: { ...L.AX.axisLabel, fontSize: ts(11) } },
       yAxis: { type: "value", max: Math.ceil((top * 1.12) / 10) * 10, ...L.AX, axisLine: { show: false } },
       series: [

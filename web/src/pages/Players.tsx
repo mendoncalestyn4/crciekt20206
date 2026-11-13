@@ -9,10 +9,12 @@ import { get, type ByInnings, type InningsCol, type InningsMarks, type PlayerPag
 import { Explain, Hero, Logo, Missing, Name, Num, PName, Sub, Tile } from "../kit/base";
 import { PercentileBars } from "../kit/blocks";
 import { RingList } from "../kit/charts";
+import { MatchWinners } from "../kit/season";
+import { Grid } from "../kit/teams";
 import { Mark } from "../kit/myteam";
 import { AttrGrid, ScoutText } from "../kit/fm";
 import { FormBars, Funnel, ImpactBars, PairedBars, RankLines, RecordTable, SplitBars } from "../kit/player";
-import { cap, dayY, f0, f1, f2, fmtOf, plural, NO_MATCHES } from "../format";
+import { cap, dayY, f0, f1, f2, fmtOf, plural, NO_MATCHES, rnd, fx } from "../format";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
 import { useTheme } from "../theme";
@@ -133,12 +135,26 @@ export function PlayerView() {
                 <td className="r"><span className="tn dimn">{r.matches}/{r.team_matches}</span></td>
                 <td className="r"><span className="tn">{r.runs}</span></td><td><ShareBar v={r.run_share} of={r.team_runs} /></td>
                 <td className="r"><span className="tn">{r.wickets}</span></td><td><ShareBar v={r.wicket_share} of={r.team_wickets} /></td></tr>))}</tbody></table>
-          <div className="note">Their runs out of all the team's runs that season there (extras included, as the totals print them), and their
+          <div className="note">Their runs out of all the runs the team's batters made that season there (off the bat: extras are no one's), and their
             wickets out of all the wickets the team took; matches: theirs of the team's.</div></Tile>}
-        {d.won && <Tile span={5} title="Matches they won" right="player of the match in a win">
-          {d.won.length ? <div className="won">{d.won.slice(0, 8).map((x) => (
-            <div key={x.id}><Link to={`/matches/${x.id}${keep}`} className="lk"><b>{fmtOf(x.section)} v {x.opp} · {dayY(x.date)}</b></Link><span className="why"><T>{x.headline}</T></span></div>))}
-            {d.won.length > 8 && <div className="note">and {d.won.length - 8} more.</div>}</div> : <div className="note">No player of the match award in a win yet.</div>}</Tile>}
+        {d.winners ? <Tile span={12} title="Match-winners" right="player of the match in a win, and what they did">
+          {d.winners.players.length ? <MatchWinners w={d.winners} /> : null}<div className="note">{d.winners.line}</div></Tile>
+          : d.missing.winners ? <Tile span={12} title="Match-winners"><Missing why={d.missing.winners} /></Tile> : null}
+        <Tile span={7} title={`🏟️ ${d.countries?.nation === false ? "Ground by ground" : "Country by country"}`} right={`${fmtOf(d.section)} · every season · neutral grounds on their own`}>
+          {d.countries ? <Grid t={d.countries} /> : d.missing.countries ? <Missing why={d.missing.countries} /> : <div className="plain">No games here yet.</div>}</Tile>
+        <Tile span={5} title="🔥 Big-match player" right="knockouts and series deciders">
+          {d.big ? (d.big.none ? <div className="plain">{d.big.none}</div> : d.big.rows!.map((r) => (
+            <div key={r.team}><table className="c"><thead><tr><th></th><th className="r">Big games ({r.big})</th><th className="r">Otherwise ({r.ordinary})</th></tr></thead>
+              <tbody><tr><td>Batting</td><td className="r">{r.big_bat}</td><td className="r">{r.ord_bat}</td></tr>
+                <tr><td>Strike rate</td><td className="r">{r.big_sr}</td><td className="r">{r.ord_sr}</td></tr>
+                <tr><td>Bowling</td><td className="r">{r.big_bowl}</td><td className="r">{r.ord_bowl}</td></tr>
+                <tr><td>Economy</td><td className="r">{r.big_econ}</td><td className="r">{r.ord_econ}</td></tr></tbody></table>
+              {d.big!.rows!.length > 1 && <div className="note">For {r.team}.</div>}</div>))) : <Missing why={d.missing.big} />}
+          <div className="note">Big games: finals, semi-finals, qualifiers, eliminators and other knockouts, and series deciders (level with one to play). Shown from 3.</div></Tile>
+        <Tile span={12} title="↩️ Bounce-back" right="the game after a poor one">
+          {d.bounce ? ((d.bounce.bat || d.bounce.bowl) ? <ul className="dots">{[d.bounce.bat, d.bounce.bowl].filter(Boolean).map((x) => <li key={x!.line}>{x!.line}</li>)}</ul>
+            : <div className="plain">No poor games here yet: never out for under 10, and never wicketless for 30 or more.</div>) : <Missing why={d.missing.bounce} />}
+          <div className="note">A poor game: out for a duck or under 10 with the bat, or no wicket for 30 runs or more with the ball. The game after it is their next match here; shown from 3.</div></Tile>
         {d.marks && d.marks.length > 0 && <Tile span={12} title="Marks out of 10 · every series" right="newest first">
           <table className="c marks"><thead><tr><th>Series</th><th className="r">Mark</th><th className="r">Rank</th><th>In the series</th><th>Best match</th></tr></thead>
             <tbody>{d.marks.slice(0, 10).map((m) => (
@@ -207,7 +223,7 @@ export function PlayerView() {
                   <td className="r"><span className="tn">{f1(r.average)}</span></td><td className="r"><span className="tn dimn">{f1(r.strike_rate)}</span></td>
                   <td className="r"><span className="tn dimn">{r.fifties}</span></td><td className="r"><span className="tn dimn">{r.hundreds}</span></td>
                   <td className="r"><span className="tn dimn">{f1(r.all_average)}</span></td>
-                  <td className="r"><span className="tn">{r.edge == null ? "–" : `${r.edge >= 0 ? "+" : ""}${Math.round(r.edge)}%`}</span></td></tr>))}</tbody></table>
+                  <td className="r"><span className="tn">{r.edge == null ? "–" : `${r.edge >= 0 ? "+" : ""}${rnd(r.edge)}%`}</span></td></tr>))}</tbody></table>
             <Explain shows={b.positions.shows} for_={b.positions.for_} /></Box>}
           <Box title="Average by the situation they walked into"><Sp s={b.came_in} overall={b.splits.overall} /></Box>
           <Box title="Best rescue innings" right={`came in 3+ down for ${b.came_in.press} or fewer`}>{b.came_in.rescue.length ? <table className="c"><thead><tr><th>Came in at</th><th className="r">Score</th><th className="r">Balls</th><th>Against</th><th>Date</th></tr></thead>
@@ -284,7 +300,7 @@ export function PlayerView() {
   );
 }
 
-const pc = (v: number | null) => (v == null ? "–" : `${v >= 0 ? "+" : ""}${Math.round(v)}%`);
+const pc = (v: number | null) => (v == null ? "–" : `${v >= 0 ? "+" : ""}${rnd(v)}%`);
 
 function ShareBar({ v, of }: { v: number | null; of: number }) {
   return v == null ? <span className="tn dimn">–</span> : (
@@ -295,7 +311,7 @@ function ShareBar({ v, of }: { v: number | null; of: number }) {
 /** "4.9 better", "27% worse" or "same": + always means better (the server turns bowling figures round). */
 function Diff({ v, dec = 1, unit = "" }: { v: number | null; dec?: number; unit?: string }) {
   if (v == null) return <span className="tn dimn dif">–</span>;
-  const a = Math.abs(v).toFixed(dec);
+  const a = fx(Math.abs(v), dec);
   if (Number(a) === 0) return <span className="tn dimn dif">same</span>;
   return <span className={`tn dif ${v > 0 ? "up" : "down"}`}>{a}{unit} {v > 0 ? "better" : "worse"}</span>;
 }
@@ -310,7 +326,7 @@ function Slot({ r }: { r: InningsMarks }) {
 
 function Cell({ c, v }: { c: InningsCol; v: unknown }) {
   if (c.t === "d") return <td className="r"><Diff v={typeof v === "number" ? v : null} dec={c.dec} unit={c.unit} /></td>;
-  const text = v == null ? "–" : typeof v === "number" ? `${v.toFixed(c.dec)}${c.unit}` : String(v);
+  const text = v == null ? "–" : typeof v === "number" ? `${fx(v, c.dec)}${c.unit}` : String(v);
   return <td className="r"><span className={`tn${c.t === "n" ? "" : " dimn"}`}>{text}</span></td>;
 }
 

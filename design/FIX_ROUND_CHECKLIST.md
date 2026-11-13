@@ -23,20 +23,32 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
 
 ## 2. Opponent preview
 
-- [ ] **The score to aim for, rebuilt as agreed** (1; section 14): the chance of winning against the total made
+- [x] **The score to aim for, rebuilt as agreed** (1; section 14): the chance of winning against the total made
       batting first, from every finished game without rain, how fast it rises shared by cricket of one length (T20Is
       with the IPL, the Blast and the Hundred; ODIs with the domestic one-day cups), each competition keeping its own
       totals; home worth some runs, from near nothing, growing only as the games show it; their batting and your
       bowling in runs above or below the usual total, pulled to the usual until there are enough games (5 count
-      half); the totals for an even game and for 70%, home, away and neutral
-- [ ] How sure it is: how many games each target rests on; "few games, treat with care" under 10; how often it would
-      have called your past games right, next to "the total alone" (1)
-- [ ] The score they usually set against you there, and your real games against them there (1)
-- [ ] **Tests:** the typical first-innings total that won, drew and lost against that team, home and away, with every
-      game under it (1)
-- [ ] **My team's "next up" tile** shows the same line ("v England, away, T20I: 175 for an even game, 194 for 70%") (1)
-- [ ] Batting first v chasing chart, the opponent's own record, in the main tab under the head-to-head record (2, 7)
-- [ ] Home, away and neutral chart, then country by country, the opponent's own record, same place (2, 7)
+      half); the totals for an even game and for 70%, home, away and neutral — ✓ Opponent preview, top tile
+      (`ccstats/aim.py`); checked: the fit finds a made-up known answer, every strength counted again by hand, every
+      target put back through the curve gives 50% and 70% (`tests/test_aim.py`); on your 2032 save T20Is fit 1,110
+      games in 0.7 s
+- [x] How sure it is: how many games each target rests on; "few games, treat with care" under 10; how often it would
+      have called your past games right, next to "the total alone" (1) — ✓ the tile's "How sure it is" lines; each game
+      judged from all the others, counted again by hand in the tests (2032 save: T20Is 79% against 77% for the total
+      alone, ODIs 75% against 73%)
+- [x] The score they usually set against you there, and your real games against them there (1) — ✓ the same tile,
+      each ground; checked against the scorecards for every pair of teams in six competitions
+- [x] **Tests:** the typical first-innings total that won, drew and lost against that team, home and away, with every
+      game under it (1) — ✓ the tile in Tests and first-class ("First-innings totals that won, drew and lost"), neutral
+      grounds too; counted again by hand for every pair in Tests, the Ranji Trophy and the County Championship
+- [x] **My team's "next up" tile** shows the same line ("v England, away, T20I: 175 for an even game, 194 for 70%") (1)
+      — ✓ My team · Next up, "🎯 Batting first v …"; in Tests the first-innings total that usually beat them there;
+      the test checks it equals Opponent preview's
+- [x] Batting first v chasing chart, the opponent's own record, in the main tab under the head-to-head record (2, 7)
+      — ✓ Opponent preview · Head to head, under the record (shows with no team of yours picked too); counted again
+      from the scorecards for 18 opponents in ODIs, Tests and the IPL
+- [x] Home, away and neutral chart, then country by country, the opponent's own record, same place (2, 7) — ✓ next
+      to it; counted again the same way
 - [ ] **How they play** at the top of "About them" (26): bowling (when they take wickets, sides 3 down cheaply and
       bowled out, the new-ball bowlers' share, the top-order share, attack or squeeze, dot balls in T20); batting
       (strike rate and boundary share by part of the order, fours and sixes and from where, their usual score at each
@@ -47,24 +59,34 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
 - [ ] **Big-match players** (29): their players in finals, semi-finals, qualifiers, eliminators and series deciders
       against ordinary games, shown after 3 such games
 - [ ] **Record by country** (31): their players in the country the match is in
-- [ ] Donut: how their batters get out; batting depth (8, 9)
+- [x] Donut: how their batters get out; batting depth (8, 9) — ✓ Opponent preview · About them (each slice's count
+      from the engine; a team without a run now has no share instead of 0%)
 - [ ] Team badges in the headings and tiles (section 6)
 
 ## 3. Team record (Teams)
 
-- [ ] Against stronger and weaker sides chart, on Overview (2)
-- [ ] Home, away and neutral chart, then country by country, on Overview (2)
-- [ ] Streaks chart (every match in order, the longest runs marked, the run you're on), on Overview (2)
-- [ ] **Every player's contribution** (27): all the team's players, share of the runs (off the bat) and of the
+- [x] Against stronger and weaker sides chart, on Overview (2) — ✓ Teams · Team record · Overview; both ratings
+      checked against the rating list for 16 teams in four competitions
+- [x] Home, away and neutral chart, then country by country, on Overview (2) — ✓ same tab; every host counted again
+- [x] Streaks chart (every match in order, the longest runs marked, the run you're on), on Overview (2) — ✓ same tab
+      ("Runs of results"); every match's result and every run checked
+- [x] **Every player's contribution** (27): all the team's players, share of the runs (off the bat) and of the
       wickets, one table sorted by clicking a column, under "Who carries the team", with a donut of the runs share
-- [ ] **Big stands** next to Collapses (24)
-- [ ] **The usual-score line** ("usually 48/1, 97/2, 152/3…") with the table (25)
-- [ ] Donut: batting depth (8, 9)
-- [ ] **Runs off the bat** for every share: "Who carries the team" switches (27); its order stays as it is
+      — ✓ Teams · Overview; every player and run checked against the scorecards, the shares the same as "Who carries
+      the team" writes them
+- [x] **Big stands** next to Collapses (24) — ✓ Teams · Overview (the ten biggest, * not out); checked against every
+      stand counted again
+- [x] **The usual-score line** ("usually 48/1, 97/2, 152/3…") with the table (25) — ✓ above the table, with their
+      opponents'; the same numbers as the table
+- [x] Donut: batting depth (8, 9) — ✓ Teams · Overview, with the average team's shares (now adding up to 100%: a
+      team without a run used to count as 0%)
+- [x] **Runs off the bat** for every share: "Who carries the team" switches (27); its order stays as it is — ✓ the
+      engine's team share (`ccstats/aim.py`, `ccstats/players.py`); the shares now add up to 100%
 
 ## 4. Team vs team
 
-- [ ] Batting first v chasing chart, under the head-to-head record (2)
+- [x] Batting first v chasing chart, under the head-to-head record (2) — ✓ Teams · Team v team, both sides, under
+      "Head to head" (their meetings, or each side against anyone); counted again for every competition
 
 ## 5. Competitions
 
@@ -100,7 +122,8 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
       World Cup logos only on their games); My team's latest result with both teams and the competition logo (13)
 - [ ] My team: the series tug of war on "series this season" (12)
 - [ ] Player page: the match-winners chart in place of "Matches they won" (11)
-- [ ] Player page: share of the team on runs off the bat (27)
+- [x] Player page: share of the team on runs off the bat (27) — ✓ Players · the player's page, the same sum as Teams
+      (checked player by player for every competition and season)
 - [ ] Player page: **big-match players** (29), **record by country** with neutral games their own row (31),
       **bounce-back** (a duck or under 10, or no wickets for 30+, shown after 3) (33)
 

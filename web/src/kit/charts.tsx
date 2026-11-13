@@ -1,8 +1,8 @@
 // The chart pieces, exactly as on the approved mock-up (idea 4: idea 1's charts in idea 2's look), drawn from the
 // engine's numbers. Heights are the mock-up's with the approved 20% extra room for the bigger words.
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
-import type { Banner, Elo, Form, Result, Stand, Strength } from "../api";
-import { ab, day, dayer, fmtOf, ord } from "../format";
+import type { Banner, Bar, Elo, Form, Result, Stand, Strength } from "../api";
+import { ab, day, dayer, fmtOf, ord, rnd } from "../format";
 import { useTheme } from "../theme";
 import { EChart, type Option } from "./EChart";
 import { look, NUMF, sc, ts } from "./look";
@@ -192,7 +192,7 @@ export function RingList({ items, centre, sub }: { items: [string, number, strin
     <div className="dlw"><div className="dl"><div className="dl-ring"><EChart option={option} height={180} label={`${centre} ${sub}`} /></div>
       <div className="dl-list">{shown.map(([n, v, c]) => (
         <div className="dl-row" key={n}><i style={{ background: c }} /><span className="pn" style={{ fontSize: ts(15) }}>{n}</span>
-          <span className="v"><b>{v}</b><small>{Math.round((v / tot) * 100)}%</small></span>
+          <span className="v"><b>{v}</b><small>{rnd((v / tot) * 100)}%</small></span>
           <div className="dl-bar"><span style={{ width: `${(v / tot) * 100}%`, background: c }} /></div></div>))}</div></div></div>
   );
 }
@@ -327,4 +327,11 @@ export function StrengthDots({ rows, lanes, height = 360 }: { rows: Strength[]; 
     };
   }, [t, rows, lanes, height, w]);
   return <div ref={box}><EChart option={option} height={height} label="Against stronger and weaker sides" /></div>;
+}
+
+/** A share of a whole as a donut with its list (RingList), each slice in the site's share colours: `count` is what
+ *  each slice is made of (runs, dismissals), `centre` the whole. */
+export function ShareRing({ rows, count, centre, sub }: { rows: Bar[]; count: (r: Bar) => number; centre: string; sub: string }) {
+  const t = useTheme(), pal = [t.led, t.warm, t.cream, t.win, t.blue, t.grey];
+  return <RingList items={rows.map((r, i) => [r.label, count(r), pal[i % pal.length]!] as [string, number, string])} centre={centre} sub={sub} />;
 }

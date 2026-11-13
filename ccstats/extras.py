@@ -371,13 +371,14 @@ def opponent_preview(career, ids, opponent: str, recent: int = 5) -> dict:
     fw["economy"] = np.where(fw.balls > 0, fw.runs / fw.balls.replace(0, np.nan) * 6, np.nan)
     fw["average"] = np.where(fw.wickets > 0, fw.runs / fw.wickets.replace(0, np.nan), np.nan)
     allbat = career.batting[career.batting.match_id.isin(ids) & (career.batting.team == opponent) & career.batting.out]
-    how = allbat.how_out.value_counts(normalize=True) * 100
+    how_n = allbat.how_out.value_counts()
+    how = how_n / how_n.sum() * 100 if len(how_n) else how_n.astype(float)
     col = A.collapses(career, tm.match_id, opponent)
     inns_count = int((career.innings.match_id.isin(tm.match_id) & (career.innings.team == opponent)).sum())
     return dict(matches=tm, recent=tm.tail(recent), kind=kind,
                 batters=fb.sort_values("runs", ascending=False).reset_index(drop=True),
                 bowlers=fw[fw.balls > 0].sort_values(["wickets", "economy"], ascending=[False, True]).reset_index(drop=True),
-                how_out=how, collapses=len(col), innings=inns_count,
+                how_out=how, how_out_n=how_n, collapses=len(col), innings=inns_count,
                 depth=A.batting_depth(career, tm.match_id, opponent))
 
 

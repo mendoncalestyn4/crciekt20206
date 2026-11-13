@@ -12,6 +12,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from ccstats import aim as AIM
 from ccstats import catalogue as CAT
 from ccstats import depth as DP
 from ccstats import extras as E
@@ -26,7 +27,7 @@ from ccstats import winprob as WP
 from ccstats.competitions import shown_name, with_stage
 
 from . import styleguide as SG
-from .cache import kept
+from .cache import aim_fits, kept
 
 
 def pct(v) -> str:
@@ -144,7 +145,8 @@ def next_up(career, team: str, sched: list) -> dict | None:
             p = WP.predict(career, FX.format_ids(career, team, nx["format"]), team, nx["opponent"],
                            nx["venue"] if nx["venue"] in ("home", "away") else "neutral")
             chance = dict(win=p["win"], draw=p["draw"] if p["multi"] else None, lose=p["lose"])
-        out["next"] = dict(what=what, venue=nx["venue"] or "", when=when, opponent=nx["opponent"] or "", chance=chance)
+        out["next"] = dict(what=what, venue=nx["venue"] or "", when=when, opponent=nx["opponent"] or "", chance=chance,
+                           aim=_aim_line(career, team, nx) if nx["opponent"] else "")
     for sg in FX.series_groups(tr, team):
         if sg["state"] == "under way":
             o = FX.series_outlook(career, team, sg)
@@ -152,6 +154,23 @@ def next_up(career, team: str, sched: list) -> dict | None:
             out["under_way"].append(f"{sg['series']}: {lead} {sg['won']}–{sg['lost']}; {o['need']} "
                                     f"(chance {o['odds']['A']:.0f}%)")
     return SG.clean(out)
+
+
+def _aim_line(career, team: str, nx) -> str:
+    """The score to aim for batting first in the next match, as on Opponent preview: 'v England, away, T20I: 175 for an
+    even game, 194 for 70%'; in multi-day cricket the first-innings total that usually won against them there."""
+    ids = tuple(FX.format_ids(career, team, nx["format"]))
+    venue = nx["venue"] if nx["venue"] in ("home", "away") else "neutral"
+    a = kept(career, ("score_to_aim", ids, team, nx["opponent"]), lambda: AIM.score_to_aim(career, ids, team, nx["opponent"], aim_fits(career)))
+    v = a["venues"].get(venue) if not a["none"] else None
+    if not v:
+        return ""
+    head = f"v {nx['opponent']}, {'on a neutral ground' if venue == 'neutral' else venue}, {nx['format']}"
+    if a["kind"] == "multi":
+        won = v["typical"]["won"]
+        return (f"{head}: first-innings totals that beat them there were usually {won['typical']} "
+                f"({won['n']} game{'s' if won['n'] != 1 else ''})") if won["n"] else ""
+    return f"{head}: {v['even']} for an even game, {v['seventy']} for 70%" + (" (few games, treat with care)" if v["few"] else "")
 
 
 def report_card(career, team: str) -> dict | None:

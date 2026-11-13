@@ -186,7 +186,7 @@ export type MyTeam = {
   after?: { opponent: string; date: string; lines: { k: string; text: string; up: boolean | null }[]; news: string[];
     form: { player: string; arrow: string; text: string }[]; match_id: string } | null;
   next_up?: { played: number; total: number; next: { what: string; venue: string; when: string; opponent: string;
-    chance: { win: number; draw: number | null; lose: number } | null } | null; under_way: string[] } | null;
+    chance: { win: number; draw: number | null; lose: number } | null; aim?: string } | null; under_way: string[] } | null;
   report?: ReportCard | null; season?: Calendar | null; forms?: { section: string; results: Result[]; form: Form }[] | null;
   series?: SeriesItem[] | null; venues?: Venues | null; winners?: Winners | null; scores?: Scores | null;
   history?: { season: string; section: string; played: number; won: number; lost: number; drawn: number; tied: number;
@@ -199,7 +199,7 @@ export type MyTeam = {
 
 // ------------------------------------------------------------------ Players (server/playerpage.py)
 /** One bar of a split (a season, home or away...), with what the tooltip adds. */
-export type Bar = { label: string; value: number | null; note?: string };
+export type Bar = { label: string; value: number | null; note?: string; n?: number; runs?: number; ref?: number };
 /** The player against everyone here, for one band or position; `key`: the band that matters most in this format. */
 export type Pair = { label: string; me: number | null; all: number | null; note?: string; key?: boolean };
 export type Split = { title?: string; rows: Bar[]; shows: string; for_: string };
@@ -247,6 +247,8 @@ export type Story = {
   quirks: string[];
   compare: { seasons: string[]; per: Record<string, Record<string, { v: number | null; text: string; better: "high" | "low" | null }>> } | null;
 };
+export type Bounce = { shown: boolean; poor: number; followed: number; after: string; usual: string; after_avg: number | null;
+  usual_avg: number | null; line: string };
 export type PlayerPage = {
   player: string; teams: string[]; keeper: boolean; matches: number; missing: Record<string, string>;
   card: { matches: number; sections: number; runs: number; best_score: string; wickets: number; best_bowling: string; badges: number;
@@ -257,6 +259,11 @@ export type PlayerPage = {
   share: { section: string; season: string; team: string; matches: number; team_matches: number; runs: number; team_runs: number;
     run_share: number | null; wickets: number; team_wickets: number; wicket_share: number | null }[] | null;
   won: { id: string; section: string; opp: string; date: string; headline: string }[] | null;
+  winners?: (Winners & { line: string }) | null;
+  big?: { none: string; section?: string; rows?: { team: string; big: number; ordinary: number; big_bat: string; ord_bat: string;
+    big_bowl: string; ord_bowl: string; big_sr: string; ord_sr: string; big_econ: string; ord_econ: string }[] } | null;
+  countries?: (GridT & { nation: boolean }) | null;
+  bounce?: { bat?: Bounce; bowl?: Bounce } | null;
   marks: { series: string; team: string; label: string; mark: number; rank: number; of: number; line: string; best: string; best_match: string }[] | null;
   journey: { first: string; last: string; team: string; section: string; season: string; matches: number; runs: number; wickets: number }[] | null;
   section: string; season: string; sections: string[]; seasons: string[];
@@ -299,15 +306,20 @@ export type Explained = { shows: string; for_: string };
 export type TeamChoice = { section: string; matches: number; seasons: string[]; teams: string[]; todo: string[]; neutral: boolean };
 export type TeamHead = { none: string; elsewhere?: string[]; kpis?: { k: string; v: string }[]; last5?: string[]; runs?: string;
   venue_note?: string; ratings?: string; limited?: boolean };
+export type Contribution = { player: string; matches: number; runs: number; run_share: number; wickets: number; wicket_share: number };
 export type TeamBody = {
   missing: Record<string, string>;
   keepers?: { player: string; stumpings: number }[] | null;
   vs_average?: ({ title: string; right: string; rows: SignedBar[] } & Explained) | null;
+  strength?: ({ rows: Strength[]; lanes: string[] } & Explained) | null;
+  venues?: (Venues & Explained) | null;
+  streaks?: ({ results: Result[]; streaks: Run[] } & Explained) | null;
   top_bat?: ({ rows: { player: string; team: string; runs: number; note: string }[] } & Explained) | null;
   top_bowl?: ({ rows: { player: string; team: string; wickets: number; note: string }[] } & Explained) | null;
   depth?: ({ rows: Bar[] } & Explained) | null;
   stands?: ({ rows: Bar[] } & Explained) | null;
-  openers?: GridT | null; collapses?: GridT | null; carry?: (GridT & Explained) | null; usual?: (GridT & Explained) | null;
+  openers?: GridT | null; collapses?: GridT | null; carry?: (GridT & Explained) | null; usual?: (GridT & Explained & { line?: string }) | null; big_stands?: GridT | null;
+  contribution?: ({ rows: Contribution[]; team_runs: number; team_wickets: number } & Explained) | null;
   how_they_play?: ({ rows: SignedBar[]; every: boolean } & Explained) | null;
   discipline?: ({ rows: { player: string; team: string; extras: number; note: string }[]; every: boolean } & Explained) | null;
   every_team?: NGrid | null;
@@ -331,6 +343,7 @@ export type TvtBody = {
   tiles?: { team: string; sub: string; figures: { k: string; v: string; up: boolean }[] }[] | null;
   tape?: ({ rows: TapeRow[]; verdict: string } & Explained) | null;
   meetings?: { none: string; line: string; rows: { id: string; date: string; stage: string; match: string; result: string }[] } | null;
+  bat_first?: ({ sides: (BatFirst & { team: string })[] } & Explained) | null;
   bat_dots?: ({ points: Dot[]; slope: number; line: string; x: string; y: string; keys: string[] } & Explained) | null;
   bowl_dots?: ({ points: Dot[]; slope: number; line: string; x: string; y: string; keys: string[] } & Explained) | null;
   above?: ({ rows: TeamBarRow[] } & Explained) | null;
@@ -341,27 +354,37 @@ export type TvtPage = { choices: TeamChoice[]; page: { section: string; season: 
   others?: string[]; which: string; ground: string; grounds: { key: string; label: string }[]; where_help?: string; info: string; none: string;
   body?: TvtBody } | null };
 export type Fig = { k: string; v: string };
+export type DangerMan = { player: string; points: number; matches: number; role: "bat" | "bowl" | "both"; line: string;
+  innings: { id: string; date: string; opp: string; text: string }[]; spells: { id: string; date: string; opp: string; text: string }[] };
+export type HowTheyPlay = { none: string; season?: string; this?: string; last?: string; showing_last?: boolean; matches?: number;
+  note?: string; summary?: string; bowling?: string[]; batting?: string[]; parts?: GridT; rules?: string };
 export type PreviewBody = {
-  missing: Record<string, string>; none?: string;
+  missing: Record<string, string>; none?: string; how?: HowTheyPlay | null;
+  danger?: ({ none: string; season?: string; note?: string; men: DangerMan[] } & Partial<Explained>) | null;
+  big_players?: ((GridT & Explained & { none: "" }) | { none: string }) | null;
+  by_country?: ({ none: string; venues: Record<string, (GridT & { none: ""; place: string }) | { none: string; place: string }> } & Partial<Explained>) | null;
   h2h?: { never: string; other?: string; kpis?: Fig[]; last5?: string[]; how?: string; typical?: string;
     keys?: { title: string; rows: string[][]; dim: boolean[] }[];
     cards?: { id: string; date: string; event: string; sides: { team: string; score: string; top_bat: string; top_bowl: string }[]; potm: string; story: string }[] } | null;
   matchups?: (NGrid | { title: string; none: string })[] | null;
+  bat_first?: ((BatFirst & Explained & { who: string; none?: undefined }) | { none: string }) | null;
+  where?: ((Venues & Explained & { who: string; none?: undefined }) | { none: string }) | null;
   batters?: ({ rows: { player: string; team: string; runs: number }[]; notes: string[] } & Explained) | null;
   bowlers?: ({ rows: { player: string; team: string; wickets: number }[]; notes: string[] } & Explained) | null;
   key_wicket?: GridT | null; weak_spot?: ({ rows: SignedBar[] } & Explained) | null; attack?: NGrid | null; styles?: GridT | null;
   chase?: (NGrid & { extremes: { label: string; text: string; id: string }[] }) | null;
   venues?: Record<string, NGrid> | null; big?: GridT | null; trend?: { last: string[]; line: string } | null;
-  how_out?: ({ rows: Bar[] } & Explained) | null; depth?: ({ rows: Bar[] } & Explained) | null;
+  how_out?: ({ rows: Bar[]; outs?: number } & Explained) | null; depth?: ({ rows: Bar[] } & Explained) | null;
   sbs?: NGrid | null;
   xi?: { title: string; right: string; none: string; bat: GridT | null; bowl: GridT | null; lines: string[]; note?: string } | null;
 };
 export type PreviewPage = { choices: { section: string; matches: number }[]; section: string; formats: string[]; format: string;
   mine_opts: string[]; mine: string; opp: string; opp_opts: { team: string; label: string }[]; none: string; elsewhere: string[];
-  tabs: string[]; tab: string; mine_note?: string; where_note?: string; mu?: boolean; cur?: boolean;
+  tabs: string[]; tab: string; mine_note?: string; where_note?: string; mu?: boolean; cur?: boolean; htp?: string;
   head?: { missing: Record<string, string>; kpis: Fig[]; last5: string[]; caption: string; where_default: string;
     predicted?: Record<string, { line: string; steps: GridT; note: string }> | null; plan?: string[] | null;
-    aim?: { none: string; games: number; note?: string; venues: Record<string, { line: string; warn: string; they: string; meetings: GridT | null }> } | null };
+    aim?: { none: string; kind: string; note?: string; rests?: string; few?: string; sure?: string;
+      venues: Record<string, { line: string; warn?: string; they?: string; meetings?: GridT | null; none?: string; games?: GridT | null }> } | null };
   body?: PreviewBody };
 
 // ------------------------------------------------------------------ Settings → Problems

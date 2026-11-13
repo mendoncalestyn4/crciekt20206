@@ -607,3 +607,17 @@ table.c tr.dimrow td { opacity: .45; }
 .wdots button { width: 12px; height: 12px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; background: var(--track); }
 .wdots button.on { background: var(--blue); }
 .wbar .btn:disabled { opacity: .45; cursor: default; }
+
+/* Teams · every player's contribution: the donut beside a table sorted by a click on a column */
+.contrib { display: grid; grid-template-columns: minmax(300px, 4fr) 8fr; gap: 26px; align-items: start; }
+table.c th.sortable { cursor: pointer; user-select: none; } table.c th.sortable.on { color: var(--led); }
+.sharecell { display: flex; align-items: center; gap: 8px; min-width: 120px; } .sharecell .bar { flex: 1; margin-top: 0; }
+
+/* Opponent preview · how they play: bowling and batting side by side */
+.htp { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-top: 10px; }
+
+/* Opponent preview · their danger men: three cards, each with their last five innings and spells */
+.danger { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.last5 { display: flex; gap: 6px; flex-wrap: wrap; } .last5 a { display: flex; flex-direction: column; align-items: center;
+  min-width: 54px; padding: 6px 4px; border: 1px solid var(--edge); border-radius: 8px; }
+.last5 b { font-variant-numeric: tabular-nums; } .last5 small { color: var(--dim); font-size: 11px; }

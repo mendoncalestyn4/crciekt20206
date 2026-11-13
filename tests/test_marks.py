@@ -155,7 +155,7 @@ def test_every_player_in_every_series_of_the_test_scorecards(fixtures_marks):
 
 
 def test_a_players_share_of_the_team():
-    """Runs out of the team's totals (extras included), wickets out of the team's bowlers', worked by hand."""
+    """Runs out of the team's runs off the bat (extras are no one's), wickets out of the team's bowlers', worked by hand."""
     from ccstats import players as PL
     b = Book()
     b.match("m1", "2026-01-01", "India", "England")
@@ -164,8 +164,8 @@ def test_a_players_share_of_the_team():
     b.inns("m1", 2, "England", "India", [("X", 40, 50, True)], extras=0)
     b.bowl("m1", 2, "India", "England", [("B", 60, 20, 3), ("C", 60, 20, 1)])
     s = PL.team_share(b.career(), "B").iloc[0]
-    assert (s.matches, s.team_matches, s.runs, s.team_runs, s.wickets, s.team_wickets) == (1, 1, 30, 100, 3, 4)
-    assert s.run_share == pytest.approx(30.0) and s.wicket_share == pytest.approx(75.0)
+    assert (s.matches, s.team_matches, s.runs, s.team_runs, s.wickets, s.team_wickets) == (1, 1, 30, 90, 3, 4)
+    assert s.run_share == pytest.approx(100 / 3) and s.wicket_share == pytest.approx(75.0)
 
 
 def test_hundreds_and_fifties_are_counted_innings_by_innings():

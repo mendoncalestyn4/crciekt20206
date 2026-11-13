@@ -12,7 +12,7 @@ import { DepthRow, Msg } from "../kit/fm";
 import { AdviceList, AfterLines, Grades, MarksTable, NextUp } from "../kit/myteam";
 import { useInbox } from "./Inbox";
 import { FormCard, MatchWinners, ScoreRows, Streaks, VenueRecord } from "../kit/season";
-import { dayY, f0, f1, f2, fmtOf, ord } from "../format";
+import { dayY, f0, f1, f2, fmtOf, ord, rnd } from "../format";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
 import { T } from "../shell/names";
@@ -65,7 +65,7 @@ export function MyTeam() {
 
         <Tile span={4} rows={2} title="Season">
           <div className="row2"><Logo team={d.team} size={124} /><div><Num v={`${won}–${lost}`} px={48} />
-            <div className="s"><b>{rs.length}</b> matches · won <b>{won + lost ? `${Math.round((won / (won + lost)) * 100)}%` : "–"}</b></div></div></div>
+            <div className="s"><b>{rs.length}</b> matches · won <b>{won + lost ? `${rnd((won / (won + lost)) * 100)}%` : "–"}</b></div></div></div>
           {rs.length ? <Ring won={won} lost={lost} other={rs.length - won - lost} /> : <Missing why={miss.season} />}
           <div className="note">Every format, April to March{cal ? ` (Apr ${cal.year} – Mar ${cal.year + 1})` : ""}.</div>
         </Tile>
@@ -172,7 +172,7 @@ export function MyTeam() {
                 {r.waiting.length > 0 && <div className="dsub">Waiting in domestic cricket</div>}
                 {r.waiting.map((w) => (
                   <div className={`dwait ${w.clears ? "ok" : ""}`} key={w.player}><PName p={w.player} px={19} />
-                    <span className="gain">{w.gain == null ? "" : `${w.gain >= 0 ? "+" : ""}${Math.round(w.gain * 100)}%`}</span>
+                    <span className="gain">{w.gain == null ? "" : `${w.gain >= 0 ? "+" : ""}${rnd(w.gain * 100)}%`}</span>
                     <div className="how">{w.side} · {w.raw_bat || w.raw_bowl}</div></div>))}
               </div>))}</div>
             <div className="note">Starters: who played in the latest series here. The number is their rating out of 20 here (the average of their attributes; – means
@@ -206,7 +206,7 @@ export function MyTeam() {
             <tbody>{d.history.map((r) => (
               <tr key={r.season + r.section}><td><span className="tn dimn">{r.season}</span></td><td><Name p={r.section} px={20} /></td>
                 <td className="r"><span className="tn">{r.won}–{r.lost}{r.drawn ? `–${r.drawn}` : ""}</span></td>
-                <td className="r"><span className="tn dimn">{r.win_pct == null ? "–" : `${Math.round(r.win_pct)}%`}</span></td><td><span className="why">{r.finish || "–"}</span></td></tr>))}</tbody></table>
+                <td className="r"><span className="tn dimn">{r.win_pct == null ? "–" : `${rnd(r.win_pct)}%`}</span></td><td><span className="why">{r.finish || "–"}</span></td></tr>))}</tbody></table>
         </Tile>}
         <Tile span={d.history?.length ? 5 : 12} title="📝 Your match notes">
           {d.notes?.length ? <table className="c"><tbody>{d.notes.map((n) => (

@@ -4,12 +4,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { get, type NGrid, type Outcome, type PreviewPage, remember } from "../api";
+import { type Explained, get, type GridT, type HowTheyPlay as HowTheyPlayT, type NGrid, type Outcome, type PreviewPage, remember } from "../api";
 import { Explain, Lamps, Logo, Missing, Num, Tile } from "../kit/base";
-import { LeaderBars } from "../kit/charts";
-import { SplitBars } from "../kit/player";
+import { LeaderBars, ShareRing } from "../kit/charts";
+import { BatFirstSides, VenueRecord } from "../kit/season";
 import { Grid, Md, SignedBars } from "../kit/teams";
-import { dayY } from "../format";
+import { ab, dayY } from "../format";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
 import { T } from "../shell/names";
@@ -23,7 +23,8 @@ export function Preview() {
   const go = useNavigate();
   const keep = nation ? `?nation=${encodeURIComponent(nation)}` : "";
   const want = { section: params.get("section") ?? "", format: params.get("format") ?? "", mine: params.get("mine") ?? "",
-    opp: params.get("opp") ?? "", tab: params.get("tab") ?? "", mu: params.get("mu") ?? "", cur: params.get("cur") ?? "" };
+    opp: params.get("opp") ?? "", tab: params.get("tab") ?? "", mu: params.get("mu") ?? "", cur: params.get("cur") ?? "",
+    htp: params.get("htp") ?? "" };
   const qs = Object.entries(want).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
   const q = useQuery({ queryKey: ["preview", qs, career?.name], enabled: Boolean(career), retry: false, queryFn: () => get<PreviewPage>(`/api/preview?${qs}`) });
   const [where, setWhere] = useState(""), [you, setYou] = useState("Home");
@@ -34,10 +35,11 @@ export function Preview() {
     remember({ ...(changes.section && changes.section !== "International cricket" ? { section: changes.section } : {}),
       ...(changes.format && changes.format !== "All" ? { format: changes.format } : {}) }, { format: "section" });
     const base = d ? { section: d.section, format: d.format, mine: d.mine, opp: d.opp, tab: d.tab === d.tabs[0] ? "" : d.tab,
-      mu: d.mu ? "every" : "", cur: d.cur ? "1" : "" } : want;
+      mu: d.mu ? "every" : "", cur: d.cur ? "1" : "", htp: d.htp ?? "" } : want;
     const next: Record<string, string> = { ...base, ...changes };
     if ("section" in changes) Object.assign(next, { format: "", opp: "" });
     if ("format" in changes || "mine" in changes) next.opp = "";
+    if (!("htp" in changes) && ("section" in changes || "format" in changes || "opp" in changes)) next.htp = "";   // a new opponent: this season again
     if (nation) next.nation = nation;
     go(`/teams/preview?${new URLSearchParams(Object.entries(next).filter(([, v]) => Boolean(v))).toString()}`);
   };
@@ -93,29 +95,40 @@ export function Preview() {
           {me && <Tile span={5} title={`📋 Game plan for ${me} v ${d.opp}`}>
             {h.plan ? (h.plan.length ? <ul className="dots plan">{h.plan.map((x) => <li key={x}><Md s={x} /></li>)}</ul>
               : <div className="plain">Nothing stands out yet: not enough games for a clear pattern. Play a few more and it fills in.</div>) : <Missing why={h.missing.plan} />}</Tile>}
-          {me && <Tile span={12} title="🎯 The score to aim for batting first">
+          {me && <Tile span={12} title={h.aim?.kind === "multi" ? "🎯 First-innings totals that won, drew and lost" : "🎯 The score to aim for batting first"}>
             {h.aim ? (h.aim.none ? <div className="plain">{h.aim.none}</div> : (() => {
               const a = h.aim.venues[w];
-              return a ? <><div className="field" style={{ marginTop: 0 }}><span className="plain" style={{ flex: 1 }}><b>{a.line}</b></span>
-                <div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>{WHERE.map((x) => (
-                  <button key={x} className={x === w ? "on" : ""} onClick={() => setWhere(x)}>{x}</button>))}</div></div>
+              const where = <div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>{WHERE.map((x) => (
+                <button key={x} className={x === w ? "on" : ""} onClick={() => setWhere(x)}>{x}</button>))}</div>;
+              if (!a) return null;
+              if (h.aim.kind === "multi") return <><div className="field" style={{ marginTop: 0 }}><span className="plain" style={{ flex: 1 }}>
+                  {a.line ? <b><T>{a.line}</T></b> : <T>{a.none || ""}</T>}</span>{where}</div>
+                {a.games && <><div className="glabel">Every game against them here · newest first</div><Grid t={a.games} keep={keep} /></>}
+                <div className="note">{h.aim.note}</div></>;
+              return <><div className="field" style={{ marginTop: 0 }}><span className="plain" style={{ flex: 1 }}><b>{a.line}</b></span>{where}</div>
                 {a.warn && <div className="plain">⚠️ {a.warn}</div>}
-                <div className="plain"><T>{a.they}</T></div>
+                {h.aim.few && <div className="plain">⚠️ {h.aim.few}</div>}
+                <div className="plain"><T>{a.they || ""}</T></div>
+                <div className="glabel">How sure it is</div>
+                <div className="plain"><T>{h.aim.rests || ""}</T> {h.aim.sure}</div>
                 {a.meetings ? <><div className="glabel">Your games against them here · newest first</div><Grid t={a.meetings} keep={keep} /></>
                   : <div className="plain">You haven't played them here yet.</div>}
-                <div className="note">{h.aim.note}</div></> : null;
+                <div className="note">{h.aim.note}</div></>;
             })()) : <Missing why={h.missing.aim} />}</Tile>}
           <div className="itabs">{d.tabs.map((x, i) => (
             <button key={x} className={x === d.tab ? "on" : ""} onClick={() => set({ tab: i === 0 ? "" : x })}>{x === "About them" ? `About ${d.opp}` : x}</button>))}</div>
           {!b ? null : b.none ? <Tile span={12}><div className="plain">{b.none}</div></Tile> : <>
             {d.tab === "Head to head" && <>
               {b.h2h === null ? <Tile span={12}><Missing why={m.h2h} /></Tile> : b.h2h && (b.h2h.never ? <Tile span={12} title="Head to head">
-                <div className="plain"><b><T>{b.h2h.never}</T></b></div>{b.h2h.other && <div className="note">{b.h2h.other}</div>}</Tile> : <>
+                <div className="plain"><b><T>{b.h2h.never}</T></b></div>{b.h2h.other && <div className="note">{b.h2h.other}</div>}</Tile> : null)}
+              {b.h2h === null || !b.h2h || b.h2h.never ? <TheirRecord b={b} opp={d.opp} /> : null}
+              {b.h2h && !b.h2h.never && <>
                 <Tile span={12} title={`${me} v ${d.opp}`}>
                   <div className="kpis">{b.h2h.kpis!.map((k) => <div key={k.k}><span>{k.k}</span><Num v={k.v} px={30} /></div>)}
                     <div><span>Last 5</span><Lamps seq={b.h2h.last5 as Outcome[]} /></div></div>
                   <div className="plain" style={{ marginTop: 8 }}><T>{b.h2h.how!}</T></div><div className="plain"><T>{b.h2h.typical!}</T></div>
                 </Tile>
+                <TheirRecord b={b} opp={d.opp} />
                 {b.h2h.keys!.map((k) => <Tile key={k.title} span={6} title={k.title}>
                   {k.rows.length ? <Grid t={{ cols: ["Player", "", ""], rows: k.rows, num: [], hi: [], links: [], dim: k.dim }} /> : <div className="plain">No figures yet.</div>}
                   <div className="note">Greyed out: not in that team's last 3 games, so maybe not playing now.</div></Tile>)}
@@ -126,8 +139,8 @@ export function Preview() {
                         <div className="who"><T>{`🏏 ${s.top_bat} · 🎯 ${s.top_bowl}`}</T></div></div>)}
                       {c.potm && <div className="who"><T>{`⭐ Player of the Match: ${c.potm}`}</T></div>}
                       <div className="story"><T>{c.story}</T></div></div>))}</div>
-                </Tile></>)}
-              <Tile span={12} title="Who gets whom out" right="dismissals by each bowler of each batter (run-outs left out)">
+                </Tile></>}
+              {me && <Tile span={12} title="Who gets whom out" right="dismissals by each bowler of each batter (run-outs left out)">
                 <div className="field" style={{ marginTop: 0 }}><label>Count</label><div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>
                   {[["", "Only our meetings"], ["every", "Every match these players faced each other"]].map(([k, l]) => (
                     <button key={l} className={(d.mu ? "every" : "") === k ? "on" : ""} onClick={() => set({ mu: k! })}>{l}</button>))}
@@ -139,8 +152,21 @@ export function Preview() {
                   : <Missing why={m.matchups} />}
                 <div className="note">Innings met: innings where the batter batted and the bowler bowled at them. The scorecards don't say which bowler each run came
                   off, so the runs are the batter's whole score in the innings that bowler got them out.</div>
-              </Tile></>}
+              </Tile>}</>}
             {d.tab === "About them" && <>
+              <Tile span={12} title={`How ${d.opp} play`} right={b.how?.season ? `${b.how.showing_last ? "last season" : "this season"} · ${b.how.season} · ${b.how.matches} matches` : ""}>
+                {b.how ? <HowTheyPlay h={b.how} toggle={(last) => set({ htp: last ? "last" : "" })} /> : <Missing why={m.how} />}</Tile>
+              <Tile span={12} title={`⚠️ ${poss(d.opp)} danger men right now`} right={b.danger?.season ? `most impact points · ${b.danger.season}` : ""}>
+                {b.danger ? (b.danger.none ? <div className="plain">{b.danger.none}</div> : <>
+                  {b.danger.note && <div className="note" style={{ marginTop: 0 }}>{b.danger.note}</div>}
+                  <div className="danger">{b.danger.men.map((x) => <div key={x.player} className="bf-side">
+                    <div className="k"><T>{x.player}</T></div><div className="note" style={{ marginTop: 2 }}>{x.line}</div>
+                    {x.role !== "bowl" && x.innings.length > 0 && <><div className="glabel">Last five innings</div>
+                      <div className="last5">{x.innings.map((i) => <Link key={i.id + i.text} className="lk" to={`/matches/${i.id}${keep}`} title={`v ${i.opp} · ${i.date}`}><b>{i.text}</b><small>{ab(i.opp)}</small></Link>)}</div></>}
+                    {x.role !== "bat" && x.spells.length > 0 && <><div className="glabel">Last five spells</div>
+                      <div className="last5">{x.spells.map((w) => <Link key={w.id + w.text} className="lk" to={`/matches/${w.id}${keep}`} title={`v ${w.opp} · ${w.date}`}><b>{w.text}</b><small>{ab(w.opp)}</small></Link>)}</div></>}
+                  </div>)}</div>
+                  {b.danger.shows && <Explain shows={<T>{b.danger.shows}</T>} for_={b.danger.for_ ?? ""} />}</>) : <Missing why={m.danger} />}</Tile>
               {(["batters", "bowlers"] as const).map((k) => {
                 const s = b[k];
                 return <Tile key={k} span={6} title={k === "batters" ? "Batters in form" : "Bowlers in form"} right={k === "batters" ? "runs, last 10 matches" : "wickets, last 10 matches"}>
@@ -164,14 +190,25 @@ export function Preview() {
                 {b.venues ? <><div className="field" style={{ marginTop: 0 }}><label>You are</label><div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>{WHERE.map((x) => (
                   <button key={x} className={x === you ? "on" : ""} onClick={() => setYou(x)}>{x}</button>))}</div></div>
                   <Grid t={b.venues[you]!} /><div className="note">{b.venues[you]!.note}</div></> : <Missing why={m.venues} />}</Tile>
+              <Tile span={12} title="🏟️ Their players where your match is" right="current players · their record there">
+                {b.by_country ? (b.by_country.none ? <div className="plain">{b.by_country.none}</div> : (() => {
+                  const keys = Object.keys(b.by_country.venues), k = keys.includes(you) ? you : keys[0]!, v = b.by_country.venues[k]!;
+                  return <><div className="field" style={{ marginTop: 0 }}><label>You are</label><div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>{keys.map((x) => (
+                    <button key={x} className={x === k ? "on" : ""} onClick={() => setYou(x)}>{x}</button>))}</div><span className="plain">their players {v.place}</span></div>
+                    {v.none ? <div className="plain"><T>{v.none}</T></div> : <Grid t={v as GridT} />}
+                    {b.by_country.shows && <Explain shows={<T>{b.by_country.shows}</T>} for_={b.by_country.for_ ?? ""} />}</>;
+                })()) : <Missing why={m.by_country} />}</Tile>
+              <Tile span={12} title="🔥 Their big-match players" right="knockouts and series deciders against every other game">
+                {b.big_players ? (b.big_players.none ? <div className="plain"><T>{b.big_players.none}</T></div> : <><Grid t={b.big_players as GridT} />
+                  <Explain shows={<T>{(b.big_players as GridT & Explained).shows}</T>} for_={(b.big_players as GridT & Explained).for_} /></>) : <Missing why={m.big_players} />}</Tile>
               <Tile span={6} title="🏆 Big-match record">{b.big ? <Grid t={b.big} /> : m.big ? <Missing why={m.big} /> : <div className="plain">No knockouts, finals or series deciders yet.</div>}</Tile>
               <Tile span={6} title="📈 Trend">{b.trend ? <><div className="field" style={{ marginTop: 0 }}><span className="k3" style={{ margin: 0 }}>Last 5</span>
                 <Lamps seq={b.trend.last as Outcome[]} /></div><div className="plain">{b.trend.line}</div></> : <Missing why={m.trend} />}</Tile>
               <Tile span={6} title="How their batters get out" right="share of dismissals">
-                {b.how_out ? <><SplitBars rows={b.how_out.rows} dec={0} unit="%" /><Explain shows={b.how_out.shows} for_={b.how_out.for_} /></>
+                {b.how_out ? <><ShareRing rows={b.how_out.rows} count={(r) => r.n ?? 0} centre={String(b.how_out.outs ?? "")} sub="dismissals" /><Explain shows={b.how_out.shows} for_={b.how_out.for_} /></>
                   : m.how_out ? <Missing why={m.how_out} /> : <div className="plain">Not dismissed yet.</div>}</Tile>
               <Tile span={6} title="Where their runs come from">
-                {b.depth ? <><SplitBars rows={b.depth.rows} dec={0} unit="%" />{b.depth.shows && <Explain shows={b.depth.shows} for_={b.depth.for_} />}</> : <Missing why={m.depth} />}</Tile>
+                {b.depth ? <><ShareRing rows={b.depth.rows} count={(r) => r.runs ?? 0} centre={String(b.depth.rows.reduce((a, r) => a + (r.runs ?? 0), 0))} sub="runs" />{b.depth.shows && <Explain shows={b.depth.shows} for_={b.depth.for_} />}</> : m.depth ? <Missing why={m.depth} /> : <div className="plain">No runs yet.</div>}</Tile>
             </>}
             {d.tab === "Side by side" && <Tile span={12} title={b.sbs?.title ?? "Side by side"}>
               {b.sbs ? <><div className="how" style={{ marginTop: -4, marginBottom: 6 }}>{b.sbs.right}</div><Grid t={b.sbs} /><div className="note">{b.sbs.note}</div></> : <Missing why={m.sbs} />}</Tile>}
@@ -187,4 +224,42 @@ export function Preview() {
       </div>
     </>
   );
+}
+
+/** "India's", "West Indies'" */
+const poss = (t: string) => (t.endsWith("s") ? `${t}'` : `${t}'s`);
+
+/** The opponent's own record batting first or chasing, and home, away and neutral then country by country, against
+ *  every side: under the head-to-head record. */
+function TheirRecord({ b, opp }: { b: NonNullable<PreviewPage["body"]>; opp: string }) {
+  const m = b.missing, bf = b.bat_first, wh = b.where;
+  return <>
+    <Tile span={6} title={`${opp}: batting first or chasing`}>
+      {bf ? (bf.none !== undefined ? <div className="plain">{bf.none}</div> : <><BatFirstSides bf={bf} who={opp} />
+        <div className="note">Games shortened by rain are left out of the totals.</div><Explain shows={<T>{bf.shows}</T>} for_={bf.for_} /></>)
+        : <Missing why={m.bat_first} />}</Tile>
+    <Tile span={6} title={`${opp}: home, away and neutral`}>
+      {wh ? (wh.none !== undefined ? <div className="plain">{wh.none}</div> : <><VenueRecord v={wh} team={opp} who />
+        <div className="note">The scorecards don't name the ground, so it goes by the home side{wh.nation ? "'s country" : ""}.</div>
+        <Explain shows={<T>{wh.shows}</T>} for_={wh.for_} /></>) : <Missing why={m.where} />}</Tile>
+  </>;
+}
+
+/** How they play: a short summary, then their bowling and batting in plain words and how fast each part of the order
+ *  goes; this season, with last season a click away when this one has too few matches. */
+function HowTheyPlay({ h, toggle }: { h: HowTheyPlayT; toggle: (last: boolean) => void }) {
+  const button = h.showing_last ? <button className="btn quiet" onClick={() => toggle(false)}>Back to this season ({h.this})</button>
+    : h.last ? <button className="btn quiet" onClick={() => toggle(true)}>See last season ({h.last})</button> : null;
+  if (h.none) return <><div className="plain">{h.none}</div>{h.note && <div className="note">{h.note}</div>}{button}</>;
+  return <>
+    {h.note && !h.showing_last && <div className="field" style={{ marginTop: 0 }}><span className="plain" style={{ flex: 1 }}>⚠️ {h.note}</span>{button}</div>}
+    {h.showing_last && <div className="field" style={{ marginTop: 0 }}><span className="plain" style={{ flex: 1 }}>Showing last season ({h.season}).</span>{button}</div>}
+    {h.summary && <div className="plain"><b><T>{h.summary}</T></b></div>}
+    <div className="htp">
+      <div><div className="k3">🎯 Bowling</div><ul className="dots">{(h.bowling ?? []).map((x) => <li key={x}><T>{x}</T></li>)}</ul></div>
+      <div><div className="k3">🏏 Batting</div><ul className="dots">{(h.batting ?? []).map((x) => <li key={x}><T>{x}</T></li>)}</ul></div>
+    </div>
+    {h.parts && <><div className="glabel">Each part of the order</div><Grid t={h.parts} /></>}
+    {h.rules && <div className="note">{h.rules}</div>}
+  </>;
 }
