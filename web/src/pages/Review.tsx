@@ -24,7 +24,8 @@ export function Review() {
   const [params] = useSearchParams();
   const go = useNavigate();
   const keep = nation ? `?nation=${encodeURIComponent(nation)}` : "";
-  const want = { pick: params.get("pick") ?? "", points: params.get("points") ?? "", wteam: params.get("wteam") ?? "", wfmt: params.get("wfmt") ?? "" };
+  const want = { pick: params.get("pick") ?? "", points: params.get("points") ?? "", wteam: params.get("wteam") ?? "", wfmt: params.get("wfmt") ?? "",
+    wview: params.get("wview") ?? "" };
   const qs = Object.entries(want).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
   const q = useQuery({ queryKey: ["review", qs, career?.name], enabled: Boolean(career), retry: false,
     queryFn: () => get<ReviewPage>(`/api/review?${qs}`) });
@@ -61,7 +62,10 @@ export function Review() {
               <label htmlFor="rv-wteam">Team</label>
               <select id="rv-wteam" className="pick" value={wr.team} onChange={(e) => set({ wteam: e.target.value })}>
                 {wr.teams.map((t) => <option key={t}>{t}</option>)}</select>
-              {wr.formats.length > 0 && <div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>{wr.formats.map((f) => (
+              <div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>{([["", "This competition"], ["whole", "The whole season, every format"]] as const).map(([v, l]) => (
+                <button key={l} className={(wr.view ?? "") === v ? "on" : ""} onClick={() => set({ wview: v })}
+                  title={v ? "April to March, everything this team played, added up" : "This competition's season only"}>{l}</button>))}</div>
+              {wr.formats.length > 0 && !wr.view && <div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>{wr.formats.map((f) => (
                 <button key={f} className={f === wr.format ? "on" : ""} onClick={() => set({ wfmt: f })}>{f}s</button>))}</div>}
             </div>
             {wr.none ? <Missing why={wr.none} /> : <><Wrapped slides={wr.slides ?? []} team={wr.team} section={wr.section ?? ""} season={wr.season ?? ""} keep={keep} />

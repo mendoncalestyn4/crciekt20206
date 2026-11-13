@@ -407,3 +407,28 @@ def test_season_wrapped_best_game_is_the_top_rated_on_the_excitement_rating(care
                     assert w["game"]["rank"] == int(top["rank"].iloc[0])
                     done += 1
     assert done > 20
+
+
+def test_whole_season_wrapped_adds_every_format_up(career):
+    """Season wrapped's whole-season view: every match the team played that April-to-March season, every format,
+    with the runs, wickets and record added up across them."""
+    from ccstats import seasonal as SN
+    from ccstats import wrapped as WR
+    m = career.matches
+    year_of = SN.april_seasons(m)
+    done = 0
+    for team in sorted(set(m.home) | set(m.away))[:14]:
+        mine = m[(m.home == team) | (m.away == team)]
+        for y in sorted({int(year_of[i]) for i in mine.match_id}):
+            w = WR.whole_season_wrapped(career, y, team)
+            g = mine[mine.match_id.map(year_of) == y]
+            assert w["matches"] == len(g) and set(w["sections"]) == set(g.section)
+            assert w["record"]["won"] == int((g.winner == team).sum())
+            b = career.batting[career.batting.match_id.isin(g.match_id) & (career.batting.team == team) & career.batting.did_bat]
+            if "runs" in w:
+                assert w["runs"]["runs"] == b.groupby("player").runs.sum().max()
+            wk = career.bowling[career.bowling.match_id.isin(g.match_id) & (career.bowling.team == team)]
+            if "wickets" in w:
+                assert w["wickets"]["wickets"] == wk.groupby("player").wickets.sum().max()
+            done += 1
+    assert done > 15

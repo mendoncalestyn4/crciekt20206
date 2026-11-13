@@ -123,8 +123,10 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
       wins), each win checked
 - [x] The new excitement rating in the best matches (5) — ✓ Season review's best matches and Season wrapped's best game on the
       match excitement rating, with each one's place in the competition; the old site keeps its score
-- [ ] **Season wrapped:** each format on its own, or the whole April-March season with all formats together (runs and
-      wickets added up there); its "best game" on the new rating (5, 23)
+- [x] **Season wrapped:** each format on its own, or the whole April-March season with all formats together (runs and
+      wickets added up there); its "best game" on the new rating (5, 23) — ✓ Season review: "This competition" or "The whole season,
+      every format" (`ccstats/wrapped.py` whole_season_wrapped: every format added up, impact points game by game);
+      counted again by hand; found and fixed: every slide's text was faint and pushed off its left edge (since 12 Nov)
 
 ## 8. Rivalries
 

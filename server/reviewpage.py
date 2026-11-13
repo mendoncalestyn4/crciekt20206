@@ -79,8 +79,9 @@ def review(career, q: dict, mine: list[str]) -> dict:
             pick = keys[0]
     section, season = pick.split("|", 1)
     out.update(pick=pick, section=section, season=season)
-    out["wrapped"] = kept(career, ("wrapped", section, season, q.get("wteam", ""), q.get("wfmt", ""), tuple(mine)),
-                          lambda: _wrapped(career, section, season, q.get("wteam", ""), q.get("wfmt", ""), mine))
+    wview = "whole" if q.get("wview", "") == "whole" else ""
+    out["wrapped"] = kept(career, ("wrapped", section, season, q.get("wteam", ""), q.get("wfmt", ""), tuple(mine), wview),
+                          lambda: _wrapped(career, section, season, q.get("wteam", ""), q.get("wfmt", ""), mine, wview))
     if section == INTL:
         out["year"] = kept(career, ("year-review", season), lambda: _year(career, season))
     else:
@@ -286,7 +287,7 @@ def _ord(n: int) -> str:
     return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
 
 
-def _wrapped(career, section, season, asked, fmt_pick, mine) -> dict:
+def _wrapped(career, section, season, asked, fmt_pick, mine, view="") -> dict:
     """Your season, wrapped: one team's season as ten slides (ccstats.wrapped). International cricket is one format at
     a time (Tests, ODIs and T20Is are never mixed); the team is yours when you played here, else the side with the
     most matches."""
@@ -316,8 +317,15 @@ def _wrapped(career, section, season, asked, fmt_pick, mine) -> dict:
         if team not in teams:
             yours = [t for t in mine if t in teams]
             team = yours[0] if yours else sorted(teams, key=lambda t: (-played[t], t))[0]
-        w = WR.season_wrapped(career, sec, sv, team, ratings=matchpage.ratings(career, sec))
-        label = f"{sec} {season}"
+        whole = view == "whole"
+        if whole:   # the whole April-to-March season, every format together (the owner's exception, this view only)
+            dates = sorted(here.date)
+            year = SN.april_year(dates[len(dates) // 2])
+            w = WR.whole_season_wrapped(career, year, team, ratings_for=lambda s_: matchpage.ratings(career, s_))
+            label = f"the whole {w['season']} season"
+        else:
+            w = WR.season_wrapped(career, sec, sv, team, ratings=matchpage.ratings(career, sec))
+            label = f"{sec} {season}"
         slides = []
 
         def add(key, kicker, head, big="", unit="", lines=(), mid=None):
@@ -369,10 +377,17 @@ def _wrapped(career, section, season, asked, fmt_pick, mine) -> dict:
         if x:
             add("player", "Player of the season", x["player"], f"{x['points']:.0f}", "impact points",
                 [f"{x['matches']} match{'es' if x['matches'] != 1 else ''} · batting {x['batting']:.0f}, bowling {x['bowling']:.0f}, fielding {x['fielding']:.0f}"])
+        note = ("Every figure is the team's own in this competition and season, from the scorecards as printed. "
+                "Best game: the excitement rating out of 10 (Matches page). Player of the season: the most impact "
+                "points (below). * not out or unbroken.")
+        if whole:
+            note = (f"The whole April-to-March season, every format {team} played added up: "
+                    + ", ".join(w.get("sections", [])) + ". Runs, wickets and records count across them all (this view "
+                    "only: everywhere else formats are kept apart). Best game: each match on its own competition's "
+                    "excitement rating. Player of the season: impact points added up over every competition, each "
+                    "counted against its own competition's averages. * not out or unbroken.")
         return dict(none="" if slides else f"{team} haven't played here yet.", formats=formats, format=fmt, teams=teams,
-                    team=team, section=sec, season=season, slides=slides,
-                    note="Every figure is the team's own in this competition and season, from the scorecards as printed. "
-                         "Best game: the excitement rating out of 10 (Matches page). Player of the season: the most impact "
-                         "points (below). * not out or unbroken.")
+                    team=team, section=sec if not whole else "", season=season if not whole else w["season"], slides=slides,
+                    view="whole" if whole else "", note=note)
     part("wrapped", wrapped)
     return out

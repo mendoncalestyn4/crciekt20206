@@ -39,7 +39,8 @@ function draw(g: CanvasRenderingContext2D, s: WrapSlide, t: Theme, logo: HTMLIma
   g.fillStyle = t.blue; g.fillRect(0, 0, 18, H);
   // the slide's number, large and faint, behind everything
   g.globalAlpha = 0.06; g.fillStyle = t.ink; g.font = "400 560px 'Bebas Neue'"; g.textAlign = "right"; g.textBaseline = "alphabetic";
-  g.fillText(String(n), W - 110, H - 120);   // clear of the "n / of" count under it g.globalAlpha = 1; g.textAlign = "left";
+  g.fillText(String(n), W - 110, H - 120);   // clear of the "n / of" count under it
+  g.globalAlpha = 1; g.textAlign = "left";   // everything after it at full strength, from the left
   const L = 110, R = W - 110, width = R - L;
   if (logo && logo.complete && logo.naturalWidth) g.drawImage(logo, R - 150, 70, 150, 150);
   g.fillStyle = t.gold; g.font = "600 34px Inter"; g.textBaseline = "top";

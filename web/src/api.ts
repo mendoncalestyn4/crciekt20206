@@ -454,6 +454,6 @@ export type ReviewPage = { choices: { key: string; section: string; season: stri
     bars: { player: string; team: string; value: number; note: string }[]; shows: string; for_: string; note: string } | null } };
 export type WrapSlide = { key: string; kicker: string; head: string; big: string; unit: string; lines: string[]; id: string | null };
 export type Wrap = { none: string; formats: string[]; format: string; teams: string[]; team: string; section?: string; season?: string;
-  slides?: WrapSlide[]; note?: string };
+  slides?: WrapSlide[]; note?: string ; view?: string };
 export type HonoursPage = { tabs: string[]; tab: string; none: string; boards?: (GridT & { title: string })[]; note?: string;
   cabinet?: GridT | null; cabinet_none?: string };

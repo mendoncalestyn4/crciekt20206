@@ -25,8 +25,51 @@ def season_wrapped(career, section: str, season, team: str, ratings: pd.DataFram
     ratings if already worked out."""
     m = career.matches
     ids = set(m[(m.section == section) & (m.season == season)].match_id)
+    rt = X.rate(career, m[m.section == section].match_id) if ratings is None else ratings
+    mvp = MV.season_mvp(career, section, season, "impact")
+    return _wrap(career, ids, team, rt, mvp[mvp.team == team], dict(section=section, season=str(season)))
+
+
+def whole_season_wrapped(career, year: int, team: str, ratings_for=None) -> dict:
+    """The whole April-to-March season for `team`, every format together (the owner's exception to "formats never
+    mixed", for this view only): runs, wickets and records added up across Tests, ODIs, T20Is and any domestic or
+    franchise competition it played; the best game on each competition's own excitement rating; the player of the
+    season by impact points added up over every competition. `ratings_for(section)`: a section's ratings if kept."""
+    from .seasonal import april_seasons
+    m = career.matches
+    mine = m[(m.home == team) | (m.away == team)]
+    year_of = april_seasons(m)
+    mine = mine[mine.match_id.map(year_of) == year]
+    ids = set(mine.match_id)
+    rate = ratings_for or (lambda sec: X.rate(career, m[m.section == sec].match_id))
+    rt = pd.concat([rate(sec) for sec in sorted(mine.section.unique())]) if len(mine) else pd.DataFrame(columns=X.RATING_COLUMNS)
+    # impact points game by game (each competition's own averages), only this season's games: a season label isn't
+    # always April to March (Tests "2032" runs January to December)
+    from .playerdeep import match_impact
+    parts = []
+    for sec in sorted(mine.section.unique()):
+        imp = match_impact(career, m[m.section == sec].match_id)
+        parts.append(imp[imp.match_id.isin(ids) & (imp.team == team)])
+    imp = pd.concat(parts) if parts else pd.DataFrame(columns=["player", "team", "match_id", "bat", "bowl", "field"])
+    mvp = pd.DataFrame(columns=["player", "team", "matches", "batting", "bowling", "fielding", "points"])
+    if len(imp):
+        xi = career.batting[career.batting.match_id.isin(ids) & (career.batting.team == team)]
+        played = xi.groupby("player").match_id.nunique()
+        g = imp.groupby("player")[["bat", "bowl", "field"]].sum()
+        mvp = pd.DataFrame({"player": played.index, "team": team, "matches": played.values})
+        mvp = mvp.assign(batting=mvp.player.map(g.bat).fillna(0.0), bowling=mvp.player.map(g.bowl).fillna(0.0),
+                         fielding=mvp.player.map(g.field).fillna(0.0))
+        mvp["points"] = mvp.batting + mvp.bowling + mvp.fielding
+        mvp = mvp.sort_values(["points", "player"], ascending=[False, True]).reset_index(drop=True)
+    return _wrap(career, ids, team, rt, mvp, dict(section="", season=f"{year}–{str(year + 1)[-2:]}",
+                                                  sections=sorted(mine.section.unique())))
+
+
+def _wrap(career, ids: set, team: str, rt: pd.DataFrame, mvp: pd.DataFrame, base: dict) -> dict:
+    """The slides for these matches (one competition's season, or a whole season of every format)."""
+    m = career.matches
     tm = A.team_matches(career, ids, team)
-    out: dict = dict(team=team, section=section, season=str(season), matches=len(tm))
+    out: dict = dict(team=team, matches=len(tm), **base)
     if tm.empty:
         return out
     mids = set(tm.match_id)
@@ -99,16 +142,12 @@ def season_wrapped(career, section: str, season, team: str, ratings: pd.DataFram
                 w = wkts_.sort_values(["margin_wickets", "date"], ascending=[False, True]).iloc[0]
                 out["win"]["also"] = dict(result=w.result, against=w.opponent, date=_date(w.date), id=w.match_id)
 
-    sec_ids = m[m.section == section].match_id
-    rt = X.rate(career, sec_ids) if ratings is None else ratings
     bm = rt[rt.match_id.isin(mids)].sort_values(["rating", "date"], ascending=[False, False])
     if len(bm):
         b = bm.iloc[0]
         out["game"] = dict(teams=f"{b.home} v {b.away}", result=b.result, rating=float(b.rating), why=b.why,
                            date=_date(b.date), id=b.match_id, rank=int(b["rank"]), of=int(b["of"]))
 
-    mvp = MV.season_mvp(career, section, season, "impact")
-    mvp = mvp[mvp.team == team]
     if len(mvp):
         p = mvp.iloc[0]
         out["player"] = dict(player=p.player, points=float(p.points), matches=int(p.matches), batting=float(p.batting),
