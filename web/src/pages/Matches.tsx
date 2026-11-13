@@ -63,7 +63,7 @@ export function MatchesHome() {
             <Link key={m.id} to={`/matches/${m.id}${keep}`} className="mli">
               <span className="when">{m.label.split(" · ")[0]}</span>
               <span className="cell"><Logo team={m.home} size={30} /><Name p={`${m.home} v ${m.away}`} px={21} /><Logo team={m.away} size={30} /></span>
-              <span className="how">{m.name}</span><span className="res">{m.result}</span></Link>))}
+              <span className="how row2" style={{ gap: 8 }}><span className="cslot"><Logo comp={m.event} size={30} /></span>{m.name}</span><span className="res">{m.result}</span></Link>))}
             {!hits.length && <div className="empty">No match fits "{typed}".</div>}</div>
           {hits.length > shown && <div className="field"><button className="btn quiet" onClick={() => setShown(shown + 30)}>Show 30 more</button>
             <span className="note" style={{ marginTop: 0 }}>Showing the newest {shown} of {hits.length.toLocaleString("en-GB")}; type to narrow the list.</span></div>}

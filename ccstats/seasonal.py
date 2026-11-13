@@ -776,3 +776,22 @@ def year_review(career, year: str) -> dict:
     else:
         out["cricketer"] = pd.DataFrame()
     return out
+
+
+# --------------------------------------------------------------------------- the season's year, April to March
+def april_year(d) -> int:
+    """The year an April-to-March season starts in: April 2026 to March 2027 is the 2026 season."""
+    d = pd.Timestamp(d)
+    return d.year if d.month >= 4 else d.year - 1
+
+
+def april_seasons(matches: pd.DataFrame) -> pd.Series:
+    """Match id -> the April-to-March season it belongs to. A series or a tournament goes whole to the season most of
+    it is played in (by its middle match), so an IPL starting on 29 March stays with the rest of its season."""
+    if matches.empty:
+        return pd.Series(dtype=int)
+    key = [("series", s) if s else ("event", e, str(se)) for s, e, se in zip(matches.series_id, matches.event, matches.season)]
+    m = matches.assign(_k=key)
+    mid = m.groupby("_k").date.apply(lambda d: sorted(d)[len(d) // 2])
+    year = mid.map(april_year)
+    return pd.Series([int(year[k]) for k in m._k], index=m.match_id.values)

@@ -48,7 +48,7 @@ def finder(career, section: str = "", team: str = "", mine: list[str] | None = N
     return dict(section=section, team=team or "All teams", sections=["All sections"] + sections,
                 teams=["All teams"] + teams,
                 matches=[dict(id=r.match_id, label=label(r), date=SG.clean(r.date), home=r.home, away=r.away,
-                              section=r.section, name=name_of(r), result=r.result) for r in pool.itertuples()])
+                              section=r.section, event=r.event, name=name_of(r), result=r.result) for r in pool.itertuples()])
 
 
 def ratings(career, section: str) -> pd.DataFrame:
@@ -75,7 +75,7 @@ def best_games(career, section: str, team: str = "", top: int = BEST) -> dict:
     meta = career.matches.set_index("match_id")
     return dict(section=section, team=team or "All teams", rows=[SG.clean(dict(
         id=r.match_id, rating=r.rating, rank=r.rank, of=r.of, home=r.home, away=r.away, date=r.date,
-        section=r.section, name=name_of(meta.loc[r.match_id]),
+        section=r.section, event=meta.event[r.match_id], name=name_of(meta.loc[r.match_id]),
         result=r.result, why=r.why, finish=r.finish, comeback=r.comeback, stakes=r.stakes, show=r.show))
         for r in d.itertuples()])
 

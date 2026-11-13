@@ -82,13 +82,13 @@ export function PomCard({ pom }: { pom: Pom }) {
 }
 
 /** Almanack's summary: a kicker, the headline worked out from the scorecard, the scores, the engine's report. */
-export function Story({ kicker, headline, report, size = 46, scores }: {
-  kicker: ReactNode; headline: string; report: string; size?: number; scores?: { team: string; opp: string; r: Result };
+export function Story({ kicker, headline, report, size = 46, scores, comp }: {
+  kicker: ReactNode; headline: string; report: string; size?: number; scores?: { team: string; opp: string; r: Result }; comp?: string;
 }) {
   const t = useTheme();
   return (
     <>
-      <div className="kick">{kicker}</div>
+      <div className="kick row2" style={{ gap: 10 }}>{comp && <Logo comp={comp} size={34} />}{kicker}</div>
       <div className="hl" style={{ fontSize: size }}><KeepScores text={headline} /></div>
       {scores && (
         <div className="row2" style={{ gap: 26, marginBottom: 12, flexWrap: "wrap" }}>
@@ -122,7 +122,7 @@ export function MatchSummary({ m }: { m: Match }) {
   const topBat = (c: Card) => c.bat.filter((x) => x.did_bat).sort((a, b) => b.runs - a.runs || a.balls - b.balls).slice(0, top);
   const topBowl = (c: Card) => [...c.bowl].sort((a, b) => b.wickets - a.wickets || a.runs - b.runs).slice(0, top);
   return (
-    <div className="msum"><div className="ttl">Match summary</div>
+    <div className="msum"><div className="ttl row2" style={{ justifyContent: "center", gap: 12 }}><Logo comp={m.event} size={48} />Match summary</div>
       <div className="sub2">{which(m)} · {m.home} v {m.away} · {dayY(m.date)}</div>
       <div className="msgrid"><div>
         {m.cards.map((c, i) => { const bt = topBat(c), bw = topBowl(c); return (
@@ -235,7 +235,7 @@ export function MatchRows({ results, team, compact }: { results: Result[]; team:
       <span className="sc2"><Num v={r.us} px={23} /><span className="s" style={{ margin: 0 }}>v</span><Num v={r.them} px={23} style={{ opacity: 0.7 }} /></span>
       <span><Name p={r.headline || r.result} px={17} /><div className="how">{r.result}</div></span></div>))}</>;
   return <>{results.map((r) => (
-    <div className="mrow" key={r.id}><span className="when">{fmtOf(r.section)} {r.no ?? ""}<br />{day(r.date)}</span><Lamp o={r.outcome} />
+    <div className="mrow" key={r.id}><span className="when row2" style={{ gap: 6 }}><span className="cslot sm"><Logo comp={r.event} size={24} /></span><span>{fmtOf(r.section)} {r.no ?? ""}<br />{day(r.date)}</span></span><Lamp o={r.outcome} />
       <span className="sc2"><Logo team={team} size={40} /><Num v={r.us} px={26} /><span className="s" style={{ margin: "0 2px" }}>v</span>
         <Num v={r.them} px={26} style={{ opacity: 0.7 }} /><Logo team={r.opp} size={40} /></span>
       <span><Name p={r.headline || r.result} px={18} /></span>

@@ -110,7 +110,8 @@ export function BestTable({ rows, showSection, keep }: { rows: BestGame[]; showS
           <td><Link to={`/matches/${r.id}${keep}`} className="cell" style={{ textDecoration: "none" }}>
             <Logo team={r.home} size={34} /><Name p={`${ab(r.home)} v ${ab(r.away)}`} px={22} /><Logo team={r.away} size={34} /></Link>
             <div className="how">{r.result}</div></td>
-          <td><span className="tn dimn">{dayY(r.date)}</span><div className="how">{showSection ? r.name : r.name === r.section ? "" : r.name}</div></td>
+          <td><span className="row2" style={{ gap: 8 }}><span className="cslot"><Logo comp={r.event} size={30} /></span><span><span className="tn dimn">{dayY(r.date)}</span>
+            <div className="how">{showSection ? r.name : r.name === r.section ? "" : r.name}</div></span></span></td>
           <td><span className="why">{r.why}</span></td></tr>))}</tbody></table>
   );
 }

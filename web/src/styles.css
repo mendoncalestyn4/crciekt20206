@@ -161,7 +161,7 @@ img.lg { vertical-align: middle; flex: none; object-fit: contain; }
 .l5t { font: 500 15.4px Inter; color: var(--dim); margin-left: 8px; letter-spacing: .02em; }
 
 /* match by match rows */
-.mrow { display: grid; grid-template-columns: 84px 34px 270px minmax(0, 1fr) 210px; gap: 14px; align-items: center;
+.mrow { display: grid; grid-template-columns: 116px 34px 270px minmax(0, 1fr) 210px; gap: 14px; align-items: center;
   padding: 10px 0; border-top: 1px solid var(--edge); }
 .mrow:first-of-type { border-top: 0; }
 .mrow .when { font: 600 18.1px/1.35 Inter; color: var(--dim); }
@@ -629,3 +629,7 @@ table.c th.sortable { cursor: pointer; user-select: none; } table.c th.sortable.
 .badged { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; } .badged > span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .badged .slot { display: inline-flex; width: 28px; height: 28px; flex: none; }
 .badged .vs { font-style: normal; color: var(--dim); margin: 0 2px; } .badged img.lg { flex: none; }
+
+/* the competition logo's place on a scoreboard row: kept for every row, so the rows line up with or without one */
+.cslot { display: inline-flex; width: 30px; height: 30px; flex: none; align-items: center; justify-content: center; }
+.cslot.sm { width: 24px; height: 24px; }

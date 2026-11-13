@@ -12,6 +12,7 @@ import math
 import numpy as np
 import pandas as pd
 
+from ccstats import seasonal as SN
 from ccstats import tables as TB
 from ccstats import matchstory as MS
 from ccstats import myteam as MT
@@ -359,16 +360,12 @@ def calendar(career, team: str) -> dict:
     rs = results(career, team)
     if not rs:
         raise ValueError("The team hasn't played yet.")
-    label = career.matches.set_index("match_id").season
-    key = {r["id"]: ("series", r["series"]) if r["series"] else ("event", r["event"], label.get(r["id"], "")) for r in rs}
-    dates: dict[tuple, list[str]] = {}
-    for r in rs:
-        dates.setdefault(key[r["id"]], []).append(r["date"])
-    year_of = {k: season_start(sorted(d)[len(d) // 2]) for k, d in dates.items()}   # where most of it is played
+    m = career.matches
+    year_of = SN.april_seasons(m[m.match_id.isin([r["id"] for r in rs])])   # a tournament goes whole to its season
     latest = in_played_order(career, rs)[-1]
-    y = year_of[key[latest["id"]]]
+    y = int(year_of[latest["id"]])
     start, end = f"{y}-04-01", f"{y + 1}-03-31"
-    rs = in_played_order(career, [r for r in rs if year_of[key[r["id"]]] == y])
+    rs = in_played_order(career, [r for r in rs if year_of[r["id"]] == y])
     months = []
     for k in range(12):
         yy, mm = (y, 4 + k) if k < 9 else (y + 1, k - 8)

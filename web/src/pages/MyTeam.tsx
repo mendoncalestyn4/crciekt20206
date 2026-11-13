@@ -80,7 +80,7 @@ export function MyTeam() {
         </div>
         <Tile span={8} title="Latest result · player of the match">
           {d.latest ? <Story kicker={`${d.latest.kicker} · player of the match`} headline={d.latest.result.headline || d.latest.result.result}
-            report={d.latest.report} size={42} scores={{ team: d.team, opp: d.latest.result.opp, r: d.latest.result }} /> : <Missing why={miss.latest} />}
+            report={d.latest.report} size={42} scores={{ team: d.team, opp: d.latest.result.opp, r: d.latest.result }} comp={d.latest.result.event} /> : <Missing why={miss.latest} />}
           {d.latest && <div className="note"><Link to={`/matches/${d.latest.result.id}${keep}`}>Open the match →</Link></div>}
         </Tile>
         {d.banner?.caption && <div className="note" style={{ gridColumn: "span 12", marginTop: -4 }}>{d.banner.caption}</div>}
