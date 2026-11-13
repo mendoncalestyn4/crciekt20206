@@ -201,3 +201,12 @@ confidence with season awards were not picked. Of the new ideas offered the same
     preview).
 32. **Rivalry streaks:** the current run in each rivalry and the longest ever (Rivalries).
 33. **Bounce-back by player:** how each player does in the game after a duck or a poor game (Player page).
+
+**Your answers (13 November): yes to every pick** for the six ideas (Team of the series for every series of 2+
+matches; big matches are finals, semi-finals, qualifiers, eliminators and series deciders, shown after 3; danger men by
+impact points this season, last season when under 5 matches; neutral games their own row, Opponent preview in the
+match's country; draws and ties end a run, no-results skipped; a poor game is a duck or under 10, or no wickets for
+30+, shown after 3) and for the open points: Opponent preview's two charts show the opponent's own record; the series
+ladder on Competitions' "match by match" view; donuts for batting depth, how their batters get out and the runs share
+in the every-player table; our score v theirs on the Matches front page; the match-winners chart on the Player page in
+place of the "Matches they won" table; the "where your team ranks" tile at the top of the Season page.
