@@ -627,5 +627,5 @@ table.c th.sortable { cursor: pointer; user-select: none; } table.c th.sortable.
 
 /* a team's name with its badge in a table cell */
 .badged { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; } .badged > span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.badged .slot { display: inline-flex; width: 22px; height: 22px; flex: none; }
+.badged .slot { display: inline-flex; width: 28px; height: 28px; flex: none; }
 .badged .vs { font-style: normal; color: var(--dim); margin: 0 2px; } .badged img.lg { flex: none; }
