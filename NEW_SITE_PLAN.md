@@ -1,8 +1,9 @@
 # The new Stats Pack website: the plan
 
 **Status:** stage 0 approved (27 October); stage 1 (core pages) built (1 November), checked (3 November), stress-tested and finished (6 November);
-stage 2 started on your word (3 November), stopped on 4 November until stage 1 was finished, and going again on your word (12 November: "move on to stage 2"); stage 2 built, stress-tested and finished
-(12 November): see section 16.
+stage 2 started on your word (3 November), stopped on 4 November until stage 1 was finished, and going again on your word (12 November: "move on to stage 2"); stage 2 built and stress-tested (12 November),
+**reopened 13 November**: checked against this plan, it (and stage 1 in places) differs from what was agreed; the gaps
+are listed at the end of section 16 and are being put right before stage 3.
 **You said:** build it without waiting for answers; screenshots come at the end of each stage.
 **27 October:** you've stopped using the current site, so it gets no more work (it stays as it is until the
 switch-over). The zip comes once the whole new site is done. Screenshots of other teams' colours go in a set of their
@@ -822,7 +823,31 @@ errors): 1,272 passed on each, none skipped; every problems list and server log 
 - Knocking on the door worked a typical score out of nothing when all of a team's games were abandoned.
 - In the checks themselves: the run on your PC's set-up wasn't really treating pandas' warnings as errors, and one
   browser test had been skipping itself; both now do their job.
-Each fix has a test that fails without it. Stage 2 is finished.
+Each fix has a test that fails without it.
+
+**Checked against this plan (13 November, your request): what differs from what was agreed.** Stage 2 is not
+finished until each of these is put right:
+1. **The nothing-lost checklist (section 5, a hard gate) was never ticked for stage 2's pages:** Teams (103 lines),
+   Opponent preview (88), Team vs team (35), Team planner (34), Season review (26), Honours (21), Competitions (19),
+   Season (19), Rivalries (16): 361 lines, plus the lines stage 1 left for stage 2 (the table of every competition,
+   Opponent preview).
+2. **The score to aim for was built another way** than section 14 says: per competition with the two sides' ratings,
+   instead of the slope shared by formats of one length, home worth in runs grown from nothing, each side's batting
+   and bowling in runs pulled to the usual, how sure it is (games behind it, the "few games" note, how often it would
+   have been right), the Tests view (first-innings totals that won, drew and lost), and the same line on My team's
+   "next up" tile.
+3. **The six new charts (section 14) aren't on the pages picked for them:** batting first v chasing (Opponent preview,
+   Team vs team), against stronger and weaker sides (Teams), home, away and neutral (Teams, Opponent preview), streaks
+   (Teams), match-winners (Season review; and Players, stage 1), our score v theirs (Matches, stage 1). Each is built
+   and on the style guide; My team has its four.
+4. **The series score** (tug of war on the main pages, the scoreboard ladder in the analysis) is on no page.
+5. **The season calendar** isn't the agreed twelve month tiles: each month's record, the best month lit up and the
+   "29 Mar" mark for an IPL that starts in March are missing.
+6. **The new match excitement rating** (section 14) isn't used in Season review's best matches or Season wrapped's best
+   game; they use the current site's old score.
+7. **Parity tests (section 9, step 3):** stage 1 and 2 numbers are tested against the engine, not against the old
+   site's own pages, which hold logic of their own in places.
+8. **Saving a chart as a picture** (section 5, "Charts and tables") isn't on the new site's charts.
 
 ## Appendix: technical outline
 
