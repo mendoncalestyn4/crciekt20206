@@ -54,11 +54,16 @@ def say(word: str) -> str:
     return "LBW" if word.lower() == "lbw" else word[:1].upper() + word[1:]
 
 
+TEAM_COLUMNS = {"Team", "Against", "Opponent", "Champions", "Runners-up", "Rivalry"}   # columns that name teams
+
+
 def table(cols, rows, num=(), hi=None, links=None) -> dict:
     """A plain table: column names, rows of text, which columns are numbers, the rows to light up, and a match to open
-    from each row (the first column links to it)."""
-    return SG.clean(dict(cols=list(cols), rows=[list(r) for r in rows], num=sorted(num), hi=list(hi) if hi else [],
-                         links=list(links) if links else []))
+    from each row (the first column links to it). Columns that name teams (by their heading) show each team's badge."""
+    cols = list(cols)
+    return SG.clean(dict(cols=cols, rows=[list(r) for r in rows], num=sorted(num), hi=list(hi) if hi else [],
+                         links=list(links) if links else [],
+                         badges=[i for i, c in enumerate(cols) if c in TEAM_COLUMNS and i not in set(num)]))
 
 
 # --------------------------------------------------------------------------- the pickers

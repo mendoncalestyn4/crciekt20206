@@ -28,13 +28,14 @@ def page(career, q: dict, mine: list[str]) -> dict:
         out["none"] = "No matches here yet."
         return SG.clean(out)
     show = rv.head(30)
-    out["table"] = table(["Rivalry", "Played", "Won", "Last 5 (oldest first)", "Last met"],
-                         [[f"{a} v {b}", int(p), f"{wa} – {wb}" + (f" ({o} other)" if o else ""),
-                           " ".join({"A": "◀", "B": "▶", "–": "·"}[x] for x in last), f"{d:%d %b %Y}"]
-                          for a, b, p, wa, wb, o, last, d in zip(show.team_a, show.team_b, show.played, show.wins_a, show.wins_b,
-                                                                  show.other, show.last5, show["last"])], num={1})
+    out["table"] = table(["Rivalry", "Played", "Won", "Last 5 (oldest first)", "Run now", "Longest run", "Last met"],
+                         [[f"{r.team_a} v {r.team_b}", int(r.played), f"{r.wins_a} – {r.wins_b}" + (f" ({r.other} other)" if r.other else ""),
+                           " ".join({"A": "◀", "B": "▶", "–": "·"}[x] for x in r.last5), _run(r.current_team, r.current_n),
+                           _run(r.longest_team, r.longest_n), f"{r.last:%d %b %Y}"] for r in show.itertuples()], num={1})
+    out["table"]["badges"] = [0]
     out["table"]["note"] = ("Won: wins for the first-named team – wins for the second. Last 5: ◀ = the first-named team won, "
-                            "▶ = the second-named team won, · = draw, tie or no result.")
+                            "▶ = the second-named team won, · = draw, tie or no result. Runs: wins in a row; a draw or a tie "
+                            "ends a run, a no-result is skipped.")
     keys = [f"{a}|{b}" for a, b in zip(rv.team_a, rv.team_b)]
     out["pairs"] = [dict(key=k, label=f"{a} v {b} ({p})") for k, a, b, p in zip(keys, rv.team_a, rv.team_b, rv.played)]
     pick = q.get("pick", "")
@@ -42,8 +43,21 @@ def page(career, q: dict, mine: list[str]) -> dict:
         pick = next((k for k in keys if set(k.split("|")) & set(mine)), keys[0])
     out["pick"] = pick
     a, b = pick.split("|")
-    out["close"] = kept(career, ("rivalry", section, pick), lambda: _close(career, ids, a, b))
+    r = rv[(rv.team_a == a) & (rv.team_b == b)].iloc[0]
+    out["close"] = dict(kept(career, ("rivalry", section, pick), lambda: _close(career, ids, a, b)))   # a copy: the kept one stays as it is
+    out["close"]["streak"] = dict(
+        now=(f"{r.current_team} have won the last {r.current_n}" if r.current_n > 1 else
+             f"{r.current_team} won the last one" if r.current_n == 1 else
+             "No run going: their last game (no-results aside) was a draw or a tie"),
+        longest=(f"Longest run: {r.longest_team}, {r.longest_n} in a row ({r.longest_from:%d %b %Y} to {r.longest_to:%d %b %Y})"
+                 if r.longest_n > 1 else f"Longest run: {r.longest_team}, 1 (never two in a row)" if r.longest_n == 1
+                 else "No wins yet: every game a draw, a tie or no result"),
+        note="Wins in a row; a draw or a tie ends a run, a no-result is skipped.")
     return SG.clean(out)
+
+
+def _run(team: str, n: int) -> str:
+    return f"{team} {n}" if n else "–"
 
 
 def _close(career, ids, a, b) -> dict:

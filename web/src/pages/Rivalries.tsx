@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import { get, type LeaderRow, type RivalriesPage, remember } from "../api";
 import { Explain, Missing, PName, Tile } from "../kit/base";
 import { Grid } from "../kit/teams";
+import { T } from "../shell/names";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
 
@@ -65,6 +66,9 @@ export function Rivalries() {
             </div>
           </Tile>
           {c && <>
+            {c.streak && <Tile span={12} title={`🔥 Streaks · ${c.a} v ${c.b}`}>
+              <div className="plain"><b><T>{c.streak.now}</T></b></div><div className="plain"><T>{c.streak.longest}</T></div>
+              <div className="note">{c.streak.note}</div></Tile>}
             <Tile span={6} title={`Most runs · ${c.a} v ${c.b}`}>
               {m.runs ? <Missing why={m.runs} /> : c.runs ? <><Leaders rows={c.runs.rows} value="runs" unit="Runs" />
                 <Explain shows={c.runs.shows} for_={c.runs.for_} /></> : <Missing why="No runs in these games yet." />}

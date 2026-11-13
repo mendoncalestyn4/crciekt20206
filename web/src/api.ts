@@ -404,7 +404,7 @@ export type PlannerPage = { choices: TeamChoice[]; section: string; season: stri
 export type LeaderRow = { player: string; team: string; note: string } & Record<string, string | number>;
 export type RivalriesPage = { choices: TeamChoice[]; section: string; none: string; table?: NGrid; pairs: { key: string; label: string }[]; pick: string;
   close?: { missing: Record<string, string>; a: string; b: string; runs?: ({ rows: LeaderRow[] } & Explained) | null;
-    wickets?: ({ rows: LeaderRow[] } & Explained) | null; meetings?: GridT | null } };
+    wickets?: ({ rows: LeaderRow[] } & Explained) | null; meetings?: GridT | null; streak?: { now: string; longest: string; note: string } } };
 
 // ------------------------------------------------------------------ Seasons · Competitions (stage 2)
 export type CompGrid = GridT & { note?: string; label?: string; teams?: string[]; heading?: string };

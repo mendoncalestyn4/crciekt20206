@@ -122,8 +122,10 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
 
 ## 8. Rivalries
 
-- [ ] **Rivalry streaks:** the current run in each rivalry and the longest ever; draws and ties end a run, no-results
-      skipped (32)
+- [x] **Rivalry streaks:** the current run in each rivalry and the longest ever; draws and ties end a run, no-results
+      skipped (32) — ✓ Rivalries: "Run now" and "Longest run" in the
+      table, and a Streaks tile for the rivalry picked (`ccstats/extras.py`); the rules checked on made-up runs and every
+      rivalry counted again by hand
 
 ## 9. Stage 1 pages
 

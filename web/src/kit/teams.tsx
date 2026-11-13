@@ -31,8 +31,9 @@ export function Grid({ t, keep = "" }: { t: GridT; keep?: string }) {
       <tbody>{t.rows.map((r, i) => (
         <tr key={i} className={t.hi[i] ? "me" : t.dim?.[i] ? "dimrow" : ""}>{r.map((v, j) => {
           const text = v == null ? "–" : String(v);
-          const link = j === 0 && t.links[i];
-          if (badge.has(j) && v != null) return <td key={j}><Badged text={text} slot={slot} /></td>;
+          const link = j === 0 ? t.links[i] : null;
+          if (badge.has(j) && v != null) return <td key={j}>{link ? <Link className="lk" to={`/matches/${link}${keep}`}><Badged text={text} slot={slot} /></Link>
+            : <Badged text={text} slot={slot} />}</td>;
           return <td key={j} className={num.has(j) ? "r" : ""}>{num.has(j) ? <span className="tn">{text}</span>
             : link ? <Link className="lk" to={`/matches/${link}${keep}`}>{text}</Link> : <span className="why"><T>{text}</T></span>}</td>;
         })}</tr>))}</tbody></table></div>

@@ -123,3 +123,53 @@ def test_danger_men_are_the_top_three_by_impact_points(career):
                     assert [i["runs"] for i in x["innings"]] == list(b.runs)
                 done += 1
     assert done > 20
+
+
+def test_rivalry_runs_by_the_agreed_rules():
+    """Wins in a row: a draw or a tie ends a run, a no-result is skipped; the longest is the first on a tie."""
+    import pandas as pd
+    from ccstats import extras as E
+
+    def g(seq):
+        rows = []
+        for i, x in enumerate(seq):
+            w = {"A": "A", "B": "B", "D": "", "T": "", "N": ""}[x]
+            rt = {"D": "draw", "T": "tie", "N": "no result"}.get(x, "win")
+            rows.append(dict(winner=w, result_type=rt, date=pd.Timestamp("2026-01-01") + pd.Timedelta(days=i)))
+        return pd.DataFrame(rows)
+    r = E.rivalry_runs(g("AABBBNBDA"))
+    assert (r["current_team"], r["current_n"]) == ("A", 1)
+    assert (r["longest_team"], r["longest_n"]) == ("B", 4)        # the no-result in the middle doesn't break it
+    assert r["longest_from"] == pd.Timestamp("2026-01-03") and r["longest_to"] == pd.Timestamp("2026-01-07")
+    r = E.rivalry_runs(g("AAT"))
+    assert (r["current_team"], r["current_n"], r["longest_team"], r["longest_n"]) == ("", 0, "A", 2)
+    r = E.rivalry_runs(g("ABBAAN"))
+    assert (r["current_team"], r["current_n"], r["longest_team"], r["longest_n"]) == ("A", 2, "B", 2)   # the first of two 2s
+    r = E.rivalry_runs(g("NN"))
+    assert (r["current_n"], r["longest_n"]) == (0, 0)
+
+
+def test_every_rivalry_run_counted_by_hand(career):
+    from ccstats import extras as E
+    from ccstats.records import by_played
+    m = career.matches
+    for sec in m.section.unique():
+        ids = set(m[m.section == sec].match_id)
+        rv = E.rivalries(career, ids)
+        for r in rv.itertuples():
+            g = by_played(career, m[m.match_id.isin(ids) & (((m.home == r.team_a) & (m.away == r.team_b)) | ((m.home == r.team_b) & (m.away == r.team_a)))])
+            seq = [x.winner for x in g.itertuples() if x.result_type != "no result"]
+            cur = 0
+            for w in reversed(seq):
+                if w and w == seq[-1]:
+                    cur += 1
+                else:
+                    break
+            assert r.current_n == cur and (r.current_team == (seq[-1] if cur else ""))
+            best = run = 0
+            prev = None
+            for w in seq:
+                run = run + 1 if (w and w == prev) else (1 if w else 0)
+                prev = w
+                best = max(best, run)
+            assert r.longest_n == best

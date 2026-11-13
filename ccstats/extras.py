@@ -129,18 +129,46 @@ def deadly_duos(career, ids) -> tuple[pd.DataFrame, pd.DataFrame]:
 # --------------------------------------------------------------------------- #
 
 
+RIVALRY_COLUMNS = ["team_a", "team_b", "played", "wins_a", "wins_b", "other", "last5", "last", "current_team", "current_n",
+                   "longest_team", "longest_n", "longest_from", "longest_to"]
+
+
+def rivalry_runs(g: pd.DataFrame) -> dict:
+    """The wins in a row in one rivalry (its matches in played order): the run going now and the longest ever. A draw
+    or a tie ends a run; a no-result is skipped (it neither ends nor adds to one). The longest: the first one on a
+    tie, with the dates of its first and last win."""
+    cur_t, cur_n, best = "", 0, ("", 0, None, None)
+    start = None
+    for r in g.itertuples():
+        if r.result_type == "no result":
+            continue
+        w = r.winner
+        if not w:                      # a draw or a tie
+            cur_t, cur_n = "", 0
+            continue
+        if w == cur_t:
+            cur_n += 1
+        else:
+            cur_t, cur_n, start = w, 1, r.date
+        if cur_n > best[1]:
+            best = (cur_t, cur_n, start, r.date)
+    return dict(current_team=cur_t, current_n=cur_n, longest_team=best[0], longest_n=best[1], longest_from=best[2],
+                longest_to=best[3])
+
+
 def rivalries(career, ids) -> pd.DataFrame:
-    """Every pair of teams that have met: record, and the last few results."""
-    m = career.matches[career.matches.match_id.isin(ids)].sort_values("date")
+    """Every pair of teams that have met: record, the last few results, the run of wins going now and the longest."""
+    from .records import by_played
+    m = by_played(career, career.matches[career.matches.match_id.isin(ids)])
     rows = []
-    for pair, g in m.groupby(m.apply(lambda r: tuple(sorted((r.home, r.away))), axis=1)):
+    for pair, g in m.groupby(m.apply(lambda r: tuple(sorted((r.home, r.away))), axis=1), sort=False):
         a, b = pair
         wa, wb = int((g.winner == a).sum()), int((g.winner == b).sum())
         last = "".join("A" if w == a else "B" if w == b else "–" for w in g.winner.tail(5))
         rows.append(dict(team_a=a, team_b=b, played=len(g), wins_a=wa, wins_b=wb, other=len(g) - wa - wb,
-                         last5=last, last=g.date.max()))
-    return pd.DataFrame(rows, columns=["team_a", "team_b", "played", "wins_a", "wins_b", "other", "last5", "last"]) \
-        .sort_values(["played", "last"], ascending=False).reset_index(drop=True)
+                         last5=last, last=g.date.max(), **rivalry_runs(g)))
+    return pd.DataFrame(rows, columns=RIVALRY_COLUMNS).sort_values(["played", "last", "team_a"], ascending=[False, False, True]) \
+        .reset_index(drop=True)
 
 
 def rivalry_players(career, ids, a: str, b: str) -> tuple[pd.DataFrame, pd.DataFrame]:
