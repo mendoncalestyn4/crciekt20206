@@ -49,16 +49,19 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
       from the scorecards for 18 opponents in ODIs, Tests and the IPL
 - [x] Home, away and neutral chart, then country by country, the opponent's own record, same place (2, 7) — ✓ next
       to it; counted again the same way
-- [ ] **How they play** at the top of "About them" (26): bowling (when they take wickets, sides 3 down cheaply and
+- [x] **How they play** at the top of "About them" (26): bowling (when they take wickets, sides 3 down cheaply and
       bowled out, the new-ball bowlers' share, the top-order share, attack or squeeze, dot balls in T20); batting
       (strike rate and boundary share by part of the order, fours and sixes and from where, their usual score at each
       wicket); a plain summary; their own figures only; this season, with a note and a button for last season when
-      this season has fewer than 5 matches
-- [ ] **Their danger men right now** (30): three by impact points this season (last season when under 5 matches),
-      each with their last five innings or spells
-- [ ] **Big-match players** (29): their players in finals, semi-finals, qualifiers, eliminators and series deciders
-      against ordinary games, shown after 3 such games
-- [ ] **Record by country** (31): their players in the country the match is in
+      this season has fewer than 5 matches — ✓ Opponent preview · About them, at the top (`ccstats/howtheyplay.py`); every figure counted
+      again for every team of every competition; the rules it reads by written on the page
+- [x] **Their danger men right now** (30): three by impact points this season (last season when under 5 matches),
+      each with their last five innings or spells — ✓ Opponent preview · About them (`ccstats/moments.py`); the top three checked against
+      Season review's MVP points, the last five innings against the scorecards
+- [x] **Big-match players** (29): their players in finals, semi-finals, qualifiers, eliminators and series deciders
+      against ordinary games, shown after 3 such games — ✓ Opponent preview · About them (every knockout and series decider); counted again
+      for every player
+- [x] **Record by country** (31): their players in the country the match is in — ✓ Opponent preview · About them, with the You are: Home / Away / Neutral picker
 - [x] Donut: how their batters get out; batting depth (8, 9) — ✓ Opponent preview · About them (each slice's count
       from the engine; a team without a run now has no share instead of 0%)
 - [ ] Team badges in the headings and tiles (section 6)
@@ -121,11 +124,12 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
 - [ ] Matches and My team: the competition logo on every scoreboard (the World Test Championship's on every Test,
       World Cup logos only on their games); My team's latest result with both teams and the competition logo (13)
 - [ ] My team: the series tug of war on "series this season" (12)
-- [ ] Player page: the match-winners chart in place of "Matches they won" (11)
+- [x] Player page: the match-winners chart in place of "Matches they won" (11) — ✓ Players · the player's page (the same wins as before, with what they did)
 - [x] Player page: share of the team on runs off the bat (27) — ✓ Players · the player's page, the same sum as Teams
       (checked player by player for every competition and season)
-- [ ] Player page: **big-match players** (29), **record by country** with neutral games their own row (31),
-      **bounce-back** (a duck or under 10, or no wickets for 30+, shown after 3) (33)
+- [x] Player page: **big-match players** (29), **record by country** with neutral games their own row (31),
+      **bounce-back** (a duck or under 10, or no wickets for 30+, shown after 3) (33) — ✓ Players · the player's page: big-match record, country by country (neutral grounds
+      their own row) and bounce-back, each for the competition picked, counted again in `tests/test_moments.py`
 
 ## 10. Every chart
 
