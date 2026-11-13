@@ -7,6 +7,7 @@ import { get, type ReviewPage, type XiGrid } from "../api";
 import { Explain, Missing, Num, Tile } from "../kit/base";
 import { LeaderBars } from "../kit/charts";
 import { Grades } from "../kit/myteam";
+import { MatchWinners } from "../kit/season";
 import { Grid } from "../kit/teams";
 import { Wrapped } from "../kit/wrapped";
 import { useReady } from "../ready";
@@ -113,6 +114,11 @@ export function Review() {
               {mv.shows && <Explain shows={mv.shows} for_={mv.for_} />}
               <div className="note">{mv.note}</div></>}
           </Tile>}
+          {d.winners?.winners && d.winners.winners.players.length > 0 && <Tile span={12} title={`Match-winners · ${d.winners.winners.team}`}
+            right={`${d.winners.winners.wins} wins · the player of the match in each`}>
+            <MatchWinners w={d.winners.winners} />
+            {!d.winners.winners.yours && <div className="note">Your team didn't play here, so it's the side with the most wins.</div>}</Tile>}
+          {d.winners?.missing.winners && <Tile span={12} title="Match-winners"><Missing why={d.winners.missing.winners} /></Tile>}
         </>}
       </div>
     </>

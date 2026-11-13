@@ -1144,3 +1144,31 @@ def test_season_where_your_team_ranks(every):
             t = R.team_totals(c, m[(m.section == r["section"]) & (m.match_id.map(year_of) == y)].match_id)
             x = t[t.team == team].iloc[0]
             assert (r["runs_rank"], r["wickets_rank"], r["runs"], r["teams"]) == (x.runs_rank, x.wickets_rank, x.runs, len(t))
+
+
+def test_season_review_best_matches_on_the_new_rating_and_match_winners(every):
+    """Season review: the best matches are the season's top three on the match excitement rating (the Matches pages'
+    one), and the match-winners are the team's players of the match in its wins."""
+    from ccstats import excitement as X
+    c = every.app.state.site.career()
+    m = c.matches
+    done = 0
+    for ch in every.json("/api/review")["choices"]:
+        if ch["section"] == "International cricket":
+            continue
+        d = every.json(f"/api/review?pick={ch['key']}")
+        rv = d["season_review"]["review"]
+        here = m[(m.section == ch["section"]) & (m.season.astype(str) == ch["season"])]
+        rt = X.rate(c, m[m.section == ch["section"]].match_id)
+        top = rt[rt.match_id.isin(here.match_id)].sort_values(["rating", "date"], ascending=[False, False]).head(3)
+        if rv.get("best"):
+            assert rv["best"]["links"] == list(top.match_id)
+        w = d["winners"]["winners"]
+        if w:
+            team = w["team"]
+            for p in w["players"]:
+                for x in p["matches"]:
+                    r = m.set_index("match_id").loc[x["id"]]
+                    assert r.winner == team and r.player_of_match == p["player"]
+        done += 1
+    assert done >= 5

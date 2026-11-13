@@ -8,9 +8,9 @@ from __future__ import annotations
 import pandas as pd
 
 from . import analysis as A
+from . import excitement as X
 from . import mvp as MV
 from . import partnerships as PS
-from . import winprob as WP
 
 SLIDES = ["record", "runs", "wickets", "score", "bowling", "stand", "streak", "win", "game", "player"]
 
@@ -19,8 +19,10 @@ def _date(d) -> str:
     return f"{d:%d %b %Y}"
 
 
-def season_wrapped(career, section: str, season, team: str) -> dict:
-    """{slide name: dict or None (nothing to show)} for `team` in `section` and `season`, plus matches."""
+def season_wrapped(career, section: str, season, team: str, ratings: pd.DataFrame | None = None) -> dict:
+    """{slide name: dict or None (nothing to show)} for `team` in `section` and `season`, plus matches. The best game
+    goes by the match excitement rating (ccstats/excitement.py, the one the Matches pages use); `ratings`, the section's
+    ratings if already worked out."""
     m = career.matches
     ids = set(m[(m.section == section) & (m.season == season)].match_id)
     tm = A.team_matches(career, ids, team)
@@ -98,11 +100,12 @@ def season_wrapped(career, section: str, season, team: str) -> dict:
                 out["win"]["also"] = dict(result=w.result, against=w.opponent, date=_date(w.date), id=w.match_id)
 
     sec_ids = m[m.section == section].match_id
-    bm = WP.best_matches(career, sec_ids, top=1, only=mids)
+    rt = X.rate(career, sec_ids) if ratings is None else ratings
+    bm = rt[rt.match_id.isin(mids)].sort_values(["rating", "date"], ascending=[False, False])
     if len(bm):
         b = bm.iloc[0]
         out["game"] = dict(teams=f"{b.home} v {b.away}", result=b.result, rating=float(b.rating), why=b.why,
-                           date=_date(b.date), id=b.match_id)
+                           date=_date(b.date), id=b.match_id, rank=int(b["rank"]), of=int(b["of"]))
 
     mvp = MV.season_mvp(career, section, season, "impact")
     mvp = mvp[mvp.team == team]

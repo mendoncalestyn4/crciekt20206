@@ -11,7 +11,9 @@ from ccstats import extras as E
 from ccstats import mvp as MV
 from ccstats import seasonal as SN
 from ccstats import wrapped as WR
+from ccstats.stats import ordinal
 
+from . import matchpage
 from . import styleguide as SG
 from .cache import kept
 from .teampage import XI_HOW, fmt, table
@@ -86,7 +88,28 @@ def review(career, q: dict, mine: list[str]) -> dict:
         out["season_review"] = kept(career, ("season-review", section, season, tuple(mine)),
                                     lambda: _season(career, section, season, mine))
         out["mvp"] = kept(career, ("season-mvp", section, season, how), lambda: _mvp(career, section, season, how))
+        out["winners"] = kept(career, ("season-winners", section, season, tuple(mine)),
+                              lambda: _winners(career, section, season, mine))
     return SG.clean(out)
+
+
+def _winners(career, section, season, mine) -> dict:
+    """The match-winners chart under the MVPs: who won the team's matches this season (its players of the match in
+    its wins, and what they did each time); the team yours when you played here, else the side with the most wins."""
+    out, part = _parts()
+
+    def winners():
+        m = career.matches
+        here = m[(m.section == section) & (m.season == _sval(career, season))]
+        teams = set(here.home) | set(here.away)
+        if not teams:
+            return None
+        wins = here.winner.value_counts()
+        team = next((t for t in mine if t in teams), None) or sorted(teams, key=lambda t: (-int(wins.get(t, 0)), t))[0]
+        w = SG.match_winners(SG.results(career, team, here.match_id), team)
+        return dict(w, team=team, yours=team in mine)
+    part("winners", winners)
+    return out
 
 
 def _sval(career, season):
@@ -146,10 +169,14 @@ def _season(career, section, season, mine) -> dict:
             r = bw.iloc[0]
             rows.append(["Breakout bowler", r.player, f"{r.now:+.1f} runs saved an innings (was {r.before:+.1f})"])
         res["leaders"] = table(["", "Player", ""], rows) if rows else None
-        bm = rv["best_match"]
+        # the season's best matches on the match excitement rating (the one the Matches pages use)
+        rt = matchpage.ratings(career, section)
+        sids = set(career.matches[(career.matches.section == section) & (career.matches.season == _sval(career, season))].match_id)
+        bm = rt[rt.match_id.isin(sids)].sort_values(["rating", "date"], ascending=[False, False]).head(3)
         if len(bm):
             res["best"] = table(["Match", "Rating", "Date", "Why"],
-                                [[f"{r.home} v {r.away}", f"{r.rating:.1f}", f"{r.date:%d %b}", r.why] for r in bm.itertuples()],
+                                [[f"{r.home} v {r.away}", f"{r.rating:.1f}", f"{r.date:%d %b}",
+                                  f"{r.why} ({ordinal(int(r['rank']))} of {int(r['of'])} here)"] for _, r in bm.iterrows()],
                                 num={1}, links=list(bm.match_id))
         up = rv["upset"]
         if len(up):
@@ -289,7 +316,7 @@ def _wrapped(career, section, season, asked, fmt_pick, mine) -> dict:
         if team not in teams:
             yours = [t for t in mine if t in teams]
             team = yours[0] if yours else sorted(teams, key=lambda t: (-played[t], t))[0]
-        w = WR.season_wrapped(career, sec, sv, team)
+        w = WR.season_wrapped(career, sec, sv, team, ratings=matchpage.ratings(career, sec))
         label = f"{sec} {season}"
         slides = []
 
@@ -336,7 +363,8 @@ def _wrapped(career, section, season, asked, fmt_pick, mine) -> dict:
                 x["id"])
         x = w.get("game")
         if x:
-            add("game", "Best game", x["teams"], f"{x['rating']:.1f}", "out of 10", [x["result"], _cap(x["why"]), x["date"]], x["id"])
+            add("game", "Best game", x["teams"], f"{x['rating']:.1f}", "out of 10",
+                [x["result"], _cap(x["why"]), f"{x['date']} · the {ordinal(x['rank'])} best of {x['of']} here" if x.get("rank") else x["date"]], x["id"])
         x = w.get("player")
         if x:
             add("player", "Player of the season", x["player"], f"{x['points']:.0f}", "impact points",

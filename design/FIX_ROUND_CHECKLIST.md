@@ -119,8 +119,10 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
 
 ## 7. Season review
 
-- [ ] The match-winners chart, under the MVPs (2)
-- [ ] The new excitement rating in the best matches (5)
+- [x] The match-winners chart, under the MVPs (2) — ✓ Seasons · Season review: your team's (or the side with the most
+      wins), each win checked
+- [x] The new excitement rating in the best matches (5) — ✓ Season review's best matches and Season wrapped's best game on the
+      match excitement rating, with each one's place in the competition; the old site keeps its score
 - [ ] **Season wrapped:** each format on its own, or the whole April-March season with all formats together (runs and
       wickets added up there); its "best game" on the new rating (5, 23)
 

@@ -385,3 +385,25 @@ def test_my_teams_next_up_shows_the_same_score_to_aim(career):
                                 f"{won['typical']} ({won['n']} game{'s' if won['n'] != 1 else ''})" if won["n"] else "")
                 done += bool(line)
     assert done
+
+
+def test_season_wrapped_best_game_is_the_top_rated_on_the_excitement_rating(career):
+    """Season wrapped's best game: the team's highest-rated match of the season on the match excitement rating (the
+    one the Matches pages use), with its place in the section."""
+    from ccstats import excitement as X
+    from ccstats import wrapped as WR
+    m = career.matches
+    done = 0
+    for sec in m.section.unique():
+        rt = X.rate(career, m[m.section == sec].match_id)
+        for season in m[m.section == sec].season.unique():
+            here = m[(m.section == sec) & (m.season == season)]
+            for team in sorted(set(here.home) | set(here.away))[:4]:
+                w = WR.season_wrapped(career, sec, season, team, ratings=rt)
+                mine = set(here[(here.home == team) | (here.away == team)].match_id)
+                top = rt[rt.match_id.isin(mine)].sort_values(["rating", "date"], ascending=[False, False])
+                if len(top):
+                    assert w["game"]["id"] == top.match_id.iloc[0] and w["game"]["rating"] == pytest.approx(top.rating.iloc[0])
+                    assert w["game"]["rank"] == int(top["rank"].iloc[0])
+                    done += 1
+    assert done > 20

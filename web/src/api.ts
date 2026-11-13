@@ -442,6 +442,7 @@ export type SeasonPage = { teams: string[]; team: string; tabs: string[]; tab: s
 export type XiGrid = (GridT & { title: string; note?: string }) | { title: string; none: string };
 export type ReviewPage = { choices: { key: string; section: string; season: string; label: string }[]; pick: string; section: string;
   season: string; none: string; wrapped?: { missing: Record<string, string>; wrapped?: Wrap | null };
+  winners?: { missing: Record<string, string>; winners?: (Winners & { team: string; yours: boolean }) | null };
   year?: { missing: Record<string, string>; year?: { title: string; counts: { label: string; value: number }[]; cricketer: GridT | null;
     formats: { format: string; matches: number; player: GridT | null; most: string; xi: XiGrid }[]; note: string } | null };
   season_review?: { missing: Record<string, string>; review?: { title: string; complete: boolean; matches: number; champion: string;
