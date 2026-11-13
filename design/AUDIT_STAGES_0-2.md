@@ -115,12 +115,14 @@ How it was checked:
 
 23. **Season wrapped: one format, or the whole year?** The plan's example ("your 2026: 22 matches, won 12, lost 10; S
     Gill 830 runs; A Singh 34 wickets…") reads like all of a team's cricket in a year together, while your rule is that
-    formats are never mixed. Built: one format at a time.
+    formats are never mixed. Built: one format at a time. **Your answer (13 November): the team's whole year**
+    (all its cricket in the year together, as the plan's example), a chosen exception to "never mixed" for Season
+    wrapped only.
 24. **"Collapses: also big stands"** (section 14's table): on Teams next to the collapses, or only as "the best stand
     for each wicket" on Records (stage 3), as point 3 of "wickets and scores" says?
 25. **Usual score at each wicket:** the plan's example is a line ("in ODIs India are usually 48/1, 97/2, 152/3…");
     built as a table (wicket, usual, opponents', difference, highest, lowest, innings). Keep the table, add the line,
-    or both?
+    or both? **Your answer (13 November): both.**
 
 ---
 
