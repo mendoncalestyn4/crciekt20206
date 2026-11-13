@@ -12,7 +12,7 @@ import { RingList } from "../kit/charts";
 import { Mark } from "../kit/myteam";
 import { AttrGrid, ScoutText } from "../kit/fm";
 import { FormBars, Funnel, ImpactBars, PairedBars, RankLines, RecordTable, SplitBars } from "../kit/player";
-import { cap, dayY, f0, f1, f2, fmtOf, plural } from "../format";
+import { cap, dayY, f0, f1, f2, fmtOf, plural, NO_MATCHES } from "../format";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
 import { useTheme } from "../theme";
@@ -21,7 +21,7 @@ import { T } from "../shell/names";
 const SHOWN = 40;
 
 export function PlayersHome() {
-  const { nation } = useShell();
+  const { nation, career } = useShell();
   const keep = nation ? `?nation=${encodeURIComponent(nation)}` : "";
   const go = useNavigate();
   const q = useQuery({ queryKey: ["players"], queryFn: () => get<PlayersLanding>("/api/players") });
@@ -35,6 +35,7 @@ export function PlayersHome() {
   if (q.error) return <><Head title="Players" crumb="Pick a player" /><div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
   if (!q.data) return <><Head title="Players" crumb="Pick a player" /><div className="empty">Finding your players…</div></>;
   const d = q.data;
+  if (career && career.matches === 0) return <><Head title="Players" crumb="Pick a player" /><div className="grid"><Tile span={12}><Missing why={NO_MATCHES} /></Tile></div></>;
   return (
     <>
       <Head title="Players" crumb="Pick a player" />

@@ -286,7 +286,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             asked, team = team, ""
         team = team or (order[0] if order else styleguide.pick_team(c, []) or "")
         if not team:
-            return dict(teams=[], team="", mine=False, asked=asked, missing={"everything": "This career has no matches yet."})
+            return dict(teams=[], team="", mine=False, asked=asked, missing={"everything": styleguide.NO_MATCHES})
         s = site.settings(c.name)
         notes, sched = site.notes(c), list(s.fixtures) if s else []
         # the whole page is kept with the career (and your notes and schedule as they are): a second look, or the

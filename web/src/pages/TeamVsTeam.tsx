@@ -6,7 +6,7 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import { get, type TvtPage } from "../api";
 import { Explain, Logo, Missing, Num, Tile } from "../kit/base";
 import { Grid, TapeBars, TeamBars, TwoScatter } from "../kit/teams";
-import { dayY } from "../format";
+import { dayY, NO_MATCHES } from "../format";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
 import { T } from "../shell/names";
@@ -38,7 +38,7 @@ export function TeamVsTeam() {
   if (q.error) return <>{head}<div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
   if (!q.data) return <>{head}<div className="empty">Putting the two teams side by side…</div></>;
   const d = q.data, p = d.page;
-  if (!p) return <>{head}<div className="grid"><Tile span={12}><Missing why="No matches in this career yet." /></Tile></div></>;
+  if (!p) return <>{head}<div className="grid"><Tile span={12}><Missing why={NO_MATCHES} /></Tile></div></>;
   const ch = d.choices.find((c) => c.section === p.section)!;
   const b = p.body, m = b?.missing ?? {};
   const mark = (t: string) => `${t}${p.todo.includes(t) ? " (0 games)" : ""}`;

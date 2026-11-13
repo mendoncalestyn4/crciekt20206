@@ -61,3 +61,6 @@ export const fmtOf = (section: string) => {
   const words = section.split(/\s+/).filter((w) => /^[A-Z0-9]/.test(w) && w !== "The");
   return words.length > 1 ? words.map((w) => w[0]).join("") : section;
 };
+
+/** What every page says on a career with no matches yet (the same words the server uses, server/styleguide.py). */
+export const NO_MATCHES = "No matches in this career yet. Play a match in Cricket Captain (with Autosave scorecards on in Options) and this page fills in within about 20 seconds.";

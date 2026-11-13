@@ -4657,7 +4657,7 @@ Everything kept in `Documents\Cricket Captain Stats Pack`. The new site reads an
 **In the code** (every part of the page, including what shows only for some choices)
 
 - **stop_if_no_matches**
-  - [ ] *info* **No matches in this career yet.** Play a match in Cricket Captain (with *Autosave scorecards* on in Options) and this page fills in within about 20 seconds. Meanwhile you can add your schedule on the **Fixtures** page.
+  - [x] *info* **No matches in this career yet.** Play a match in Cricket Captain (with *Autosave scorecards* on in Options) and this page fills in within about 20 seconds. Meanwhile you can add your schedule on the **Fixtures** page. — ✓ every page of the new site on a career with no matches yet, in these words (added 13 November)
 
 ## ui/theme.py · `ui/theme.py`
 

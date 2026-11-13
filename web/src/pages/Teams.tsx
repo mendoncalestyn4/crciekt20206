@@ -7,6 +7,7 @@ import { Explain, Lamps, Logo, Missing, Num, Tile } from "../kit/base";
 import { LeaderBars } from "../kit/charts";
 import { SplitBars } from "../kit/player";
 import { Grid, PositionRace, SignedBars } from "../kit/teams";
+import { NO_MATCHES } from "../format";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
 import { T } from "../shell/names";
@@ -43,7 +44,7 @@ export function Teams() {
   if (q.error) return <><Head title="Teams" crumb="Team record" /><div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
   if (!q.data) return <><Head title="Teams" crumb="Team record" /><div className="empty">Working out the team's record…</div></>;
   const d = q.data, p = d.page;
-  if (!p) return <><Head title="Teams" crumb="Team record" /><div className="grid"><Tile span={12}><Missing why="No matches in this career yet." /></Tile></div></>;
+  if (!p) return <><Head title="Teams" crumb="Team record" /><div className="grid"><Tile span={12}><Missing why={NO_MATCHES} /></Tile></div></>;
   const ch = d.choices.find((c) => c.section === p.section)!;
   const h = p.head, b = p.body, scope = `${p.section}${p.season === "All seasons" ? "" : ` · ${p.season}`}`;
   const vlabel = VENUES.find(([, v]) => v === p.venue)?.[0] ?? "Overall";

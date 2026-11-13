@@ -61,7 +61,7 @@ def review(career, q: dict, mine: list[str]) -> dict:
     ch = choices(career)
     out: dict = dict(choices=ch, pick="", section="", season="", none="")
     if not ch:
-        out["none"] = "No matches yet."
+        out["none"] = SG.NO_MATCHES
         return out
     keys = [c["key"] for c in ch]
     pick = q.get("pick", "")

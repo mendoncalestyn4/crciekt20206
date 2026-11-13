@@ -23,6 +23,9 @@ from ccstats.stats import KIND, Scope, player_tables
 from ccstats.winprob import match_report
 
 FORMAT_WORD = {"T20Is": "T20I", "ODIs": "ODI", "Tests": "Test"}
+# what every page says on a career with no matches yet (the current site's words, ui/state.py)
+NO_MATCHES = ("No matches in this career yet. Play a match in Cricket Captain (with Autosave scorecards on in Options) "
+              "and this page fills in within about 20 seconds.")
 
 
 def clean(v):
@@ -470,7 +473,7 @@ def build(career, mine: list[str]) -> dict:
     team = pick_team(career, mine)
     out: dict = dict(career=career.name, matches=int(len(career.matches)), team=team, mine=team in mine, missing={})
     if team is None:
-        out["missing"]["everything"] = "This career has no matches yet."
+        out["missing"]["everything"] = NO_MATCHES
         return out
     sections = MT.sections_of(career, team)
     section = sections[0]

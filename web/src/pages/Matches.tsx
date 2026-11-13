@@ -8,6 +8,7 @@ import { get, type BestGames, type Finder, type MatchPage } from "../api";
 import { Explain, Logo, Missing, Name, PName, Tile } from "../kit/base";
 import { MatchSummary, Scorecard } from "../kit/blocks";
 import { BestTable, ExcitementPanel, NoteBox, WicketClimb, WinChanceChart } from "../kit/match";
+import { NO_MATCHES } from "../format";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
 import { T } from "../shell/names";
@@ -15,7 +16,7 @@ import { T } from "../shell/names";
 const PAGE = 15;   // matches listed at first, and how many more each "Show more" adds
 
 export function MatchesHome() {
-  const { nation } = useShell();
+  const { nation, career } = useShell();
   const keep = nation ? `?nation=${encodeURIComponent(nation)}` : "";
   const [params, setParams] = useSearchParams();
   const section = params.get("section") ?? "", team = params.get("team") ?? "";
@@ -38,6 +39,7 @@ export function MatchesHome() {
     [f.data, typed]);   // eslint-disable-line react-hooks/exhaustive-deps
   if (f.error) return <><Head title="Matches" crumb="Find a match" /><div className="grid"><Tile span={12}><Missing why={String(f.error)} /></Tile></div></>;
   if (!f.data) return <><Head title="Matches" crumb="Find a match" /><div className="empty">Finding your matches…</div></>;
+  if (career && career.matches === 0) return <><Head title="Matches" crumb="Find a match" /><div className="grid"><Tile span={12}><Missing why={NO_MATCHES} /></Tile></div></>;
   const d = f.data, all = d.section === "All sections";
   return (
     <>

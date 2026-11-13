@@ -44,7 +44,7 @@ def page(career, q: dict, mine: list[str], sched: list[dict]) -> dict:
     tab = q.get("tab", "") if q.get("tab", "") in TABS else TABS[0]
     out = dict(teams=[ALL] + teams, team=team, tabs=TABS, tab=tab, none="")
     if m.empty:
-        out["none"] = "No matches yet."
+        out["none"] = SG.NO_MATCHES
         return out
     if tab == "Calendar":
         out["calendar"] = _calendar(career, team, q, sched)

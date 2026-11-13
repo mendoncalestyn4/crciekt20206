@@ -39,7 +39,7 @@ def page(career, q: dict, mine_all: list[str], mine_order: list[str], sched: lis
     m = career.matches
     if m.empty:   # a career made before any game was played
         return SG.clean(dict(choices=[], section="", formats=[], format="", mine_opts=[], mine="", opp="", opp_opts=[],
-                             none="No matches yet. This page fills in once the first scorecard of the career is in.", elsewhere=[], tabs=TABS, tab=TABS[0]))
+                             none=SG.NO_MATCHES, elsewhere=[], tabs=TABS, tab=TABS[0]))
     intl = [s for s in ("Tests", "ODIs", "T20Is") if s in set(m.section)]
     counts = m.section.value_counts()
     choices = ([INTL] if intl else []) + [s for s in counts.index if s not in intl]

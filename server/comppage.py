@@ -54,7 +54,7 @@ def page(career, q: dict, mine: list[str]) -> dict:
     ch = choices(career)
     out: dict = dict(choices=ch, event="", season="", none="")
     if not ch:
-        out["none"] = "No matches in this career yet."
+        out["none"] = SG.NO_MATCHES
         return out
     out["every"] = kept(career, ("every_section",), lambda: _every(career))
     events = [c["event"] for c in ch]

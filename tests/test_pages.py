@@ -744,7 +744,9 @@ def test_every_stage_2_page_answers_on_a_career_with_no_matches(tmp_path):
             code, _, _ = s.get(path)
             assert code == 200, (path, code)
         assert "No competition has been decided yet" in s.json("/api/honours")["none"]
-        for path in ("/api/preview", "/api/planner", "/api/rivalries"):   # once "No career is open yet": there is one
-            assert s.json(path)["none"].startswith("No matches yet"), path
+        from server.styleguide import NO_MATCHES   # the current site's words, with how to get matches in
+        for path in ("/api/preview", "/api/planner", "/api/rivalries", "/api/competition", "/api/season", "/api/review"):
+            assert s.json(path)["none"] == NO_MATCHES, path   # (once "No career is open yet": there is one)
+        assert s.json("/api/myteam")["missing"]["everything"] == NO_MATCHES
     finally:
         s.stop()
