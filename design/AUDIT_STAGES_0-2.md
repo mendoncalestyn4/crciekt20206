@@ -119,7 +119,9 @@ How it was checked:
     (all its cricket in the year together, as the plan's example), a chosen exception to "never mixed" for Season
     wrapped only.
 24. **"Collapses: also big stands"** (section 14's table): on Teams next to the collapses, or only as "the best stand
-    for each wicket" on Records (stage 3), as point 3 of "wickets and scores" says?
+    for each wicket" on Records (stage 3), as point 3 of "wickets and scores" says? **Your answer (13 November): do it:**
+    a "Big stands" list on Team record next to Collapses (the team's biggest partnerships in that competition and
+    season), as well as the best stand for each wicket on Records in stage 3.
 25. **Usual score at each wicket:** the plan's example is a line ("in ODIs India are usually 48/1, 97/2, 152/3…");
     built as a table (wicket, usual, opponents', difference, highest, lowest, innings). Keep the table, add the line,
     or both? **Your answer (13 November): both.**
@@ -140,3 +142,24 @@ How it was checked:
   on Teams and Team vs team and offered on Opponent preview; who carries the team and the usual score at each wicket
   (numbers checked by hand in tests); collapses; the best stands counted with unbroken stands; Season wrapped's slides
   (plus the best game, as section 14 asks); the stage 2 stress test's fixes.
+
+---
+
+## F. Added on 13 November (your request), for the stage 2 fix round
+
+26. **Opponent preview: "How they play", an overview of the opponent** (to be built in the stage 2 fix round, once
+    you say go). The scorecards hold no overs (no over a wicket fell in, no runs per over), so it reads the game
+    through the score at each wicket, the batting order, each batter's runs, balls, fours and sixes, and the order
+    the bowlers came on:
+    - **Bowling:** when they take wickets (the usual score at their 1st, 2nd and 3rd wicket against the usual
+      here); how often they have a side 3 down cheaply and how often they bowl sides out; the new-ball bowlers'
+      share of the wickets against those who come on later; the share of their wickets that are top-order batters;
+      attack or squeeze (wicket-taking against runs given, and dot balls in T20 where the cards print them).
+    - **Batting:** strike rate and boundary share for the openers, the top order, the middle order and the lower
+      order against the usual ("blast from the start", or "build, then blast"); how much comes in fours and sixes,
+      and from where; their usual score at each wicket against the usual here (fast start and fade, or slow start
+      and strong finish).
+    - A short summary in plain words at the top.
+    Open questions (asked 13 November): where on the page (my pick: the top of the "About them" tab); against the
+    usual for that competition or that format (my pick: competition); whole career or recent seasons (my pick: whole
+    career with a "this season" switch); them only, or your team beside them (my pick: them only).
