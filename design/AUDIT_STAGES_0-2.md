@@ -210,3 +210,5 @@ match's country; draws and ties end a run, no-results skipped; a poor game is a 
 ladder on Competitions' "match by match" view; donuts for batting depth, how their batters get out and the runs share
 in the every-player table; our score v theirs on the Matches front page; the match-winners chart on the Player page in
 place of the "Matches they won" table; the "where your team ranks" tile at the top of the Season page.
+
+**14 (13 November):** to-dos B to E come after stage 3, as planned.
