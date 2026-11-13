@@ -7,6 +7,7 @@ import { Link, useParams, useSearchParams } from "react-router";
 import { get, type BestGames, type Finder, type MatchPage, remember } from "../api";
 import { Explain, Logo, Missing, Name, PName, Tile } from "../kit/base";
 import { MatchSummary, Scorecard } from "../kit/blocks";
+import { ScoreRows } from "../kit/season";
 import { BestTable, ExcitementPanel, NoteBox, WicketClimb, WinChanceChart } from "../kit/match";
 import { NO_MATCHES } from "../format";
 import { useReady } from "../ready";
@@ -67,6 +68,13 @@ export function MatchesHome() {
             {!hits.length && <div className="empty">No match fits "{typed}".</div>}</div>
           {hits.length > shown && <div className="field"><button className="btn quiet" onClick={() => setShown(shown + 30)}>Show 30 more</button>
             <span className="note" style={{ marginTop: 0 }}>Showing the newest {shown} of {hits.length.toLocaleString("en-GB")}; type to narrow the list.</span></div>}
+        </Tile>
+        <Tile span={12} title={`Our score v theirs${d.scores ? ` · ${d.scores.team} · ${d.section}` : ""}`} right={d.scores ? `the latest ${d.scores.results.length}, newest at the bottom` : undefined}>
+          {d.scores ? <><ScoreRows results={d.scores.results} scores={d.scores.summary} />
+            <div className="note">Both totals on one line for each match: {d.scores.team}'s in gold, the other side's in blue, joined in green when they won and
+              red when they lost; a Test's innings each on its own line. Games shortened by rain are left out of the averages.</div></>
+            : <div className="plain">{all ? "Pick one competition and a team to see their totals against the other side's, match by match (formats are never mixed)."
+              : "Pick a team to see its totals against the other side's, match by match."}</div>}
         </Tile>
         <Tile span={12} title={`Best games · ${all ? "every competition" : d.section}${d.team !== "All teams" ? ` · ${d.team}` : ""}`} right="rated 0–10 for excitement">
           {best.data ? (best.data.rows.length ? <BestTable rows={best.data.rows} showSection={all} keep={keep} /> : <Missing why="No matches here yet." />)

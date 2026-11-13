@@ -137,7 +137,8 @@ export type Live = { type: "matches"; career: string; added: number; records: st
 
 // ------------------------------------------------------------------ Matches (server/matchpage.py)
 export type FinderItem = { id: string; label: string; date: string; home: string; away: string; section: string; event: string; name: string; result: string };
-export type Finder = { section: string; team: string; sections: string[]; teams: string[]; matches: FinderItem[] };
+export type Finder = { section: string; team: string; sections: string[]; teams: string[]; matches: FinderItem[];
+  scores?: { results: Result[]; summary: Scores; team: string } | null };
 export type BestGame = { id: string; rating: number; rank: number; of: number; home: string; away: string; date: string;
   section: string; event: string; name: string; result: string; why: string; finish: number; comeback: number; stakes: number; show: number };
 export type BestGames = { section: string; team: string; rows: BestGame[] };

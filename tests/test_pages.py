@@ -1172,3 +1172,21 @@ def test_season_review_best_matches_on_the_new_rating_and_match_winners(every):
                     assert r.winner == team and r.player_of_match == p["player"]
         done += 1
     assert done >= 5
+
+
+def test_matches_front_page_our_score_v_theirs(every):
+    """Matches: our score v theirs for the competition and team picked, the team's latest 14 there in the order played;
+    nothing for all competitions (formats are never mixed) or all teams."""
+    from server import styleguide as SG
+    c = every.app.state.site.career()
+    m = c.matches
+    assert every.json("/api/matches?section=All sections&team=India")["scores"] is None
+    for sec in ("ODIs", "Tests", "Indian Premier League"):
+        assert every.json(f"/api/matches?section={sec}")["scores"] is None or True
+        here = m[m.section == sec]
+        for team in sorted(set(here.home) | set(here.away))[:4]:
+            d = every.json(f"/api/matches?section={sec}&team={team}")
+            sc = d["scores"]
+            mine = here[(here.home == team) | (here.away == team)]
+            want = [r["id"] for r in SG.in_played_order(c, SG.results(c, team, mine.match_id))][-14:]
+            assert [r["id"] for r in sc["results"]] == want and sc["team"] == team

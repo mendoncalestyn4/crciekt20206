@@ -45,8 +45,13 @@ def finder(career, section: str = "", team: str = "", mine: list[str] | None = N
     teams = sorted(set(pool.home) | set(pool.away))
     if team and team != "All teams":
         pool = pool[(pool.home == team) | (pool.away == team)]
+    # our score v theirs: the team's latest matches in the competition picked (one competition: formats never mixed)
+    scores = None
+    if team and team != "All teams" and section != "All sections" and len(pool):
+        rs = SG.in_played_order(career, SG.results(career, team, pool.match_id))[-14:]
+        scores = dict(results=rs, summary=SG.scores(rs), team=team)
     return dict(section=section, team=team or "All teams", sections=["All sections"] + sections,
-                teams=["All teams"] + teams,
+                teams=["All teams"] + teams, scores=scores,
                 matches=[dict(id=r.match_id, label=label(r), date=SG.clean(r.date), home=r.home, away=r.away,
                               section=r.section, event=r.event, name=name_of(r), result=r.result) for r in pool.itertuples()])
 

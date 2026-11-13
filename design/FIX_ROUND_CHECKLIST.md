@@ -137,9 +137,11 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
 
 ## 9. Stage 1 pages
 
-- [ ] Matches: our score v their score chart on the front page, for the competition and team picked (10)
-- [ ] Matches and My team: the competition logo on every scoreboard (the World Test Championship's on every Test,
-      World Cup logos only on their games); My team's latest result with both teams and the competition logo (13)
+- [x] Matches: our score v their score chart on the front page, for the competition and team picked (10) — ✓ Matches, under
+      the list: the team's latest 14 there (a Test's innings each on its own line); asks for one competition and a team
+- [x] Matches and My team: the competition logo on every scoreboard (the World Test Championship's on every Test,
+      World Cup logos only on their games); My team's latest result with both teams and the competition logo (13) — ✓ the match summary, the matches list, the best games, My team's
+      results and its latest result (with both teams' badges): the competition's own logo, a Test the game's Test logo
 - [x] My team: the series tug of war on "series this season" (12) — ✓ My team, beside "Series this season": the latest series
 - [x] Player page: the match-winners chart in place of "Matches they won" (11) — ✓ Players · the player's page (the same wins as before, with what they did)
 - [x] Player page: share of the team on runs off the bat (27) — ✓ Players · the player's page, the same sum as Teams
