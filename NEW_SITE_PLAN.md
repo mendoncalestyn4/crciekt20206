@@ -378,7 +378,8 @@ Each stage ends with the same steps:
 | **0. Foundations** | The server (careers, settings, folder watching); the website shell in your chosen style (menu, search bar, team colours, fonts); logos served exactly as approved, with the logo tests carried over; the chart kit (your chosen chart style as reusable pieces); the launcher and zip; the test set-up. **You see:** the shell, plus a "style guide" page with every chart piece drawn from your data. | 2–3 days |
 | **1. Core pages** | My team home, Player profile, Match (scorecard and report). Your national side and franchise together. New: a player's share of the team's runs and wickets, wicket by wicket in every innings (section 14) | 4–5 days |
 | **2. Teams and competitions** | Teams, Team vs team, Opponent preview, Team planner, Rivalries, Competitions, Season, Season review, Honours. New: who carries the team, your usual score at each wicket, collapses, the score to aim for against your next opponent, home or away, your season wrapped (section 14) | 5–6 days |
-| **3. Leaders, records and insights** | Stat by stat, Records, Hall of fame, Rankings, Insights, Analytics, Player stories, Compare players. New: every team ranked by runs and wickets up to any date, best stand for each wicket, the score to aim for against every team, home and away, "plays like" on Compare players (section 14) | 4–5 days |
+| **3. Leaders, records and insights** | Stat by stat, Records, Hall of fame, Rankings, Insights, Analytics, Player stories, Compare players. New: every team ranked by runs and wickets up to any date, best stand for each wicket, the score to aim for against every team, home and away, "plays like" on Compare players, Team leaders (each team's top two by share of its runs and of its wickets), and
+every share of the team counted on runs off the bat (section 14) | 5–6 days |
 | **4. Fixtures and tools** | Fixtures (all 8 tabs, the biggest page), careers and uploads, backups, Data check, the first-start question, live alerts | 4–5 days |
 | **5. Final checks and switch-over** | Full test runs, stress tests (including the three logo stress tests), a new-user install test from the zip, speed checks, and screenshots of every page and tab. Then the new site becomes `Start Stats Pack.bat`, the old site (Streamlit) is deleted completely with no backup launcher (your choice, 31 October), and the README is rewritten. | 3–4 days |
 | **6. A note for every section (added 31 October; done last, after stage 5)** | Every section on every page gets a plain note saying what it is and how to read it, every column and number included, so each one is understood well (the innings-by-innings tile's sections too). Not before stage 6. (Player art behind the pages was tried as mock-ups on 6 and 7 November and dropped on 12 November, your choice: no players in the background.) | to size then |
@@ -585,6 +586,30 @@ what the scorecards record (no overs for wickets, no grounds, no toss).
    record, top run-scorer and wicket-taker, highest score, best bowling, biggest stand, longest winning run, biggest
    win, player of the season. Your 2026: 22 matches, won 12, lost 10; S Gill 830 runs; A Singh 34 wickets; S Gill
    163; K Yadav 5/28; Gill and Jaiswal's 225 for the first wicket; won by 201 runs v Afghanistan.
+
+3. **Team leaders** (stage 3; agreed with you on 13 November, to be built when you say): each team's two biggest
+   contributors to its runs and to its wickets, just to see, not to compare.
+   - A section of its own, called **Team leaders**, under Teams in the menu.
+   - **Format buttons:** Tests, ODIs, T20Is and each domestic competition apart, never mixed.
+   - **Season picker:** All time, then each season on its own (2029, 2030...), named as the game prints them
+     (2028/29 for Australian domestic seasons).
+   - **Teams:** tick the teams to see (opens with your team ticked), or the **All teams** button for every team in
+     that format. One block per team. Switching format keeps the ticked teams that play it; if none do, it opens on
+     your team there, or the first team.
+   - **In each block, runs:** the **top 2 by share of the team's runs**, counting **runs off the bat only** (extras
+     are nobody's, so they aren't in the team total and the batters' shares add up to 100%). **Wickets, apart:** the
+     **top 2 by share of the wickets the team's bowlers took.** No threshold: the top two, whoever they are.
+   - **Each row:** rank, name, share, their runs (or wickets) and matches for that team in that format and season
+     (matches played, batted or not).
+   - **No longer playing:** a name is **crossed out** when the player played no game for that team in the last
+     finished season and none so far in the current one (in every view, judged against the latest seasons). A
+     season that has only just started never crosses anyone out on its own; a player who comes back is shown
+     normally again. No other marking, and no note on teams with few games.
+   - Smaller rules: equal shares go to more matches, then A to Z; a team with no wickets yet says so; super overs
+     don't count; a player who played for two teams counts for each separately.
+   - **With it, the share everywhere is on runs off the bat:** the Player page's share of the team and "Who carries
+     the team" on Team record change to match, so a player's share is the same on every page (wickets unchanged).
+     The old site is left as it is.
 
 On hold: the scouting shortlist (you have another plan for it; it waits in the README under "Ideas on hold").
 Dropped: fantasy points, how hard your players have worked, the career quiz, "on this day", a team "nemesis" list.
