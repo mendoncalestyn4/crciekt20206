@@ -1106,3 +1106,23 @@ def test_season_month_lines_add_up_to_the_month(every):
             w = sum(int(x.group(1)) for n in mo["notes"] if n["kind"] == "played" for x in [re.search(r"(\d+)–(\d+)", n["text"])] if x)
             lo = sum(int(x.group(2)) for n in mo["notes"] if n["kind"] == "played" for x in [re.search(r"(\d+)–(\d+)", n["text"])] if x)
             assert (w, lo) == (mo["won"], mo["lost"]), (team, mo["key"], mo["notes"])
+
+
+def test_series_tug_of_war_on_the_season_tracker_and_my_team(every):
+    """The tug of war: the series score after each match from the team's side, counted again from the results; on
+    the Season page's tracker every series still going and the team's latest finished one, on My team its latest."""
+    c = every.app.state.site.career()
+    m = c.matches.set_index("match_id")
+    seen = 0
+    for team in ["All teams"] + sorted(set(c.matches.home) | set(c.matches.away))[:10]:
+        sr = every.json(f"/api/season?team={team}&tab=Series tracker")["series"]
+        for tg in sr.get("tugs", []):
+            w = lo = 0
+            for r, p in zip(tg["matches"], tg["progress"]):
+                win = m.winner[r["id"]]
+                w, lo = w + (win == tg["team"]), lo + (win not in ("", tg["team"]))
+                assert (p["won"], p["lost"]) == (w, lo)
+            if team != "All teams":
+                assert tg["team"] == team
+            seen += 1
+    assert seen >= 3

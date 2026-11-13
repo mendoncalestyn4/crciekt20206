@@ -241,6 +241,16 @@ def _series(career, team) -> dict:
                         hi=[team != ALL and r.result.startswith(team) for r in done.itertuples()]) if len(done) else None
     out["note"] = ("A series counts as finished once all its matches (the number in the match titles, e.g. '3rd of 5') are "
                    "in.")
+    # the tug of war: every series still going, and the team's latest finished one, each from the team's side (else
+    # the first-named side's)
+    tugs = []
+    for r in live.itertuples():
+        g = m[m.match_id.isin(r.match_ids)]
+        tugs.append(SG.series_of(career, r.series_id, team if team in (g.home.iloc[0], g.away.iloc[0]) else g.home.iloc[0]))
+    if team != ALL and len(done):
+        last = done.sort_values("start").iloc[-1]
+        tugs.append(SG.series_of(career, last.series_id, team))
+    out["tugs"] = [dict(t, title=f"{t['story']['headline']}" if t.get("story") else "") for t in tugs[:8]]
     return out
 
 

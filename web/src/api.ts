@@ -108,7 +108,7 @@ export type Star = {
 export type Banner = { section: string; season: string; elo: number | null; moved: number | null; rank: number | null;
   teams: number; record: { played: number; won: number; lost: number; drawn: number; tied: number; no_result: number } };
 export type Series = {
-  id: string; section: string; opp: string;
+  id: string; section: string; team?: string; opp: string;
   story: { headline: string; deck: string; flow: string; won: number; lost: number; opponent: string; complete: boolean;
     results: Outcome[]; player_of_series: { player: string; team: string; runs: number; wickets: number; matches: number } | null };
   matches: Result[]; progress: { won: number; lost: number }[]; decider: boolean;
@@ -188,7 +188,7 @@ export type MyTeam = {
   next_up?: { played: number; total: number; next: { what: string; venue: string; when: string; opponent: string;
     chance: { win: number; draw: number | null; lose: number } | null; aim?: string } | null; under_way: string[] } | null;
   report?: ReportCard | null; season?: Calendar | null; forms?: { section: string; results: Result[]; form: Form }[] | null;
-  series?: SeriesItem[] | null; venues?: Venues | null; winners?: Winners | null; scores?: Scores | null;
+  series?: SeriesItem[] | null; tug?: Series | null; venues?: Venues | null; winners?: Winners | null; scores?: Scores | null;
   history?: { season: string; section: string; played: number; won: number; lost: number; drawn: number; tied: number;
     no_result: number; win_pct: number | null; finish: string }[] | null;
   notes?: { id: string; date: string; home: string; away: string; note: string }[] | null;
@@ -433,7 +433,7 @@ export type CalMonth = { key: string; year: number; month: number; name: string;
 export type SeasonPage = { teams: string[]; team: string; tabs: string[]; tab: string; none: string;
   calendar?: { view: "season" | "month"; seasons: { key: string; label: string }[]; season: string; months: { key: string; label: string }[];
     month: string; today: string; grid: CalMonth[]; caption?: string; none?: string };
-  series?: { none: string; live: (GridT & { note?: string }) | null; done: GridT | null; note?: string };
+  series?: { none: string; live: (GridT & { note?: string }) | null; done: GridT | null; note?: string; tugs?: (Series & { title: string })[] };
   progress?: { none: string; rows: { name: string; event: string; season: string; played: string; pct: number | null; stage: string; leader: string }[]; note?: string } };
 
 // ------------------------------------------------------------------ Seasons · Season review and Honours (stage 2)

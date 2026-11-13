@@ -111,7 +111,8 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
       up, the "29 Mar" mark for an IPL that starts in March; the "one month" big view kept (3) — ✓ Seasons · Season · calendar: each month's record,
       the best month lit up, the IPL's 29 March start kept whole in its season with a "29 Mar" mark at the top of April
       (its line and record counting it too), one month kept; every game of every season checked to appear once
-- [ ] The series tug of war on the series tracker (4, G)
+- [x] The series tug of war on the series tracker (4, G) — ✓ Seasons · Season · Series tracker: every series still going and
+      your team's latest finished one, from your side; every score checked
 - [ ] **"Where your team ranks"** at the top: your rank by runs scored and wickets taken in each format this season,
       from the ranking of every team up to any date (stage 3's sums built now) (9, 12)
 
@@ -134,7 +135,7 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
 - [ ] Matches: our score v their score chart on the front page, for the competition and team picked (10)
 - [ ] Matches and My team: the competition logo on every scoreboard (the World Test Championship's on every Test,
       World Cup logos only on their games); My team's latest result with both teams and the competition logo (13)
-- [ ] My team: the series tug of war on "series this season" (12)
+- [x] My team: the series tug of war on "series this season" (12) — ✓ My team, beside "Series this season": the latest series
 - [x] Player page: the match-winners chart in place of "Matches they won" (11) — ✓ Players · the player's page (the same wins as before, with what they did)
 - [x] Player page: share of the team on runs off the bat (27) — ✓ Players · the player's page, the same sum as Teams
       (checked player by player for every competition and season)

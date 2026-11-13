@@ -5,9 +5,11 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import { get, type SeasonPage } from "../api";
 import { Missing, Tile } from "../kit/base";
 import { MonthGrid } from "../kit/calendar";
+import { TugOfWar } from "../kit/charts";
 import { Grid } from "../kit/teams";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
+import { T } from "../shell/names";
 import { SEASON_PAGES } from "./Competitions";
 
 export function Season() {
@@ -66,6 +68,10 @@ export function Season() {
           {sr && (sr.none ? <Tile span={12}><Missing why={sr.none} /></Tile> : <>
             {sr.live && <Tile span={12} title="Still going · each side's chance of winning the series"><Grid t={sr.live} />
               {sr.live.note && <div className="note">{sr.live.note}</div>}</Tile>}
+            {(sr.tugs ?? []).map((tg) => <Tile key={tg.id} span={6} title={`${tg.section} · ${tg.team} v ${tg.opp}`}
+              right={tg.story.complete ? "finished" : "under way"}>
+              <TugOfWar matches={tg.matches} progress={tg.progress} team={tg.team ?? ""} opp={tg.opp} height={280} />
+              <div className="note">Above the line {tg.team} lead, below it {tg.opp} do. <T>{tg.title}</T></div></Tile>)}
             <Tile span={12} title="Finished series · newest first">
               {sr.done ? <Grid t={sr.done} /> : <div className="plain">None finished yet.</div>}
               {sr.note && <div className="note">{sr.note}</div>}</Tile>

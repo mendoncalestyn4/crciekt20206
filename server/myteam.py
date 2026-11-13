@@ -205,6 +205,12 @@ def forms(career, team: str, rs_season: list[dict]) -> list[dict]:
     return [dict(section=s, results=x, form=SG.form(x)) for s, x in sorted(by.items(), key=lambda kv: -len(kv[1]))]
 
 
+def _tug(career, rs_season: list[dict], team: str) -> dict | None:
+    """The series tug of war for the latest bilateral series this season (the one under way, if one is)."""
+    sids = [r["series"] for r in SG.in_played_order(career, rs_season) if r["series"]] if rs_season else []
+    return SG.series_of(career, sids[-1], team) if sids else None
+
+
 def series_list(rs_season: list[dict], team: str) -> list[dict]:
     """This season's series and tournaments, newest first: who against, where, the score."""
     out: dict[str, dict] = {}
@@ -332,6 +338,7 @@ def page(career, team: str, section: str, mine: list[str], notes: dict, sched: l
     rs = (out.get("season") or {}).get("results", [])
     piece("forms", lambda: forms(career, team, rs))
     piece("series", lambda: series_list(rs, team))
+    piece("tug", lambda: _tug(career, rs, team))
     piece("venues", lambda: SG.venues(rs, team))
     piece("winners", lambda: SG.match_winners(rs, team))
     piece("scores", lambda: SG.scores(rs))

@@ -278,7 +278,7 @@ def series_of(career, sid: str, team: str) -> dict:
     last = played[-1]
     before = progress[-2] if len(progress) > 1 else None
     decider = bool(before and before["won"] == before["lost"] and last["of"] and last["no"] == last["of"])
-    return dict(id=sid, section=m[m.series_id == sid].section.iloc[0], opp=story["opponent"], story=story,
+    return dict(id=sid, section=m[m.series_id == sid].section.iloc[0], team=team, opp=story["opponent"], story=story,
                 matches=played, progress=progress, decider=decider,
                 most_runs=rows(sb, ["player", "team", "runs", "balls", "inns", "outs", "hs"]),
                 most_wickets=rows(sw, ["player", "team", "wickets", "runs", "balls", "economy"]))

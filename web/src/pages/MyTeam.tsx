@@ -7,7 +7,7 @@ import { Link, useSearchParams } from "react-router";
 import { get, type MyTeam as Data, type Result, type ScoutingPage } from "../api";
 import { Lamps, Logo, Missing, Name, Num, PName, Tile } from "../kit/base";
 import { SquadTable, Story, Ticker, TopList } from "../kit/blocks";
-import { RankTrack, Ring } from "../kit/charts";
+import { RankTrack, Ring , TugOfWar } from "../kit/charts";
 import { DepthRow, Msg } from "../kit/fm";
 import { AdviceList, AfterLines, Grades, MarksTable, NextUp } from "../kit/myteam";
 import { useInbox } from "./Inbox";
@@ -130,6 +130,9 @@ export function MyTeam() {
               <div><Name p={s.opp || s.event} px={22} /><div className="how">{s.opp ? `${s.section} · ` : ""}{dayY(s.start).slice(-8)}</div></div>
               <span className="tag">{s.tournament ? `${s.won}–${s.lost}` : s.won > s.lost ? `won ${s.won}–${s.lost}` : s.won < s.lost ? `lost ${s.won}–${s.lost}` : `drew ${s.won}–${s.lost}`}</span></div>))}</div>
         </Tile>}
+        {d.tug && <Tile span={7} title={`Series score · v ${d.tug.opp}`} right={d.tug.story.complete ? "finished" : "under way"}>
+          <TugOfWar matches={d.tug.matches} progress={d.tug.progress} team={d.team} opp={d.tug.opp} height={300} />
+          <div className="note">Above the line {d.team} lead, below it {d.tug.opp} do.</div></Tile>}
         {d.winners && <Tile span={12} title="Match-winners" right="your players of the match in your wins"><MatchWinners w={d.winners} /></Tile>}
         {tiles.some((t) => t.rank != null) && <Tile span={12} title={`Where ${d.team} rank · team rating (Elo)`}>
           <RankTrack banner={tiles} height={Math.max(150, 80 + tiles.length * 60)} /></Tile>}
