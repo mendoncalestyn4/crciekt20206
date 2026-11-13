@@ -19,6 +19,10 @@ Read these at the start of every session. They come from the owner and hold unti
 
 ## How the owner likes the work done
 - Do it well rather than fast: zero errors, deep checks, and screenshots of what changed.
+- **Ask every clarifying question before building** (13 November: "Remember to ask me all these clarification while
+  building the next stages I want it perfect"): before each stage, page or feature, go through it deeply and ask
+  about everything that is the owner's choice (what it shows, edge cases, defaults, names, where it lives), say which
+  smaller things you'll decide yourself and how, and wait for the answers and a "go".
 - Explain in plain words, not code words.
 - Commit and push after every finished piece (on the branch you were told to use), so a machine reset loses nothing.
   No pull request unless asked.
