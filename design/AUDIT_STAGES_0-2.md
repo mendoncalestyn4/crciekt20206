@@ -117,7 +117,9 @@ How it was checked:
     Gill 830 runs; A Singh 34 wickets…") reads like all of a team's cricket in a year together, while your rule is that
     formats are never mixed. Built: one format at a time. **Your answer (13 November): the team's whole year**
     (all its cricket in the year together, as the plan's example), a chosen exception to "never mixed" for Season
-    wrapped only.
+    wrapped only. **Then (13 November): both**: a choice between each format on its own and the whole season with
+    all formats together (runs and wickets added up across formats there); the season runs **April to March**, as
+    the season calendar does, for every team.
 24. **"Collapses: also big stands"** (section 14's table): on Teams next to the collapses, or only as "the best stand
     for each wicket" on Records (stage 3), as point 3 of "wickets and scores" says? **Your answer (13 November): do it:**
     a "Big stands" list on Team record next to Collapses (the team's biggest partnerships in that competition and
@@ -171,4 +173,16 @@ How it was checked:
     November): where (my pick: its own tile under "Who carries the team" on the Overview tab); one table with both
     shares, sortable by runs or wickets, or two lists (my pick: one table, sortable by clicking a column); runs off the
     bat only (as agreed for Team leaders, so a share is the same everywhere; my pick: yes, and "Who carries the team"
-    and the Player page switch at the same time, pulled forward from stage 3).
+    and the Player page switch at the same time, pulled forward from stage 3). **Your answers (13 November): yes to
+    all three picks.**
+
+## G. Your answers to the rest (13 November): yes to every pick
+
+- The score to aim for: the "few games, treat with care" note under 10 games; Tests show the typical first-innings
+  total that won, drew and lost, and every game under it; each side's strength from the whole career in that
+  competition.
+- The six charts: Opponent preview and Team vs team in their main tab under the head-to-head record; Teams on the
+  Overview tab; Season review under the MVPs.
+- The series score (tug of war) on My team's "series this season" and on the Season page's series tracker.
+- Saving a chart as a picture: a small "save picture" button on each chart when you point at it.
+- The order: the checklist first, then every fix and new piece, then a full stress test and screenshots.
