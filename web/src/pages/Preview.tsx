@@ -123,13 +123,13 @@ export function Preview() {
                 <div className="plain"><b><T>{b.h2h.never}</T></b></div>{b.h2h.other && <div className="note">{b.h2h.other}</div>}</Tile> : null)}
               {b.h2h === null || !b.h2h || b.h2h.never ? <TheirRecord b={b} opp={d.opp} /> : null}
               {b.h2h && !b.h2h.never && <>
-                <Tile span={12} title={`${me} v ${d.opp}`}>
+                <Tile span={12} title={<span className="row2" style={{ gap: 10 }}><Logo team={me} size={30} />{me} v <Logo team={d.opp} size={30} />{d.opp}</span>}>
                   <div className="kpis">{b.h2h.kpis!.map((k) => <div key={k.k}><span>{k.k}</span><Num v={k.v} px={30} /></div>)}
                     <div><span>Last 5</span><Lamps seq={b.h2h.last5 as Outcome[]} /></div></div>
                   <div className="plain" style={{ marginTop: 8 }}><T>{b.h2h.how!}</T></div><div className="plain"><T>{b.h2h.typical!}</T></div>
                 </Tile>
                 <TheirRecord b={b} opp={d.opp} />
-                {b.h2h.keys!.map((k) => <Tile key={k.title} span={6} title={k.title}>
+                {b.h2h.keys!.map((k, i) => <Tile key={k.title} span={6} title={<Titled team={i === 0 ? me : d.opp} text={k.title} />}>
                   {k.rows.length ? <Grid t={{ cols: ["Player", "", ""], rows: k.rows, num: [], hi: [], links: [], dim: k.dim }} /> : <div className="plain">No figures yet.</div>}
                   <div className="note">Greyed out: not in that team's last 3 games, so maybe not playing now.</div></Tile>)}
                 <Tile span={12} title="Every meeting" right="newest first">
@@ -154,9 +154,9 @@ export function Preview() {
                   off, so the runs are the batter's whole score in the innings that bowler got them out.</div>
               </Tile>}</>}
             {d.tab === "About them" && <>
-              <Tile span={12} title={`How ${d.opp} play`} right={b.how?.season ? `${b.how.showing_last ? "last season" : "this season"} · ${b.how.season} · ${b.how.matches} matches` : ""}>
+              <Tile span={12} title={<Titled team={d.opp} text={`How ${d.opp} play`} />} right={b.how?.season ? `${b.how.showing_last ? "last season" : "this season"} · ${b.how.season} · ${b.how.matches} matches` : ""}>
                 {b.how ? <HowTheyPlay h={b.how} toggle={(last) => set({ htp: last ? "last" : "" })} /> : <Missing why={m.how} />}</Tile>
-              <Tile span={12} title={`⚠️ ${poss(d.opp)} danger men right now`} right={b.danger?.season ? `most impact points · ${b.danger.season}` : ""}>
+              <Tile span={12} title={<Titled team={d.opp} text={`${poss(d.opp)} danger men right now`} />} right={b.danger?.season ? `most impact points · ${b.danger.season}` : ""}>
                 {b.danger ? (b.danger.none ? <div className="plain">{b.danger.none}</div> : <>
                   {b.danger.note && <div className="note" style={{ marginTop: 0 }}>{b.danger.note}</div>}
                   <div className="danger">{b.danger.men.map((x) => <div key={x.player} className="bf-side">
@@ -226,6 +226,11 @@ export function Preview() {
   );
 }
 
+/** A tile's title with the team's badge in front (only teams that have one). */
+function Titled({ team, text }: { team: string; text: string }) {
+  return <span className="row2" style={{ gap: 10 }}><Logo team={team} size={30} />{text}</span>;
+}
+
 /** "India's", "West Indies'" */
 const poss = (t: string) => (t.endsWith("s") ? `${t}'` : `${t}'s`);
 
@@ -234,11 +239,11 @@ const poss = (t: string) => (t.endsWith("s") ? `${t}'` : `${t}'s`);
 function TheirRecord({ b, opp }: { b: NonNullable<PreviewPage["body"]>; opp: string }) {
   const m = b.missing, bf = b.bat_first, wh = b.where;
   return <>
-    <Tile span={6} title={`${opp}: batting first or chasing`}>
+    <Tile span={6} title={<Titled team={opp} text={`${opp}: batting first or chasing`} />}>
       {bf ? (bf.none !== undefined ? <div className="plain">{bf.none}</div> : <><BatFirstSides bf={bf} who={opp} />
         <div className="note">Games shortened by rain are left out of the totals.</div><Explain shows={<T>{bf.shows}</T>} for_={bf.for_} /></>)
         : <Missing why={m.bat_first} />}</Tile>
-    <Tile span={6} title={`${opp}: home, away and neutral`}>
+    <Tile span={6} title={<Titled team={opp} text={`${opp}: home, away and neutral`} />}>
       {wh ? (wh.none !== undefined ? <div className="plain">{wh.none}</div> : <><VenueRecord v={wh} team={opp} who />
         <div className="note">The scorecards don't name the ground, so it goes by the home side{wh.nation ? "'s country" : ""}.</div>
         <Explain shows={<T>{wh.shows}</T>} for_={wh.for_} /></>) : <Missing why={m.where} />}</Tile>

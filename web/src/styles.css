@@ -340,7 +340,10 @@ ul.dots { margin: 10px 0 0 22px; font: 400 18px/1.7 Inter; color: var(--soft); }
 .trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .trio .bf-side .big { flex-direction: column; align-items: flex-start; gap: 2px; margin-bottom: 8px; }
 .trio .bf-side .big .nm { white-space: nowrap; line-height: 1; }
-.cty { display: grid; grid-template-columns: 200px minmax(0, 1fr) 110px; gap: 14px; align-items: center; padding: 8px 0; border-top: 1px solid var(--edge); }
+/* every country's row on one shared grid, so the name column is as wide as the longest name and the bars line up */
+.ctys { display: grid; grid-template-columns: max-content minmax(0, 1fr) 110px; }
+.cty { display: contents; } .cty > * { padding: 8px 0; border-top: 1px solid var(--edge); align-self: stretch; display: flex; align-items: center; }
+.cty > :not(.r) { padding-right: 14px; } .cty > .r { justify-content: flex-end; } .cty .slot { display: inline-flex; width: 30px; height: 30px; flex: none; }
 .cty .stack { display: flex; height: 22px; gap: 2px; }
 .cty .stack i { display: block; height: 100%; flex: 1; }
 .cty .r { font: 700 19px 'Space Grotesk'; color: var(--led); text-align: right; }

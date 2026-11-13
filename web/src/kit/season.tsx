@@ -5,6 +5,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { BatFirst, Brief, Calendar, Form, Innings, Outcome, Result, Run, Scores, Series, Strength, Venues, Winners } from "../api";
 import { ab, day, dayer, fmtOf, ord, plural, rnd } from "../format";
 import { useTheme } from "../theme";
+import { useShell } from "../shell/Shell";
 import { Lamp, Logo, Name, Num, PName } from "./base";
 import { FormLine, StrengthDots } from "./charts";
 
@@ -292,15 +293,16 @@ export function StrengthPanel({ rows, lanes }: { rows: Strength[]; lanes: string
 /** Home, away and neutral, then host by host (by country for a national side). */
 export function VenueRecord({ v, team, who }: { v: Venues; team: string; who?: boolean }) {
   const t = useTheme(), top = Math.max(...v.hosts.map((h) => h.played), 1);
+  const { logos } = useShell(), slot = v.hosts.some((h) => h.host && logos.teams.has(h.host));   // badges line up
   const name = (h: Venues["hosts"][number]) => (h.venue === "neutral" ? "Neutral grounds" : h.venue === "home" ? (v.nation ? `In ${team} (home)` : "At home") : `${v.nation ? "In" : "At"} ${h.host}`);
   return (
     <>
       <div className="trio"><Side title="Home" rec={v.home} sub={v.nation ? `In ${team}` : who ? "On their own ground" : "On your own ground"} />
         <Side title="Away" rec={v.away} sub={v.nation ? "In the other side's country" : "On the other side's ground"} />
         <Side title="Neutral" rec={v.neutral} sub="World Cups, finals and the like" /></div>
-      <div style={{ marginTop: 16 }}>{v.hosts.map((h) => (
-        <div className="cty" key={h.host || "neutral"}><span className="row2" style={{ gap: 10 }}>{h.host && <Logo team={h.host} size={30} />}<Name p={name(h)} px={17} /></span>
-          <div className="stack" style={{ width: `${(h.played / top) * 100}%` }}>{h.outcomes.map((o, i) => <i key={i} style={{ background: colourOf(t, o) === t.dim ? t.grey : colourOf(t, o) }} />)}</div>
+      <div className="ctys" style={{ marginTop: 16 }}>{v.hosts.map((h) => (
+        <div className="cty" key={h.host || "neutral"}><span className="row2" style={{ gap: 10 }}>{slot && <span className="slot">{h.host && <Logo team={h.host} size={30} />}</span>}<Name p={name(h)} px={17} /></span>
+          <div><div className="stack" style={{ width: `${(h.played / top) * 100}%` }}>{h.outcomes.map((o, i) => <i key={i} style={{ background: colourOf(t, o) === t.dim ? t.grey : colourOf(t, o) }} />)}</div></div>
           <span className="r">{h.won}–{h.lost}<small>{h.played}</small></span></div>))}</div>
     </>
   );

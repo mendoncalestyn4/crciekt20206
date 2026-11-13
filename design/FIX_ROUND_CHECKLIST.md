@@ -64,7 +64,9 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
 - [x] **Record by country** (31): their players in the country the match is in — ✓ Opponent preview · About them, with the You are: Home / Away / Neutral picker
 - [x] Donut: how their batters get out; batting depth (8, 9) — ✓ Opponent preview · About them (each slice's count
       from the engine; a team without a run now has no share instead of 0%)
-- [ ] Team badges in the headings and tiles (section 6)
+- [x] Team badges in the headings and tiles (section 6) — ✓ Opponent preview: the head, India v Australia, each key
+      players tile, their records, How they play and danger men; country by country with each host's badge (names line
+      up, the bars too); checked with test badges, 0 layout problems at 1280 and 1920
 
 ## 3. Team record (Teams)
 
