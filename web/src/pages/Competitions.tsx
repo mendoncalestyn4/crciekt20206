@@ -6,7 +6,10 @@ import { useNavigate, useSearchParams } from "react-router";
 import { get, type CompPage, remember } from "../api";
 import { Explain, Logo, Missing, Tile } from "../kit/base";
 import { Bracket, OddsRace } from "../kit/comp";
+import { TvTable } from "../kit/blocks";
+import { Ladder } from "../kit/season";
 import { Grid } from "../kit/teams";
+import { f1, f2, overs } from "../format";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
 import { T } from "../shell/names";
@@ -19,22 +22,20 @@ export function Competitions() {
   const { career, noCareer, nation } = useShell();
   const [params] = useSearchParams();
   const go = useNavigate();
-  const [series, setSeries] = useState(0);
   const [cycle, setCycle] = useState("");
   const keep = nation ? `?nation=${encodeURIComponent(nation)}` : "";
   const want = { event: params.get("event") ?? "", season: params.get("season") ?? "", games: params.get("games") ?? "",
-    places: params.get("places") ?? "", extra: params.get("extra") ?? "", pick: params.get("pick") ?? "" };
+    places: params.get("places") ?? "", extra: params.get("extra") ?? "", pick: params.get("pick") ?? "", series: params.get("series") ?? "" };
   const qs = Object.entries(want).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
   const q = useQuery({ queryKey: ["competition", qs, career?.name], enabled: Boolean(career), retry: false,
     queryFn: () => get<CompPage>(`/api/competition?${qs}`) });
-  useReady(Boolean(q.data || q.error || noCareer), `${qs}|${series}|${cycle}`);
+  useReady(Boolean(q.data || q.error || noCareer), `${qs}|${cycle}`);
   const set = (changes: Record<string, string>) => {
     remember(changes);
     const next: Record<string, string> = { ...want, ...changes };
-    if ("event" in changes) Object.assign(next, { season: "", games: "", places: "", extra: "", pick: "" });
-    if ("season" in changes) Object.assign(next, { games: "", places: "", extra: "" });
+    if ("event" in changes) Object.assign(next, { season: "", games: "", places: "", extra: "", pick: "", series: "" });
+    if ("season" in changes) Object.assign(next, { games: "", places: "", extra: "", series: "" });
     if (nation) next.nation = nation;
-    setSeries(0);
     go(`/seasons?${new URLSearchParams(Object.entries(next).filter(([, v]) => v)).toString()}`);
   };
   const head = <Head title="Seasons" crumb="Competitions · tables, brackets and series" chips={SEASON_PAGES.map((p) => p.label)} on={0}
@@ -98,10 +99,26 @@ export function Competitions() {
             <Tile span={12} title="Series"><Grid t={d.series.table} />{d.series.table.note && <div className="note">{d.series.table.note}</div>}</Tile>
             <Tile span={12} title="One series, match by match">
               <div className="field"><label htmlFor="cp-series">Series</label>
-                <select id="cp-series" className="pick" value={series} onChange={(e) => setSeries(Number(e.target.value))}>
+                <select id="cp-series" className="pick" value={d.series_pick ?? 0} onChange={(e) => set({ series: e.target.value })}>
                   {d.series.each.map((s, i) => <option key={i} value={i}>{s.label}</option>)}</select></div>
-              {d.series.each[series] && <Grid t={d.series.each[series]!.matches} keep={keep} />}
+              {(() => { const e = d.series!.each[d.series_pick ?? 0], one = d.series_one, l = one?.ladder;
+                if (!e) return null;
+                return <>
+                  {l ? <><div className="glabel">The series score after each match{l.decider ? " · the decider marked" : ""}</div><Ladder s={l} team={one!.team} /></>
+                    : one?.missing.ladder ? <Missing why={one.missing.ladder} /> : null}
+                  <div className="glabel" style={{ marginTop: 16 }}>Every match</div><Grid t={e.matches} keep={keep} />
+                </>; })()}
             </Tile>
+            {d.series_one?.ladder && (() => { const one = d.series_one!, l = one.ladder!;
+              return <>
+                <Tile span={6} title="Most runs in the series">
+                  <TvTable rows={l.most_runs} mine={one.team} cols={[["Runs", (x) => x.runs], ["Inns", (x) => x.inns], ["HS", (x) => x.hs], ["SR", (x) => (x.balls ? f1((x.runs / x.balls) * 100) : "–")]]} /></Tile>
+                <Tile span={6} title="Most wickets in the series">
+                  <TvTable rows={l.most_wickets} mine={one.team} cols={[["Wkts", (x) => x.wickets], ["Runs", (x) => x.runs], ["Overs", (x) => overs(x.balls)], ["Econ", (x) => f2(x.economy)]]} /></Tile>
+              </>; })()}
+            {d.series_one?.missing.xi ? <Tile span={12} title="Team of the series"><Missing why={d.series_one.missing.xi} /></Tile>
+              : d.series_one?.xi && <Tile span={12} title={d.series_one.xi.title}>{d.series_one.xi.none ? <div className="plain">{d.series_one.xi.none}</div>
+                : <><Grid t={d.series_one.xi} keep={keep} />{d.series_one.xi.note && <div className="note">{d.series_one.xi.note}</div>}</>}</Tile>}
           </>}
           {m.wtc ? <Tile span={12} title="World Test Championship"><Missing why={m.wtc} /></Tile> : d.wtc && <Tile span={12} title="World Test Championship">
             <div className="field"><label htmlFor="cp-cycle">Cycle</label>

@@ -73,6 +73,17 @@ def page(career, q: dict, mine: list[str]) -> dict:
     key = ("competition", event, season)
     body = kept(career, key, lambda: _body(career, event, sval, ids))
     out.update(body)
+    each = (body.get("series") or {}).get("each") or []
+    if each:   # the one series picked, match by match: worked out only for it (a season can hold 20 series)
+        i = _int(q.get("series", ""), 0, len(each) - 1, 0)
+        e = each[i]
+        g = m[m.series_id == e["id"]]
+        sides = [g.home.iloc[0], g.away.iloc[0]]
+        wins = {t: int((g.winner == t).sum()) for t in sides}
+        # told from your side when you play in it, else from the side that won (or leads) it
+        side = next((t for t in mine if t in sides), None) or max(sides, key=lambda t: (wins[t], t == sides[0]))
+        out["series_pick"] = i
+        out["series_one"] = kept(career, ("series_one", e["id"], side), lambda: _series_one(career, dict(e, team=side)))
     if body.get("race_on"):
         out["race"] = _race(career, event, sval, q, mine)
     return SG.clean(out)
@@ -155,6 +166,7 @@ def _body(career, event, season, ids) -> dict:
             g = table([h for _, h in cols], rows, num={i for i, (c, _) in enumerate(cols) if c not in text})
             g["label"] = label if (len(leagues) > 1 or label not in ("League", "Every team")) else ""
             g["teams"] = list(t.team)
+            g["badges"] = [0]
             g["note"] = (rule + (LIMITED_NOTE if limited else "") + " Won batting 1st / chasing: wins out of games played "
                          "that way." + ("" if bilateral else " Last 5: newest on the right. RR: runs per over scored and "
                                         "conceded. Move: places gained (▲) or lost (▼) since the match day before the latest one."))
@@ -196,13 +208,15 @@ def _body(career, event, season, ids) -> dict:
                   [[f"{r.start:%d %b %Y}", r.teams, r.score, r.result, int(r.drawn), r.top_runs, r.top_wickets,
                     f"{pos.player[r.series_id]} ({pos.runs[r.series_id]} runs, {pos.wickets[r.series_id]} wkts)"
                     if r.series_id in pos.index else "–"] for r in ser.itertuples()], num={4})
+        t["badges"] = [1]
         t["note"] = ("Player of the Series: the most impact over the series (runs, plus each wicket worth the section's "
                      "runs per wicket).")
         each = []
         for r in ser.itertuples():
             g = m[m.match_id.isin(r.match_ids)].sort_values("date")
             h, a = g.home.iloc[0], g.away.iloc[0]
-            each.append(dict(label=f"{r.teams} · {r.score} · {r.result}", matches=table(
+            each.append(dict(label=f"{r.teams} · {r.score} · {r.result}", team=h, id=r.series_id, teams=r.teams,
+                             matches=table(
                 ["Match", "Date", h, a, "Result"],
                 [[(f"{int(n)}" + (f" of {int(o)}" if pd.notna(o) else "")) if pd.notna(n) else "", f"{d:%d %b %Y}",
                   _score(inn, i, h), _score(inn, i, a), res]
@@ -224,6 +238,7 @@ def _body(career, event, season, ids) -> dict:
                       [[r.team, int(r.series), int(r.played), int(r.won), int(r.lost), int(r.drawn), int(r.tied),
                         fmt(r.points, 0), fmt(r.available, 0), fmt(r.pct, 2)] for r in wt.itertuples()],
                       num={1, 2, 3, 4, 5, 6, 7, 8, 9})
+            t["badges"] = [0]
             t["heading"] = (f"Heading for the final: {wt.team.iloc[0]} ({wt.pct.iloc[0]:.1f}%) and {wt.team.iloc[1]} "
                             f"({wt.pct.iloc[1]:.1f}%).") if len(wt) >= 2 else ""
             tables[str(cyc)] = t
@@ -235,6 +250,26 @@ def _body(career, event, season, ids) -> dict:
                          "two-year cycles from June of an odd year; the top two meet in the final. Over-rate penalties "
                          "aren't on the scorecards, so they aren't taken off.")
     part("wtc", wtc)
+    return out
+
+
+def _series_one(career, e: dict) -> dict:
+    """One series in full: the ladder from one side's view (`team`), the most runs and wickets, and Team of the
+    series (for a series of 2 or more matches)."""
+    out, part = _parts()
+    part("ladder", lambda: SG.series_of(career, e["id"], e["team"]))
+    ids = list(career.matches[career.matches.series_id == e["id"]].match_id)
+    part("xi", lambda: _series_xi(SN.best_xi(career, ids), f"Team of the series · {e['teams']}") if len(ids) >= 2 else None)
+    out["team"] = e["team"]
+    return SG.clean(out)
+
+
+def _series_xi(xi, title) -> dict:
+    """Team of the series, picked as Season review's Team of the Season is (by role, from the numbers)."""
+    from .reviewpage import _xi
+    out = _xi(xi, title)
+    if not xi.empty:
+        out["badges"] = [3]
     return out
 
 
@@ -286,6 +321,7 @@ def _race(career, event, season, q, mine) -> dict:
                 gt = table(["Team", "Played", "Pts", "Left"] + (["Through", "Title"] if ko else ["Top"]) + ["Change"],
                            rows, num={1, 2, 3}, hi=[x == pick for x in g.team])
                 gt["label"] = str(grp) if now["groups"] > 1 else ""
+                gt["badges"] = [0]
                 res["groups"].append(gt)
             since = now.get("since")
             res["caption"] = ("Chances from playing the rest of the league season out 4,000 times. "

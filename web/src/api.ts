@@ -297,7 +297,8 @@ export type InboxItem = InboxMsg & { id: string; team: string; read: boolean };
 export type InboxPage = { teams: string[]; messages: InboxItem[]; unread: number };
 
 // ------------------------------------------------------------------ Teams (stage 2)
-export type GridT = { cols: string[]; rows: (string | number | null)[][]; num: number[]; hi: boolean[]; links: (string | null)[]; dim?: boolean[] };
+export type GridT = { cols: string[]; rows: (string | number | null)[][]; num: number[]; hi: boolean[]; links: (string | null)[]; dim?: boolean[];
+  badges?: number[] };   // badges: the columns that name teams ("India", or "India v Australia"), each shown with its badge
 export type Noted = { title?: string; right?: string; note?: string; none?: string };
 export type NGrid = GridT & Noted;
 export type SignedBar = { label: string; value: number; text: string; note?: string };
@@ -417,7 +418,9 @@ export type CompPage = { choices: { event: string; matches: number; seasons: str
   missing?: Record<string, string>; bilateral?: boolean; race_on?: boolean;
   league?: { title: string; groups: CompGrid[]; note: string } | null;
   knockouts?: { rounds: { round: string; cards: KoCard[] }[]; champion: string } | null;
-  series?: { table: CompGrid; each: { label: string; matches: GridT }[] } | null;
+  series?: { table: CompGrid; each: { label: string; team: string; id: string; teams: string; matches: GridT }[] } | null;
+  series_pick?: number;
+  series_one?: { missing: Record<string, string>; team: string; ladder?: Series | null; xi?: (NGrid & { title: string }) | null } | null;
   wtc?: { cycles: { key: string; label: string }[]; cycle: string; tables: Record<string, CompGrid>; note: string } | null;
   race?: { missing: Record<string, string>; race?: CompRace | null } };
 

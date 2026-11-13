@@ -209,3 +209,19 @@ def series_table(career, ids) -> pd.DataFrame:
                          match_ids=list(g.match_id)))
     return pd.DataFrame(rows, columns=["series_id", "start", "teams", "score", "played", "length", "drawn", "result",
                                        "top_runs", "top_wickets", "match_ids"]).sort_values("start", ascending=False)
+
+
+def series_leaders(career, ids, n: int = 6) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """The most runs and the most wickets in one series (its matches): (batters: player, team, runs, balls, inns,
+    outs, hs, most runs first, fewer balls first among equals; bowlers: player, team, wickets, runs, balls, economy,
+    most wickets first, fewer runs first among equals)."""
+    b = career.batting[career.batting.match_id.isin(ids) & career.batting.did_bat]
+    sb = b.groupby(["player", "team"]).agg(runs=("runs", "sum"), balls=("balls", "sum"), inns=("runs", "size"),
+                                           outs=("out", "sum"), hs=("runs", "max")).reset_index()
+    sb = sb.sort_values(["runs", "balls", "player"], ascending=[False, True, True]).head(n).reset_index(drop=True)
+    w = career.bowling[career.bowling.match_id.isin(ids) & (career.bowling.balls > 0)]
+    sw = w.groupby(["player", "team"]).agg(wickets=("wickets", "sum"), runs=("runs", "sum"),
+                                           balls=("balls", "sum")).reset_index()
+    sw = sw.assign(economy=sw.runs / sw.balls * 6)
+    sw = sw.sort_values(["wickets", "runs", "player"], ascending=[False, True, True]).head(n).reset_index(drop=True)
+    return sb, sw

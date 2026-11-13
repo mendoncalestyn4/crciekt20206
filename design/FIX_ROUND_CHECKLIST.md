@@ -93,10 +93,15 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
 
 ## 5. Competitions
 
-- [ ] Every team's badge in every table that lists teams: league tables, title race, series (6; section 6)
-- [ ] "Most runs / Most wickets in the series" tables on each series (7)
-- [ ] The series scoreboard ladder (the score after every match, the decider marked) on "match by match" (4, 8)
-- [ ] **Team of the series** for every series of 2 or more matches (28)
+- [x] Every team's badge in every table that lists teams: league tables, title race, series (6; section 6) — ✓
+      Competitions: the league tables, title race, series list, WTC table, knockout bracket and Team of the series (any
+      table can now mark its team columns; names line up whether or not a team has a badge)
+- [x] "Most runs / Most wickets in the series" tables on each series (7) — ✓ Competitions · one series (the sums
+      moved into the engine, `ccstats/tables.py`); checked against the scorecards for every series
+- [x] The series scoreboard ladder (the score after every match, the decider marked) on "match by match" (4, 8) — ✓ Competitions · one series, from your side when you play
+      in it, else the winner's; every score checked
+- [x] **Team of the series** for every series of 2 or more matches (28) — ✓ Competitions · one series, picked as Team of
+      the Season is; each series worked out only when picked (a season's 23 ODI series opened in 12 s before)
 
 ## 6. Season
 

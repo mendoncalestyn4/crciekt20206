@@ -621,3 +621,8 @@ table.c th.sortable { cursor: pointer; user-select: none; } table.c th.sortable.
 .last5 { display: flex; gap: 6px; flex-wrap: wrap; } .last5 a { display: flex; flex-direction: column; align-items: center;
   min-width: 54px; padding: 6px 4px; border: 1px solid var(--edge); border-radius: 8px; }
 .last5 b { font-variant-numeric: tabular-nums; } .last5 small { color: var(--dim); font-size: 11px; }
+
+/* a team's name with its badge in a table cell */
+.badged { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; } .badged > span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.badged .slot { display: inline-flex; width: 22px; height: 22px; flex: none; }
+.badged .vs { font-style: normal; color: var(--dim); margin: 0 2px; } .badged img.lg { flex: none; }

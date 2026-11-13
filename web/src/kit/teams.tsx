@@ -5,6 +5,8 @@ import { Link } from "react-router";
 import type { Dot, GridT, RaceLine, SignedBar, TapeRow, TeamBarRow } from "../api";
 import { ab, fx } from "../format";
 import { T } from "../shell/names";
+import { Logo } from "./base";
+import { useShell } from "../shell/Shell";
 import { useTheme } from "../theme";
 import { alpha } from "./charts";
 import { EChart, type Option } from "./EChart";
@@ -12,14 +14,25 @@ import { look, ts } from "./look";
 
 /** A table as the server sends it: numbers right-aligned, the picked team's rows lit, the first column opening the
  * match when the row is one. */
+/** A team's name with its badge (only teams that have one), or "India v Australia" with both. */
+export function Badged({ text, slot = false }: { text: string; slot?: boolean }) {
+  const sides = text.split(" v ");
+  // `slot`: some names in this table have a badge, so every name keeps the badge's room and they line up
+  return <span className="badged">{sides.map((x, i) => <span key={i}>{i > 0 && <i className="vs">v</i>}
+    {slot ? <span className="slot"><Logo team={x} size={22} /></span> : <Logo team={x} size={22} />}<T>{x}</T></span>)}</span>;
+}
+
 export function Grid({ t, keep = "" }: { t: GridT; keep?: string }) {
-  const num = new Set(t.num);
+  const num = new Set(t.num), badge = new Set(t.badges ?? []);
+  const { logos } = useShell();
+  const slot = badge.size > 0 && t.rows.some((r) => [...badge].some((j) => String(r[j] ?? "").split(" v ").some((x) => logos.teams.has(x))));
   return (
     <div className="scrollx"><table className="c"><thead><tr>{t.cols.map((c, i) => <th key={i} className={num.has(i) ? "r" : ""}>{c}</th>)}</tr></thead>
       <tbody>{t.rows.map((r, i) => (
         <tr key={i} className={t.hi[i] ? "me" : t.dim?.[i] ? "dimrow" : ""}>{r.map((v, j) => {
           const text = v == null ? "–" : String(v);
           const link = j === 0 && t.links[i];
+          if (badge.has(j) && v != null) return <td key={j}><Badged text={text} slot={slot} /></td>;
           return <td key={j} className={num.has(j) ? "r" : ""}>{num.has(j) ? <span className="tn">{text}</span>
             : link ? <Link className="lk" to={`/matches/${link}${keep}`}>{text}</Link> : <span className="why"><T>{text}</T></span>}</td>;
         })}</tr>))}</tbody></table></div>

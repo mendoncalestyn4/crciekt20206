@@ -12,6 +12,7 @@ import math
 import numpy as np
 import pandas as pd
 
+from ccstats import tables as TB
 from ccstats import matchstory as MS
 from ccstats import myteam as MT
 from ccstats import partnerships as PT
@@ -104,6 +105,8 @@ def results(career, team: str, ids=None) -> list[dict]:
         except AttributeError:
             pass
     if team not in kept:
+        if ids is not None:   # only some matches wanted (a series): work out just those, and keep nothing partial
+            return _results(career, team, set(ids))
         kept[team] = _results(career, team)
     rows = kept[team]
     if ids is None:
@@ -112,9 +115,11 @@ def results(career, team: str, ids=None) -> list[dict]:
     return [r for r in rows if r["id"] in wanted]
 
 
-def _results(career, team: str) -> list[dict]:
+def _results(career, team: str, only: set | None = None) -> list[dict]:
     m = career.matches
     g = m[(m.home == team) | (m.away == team)]
+    if only is not None:
+        g = g[g.match_id.isin(only)]
     inns = {k: list(x.itertuples()) for k, x in career.innings[career.innings.match_id.isin(g.match_id)]
             .sort_values("innings_no").groupby("match_id")}
     out = []
@@ -253,17 +258,16 @@ def series(career, team: str) -> dict:
     g = m[((m.home == team) | (m.away == team)) & (m.series_id != "")].sort_values(["date", "match_id"])
     if g.empty:
         raise ValueError("The team hasn't played a series yet.")
-    sid = g.series_id.iloc[-1]
+    return series_of(career, g.series_id.iloc[-1], team)
+
+
+def series_of(career, sid: str, team: str) -> dict:
+    """One bilateral series from `team`'s side: its story, every match in played order with the series score after
+    each (the ladder), whether the last match was a decider, and the most runs and wickets in it."""
+    m = career.matches
     ids = list(m[m.series_id == sid].match_id)
     story = MS.series_story(career, ids, team)
-    b = career.batting[career.batting.match_id.isin(ids) & career.batting.did_bat]
-    sb = b.groupby(["player", "team"]).agg(runs=("runs", "sum"), balls=("balls", "sum"), inns=("runs", "size"),
-                                           outs=("out", "sum"), hs=("runs", "max")).reset_index()
-    sb = sb.sort_values(["runs", "balls"], ascending=[False, True])
-    w = career.bowling[career.bowling.match_id.isin(ids) & (career.bowling.balls > 0)]
-    sw = w.groupby(["player", "team"]).agg(wickets=("wickets", "sum"), runs=("runs", "sum"),
-                                           balls=("balls", "sum")).reset_index()
-    sw = sw.assign(economy=sw.runs / sw.balls * 6).sort_values(["wickets", "runs"], ascending=[False, True])
+    sb, sw = TB.series_leaders(career, ids)
     played = in_played_order(career, results(career, team, ids))
     won = lost = 0
     progress = []
@@ -273,10 +277,10 @@ def series(career, team: str) -> dict:
     last = played[-1]
     before = progress[-2] if len(progress) > 1 else None
     decider = bool(before and before["won"] == before["lost"] and last["of"] and last["no"] == last["of"])
-    return dict(id=sid, section=g.section.iloc[-1], opp=story["opponent"], story=story,
+    return dict(id=sid, section=m[m.series_id == sid].section.iloc[0], opp=story["opponent"], story=story,
                 matches=played, progress=progress, decider=decider,
-                most_runs=rows(sb.head(6), ["player", "team", "runs", "balls", "inns", "outs", "hs"]),
-                most_wickets=rows(sw.head(6), ["player", "team", "wickets", "runs", "balls", "economy"]))
+                most_runs=rows(sb, ["player", "team", "runs", "balls", "inns", "outs", "hs"]),
+                most_wickets=rows(sw, ["player", "team", "wickets", "runs", "balls", "economy"]))
 
 
 def season_start(d) -> int:

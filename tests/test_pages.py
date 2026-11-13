@@ -1005,3 +1005,49 @@ def test_player_page_match_winners_countries_big_games_and_bounce_back(every):
             assert bool(x["big"].get("rows")) == (not bm.empty)
             done += 1
     assert done >= 40
+
+
+def test_competitions_series_ladder_leaders_team_of_the_series_and_badges(every):
+    """Competitions · one series: the ladder (the series score after each match, from the first-named side), the
+    most runs and wickets (counted again from the scorecards) and Team of the series for 2 or more matches; every
+    league, title race, series and WTC table marks its team column for badges."""
+    c = every.app.state.site.career()
+    m = c.matches
+    seen = 0
+    for ch in every.json("/api/competition")["choices"]:
+        for season in ch["seasons"]:
+            d = every.json(f"/api/competition?event={ch['event']}&season={season}")
+            for g in (d.get("league") or {}).get("groups", []):
+                assert g["badges"] == [0]
+            if d.get("series"):
+                assert d["series"]["table"]["badges"] == [1]
+            for g in ((d.get("race") or {}).get("race") or {}).get("groups", []):
+                assert g["badges"] == [0]
+            for i, e in enumerate((d.get("series") or {}).get("each", [])):
+                x = every.json(f"/api/competition?event={ch['event']}&season={season}&series={i}")
+                one = x["series_one"]
+                assert x["series_pick"] == i and one["missing"] == {}, one["missing"]
+                ids = list(m[m.series_id == e["id"]].sort_values("date").match_id)
+                lad = one["ladder"]
+                assert sorted(r["id"] for r in lad["matches"]) == sorted(ids)
+                side = one["team"]       # your side if you play in it, else the side that won it
+                g = m[m.series_id == e["id"]]
+                assert side in (g.home.iloc[0], g.away.iloc[0])
+                mine = every.app.state.site.my_teams(c)
+                if not any(t in (g.home.iloc[0], g.away.iloc[0]) for t in mine):
+                    assert (g.winner == side).sum() >= (g.winner == ({g.home.iloc[0], g.away.iloc[0]} - {side}).pop()).sum()
+                w = l = 0
+                for r, p in zip(lad["matches"], lad["progress"]):
+                    win = m.set_index("match_id").winner[r["id"]]
+                    w, l = w + (win == side), l + (win not in ("", side))
+                    assert (p["won"], p["lost"]) == (w, l)
+                b = c.batting[c.batting.match_id.isin(ids) & c.batting.did_bat].groupby(["player", "team"]).runs.sum()
+                assert [x_["runs"] for x_ in lad["most_runs"]] == sorted(b, reverse=True)[:len(lad["most_runs"])]
+                wk = c.bowling[c.bowling.match_id.isin(ids) & (c.bowling.balls > 0)].groupby(["player", "team"]).wickets.sum()
+                assert [x_["wickets"] for x_ in lad["most_wickets"]] == sorted(wk, reverse=True)[:len(lad["most_wickets"])]
+                assert (one.get("xi") is not None) == (len(ids) >= 2)
+                if one.get("xi") and not one["xi"].get("none"):
+                    xi_players = {r[2] for r in one["xi"]["rows"]}
+                    assert xi_players <= set(c.batting[c.batting.match_id.isin(ids)].player)
+                seen += 1
+    assert seen >= 3

@@ -140,8 +140,9 @@ export function PlayerView() {
         {d.winners ? <Tile span={12} title="Match-winners" right="player of the match in a win, and what they did">
           {d.winners.players.length ? <MatchWinners w={d.winners} /> : null}<div className="note">{d.winners.line}</div></Tile>
           : d.missing.winners ? <Tile span={12} title="Match-winners"><Missing why={d.missing.winners} /></Tile> : null}
-        <Tile span={7} title={`🏟️ ${d.countries?.nation === false ? "Ground by ground" : "Country by country"}`} right={`${fmtOf(d.section)} · every season · neutral grounds on their own`}>
-          {d.countries ? <Grid t={d.countries} /> : d.missing.countries ? <Missing why={d.missing.countries} /> : <div className="plain">No games here yet.</div>}</Tile>
+        <Tile span={7} title={`🏟️ ${d.countries?.nation === false ? "Ground by ground" : "Country by country"}`} right={`${fmtOf(d.section)} · every season`}>
+          {d.countries ? <Grid t={d.countries} /> : d.missing.countries ? <Missing why={d.missing.countries} /> : <div className="plain">No games here yet.</div>}
+          <div className="note">{d.countries?.nation === false ? "By the home side's ground" : "By the home side's country"} (the scorecards don't name the ground); neutral grounds are a row of their own.</div></Tile>
         <Tile span={5} title="🔥 Big-match player" right="knockouts and series deciders">
           {d.big ? (d.big.none ? <div className="plain">{d.big.none}</div> : d.big.rows!.map((r) => (
             <div key={r.team}><table className="c"><thead><tr><th></th><th className="r">Big games ({r.big})</th><th className="r">Otherwise ({r.ordinary})</th></tr></thead>

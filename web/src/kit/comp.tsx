@@ -2,6 +2,7 @@
 // bracket (a column a round, a card a match, the side that went through lit).
 import { useMemo } from "react";
 import { Link } from "react-router";
+import { Logo } from "./base";
 import type { KoCard, OddsLine } from "../api";
 import { ab } from "../format";
 import { useTheme } from "../theme";
@@ -51,7 +52,7 @@ export function Bracket({ rounds, keep }: { rounds: { round: string; cards: KoCa
         <div className="ko-cards">{r.cards.map((c) => (
           <Link key={c.id} className="ko-card" to={`/matches/${c.id}${keep}`}>
             <div className="ko-date">{c.date}</div>
-            {c.teams.map((x) => <div key={x.team} className={`ko-team${x.won ? " win" : ""}`}><span>{x.team}</span><b>{x.score}</b></div>)}
+            {c.teams.map((x) => <div key={x.team} className={`ko-team${x.won ? " win" : ""}`}><span className="row2" style={{ gap: 6 }}><Logo team={x.team} size={20} />{x.team}</span><b>{x.score}</b></div>)}
             <div className="ko-res">{c.result}</div>
           </Link>))}</div>
       </div>))}</div>
