@@ -507,11 +507,15 @@ or a choice in Settings, is asked before it's built; checked at every screen wid
   and compared line by line with the original, with an alarm for anything unfamiliar and every rare dismissal tested;
   shortened names matched to exactly one player or flagged; a browser test that every number on screen equals the
   site's own figure; one name, unit and meaning per stat everywhere ("–" doesn't apply, 0 is zero).
-  **New matches in batches (your question, 14 November: "20-30 new matches at once"):** the site waits until the
-  game has finished writing a batch, then takes it in one go (never redoing everything once per match), redoes only
-  the competitions, players and teams those matches touch, and keeps pages usable meanwhile ("updating…", then the new
-  numbers by themselves). Expected: a few seconds to under a minute for 20-30 matches. Tested in the speed work with
-  batches of 1, 10 and 30 of your matches: identical to a full redo from scratch, and timed.
+  **New matches the moment they land (your decision, 14 November: "as soon as the match hits the folder I want it
+  inside the site, not wait for batches"):** the folder is watched live (not every 20 seconds), so a new scorecard is
+  picked up within a second or two; the match itself appears at once (about 1 s: its scorecard and summary, the
+  result in your season and on My team, the inbox message, the alert); the deeper numbers it affects (totals, ratings,
+  records, charts) follow within seconds in the background. When many arrive together each still appears as soon as
+  it's read, and the deeper update never waits for a batch to end: it takes in every match that has landed by the time
+  it runs, so no work is done 30 times over. Pages stay usable ("updating…", then the new numbers by themselves).
+  Tested in the speed work with 1, 10 and 30 of your matches dropped in: each visible within seconds, the final
+  numbers identical to a full redo from scratch, all timed.
   **When something doesn't fit (your question, 14 November): never guess, never hide, keep everything else
   working.** While building: a failed check blocks the change, the cause is fixed at the root and becomes a test. On
   your PC: a scorecard that doesn't read back exactly keeps what was read for certain, loses its ✓, shows "⚠ something
