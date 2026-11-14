@@ -437,6 +437,15 @@ every share of the team counted on runs off the bat (section 14) | 5–6 days |
 - **Big careers:** the slow sums (every match's excitement rating, the ratings, the records) are worked out once in
   the background when a career is opened or new matches arrive, and kept on disk, so a page on your 1,544-match save
   opens in under a second once that's done.
+  **Not built yet; you asked for it on 14 November** ("I want everything built before so it's all instant"), after
+  trying the preview on your PC and finding every page very slow. Measured here on your 2032 save from a fresh start:
+  My team 17 seconds and Season review 18 seconds the first time, 0.04 seconds the second; closing the site forgot
+  everything, so every start was slow again. **Your answers:** built **right after the fix round** (before stage 3);
+  the first time a career is opened (or after an update) **the site can be used meanwhile**: My team and your players
+  are prepared first, a small progress bar shows how far it is, and a page not ready yet says "Getting this ready…"
+  and fills in by itself. Everything worked out is kept on disk, so every later start is instant, and a new match
+  redoes only what it changes. Goal: every page and option under a second after that one-time preparation, checked on
+  your biggest save and on your PC.
 
 ---
 
