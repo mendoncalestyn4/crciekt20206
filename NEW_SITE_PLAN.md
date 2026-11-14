@@ -468,6 +468,12 @@ or a choice in Settings, is asked before it's built; checked at every screen wid
   the processor; the site starting in a second or two (a ready-to-read copy of the careers on disk); a page fetched as
   you point at its link, and each page loading only its own part of the website. Not picked: the shorter install list
   (the first install stays as it is for now).
+  **More, also picked by you (14 November):** a page shows at once with the last numbers your browser kept and
+  updates quietly a moment later if anything changed, and the pages you usually open next are prepared while you
+  read; logo pictures made once and kept (on disk and by the browser); long lists draw only the rows on screen;
+  a quicker-to-read copy of the career (made by Python itself, nothing new to install) for a near-instant start;
+  pages sent squeezed; and a speed guard in the tests: any page over a second on a big test career fails, so the
+  site can't quietly get slow again.
 
 **Bug found by you (14 November, trying the preview): scouting advice "Replace T Head with A Sharma".** The scorecards
 print only initials and surname, so "A Sharma" is several men in your save (an Indian international, a Victoria
