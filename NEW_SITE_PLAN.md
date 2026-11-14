@@ -544,6 +544,10 @@ speed work, and stage 4 for Data check).
 first, that opens the preview on your new scorecards with a single double-click (its own career folder, nothing old
 mixed in, no career to pick); with it, the short list of what to try on your PC.
 
+**No blue highlight on double-click (your request, 14 November):** double- or triple-clicking anywhere on the site
+(names, numbers, tiles, buttons, tabs, menus) never selects text; dragging across text still selects it, so a name or
+number can still be copied. Done in the fix round, checked in the browser test.
+
 **Competition order, your rule (14 November, "always"):** everywhere competitions are listed (tables such as the
 Player page's "every competition", pickers, buttons, chips, search), **Tests, ODIs, T20Is always come first**, in that
 order; then the **franchise leagues** (IPL, Big Bash, The Hundred...), then the **domestic** competitions (Sheffield
