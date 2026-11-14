@@ -452,6 +452,16 @@ every share of the team counted on runs off the bat (section 14) | 5–6 days |
   you point at its link, and each page loading only its own part of the website. Not picked: the shorter install list
   (the first install stays as it is for now).
 
+**Bug found by you (14 November, trying the preview): scouting advice "Replace T Head with A Sharma".** The scorecards
+print only initials and surname, so "A Sharma" is several men in your save (an Indian international, a Victoria
+player, others). Scouting rightly took the Victoria man as Australian (Australian domestic sides take no overseas
+players), but then counted every "A Sharma" game in the Big Bash as his, though those runs may be the Indian's
+(franchise sides take overseas players). The advice named a possibly wrong man with two men's numbers mixed. To be
+fixed **in the fix round**, first thing after your "go" (your choice), with a test that a shared name's franchise
+games are never counted for the wrong country. How exactly (asked, not answered yet): 1) count only the games that are
+surely that country's man and suggest him only if that's enough, marked "shared name" (my suggestion), or 2) never
+suggest a shared name.
+
 ---
 
 ## 11. Risks, and what we do about each
