@@ -399,7 +399,9 @@ Each stage ends with the same steps:
 every share of the team counted on runs off the bat (section 14) | 5–6 days |
 | **4. Fixtures and tools** | Fixtures (all 8 tabs, the biggest page), careers and uploads, backups, Data check, the first-start question, live alerts | 4–5 days |
 | **5. Final checks and switch-over** | Full test runs, stress tests (including the three logo stress tests), a new-user install test from the zip, speed checks, and screenshots of every page and tab. Then the new site becomes `Start Stats Pack.bat`, the old site (Streamlit) is deleted completely with no backup launcher (your choice, 31 October), and the README is rewritten. | 3–4 days |
-| **6. A note for every section (added 31 October; done last, after stage 5)** | Every section on every page gets a plain note saying what it is and how to read it, every column and number included, so each one is understood well (the innings-by-innings tile's sections too). Not before stage 6. (Player art behind the pages was tried as mock-ups on 6 and 7 November and dropped on 12 November, your choice: no players in the background.) | to size then |
+| **6. A note for every section (added 31 October; done last, after stage 5)** | Every section on every page gets a plain note saying what it is and how to read it, every column and number included, so each one is understood well (the innings-by-innings tile's sections too). **Also (added 14 November, your request after trying the preview on your PC): everything smaller** (the fonts,
+the numbers, the tiles, the gaps) so more fits on the screen at once. How much smaller, and whether it's one setting
+or a choice in Settings, is asked before it's built; checked at every screen width so nothing gets cut off. Not before stage 6. (Player art behind the pages was tried as mock-ups on 6 and 7 November and dropped on 12 November, your choice: no players in the background.) | to size then |
 
 **Total:** about 4 weeks of work (3½ to 5), plus the time you take to approve each stage. After stage 1 you can already use the new Home, Player and Match pages next to the old site.
 
