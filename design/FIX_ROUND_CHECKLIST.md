@@ -237,6 +237,16 @@ Accuracy and keeping it right:
 - [ ] Impossible-value guard; a match saved twice counted once; a "checked ✓" mark on each match
 - [ ] Every change tested automatically on Windows with Python 3.14.7 and pandas 3.1
 
+Zero errors (your approval, 14 November):
+- [ ] Every error found, by my checks or by you in the preview, fixed at its root (never patched over), each with a
+      test that recreates it so it can't come back
+- [ ] The full sweep at the end of this round and of every stage: every page and option on your scorecards (each
+      problem and each page over 20 seconds written down the moment it's found, each server's error log read at the
+      end), junk and load, the browser at every width in dark and light, every number checked another way; a round
+      or stage isn't finished while anything fails
+- [ ] Every change tested automatically on Windows with your Python and pandas; the self-checks on every new match keep
+      running in the finished site
+
 At the end:
 - [ ] One clean package for your PC that opens on your new scorecards with one double-click, with what to try
 - [ ] One screenshot of each new or reworked thing
