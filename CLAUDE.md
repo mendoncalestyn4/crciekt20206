@@ -51,6 +51,8 @@ Read these at the start of every session. They come from the owner and hold unti
   31 October).
 - Desktop only. Every feature must work for every team and competition: national, franchise and domestic.
 - Formats are never mixed: Tests, ODIs and T20Is apart; each domestic competition on its own.
+- Different printed names are never merged automatically (14 November: "they could be different people"); only the
+  owner's own choice on the Data check page joins two names.
 - Competition order everywhere (14 November, "always"): Tests, ODIs, T20Is first, then franchise leagues, then
   domestic competitions; most matches first within each group.
 - The plan, stages and approvals: `NEW_SITE_PLAN.md`.

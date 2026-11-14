@@ -273,6 +273,10 @@ It is a **hard gate**:
 
 **Your own fixes and notes**
 - [ ] Data check: merge two names, split one name, credit a catch. Manual only: nothing changes until you confirm.
+  **Your rule (14 November): different printed names are never merged** ("they could be different people"):
+  N Kumar Reddy and N Reddy stay two players with their own numbers. The site never joins names by itself, on
+  either site; only your own click on the Data check page can, and a pair that played in the same match can never
+  be joined. A test checks that no name is ever joined without your saved choice.
 - [ ] Notes on matches and series, goals, and schedule edits with undo.
 
 **Charts and tables**
