@@ -428,6 +428,14 @@ or a choice in Settings, is asked before it's built; checked at every screen wid
 
 ## 9. How every page gets built (the same recipe each time)
 
+**Added 14 November (your picks), for stages 3 to 6, to go faster while finding errors as well as before:**
+helper copies build independent pages side by side, each checked and combined by me (pages sharing parts are built
+one after another); every page's checks are written before it's built (its nothing-lost lines, its parity test
+against the old site, its numbers counted another way) and it's built until they pass; every new page and option
+joins the full sweeps as it's built, so the stage-end sweep runs side by side with no extra setup; and every page gets
+a self-review with cricket sense on your scorecards before you see it (misleading figures, wrong emphasis such as a
+bowler's page leading with batting, match versus innings figures, odd layout).
+
 1. **List what the old page shows:** that page's part of `design/INVENTORY.md` (every number, table, chart, option, help text and explanation, from the code and from the live page). This is the checklist for that page.
 2. **The server answers with exactly those numbers,** straight from the engine. The website never does its own cricket maths.
 3. **A parity test proves the numbers match.** For the same career, the new server's numbers must equal the old site's numbers, so nothing can change by accident.
