@@ -236,6 +236,10 @@ Accuracy and keeping it right:
 - [ ] About ten hand-worked matches and an odd-cases library locked into tests
 - [ ] Impossible-value guard; a match saved twice counted once; a "checked ✓" mark on each match
 - [ ] Every change tested automatically on Windows with Python 3.14.7 and pandas 3.1
+- [ ] Reliability (your picks, 14 November): a second, separate counter for every main figure (runs, wickets,
+      averages, strike rates, economy, records), compared after every change; "how it's worked out" on every number
+      (point at it: "845 runs ÷ 21 dismissals in 23 innings = 40.2"); the same "few games: treat with care" note on
+      every figure resting on very few games
 
 Zero errors (your approval, 14 November):
 - [ ] Every error found, by my checks or by you in the preview, fixed at its root (never patched over), each with a
