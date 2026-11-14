@@ -69,6 +69,22 @@ class Scope:
         return pd.Index(m.match_id)
 
 
+def counts_fielding(career) -> bool:
+    """Whether catches and stumpings count in this career's figures. The new site leaves fielding out of everything
+    (your decision of 14 November: nothing shown, and nothing counted in marks, impact or MVP points); it marks the
+    careers it opens with count_fielding = False. The old site counts them as before."""
+    return bool(getattr(career, "count_fielding", True))
+
+
+def fielding_credits(career, ids) -> pd.DataFrame:
+    """The catches and stumpings credited to a player in these matches, for figures that count them: none when the
+    career doesn't count fielding (see counts_fielding). Who keeps wicket is still read from the stumpings
+    themselves, quietly."""
+    f = career.fielding
+    f = f[f.match_id.isin(ids) & f.resolved]
+    return f if counts_fielding(career) else f.iloc[:0]
+
+
 def venue_of(rows: pd.DataFrame, matches: pd.DataFrame) -> pd.Series:
     """home / away / neutral for each row (batting, bowling or fielding), from that row's team."""
     info = matches.set_index("match_id")[["home", "neutral"]]

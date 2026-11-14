@@ -97,7 +97,7 @@ export function MyTeam() {
           <Tile span={8} title={`After the series · marks out of 10`} right={d.report.label}>
             <MarksTable r={d.report} keep={keep} />
             <div className="note">Each match is measured against the match itself: a batter's runs as a share of their side's runs and of the average side's,
-              a bowler's wickets as a share of the wickets their side took, speed and economy in white-ball cricket, a quarter of a wicket a catch. A
+              a bowler's wickets as a share of the wickets their side took, speed and economy in white-ball cricket (no fielding is counted). A
               lone hundred counts for about twice one of three. The mark is where that series ranks among every player's series in {d.report.among} in
               this career: 5–6 usual, 8 the best one in seven, 10 the best one in forty. Batters are marked against batters, bowlers against bowlers.</div>
           </Tile>
@@ -191,7 +191,7 @@ export function MyTeam() {
             : <div className="note">Nobody close to a milestone or a record right now.</div>}</Tile>
           <Tile span={6} title="Rivals at a glance" right="most-played opponents here">
             {b.rivals?.rows.length ? <table className="c"><thead><tr><th>Opponent</th><th className="r">Played</th><th className="r">Record</th><th className="r">Win %</th></tr></thead>
-              <tbody>{b.rivals.rows.map((r) => <tr key={r.opponent}><td><span className="cell"><Logo team={r.opponent} size={30} /><Name p={`${r.favourite ? "⭐ " : r.bogey ? "👻 " : ""}${r.opponent}`} px={21} /></span></td>
+              <tbody>{b.rivals.rows.map((r) => <tr key={r.opponent}><td><span className="cell"><Logo team={r.opponent} size={40} /><Name p={`${r.favourite ? "⭐ " : r.bogey ? "👻 " : ""}${r.opponent}`} px={21} /></span></td>
                 <td className="r"><span className="tn dimn">{r.played}</span></td><td className="r"><span className="tn">{r.record}</span></td><td className="r"><span className="tn dimn">{r.win_pct}</span></td></tr>)}</tbody></table>
               : <Missing why="No opponents here yet." />}
             {b.rivals && b.rivals.next.length > 0 && <div className="field"><label htmlFor="mt-next">Next opponent</label>

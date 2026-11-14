@@ -25,6 +25,7 @@ from ccstats import seasonal as SN
 from ccstats import teamplay as TP
 from ccstats import winprob as WP
 from ccstats.competitions import shown_name, with_stage
+from ccstats.competitions import ordered as in_order, section_rank
 
 from . import styleguide as SG
 from .cache import aim_fits, kept
@@ -332,8 +333,8 @@ def page(career, team: str, section: str, mine: list[str], notes: dict, sched: l
         out["missing"]["everything"] = (f"No matches for {team} yet: this page fills in after their first game. Add their "
                                         "schedule on Fixtures meanwhile, and the next match shows up here.")
         return out
-    section = section if section in secs else secs[0]
-    out.update(sections=secs, section=section)
+    section = section if section in secs else secs[0]   # opens on the competition played last
+    out.update(sections=in_order(career.matches, secs), section=section)   # listed in the agreed order
 
     def piece(name, fn):
         try:
@@ -358,7 +359,7 @@ def page(career, team: str, section: str, mine: list[str], notes: dict, sched: l
     piece("tug", lambda: _tug(career, rs, team))
     piece("venues", lambda: SG.venues(rs, team))
     piece("winners", lambda: SG.match_winners(rs, team))
-    piece("scores", lambda: SG.scores(rs, team, "This season"))
+    piece("scores", lambda: SG.scores(rs, team, "This season", section_rank(career.matches)))
     piece("history", lambda: SG.rows(MT.history(career, team), ["season", "section", "played", "won", "lost", "drawn",
                                                                 "tied", "no_result", "win_pct", "finish"]))
 
@@ -382,7 +383,7 @@ def scouting(career, team: str) -> dict:
     mine = marks[marks.team == team]
     mine = mine.assign(section=mine.best_match.map(career.matches.set_index("match_id").section))
     out = []
-    for sec in MT.sections_of(career, team):
+    for sec in in_order(career.matches, MT.sections_of(career, team)):   # the agreed order
         done = mine[mine.section == sec].sort_values("end")
         row = dict(section=sec, series=done.label.iloc[-1] if len(done) else "", advice=[], none="")
         if done.empty:

@@ -24,6 +24,13 @@ import { StyleGuide } from "./pages/StyleGuide";
 import { Shell } from "./shell/Shell";
 import { watchForProblems } from "./problems";
 
+// Double- or triple-clicking anywhere never selects text (your request of 14 November: no blue highlight); dragging
+// across text still selects it, so a name or a number can still be copied, and typing boxes work as usual.
+document.addEventListener("mousedown", (e) => {
+  const el = e.target as HTMLElement | null;
+  if (e.detail > 1 && !el?.closest("input, textarea, select, [contenteditable]")) e.preventDefault();
+}, true);
+
 const queries = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000, refetchOnWindowFocus: false } } });
 watchForProblems(queries);
 

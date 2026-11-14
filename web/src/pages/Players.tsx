@@ -48,7 +48,7 @@ export function PlayersHome() {
             placeholder="Type a name or a team, e.g. S Gill" aria-label="Find a player" /></div>
           {typed && <div className="plist">{hits.slice(0, SHOWN).map((p) => (
             <Link key={p.player} className="pli" to={`/players/${encodeURIComponent(p.player)}${keep}`}>
-              <Logo team={p.team} size={30} /><Name p={p.player} px={22} />
+              <span className="cslot">{/* always there, so the name keeps its own column when a team has no logo */}<Logo team={p.team} size={40} /></span><Name p={p.player} px={22} />
               <span className="how">{p.teams.join(" · ")}</span><span className="how">{plural(p.matches, "match", "matches")} · {p.sections.slice(0, 3).map(fmtOf).join(", ")}</span></Link>))}
             {!hits.length && <div className="empty">Nobody fits "{typed}".</div>}
             {hits.length > SHOWN && <div className="note">and {hits.length - SHOWN} more: type more of the name.</div>}</div>}
@@ -91,105 +91,97 @@ export function PlayerView() {
     <Link className="btn quiet" to={`/players${keep}`}>Find a player</Link></Tile></div></>;
   if (!q.data) return <><Head title="Players" crumb={`${pick} · working out the numbers…`} /><div className="empty">Working out {pick}'s numbers…</div></>;
   const d = q.data, c = d.card, b = d.batting, w = d.bowling, st = d.story;
-  const tab = d.tabs.includes(cap(view)) ? cap(view) : d.tabs[0]!;
+  const tab = d.tabs.includes(cap(view)) ? cap(view) : d.open;
   const scope = `${d.section}${d.season === "All seasons" ? "" : ` ${d.season}`}`;
   const pal = [t.led, t.warm, t.cream, t.win, t.blue, t.grey];
   // the latest three teams, newest first (every one is in the career journey below)
   const teamsLine = d.teams.slice(-3).reverse().join(" · ") + (d.teams.length > 3 ? ` · and ${d.teams.length - 3} more` : "");
+  const toTab = (x: string) => set("view", x === d.open ? "" : x.toLowerCase());
   return (
     <>
-      <Head title="Players" crumb={`${teamsLine}${d.keeper ? " · wicketkeeper" : ""}`} chips={d.tabs} on={d.tabs.indexOf(tab)}
-        onChip={(i) => set("view", i === 0 ? "" : d.tabs[i]!.toLowerCase())} />
+      <Head title="Players" crumb={teamsLine} chips={d.tabs} on={d.tabs.indexOf(tab)} onChip={(i) => toTab(d.tabs[i]!)} />
       <div className="back"><Link to={`/players${keep}`}>← Find another player</Link></div>
       <div className="grid">
         <Hero logo={d.teams[d.teams.length - 1]} px={170} kicker={`${teamsLine}${d.role ? ` · ${d.role.role.toLowerCase()}` : ""}`} title={d.player} size={104}
           side={["Matches", String(d.matches), `in ${plural(c?.sections ?? 0, "competition")}`]} />
-        {c && <Sub cols={6}>{([["Matches", c.matches], ["Runs", c.runs.toLocaleString("en-GB")], ["Best score", c.best_score], ["Wickets", c.wickets],
-          ["Best bowling", c.best_bowling], ["Badges", c.badges]] as [string, ReactNode][]).map(([k, v]) => <Tile span={1} key={k} title={k}><Num v={v} px={50} /></Tile>)}</Sub>}
-        {c && (c.last10.length > 1 || c.badge_list.length > 0) && <Tile span={12} title={`Last ${c.last10.length} innings`}>
-          <div className="row2" style={{ flexWrap: "wrap", gap: 10 }}><span className="l5" style={{ height: 40 }}>{c.last10.map((r, i) => (
-            <i key={i} className={r >= 50 ? "g" : ""} style={{ height: Math.max(3, Math.min(40, (r / Math.max(...c.last10, 1)) * 40)) }} title={String(r)} />))}</span>
-            <span className="l5t">{c.last10.join(" ")}</span>
-            {c.badge_list.map((x) => <span key={x.badge} className="tag" title={x.detail}>🏅 {x.badge}{x.times > 1 ? ` ×${x.times}` : ""}</span>)}</div></Tile>}
-        <Tile span={12} title="Batting and fielding · every competition">
-          {d.bat_table ? <RecordTable t={d.bat_table} /> : <Missing why={d.missing.bat_table} />}
-          {d.bowl_table ? <><div className="k3" style={{ marginTop: 16 }}>Bowling · every competition</div><RecordTable t={d.bowl_table} /></> : <div className="note">Hasn't bowled.</div>}
-          <div className="note">Same columns in every competition. Hover a column name for what it means. Maidens are only printed on longer-format
-            scorecards and dot balls only on T20 and Hundred scorecards, so one of them is blank.</div>
-        </Tile>
-        {d.formats && <Tile span={12} title="Every format side by side" right="each against the average player there">
-          <table className="c"><thead><tr><th>Format</th><th className="r">Mat</th><th className="r">Runs</th><th className="r">Avg</th><th className="r">v average</th>
-            <th className="r">SR</th><th className="r">v average</th><th className="r">Wkts</th><th className="r">Bowl avg</th><th className="r">v average</th></tr></thead>
-            <tbody>{d.formats.rows.map((r) => (
-              <tr key={r.section} className={r.best ? "me" : ""}><td><Name p={`${r.best ? "⭐ " : ""}${r.section}`} px={20} /></td>
-                <td className="r"><span className="tn dimn">{r.matches}</span></td><td className="r"><span className="tn">{r.runs}</span></td>
-                <td className="r"><span className="tn dimn">{f1(r.average)}</span></td><td className="r"><span className="tn">{pc(r.bat_vs)}</span></td>
-                <td className="r"><span className="tn dimn">{f1(r.strike_rate)}</span></td><td className="r"><span className="tn">{pc(r.sr_vs)}</span></td>
-                <td className="r"><span className="tn">{r.wickets}</span></td><td className="r"><span className="tn dimn">{f1(r.bowl_average)}</span></td>
-                <td className="r"><span className="tn">{pc(r.bowl_vs)}</span></td></tr>))}</tbody></table>
-          <Explain shows={d.formats.shows} for_={d.formats.for_} /></Tile>}
-        {d.share && d.share.length > 0 && <Tile span={7} title="Share of the team" right="each competition and season">
-          <table className="c"><thead><tr><th>Season</th><th>Competition</th><th className="r">Matches</th><th className="r">Runs</th><th>of the team's</th><th className="r">Wkts</th><th>of the team's</th></tr></thead>
-            <tbody>{d.share.slice(0, 12).map((r) => (
-              <tr key={r.section + r.season + r.team}><td><span className="tn dimn">{r.season}</span></td><td><Name p={fmtOf(r.section)} px={19} /><div className="how">{r.team}</div></td>
-                <td className="r"><span className="tn dimn">{r.matches}/{r.team_matches}</span></td>
-                <td className="r"><span className="tn">{r.runs}</span></td><td><ShareBar v={r.run_share} of={r.team_runs} /></td>
-                <td className="r"><span className="tn">{r.wickets}</span></td><td><ShareBar v={r.wicket_share} of={r.team_wickets} /></td></tr>))}</tbody></table>
-          <div className="note">Their runs out of all the runs the team's batters made that season there (off the bat: extras are no one's), and their
-            wickets out of all the wickets the team took; matches: theirs of the team's.</div></Tile>}
-        {d.winners ? <Tile span={12} title="Match-winners" right="player of the match in a win, and what they did">
-          {d.winners.players.length ? <MatchWinners w={d.winners} /> : null}<Explain shows={d.winners.line} for_={d.winners.for_} /></Tile>
-          : d.missing.winners ? <Tile span={12} title="Match-winners"><Missing why={d.missing.winners} /></Tile> : null}
-        <Tile span={7} title={`🏟️ ${d.countries?.nation === false ? "Ground by ground" : "Country by country"}`} right={`${fmtOf(d.section)} · every season`}>
-          {d.countries ? <Grid t={d.countries} /> : d.missing.countries ? <Missing why={d.missing.countries} /> : <div className="plain">No games here yet.</div>}
-          <div className="note">{d.countries?.nation === false ? "By the home side's ground" : "By the home side's country"} (the scorecards don't name the ground); neutral grounds are a row of their own.</div></Tile>
-        <Tile span={5} title="🔥 Big-match player" right="knockouts and series deciders">
-          {d.big ? (d.big.none ? <div className="plain">{d.big.none}</div> : d.big.rows!.map((r) => (
-            <div key={r.team}><table className="c"><thead><tr><th></th><th className="r">Big games ({r.big})</th><th className="r">Otherwise ({r.ordinary})</th></tr></thead>
-              <tbody><tr><td>Batting</td><td className="r">{r.big_bat}</td><td className="r">{r.ord_bat}</td></tr>
-                <tr><td>Strike rate</td><td className="r">{r.big_sr}</td><td className="r">{r.ord_sr}</td></tr>
-                <tr><td>Bowling</td><td className="r">{r.big_bowl}</td><td className="r">{r.ord_bowl}</td></tr>
-                <tr><td>Economy</td><td className="r">{r.big_econ}</td><td className="r">{r.ord_econ}</td></tr></tbody></table>
-              {d.big!.rows!.length > 1 && <div className="note">For {r.team}.</div>}</div>))) : <Missing why={d.missing.big} />}
-          <div className="note">Big games: finals, semi-finals, qualifiers, eliminators and other knockouts, and series deciders (level with one to play). Shown from 3.</div></Tile>
-        <Tile span={12} title="↩️ Bounce-back" right="the game after a poor one">
-          {d.bounce ? ((d.bounce.bat || d.bounce.bowl) ? <ul className="dots">{[d.bounce.bat, d.bounce.bowl].filter(Boolean).map((x) => <li key={x!.line}>{x!.line}</li>)}</ul>
-            : <div className="plain">No poor games here yet: never out for under 10, and never wicketless for 30 or more.</div>) : <Missing why={d.missing.bounce} />}
-          <div className="note">A poor game: out for a duck or under 10 with the bat, or no wicket for 30 runs or more with the ball. The game after it is their next match here; shown from 3.</div></Tile>
-        {d.marks && d.marks.length > 0 && <Tile span={12} title="Marks out of 10 · every series" right="newest first">
-          <table className="c marks"><thead><tr><th>Series</th><th className="r">Mark</th><th className="r">Rank</th><th>In the series</th><th>Best match</th></tr></thead>
-            <tbody>{d.marks.slice(0, 10).map((m) => (
-              <tr key={m.series + m.team}><td><Name p={m.label} px={19} /><div className="how">{m.team}</div></td><td className="r"><Mark v={m.mark} /></td>
-                <td className="r"><span className="tn dimn">{m.rank} of {m.of}</span></td><td><span className="why">{m.line}</span></td>
-                <td><Link to={`/matches/${m.best_match}${keep}`} className="why lk">{m.best}</Link></td></tr>))}</tbody></table>
-          <div className="note">Where each series ranks among every player's series in that format in this career (see My team); batters against batters, bowlers against bowlers.
-            {d.marks.length > 10 ? ` The latest 10 of ${d.marks.length}.` : ""}</div></Tile>}
-        {d.journey && d.journey.length > 0 && <Tile span={12} title="Career journey" right="every team and competition, in order">
-          <table className="c"><thead><tr><th>From</th><th>To</th><th>Team</th><th>Competition</th><th>Season</th><th className="r">Matches</th><th className="r">Runs</th><th className="r">Wickets</th></tr></thead>
-            <tbody>{d.journey.map((j, i) => (
-              <tr key={i}><td><span className="tn dimn">{dayY(j.first)}</span></td><td><span className="tn dimn">{dayY(j.last)}</span></td><td><Name p={j.team} px={19} /></td>
-                <td><span className="why">{j.section}</span></td><td><span className="tn dimn">{j.season}</span></td><td className="r"><span className="tn dimn">{j.matches}</span></td>
-                <td className="r"><span className="tn">{j.runs}</span></td><td className="r"><span className="tn">{j.wickets}</span></td></tr>))}</tbody></table></Tile>}
-
-        <div className="part"><span className="tl2">{scope}</span>
+        <div className="part"><div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>{d.tabs.map((x) => (
+            <button key={x} className={x === tab ? "on" : ""} onClick={() => toTab(x)}>{x}</button>))}</div>
+          <span className="tl2">{scope}</span>
           <div className="field" style={{ marginTop: 0 }}>
             <select className="pick" value={d.section} onChange={(e) => set("section", e.target.value)} aria-label="Competition">{d.sections.map((s) => <option key={s}>{s}</option>)}</select>
             <select className="pick" value={d.season} onChange={(e) => set("season", e.target.value === "All seasons" ? "" : e.target.value)} aria-label="Season">{d.seasons.map((s) => <option key={s}>{s}</option>)}</select></div>
           {d.role && <span className="row2" style={{ gap: 8 }}>{[d.role.role, ...d.role.tags].map((x) => <span className="tag" key={x}>{x}</span>)}
             <span className="note" style={{ margin: 0 }}>from where they bat (usually no. {f0(d.role.usual_position)}) and how much they bowl</span></span>}
-          <div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>{d.tabs.map((x) => (
-            <button key={x} className={x === tab ? "on" : ""} onClick={() => set("view", x === d.tabs[0] ? "" : x.toLowerCase())}>{x}</button>))}</div>
-          <span className="note" style={{ margin: 0 }}>Everything below is for {scope} only; pick another competition or season above.</span>
+          <span className="note" style={{ margin: 0 }}>Tiles marked "every competition" cover the whole career; the rest are for {scope}: pick another competition or season above.</span>
         </div>
 
-        {d.profile && <Tile span={7} title={`Attributes in ${d.section}`} right="out of 20 · against everyone there">
-          <AttrGrid a={d.profile.attributes} show={d.profile.show} other={d.profile.other} section={d.section} /></Tile>}
-        {d.profile && <Tile span={5} title="Scout report" right={d.profile.report.role ?? ""}><ScoutText r={d.profile.report} />
-          {d.season !== "All seasons" && <div className="note">Over every season of {d.section}, not just {d.season}.</div>}</Tile>}
+        {tab === "Overview" && <>
+          {c && <Sub cols={6}>{([["Matches", c.matches], ["Runs", c.runs.toLocaleString("en-GB")], ["Best score", c.best_score], ["Wickets", c.wickets],
+            ["Best bowling", c.best_bowling], ["Badges", c.badges]] as [string, ReactNode][]).map(([k, v]) => <Tile span={1} key={k} title={k}><Num v={v} px={50} /></Tile>)}</Sub>}
+          {c && c.badge_list.length > 0 && <Tile span={12} title="Badges" right="every competition">
+            <div className="row2" style={{ flexWrap: "wrap", gap: 10 }}>{c.badge_list.map((x) => <span key={x.badge} className="tag" title={x.detail}>🏅 {x.badge}{x.times > 1 ? ` ×${x.times}` : ""}</span>)}</div></Tile>}
+          {d.winners ? <Tile span={12} title="Match-winners" right="player of the match in a win, and what they did">
+            {d.winners.players.length ? <MatchWinners w={d.winners} /> : null}<Explain shows={d.winners.line} for_={d.winners.for_} /></Tile>
+            : d.missing.winners ? <Tile span={12} title="Match-winners"><Missing why={d.missing.winners} /></Tile> : null}
+          {d.share && d.share.length > 0 && <Tile span={12} title="Share of the team" right="each competition and season">
+            <table className="c"><thead><tr><th>Season</th><th>Competition</th><th className="r">Matches</th><th className="r">Runs</th><th>of the team's</th><th className="r">Wkts</th><th>of the team's</th></tr></thead>
+              <tbody>{d.share.slice(0, 12).map((r) => (
+                <tr key={r.section + r.season + r.team}><td><span className="tn dimn">{r.season}</span></td><td><Name p={fmtOf(r.section)} px={19} /><div className="how">{r.team}</div></td>
+                  <td className="r"><span className="tn dimn">{r.matches}/{r.team_matches}</span></td>
+                  <td className="r"><span className="tn">{r.runs}</span></td><td><ShareBar v={r.run_share} of={r.team_runs} /></td>
+                  <td className="r"><span className="tn">{r.wickets}</span></td><td><ShareBar v={r.wicket_share} of={r.team_wickets} /></td></tr>))}</tbody></table>
+            <div className="note">Their runs out of all the runs the team's batters made that season there (off the bat: extras are no one's), and their
+              wickets out of all the wickets the team took; matches: theirs of the team's.</div></Tile>}
+          {d.profile && <Tile span={7} title={`Attributes in ${d.section}`} right="out of 20 · against everyone there">
+            <AttrGrid a={d.profile.attributes} show={d.profile.show} other={d.profile.other} section={d.section} /></Tile>}
+          {d.profile && <Tile span={5} title="Scout report" right={d.profile.report.role ?? ""}><ScoutText r={d.profile.report} />
+            {d.season !== "All seasons" && <div className="note">Over every season of {d.section}, not just {d.season}.</div>}</Tile>}
+          {d.marks && d.marks.length > 0 && <Tile span={12} title="Marks out of 10 · every series" right="newest first">
+            <table className="c marks"><thead><tr><th>Series</th><th className="r">Mark</th><th className="r">Rank</th><th>In the series</th><th>Best match</th></tr></thead>
+              <tbody>{d.marks.slice(0, 10).map((m) => (
+                <tr key={m.series + m.team}><td><Name p={m.label} px={19} /><div className="how">{m.team}</div></td><td className="r"><Mark v={m.mark} /></td>
+                  <td className="r"><span className="tn dimn">{m.rank} of {m.of}</span></td><td><span className="why">{m.line}</span></td>
+                  <td><Link to={`/matches/${m.best_match}${keep}`} className="why lk">{m.best}</Link></td></tr>))}</tbody></table>
+            <div className="note">Where each series ranks among every player's series in that format in this career (see My team); batters against batters, bowlers against bowlers.
+              {d.marks.length > 10 ? ` The latest 10 of ${d.marks.length}.` : ""}</div></Tile>}
+          {d.journey && d.journey.length > 0 && <Tile span={12} title="Career journey" right="every team and competition, in order">
+            <table className="c"><thead><tr><th>From</th><th>To</th><th>Team</th><th>Competition</th><th>Season</th><th className="r">Matches</th><th className="r">Runs</th><th className="r">Wickets</th></tr></thead>
+              <tbody>{d.journey.map((j, i) => (
+                <tr key={i}><td><span className="tn dimn">{dayY(j.first)}</span></td><td><span className="tn dimn">{dayY(j.last)}</span></td><td><Name p={j.team} px={19} /></td>
+                  <td><span className="why">{j.section}</span></td><td><span className="tn dimn">{j.season}</span></td><td className="r"><span className="tn dimn">{j.matches}</span></td>
+                  <td className="r"><span className="tn">{j.runs}</span></td><td className="r"><span className="tn">{j.wickets}</span></td></tr>))}</tbody></table></Tile>}
+        </>}
+
+        {tab === "Batting" && <>
+          {b ? <KP items={[["Innings", b.kpis.innings], ["Runs", b.kpis.runs.toLocaleString("en-GB")], ["Average", f2(b.kpis.average)], ["Strike rate", f1(b.kpis.strike_rate)],
+            ["High score", b.kpis.high_score], ["100s / 50s", `${b.kpis.hundreds} / ${b.kpis.fifties}`]]} />
+            : <Tile span={12}><div className="plain">No innings in {scope}: pick another competition above. Their batting everywhere is below.</div></Tile>}
+          {c && c.last10.length > 1 && <Tile span={12} title={`Last ${c.last10.length} innings`} right="every competition">
+            <div className="row2" style={{ flexWrap: "wrap", gap: 10 }}><span className="l5" style={{ height: 40 }}>{c.last10.map((r, i) => (
+              <i key={i} className={r >= 50 ? "g" : ""} style={{ height: Math.max(3, Math.min(40, (r / Math.max(...c.last10, 1)) * 40)) }} title={String(r)} />))}</span>
+              <span className="l5t">{c.last10.join(" ")}</span></div></Tile>}
+          <Tile span={12} title="Batting · every competition">
+            {d.bat_table ? <RecordTable t={d.bat_table} /> : <Missing why={d.missing.bat_table} />}
+            <div className="note">Same columns in every competition. Hover a column name for what it means.</div></Tile>
+          {d.formats && <FormatsTile f={d.formats} kind="bat" />}
+          <CountriesTile d={d} kind="bat" />
+          <BigTile d={d} kind="bat" />
+          <BounceTile d={d} kind="bat" />
+        </>}
+        {tab === "Bowling" && <>
+          {w ? <KP items={[["Wickets", w.kpis.wickets], ["Average", f2(w.kpis.average)], ["Economy", f2(w.kpis.economy)], ["Strike rate", f1(w.kpis.strike_rate)], ["Best", w.kpis.best], ["4+ hauls", w.kpis.hauls]]} />
+            : <Tile span={12}><div className="plain">Hasn't bowled in {scope}: pick another competition above. Their bowling everywhere is below.</div></Tile>}
+          <Tile span={12} title="Bowling · every competition">
+            {d.bowl_table ? <RecordTable t={d.bowl_table} /> : <Missing why={d.missing.bowl_table ?? "Hasn't bowled."} />}
+            <div className="note">Same columns in every competition. Maidens are only printed on longer-format scorecards and dot balls only on T20 and
+              Hundred scorecards, so one of them is blank.</div></Tile>
+          {d.formats && <FormatsTile f={d.formats} kind="bowl" />}
+          <CountriesTile d={d} kind="bowl" />
+          <BigTile d={d} kind="bowl" />
+          <BounceTile d={d} kind="bowl" />
+        </>}
 
         {tab === "Batting" && b && <>
-          <KP items={[["Innings", b.kpis.innings], ["Runs", b.kpis.runs.toLocaleString("en-GB")], ["Average", f2(b.kpis.average)], ["Strike rate", f1(b.kpis.strike_rate)],
-            ["High score", b.kpis.high_score], ["100s / 50s", `${b.kpis.hundreds} / ${b.kpis.fifties}`]]} />
           <Box span={12} title="Form · every innings" right="oldest first">
             <FormBars f={b.form} unit="runs" />
             <div className="legend"><span><i style={{ background: t.led }} />each innings (green: 50 or more)</span><span><i className="ln" style={{ background: t.led }} />average over the last {b.form.window} innings</span>
@@ -246,7 +238,6 @@ export function PlayerView() {
         </>}
 
         {tab === "Bowling" && w && <>
-          <KP items={[["Wickets", w.kpis.wickets], ["Average", f2(w.kpis.average)], ["Economy", f2(w.kpis.economy)], ["Strike rate", f1(w.kpis.strike_rate)], ["Best", w.kpis.best], ["4+ hauls", w.kpis.hauls]]} />
           <Box span={12} title="Form · wickets in every innings bowled" right="oldest first"><FormBars f={w.form} unit="wickets" />
             <div className="legend"><span><i style={{ background: t.led }} />wickets in each innings (green: 4 or more)</span><span><i className="ln" style={{ background: t.led }} />wickets an innings over the last {w.form.window}</span>
               <span><i className="ln" style={{ background: t.ink, opacity: 0.6 }} />over everything shown</span></div>
@@ -270,12 +261,6 @@ export function PlayerView() {
           <Box span={12} title="Streaks" right="innings bowled in a row"><StreakTable rows={w.streaks} /></Box>
           {w.splits.rows.map((s) => <Box key={s.title} title={`${s.title} · economy`}><Sp s={s} overall={w.splits.overall} dec={2} low /></Box>)}
         </>}
-
-        {tab === "Fielding" && <Tile span={12} title="Fielding">
-          {d.fielding ? <Sub cols={3}>{([["Matches", d.fielding.matches], ["Catches", d.fielding.catches], ["Stumpings", d.fielding.stumpings]] as [string, number][]).map(([k, v]) =>
-            <div className="bf-side" key={k}><div className="k">{k}</div><Num v={v} px={56} /></div>)}</Sub> : <div className="note">No fielding record in this competition.</div>}
-          <div className="note">Catches and stumpings are credited under the player's own name, so 'c de Kock' counts for Q de Kock. Run outs aren't credited to
-            fielders because the scorecard doesn't name them.</div></Tile>}
 
         {tab === "Story" && st && <>
           <Box title={`Match impact · ${d.section}`} right="one number a match">{st.impact ? <><ImpactBars rows={st.impact.rows} /><Explain shows={st.impact.shows} for_={st.impact.for_} /></>
@@ -378,5 +363,111 @@ function CompareSeasons({ c, section }: { c: NonNullable<PlayerPage["story"]>["c
             <td className="r"><span className="tn">{w === "b" ? "✓ " : ""}{B[k]?.text ?? "–"}</span></td></tr>); })}</tbody></table>
       <div className="note">✓ marks the better season on each (for bowling average, economy and strike rate, lower is better).</div>
     </Tile>
+  );
+}
+
+
+/** Tick boxes for the formats a tile counts (your decision of 14 November: tick any formats; it opens on one, ticking
+ *  more counts them together). The player's competitions in the agreed order; one always stays ticked. */
+export function FormatTicks({ all, on, set }: { all: string[]; on: string[]; set: (v: string[]) => void }) {
+  if (all.length < 2) return null;
+  return (
+    <div className="ticks" role="group" aria-label="Formats">{all.map((x) => {
+      const ticked = on.includes(x);
+      return (
+        <label key={x} className={`tick ${ticked ? "on" : ""}`} title={ticked && on.length === 1 ? "At least one stays ticked" : undefined}>
+          <input type="checkbox" checked={ticked} onChange={() => {
+            const next = ticked ? on.filter((y) => y !== x) : [...on, x];
+            if (next.length) set(all.filter((y) => next.includes(y)));
+          }} />{fmtOf(x)}</label>);
+    })}</div>
+  );
+}
+
+type PartOf<K extends "countries" | "big" | "bounce"> = NonNullable<PlayerPage[K]>;
+
+/** One tile's numbers for the formats ticked on it: the page's own when it's just the page's competition, otherwise
+ *  asked of the server (kept, so ticking back is instant). */
+function usePart<K extends "countries" | "big" | "bounce">(d: PlayerPage, which: K) {
+  const [on, setOn] = useState<string[]>([d.section]);
+  const same = on.length === 1 && on[0] === d.section;
+  const q = useQuery({ queryKey: ["player_part", d.player, which, on.join("|")], enabled: !same, retry: false,
+    queryFn: () => get<{ data: PartOf<K> | null; label: string }>(`/api/player_part?name=${encodeURIComponent(d.player)}&part=${which}&sections=${encodeURIComponent(on.join("|"))}`) });
+  const data = (same ? d[which] : q.data?.data) as PartOf<K> | null | undefined;
+  const label = same ? d.section : q.data?.label ?? on.join(" + ");
+  return { on, setOn, data, label, waiting: !same && !q.data && !q.error, error: q.error ? String(q.error) : "", missing: same ? d.missing[which] : "" };
+}
+
+const BAT_COLS = [0, 1, 2, 3, 4], BOWL_COLS = [0, 1, 5, 6, 7];
+
+/** Country by country (or ground by ground), batting or bowling only, for the formats ticked. */
+function CountriesTile({ d, kind }: { d: PlayerPage; kind: "bat" | "bowl" }) {
+  const p = usePart(d, "countries");
+  const t = p.data;
+  const cols = kind === "bat" ? BAT_COLS : BOWL_COLS;
+  const rows = t ? t.rows.filter((r) => kind === "bat" ? Number(r[2] ?? 0) > 0 || r[3] !== "–" : Number(r[5] ?? 0) > 0 || r[7] !== "–") : [];
+  const grid = t ? { ...t, cols: cols.map((i) => t.cols[i]!), rows: rows.map((r) => cols.map((i) => r[i]!)), num: cols.slice(1).map((_, i) => i + 1) } : null;
+  return (
+    <Tile span={12} title={`🏟️ ${kind === "bat" ? "Batting" : "Bowling"} ${t?.nation === false ? "ground by ground" : "country by country"}`} right={`${p.label} · every season`}>
+      <FormatTicks all={d.sections} on={p.on} set={p.setOn} />
+      {p.waiting ? <div className="empty">Working it out…</div> : p.error ? <Missing why={p.error} />
+        : grid && grid.rows.length ? <Grid t={grid} /> : p.missing ? <Missing why={p.missing} />
+        : <div className="plain">{kind === "bat" ? "No innings" : "No bowling"} in {p.label} yet.</div>}
+      <div className="note">{t?.nation === false ? "By the home side's ground" : "By the home side's country"} (the scorecards don't name the ground); neutral
+        grounds are a row of their own. Several formats ticked: their games counted together.</div></Tile>
+  );
+}
+
+/** Big-match player, batting or bowling only, for the formats ticked. */
+function BigTile({ d, kind }: { d: PlayerPage; kind: "bat" | "bowl" }) {
+  const p = usePart(d, "big");
+  const x = p.data;
+  return (
+    <Tile span={6} title={`🔥 Big-match ${kind === "bat" ? "batting" : "bowling"}`} right={p.label}>
+      <FormatTicks all={d.sections} on={p.on} set={p.setOn} />
+      {p.waiting ? <div className="empty">Working it out…</div> : p.error ? <Missing why={p.error} /> : !x ? <Missing why={p.missing || "Not enough games yet."} />
+        : x.none ? <div className="plain">{x.none}</div> : x.rows!.map((r) => (
+          <div key={r.team}><table className="c"><thead><tr><th></th><th className="r">Big games ({r.big})</th><th className="r">Otherwise ({r.ordinary})</th></tr></thead>
+            <tbody>{kind === "bat" ? <><tr><td>Batting</td><td className="r">{r.big_bat}</td><td className="r">{r.ord_bat}</td></tr>
+              <tr><td>Strike rate</td><td className="r">{r.big_sr}</td><td className="r">{r.ord_sr}</td></tr></>
+              : <><tr><td>Bowling</td><td className="r">{r.big_bowl}</td><td className="r">{r.ord_bowl}</td></tr>
+              <tr><td>Economy</td><td className="r">{r.big_econ}</td><td className="r">{r.ord_econ}</td></tr></>}</tbody></table>
+            {x.rows!.length > 1 && <div className="note">For {r.team}.</div>}</div>))}
+      <div className="note">Big games: finals, semi-finals, qualifiers, eliminators and other knockouts, and series deciders (level with one to play). Shown from 3.</div></Tile>
+  );
+}
+
+/** Bounce-back, batting or bowling only, for the formats ticked. */
+function BounceTile({ d, kind }: { d: PlayerPage; kind: "bat" | "bowl" }) {
+  const p = usePart(d, "bounce");
+  const x = p.data?.[kind];
+  return (
+    <Tile span={6} title={`↩️ Bounce-back ${kind === "bat" ? "batting" : "bowling"}`} right={p.label}>
+      <FormatTicks all={d.sections} on={p.on} set={p.setOn} />
+      {p.waiting ? <div className="empty">Working it out…</div> : p.error ? <Missing why={p.error} />
+        : x ? <div className="plain">{x.line}</div>
+        : <div className="plain">{kind === "bat" ? "No poor innings here yet: never out for under 10." : "No poor spells here yet: never wicketless for 30 or more."}</div>}
+      <div className="note">{kind === "bat" ? "A poor innings: out for a duck or under 10." : "A poor spell: no wicket for 30 runs or more."} The game after it is their next match in the formats ticked; shown from 3.</div></Tile>
+  );
+}
+
+/** Every format side by side, batting or bowling only: each against the average player there. */
+function FormatsTile({ f, kind }: { f: NonNullable<PlayerPage["formats"]>; kind: "bat" | "bowl" }) {
+  const rows = f.rows.filter((r) => kind === "bat" ? r.average != null || r.runs > 0 : r.wickets > 0 || r.bowl_average != null);
+  if (!rows.length) return null;
+  return (
+    <Tile span={12} title={`Every format side by side · ${kind === "bat" ? "batting" : "bowling"}`} right="each against the average player there">
+      <table className="c"><thead><tr><th>Format</th><th className="r">Mat</th>{kind === "bat"
+        ? <><th className="r">Runs</th><th className="r">Avg</th><th className="r">v average</th><th className="r">SR</th><th className="r">v average</th></>
+        : <><th className="r">Wkts</th><th className="r">Bowl avg</th><th className="r">v average</th></>}</tr></thead>
+        <tbody>{rows.map((r) => (
+          <tr key={r.section} className={r.best ? "me" : ""}><td><Name p={`${r.best ? "⭐ " : ""}${r.section}`} px={20} /></td>
+            <td className="r"><span className="tn dimn">{r.matches}</span></td>{kind === "bat" ? <>
+              <td className="r"><span className="tn">{r.runs}</span></td><td className="r"><span className="tn dimn">{f1(r.average)}</span></td>
+              <td className="r"><span className="tn">{pc(r.bat_vs)}</span></td><td className="r"><span className="tn dimn">{f1(r.strike_rate)}</span></td>
+              <td className="r"><span className="tn">{pc(r.sr_vs)}</span></td></> : <>
+              <td className="r"><span className="tn">{r.wickets}</span></td><td className="r"><span className="tn dimn">{f1(r.bowl_average)}</span></td>
+              <td className="r"><span className="tn">{pc(r.bowl_vs)}</span></td></>}</tr>))}</tbody></table>
+      <Explain shows={f.shows} for_={f.for_} /></Tile>
   );
 }

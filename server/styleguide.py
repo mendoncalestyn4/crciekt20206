@@ -313,6 +313,33 @@ def _series_shows(team: str, opp: str, played: list[dict], progress: list[dict],
     return out
 
 
+def best_line(rows, fmt=lambda v: f"{v:,.0f}", lower: bool = False, mine: str | None = None, minimum=None) -> str:
+    """The "Who's best" line under a chart (your choice of 14 November): the top of all with its number; a chart where
+    lower is better names the lowest; ties name up to three, then "and N others"; `minimum` (name, value -> bool) is
+    the chart's own minimum to qualify; on a chart of your team against everyone (`mine`), then where your team is
+    ("Australia, 1,412 · India 3rd, 1,288"). `rows`: (name, value) pairs; "" when there are none."""
+    import math
+    rs = [(str(k), float(v)) for k, v in rows if v is not None and not (isinstance(v, float) and math.isnan(v))]
+    if minimum is not None:
+        rs = [r for r in rs if minimum(*r)]
+    if not rs:
+        return ""
+    rs.sort(key=lambda r: (r[1] if lower else -r[1], r[0]))
+    top = [r for r in rs if r[1] == rs[0][1]]
+    names = [k for k, _ in top[:3]]
+    who = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+    if len(top) > 3:
+        who = ", ".join(names) + f" and {len(top) - 3} other{'s' if len(top) - 3 != 1 else ''}"
+    out = f"{who}, {fmt(rs[0][1])}"
+    if mine and mine not in {k for k, _ in top}:
+        place = next((i for i, (k, _) in enumerate(rs) if k == mine), None)
+        if place is not None:
+            # equal values share a place
+            rank = 1 + sum(1 for _, v in rs if (v < rs[place][1] if lower else v > rs[place][1]))
+            out += f" · {mine} {_ordinal(rank)}, {fmt(rs[place][1])}"
+    return out
+
+
 def _ordinal(n: int) -> str:
     return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
 
@@ -475,13 +502,14 @@ def bat_first(career, team: str, ids) -> dict:
     return out
 
 
-def scores(rs: list[dict], team: str | None = None, where: str | None = None) -> dict:
+def scores(rs: list[dict], team: str | None = None, where: str | None = None, rank: dict | None = None) -> dict:
     """Our score and theirs: the average first innings each way (one-innings games, rain left out), won and lost; with
     `team`, the chart's "What it shows" line too (`where`: how it starts, "In these 14 matches" unless given).
     Formats are never mixed: the averages (and the highest total) are given only when the matches are all one
     competition; across several (My team's season), each competition's averages are in the line instead."""
     one = [r for r in rs if r["ours"] and r["theirs"] and not r["rain"] and len(r["ours"]) == 1]
-    secs = sorted({r["section"] for r in rs})
+    # each competition in the agreed order (`rank`: ccstats.competitions.section_rank), else A to Z
+    secs = sorted({r["section"] for r in rs}, key=lambda s: (rank or {}).get(s, (9, 0, 0, s)))
     avg = lambda k, x: round(sum(r[k][0]["runs"] for r in x) / len(x)) if x else None  # noqa: E731
     single = len(secs) <= 1
     out = dict(avg_made=avg("ours", one) if single else None, avg_conceded=avg("theirs", one) if single else None, **_record(rs))

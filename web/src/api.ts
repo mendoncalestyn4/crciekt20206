@@ -204,7 +204,7 @@ export type Bar = { label: string; value: number | null; note?: string; n?: numb
 /** The player against everyone here, for one band or position; `key`: the band that matters most in this format. */
 export type Pair = { label: string; me: number | null; all: number | null; note?: string; key?: boolean };
 export type Split = { title?: string; rows: Bar[]; shows: string; for_: string };
-export type FormT = { values: number[]; rolling: (number | null)[]; labels: string[]; window: number; overall: number | null; shows: string; for_: string };
+export type FormT = { values: number[]; rolling: (number | null)[]; labels: string[]; ids?: string[]; window: number; overall: number | null; shows: string; for_: string };
 /** The standard batting or bowling table: `first` is "section" or "season", every other column a number as printed. */
 export type RecordTableT = { cols: string[]; first: string; help: Record<string, string>; rows: Record<string, string | number | null>[] };
 export type PlayersLanding = {
@@ -239,7 +239,7 @@ export type Bowling = {
   splits: { overall: number | null; rows: Split[] };
 };
 export type Story = {
-  impact: { rows: { label: string; value: number; won: boolean; note: string }[]; shows: string; for_: string } | null;
+  impact: { rows: { label: string; value: number; won: boolean; note: string; id?: string }[]; shows: string; for_: string } | null;
   rank: { rows: { season: string; runs_rank: number | null; runs_of: number | null; wickets_rank: number | null; wickets_of: number | null }[]; shows: string; for_: string } | null;
   milestones: { unit: string; rows: { milestone: string; took: string; fastest: string; date: string }[] };
   badges: { badge: string; detail: string; id: string; date: string }[];
@@ -251,7 +251,7 @@ export type Story = {
 export type Bounce = { shown: boolean; poor: number; followed: number; after: string; usual: string; after_avg: number | null;
   usual_avg: number | null; line: string };
 export type PlayerPage = {
-  player: string; teams: string[]; keeper: boolean; matches: number; missing: Record<string, string>;
+  player: string; teams: string[]; matches: number; missing: Record<string, string>;
   card: { matches: number; sections: number; runs: number; best_score: string; wickets: number; best_bowling: string; badges: number;
     last10: number[]; badge_list: { badge: string; detail: string; times: number }[] } | null;
   bat_table: RecordTableT | null; bowl_table: RecordTableT | null;
@@ -269,7 +269,7 @@ export type PlayerPage = {
   journey: { first: string; last: string; team: string; section: string; season: string; matches: number; runs: number; wickets: number }[] | null;
   section: string; season: string; sections: string[]; seasons: string[];
   role: { role: string; tags: string[]; usual_position: number } | null;
-  tabs: string[]; batting: Batting | null; bowling: Bowling | null; fielding: { matches: number; catches: number; stumpings: number } | null;
+  tabs: string[]; open: string; batting: Batting | null; bowling: Bowling | null;
   bat_innings?: ByInnings | null; bowl_innings?: ByInnings | null;
   story: Story | null;
   profile?: { attributes: Attributes; report: ScoutReport; show: ("bat" | "bowl")[]; other: string } | null;
@@ -311,7 +311,6 @@ export type TeamHead = { none: string; elsewhere?: string[]; kpis?: { k: string;
 export type Contribution = { player: string; matches: number; runs: number; run_share: number; wickets: number; wicket_share: number };
 export type TeamBody = {
   missing: Record<string, string>;
-  keepers?: { player: string; stumpings: number }[] | null;
   vs_average?: ({ title: string; right: string; rows: SignedBar[] } & Explained) | null;
   strength?: ({ rows: Strength[]; lanes: string[] } & Explained) | null;
   venues?: (Venues & Explained) | null;

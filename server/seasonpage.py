@@ -14,6 +14,7 @@ from ccstats import seasonal as SN
 from ccstats import tables as T
 from ccstats import winprob as WP
 from ccstats.competitions import shown_name
+from ccstats.competitions import ordered as in_order
 
 from . import styleguide as SG
 from .cache import kept
@@ -70,7 +71,7 @@ def _ranks(career, team) -> dict:
     y = int(year_of[mine.sort_values("date").match_id.iloc[-1]])
     here = m[m.match_id.map(year_of) == y]
     rows = []
-    for sec, n in mine[mine.match_id.map(year_of) == y].section.value_counts().items():
+    for sec in in_order(m, mine[mine.match_id.map(year_of) == y].section.unique()):   # the agreed order
         t = R.team_totals(career, here[here.section == sec].match_id)
         r = t[t.team == team].iloc[0]
         rows.append(dict(section=sec, teams=len(t), matches=int(r.matches), runs=int(r.runs), wickets=int(r.wickets),

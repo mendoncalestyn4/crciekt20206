@@ -16,6 +16,7 @@ from ccstats import teamreport as TR
 from ccstats import winprob as W
 from ccstats.competitions import shown_name, with_stage
 from ccstats.stats import poss
+from ccstats.competitions import ordered as in_order, section_rank
 
 from . import styleguide as SG
 from .cache import kept
@@ -37,7 +38,7 @@ def finder(career, section: str = "", team: str = "", mine: list[str] | None = N
     """The choices (every section; the teams in the one picked) and the matches they leave, newest first. With no
     section asked for, the one your team played in last."""
     m = career.matches.sort_values(["date", "match_id"], ascending=False)
-    sections = sorted(m.section.unique())
+    sections = in_order(m, m.section.unique())   # the agreed order
     if not section:
         played = m[m.home.isin(mine or []) | m.away.isin(mine or [])]
         section = played.section.iloc[0] if len(played) else "All sections"
@@ -49,7 +50,7 @@ def finder(career, section: str = "", team: str = "", mine: list[str] | None = N
     scores = None
     if team and team != "All teams" and section != "All sections" and len(pool):
         rs = SG.in_played_order(career, SG.results(career, team, pool.match_id))[-14:]
-        scores = dict(results=rs, summary=SG.scores(rs, team), team=team)
+        scores = dict(results=rs, summary=SG.scores(rs, team, rank=section_rank(career.matches)), team=team)
     return dict(section=section, team=team or "All teams", sections=["All sections"] + sections,
                 teams=["All teams"] + teams, scores=scores,
                 matches=[dict(id=r.match_id, label=label(r), date=SG.clean(r.date), home=r.home, away=r.away,

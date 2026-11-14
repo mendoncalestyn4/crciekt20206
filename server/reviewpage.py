@@ -12,6 +12,7 @@ from ccstats import mvp as MV
 from ccstats import seasonal as SN
 from ccstats import wrapped as WR
 from ccstats.stats import ordinal
+from ccstats.competitions import section_rank
 
 from . import matchpage
 from . import styleguide as SG
@@ -21,18 +22,21 @@ from .teampage import XI_HOW, fmt, table
 INTL = "International cricket"
 IMPACT_NOTE = ("Impact: runs, plus half the runs above what the format's strike rate would have made off the same balls "
                "in white-ball cricket; each wicket worth the format's runs per wicket (plus runs kept below its economy in "
-               "white-ball cricket); a catch or stumping a quarter of a wicket. International seasons are calendar years.")
+               "white-ball cricket). No fielding is counted. International seasons are calendar years.")
 
 
 def choices(career) -> list[dict]:
-    """Every competition's season and every international year, the latest first."""
+    """Every competition's season and every international year: international cricket first, then the competitions
+    in the agreed order (franchise, then domestic, the most matches first), each one's latest season first."""
     m = career.matches
     intl = SN.international_sections(career)
     secs = set(intl.values())
-    opts = [(g.date.max(), sec, str(se)) for (sec, se), g in m[~m.section.isin(secs)].groupby(["section", "season"])]
+    rank = section_rank(m)
+    opts = [((1, *rank[sec]), -g.date.max().value, sec, str(se))
+            for (sec, se), g in m[~m.section.isin(secs)].groupby(["section", "season"])]
     if intl:
-        opts += [(g.date.max(), INTL, str(se)) for se, g in m[m.section.isin(secs)].groupby("season")]
-    return [dict(key=f"{sec}|{se}", section=sec, season=se, label=f"{sec} {se}") for _, sec, se in sorted(opts, reverse=True)]
+        opts += [((0,), -g.date.max().value, INTL, str(se)) for se, g in m[m.section.isin(secs)].groupby("season")]
+    return [dict(key=f"{sec}|{se}", section=sec, season=se, label=f"{sec} {se}") for *_, sec, se in sorted(opts)]
 
 
 def _xi(xi, title) -> dict:
@@ -40,7 +44,7 @@ def _xi(xi, title) -> dict:
         return dict(title=title, none="Not enough games yet to pick an XI.")
     out = table(["", "Role", "Player", "Team", "Why"],
                 [[i + 1, r.slot, r.player, r.team, r.why] for i, r in enumerate(xi.itertuples())], num={0})
-    out.update(title=title, note=f"Picked by role: 2 openers, the middle order, a keeper (made a stumping), an all-rounder "
+    out.update(title=title, note=f"Picked by role: 2 openers, the middle order, a wicketkeeper, an all-rounder "
                f"(bats in the top 8; runs per innings × bowling) and 4 bowlers. {XI_HOW[xi.attrs.get('kind', 't20')]} "
                f"Needs {xi.attrs.get('need', 2)}+ games here. 'Best available': not enough players in that role, so the "
                "best of the rest.")
@@ -213,12 +217,12 @@ def _mvp(career, section, season, how) -> dict:
             res["none"] = "No players yet."
             return res
         top = mvp.head(15)
-        res["table"] = table(["#", "Player", "Team", "Matches", "Batting", "Bowling", "Fielding", "Points", "Per match"],
-                             [[i, r.player, r.team, int(r.matches), fmt(r.batting, 0), fmt(r.bowling, 0), fmt(r.fielding, 0),
+        res["table"] = table(["#", "Player", "Team", "Matches", "Batting", "Bowling", "Points", "Per match"],
+                             [[i, r.player, r.team, int(r.matches), fmt(r.batting, 0), fmt(r.bowling, 0),
                                fmt(r.points, 0), fmt(r.per_match, 1)] for i, r in enumerate(top.itertuples(), start=1)],
-                             num={0, 3, 4, 5, 6, 7, 8})
+                             num={0, 3, 4, 5, 6, 7})
         res["bars"] = [dict(player=r.player, team=r.team, value=round(float(r.points)),
-                            note=f"{r.matches} matches · batting {r.batting:.0f}, bowling {r.bowling:.0f}, fielding {r.fielding:.0f}")
+                            note=f"{r.matches} matches · batting {r.batting:.0f}, bowling {r.bowling:.0f}")
                        for r in mvp.head(10).itertuples()]
         a, b = mvp.iloc[0], mvp.iloc[1] if len(mvp) > 1 else None
         best_pm = mvp[mvp.matches >= max(3, int(mvp.matches.max() * 0.5))].sort_values("per_match", ascending=False)
@@ -226,13 +230,14 @@ def _mvp(career, section, season, how) -> dict:
                         + (f", {a.points - b.points:.0f} ahead of {b.player}" if b is not None else "")
                         + (f". Best per match among regulars: {best_pm.iloc[0].player} on {best_pm.iloc[0].per_match:.1f}"
                            if len(best_pm) else "") + ".")
-        res["for_"] = "One number for who mattered most this season, with bat, ball and in the field together."
-        res["note"] = ("IPL MVP points, as the IPL counts them: 3.5 a wicket, 1 a dot ball, 2.5 a four, 3.5 a six, 2.5 a "
-                       "catch and 2.5 a stumping." if how_ == "ipl" else
+        res["for_"] = "One number for who mattered most this season, with bat and ball together."
+        res["note"] = ("IPL MVP points, as the IPL counts them, without fielding: 3.5 a wicket, 1 a dot ball, 2.5 a four "
+                       "and 3.5 a six (the IPL also gives 2.5 a catch and a stumping; no fielding is counted here)."
+                       if how_ == "ipl" else
                        "Impact points (the match impact on the Player stories page): runs, plus in white-ball cricket half "
                        "the runs above or below what this competition's usual strike rate would have made off the same "
                        "balls; each wicket worth this competition's runs per wicket, plus in white-ball cricket the runs "
-                       "kept below its usual economy; a catch or stumping a quarter of a wicket. A name that plays for two "
+                       "kept below its usual economy. No fielding is counted. A name that plays for two "
                        "teams in one season is two players, so each team's is listed on its own.")
         return res
     part("mvp", mvp_)
@@ -376,7 +381,7 @@ def _wrapped(career, section, season, asked, fmt_pick, mine, view="") -> dict:
         x = w.get("player")
         if x:
             add("player", "Player of the season", x["player"], f"{x['points']:.0f}", "impact points",
-                [f"{x['matches']} match{'es' if x['matches'] != 1 else ''} · batting {x['batting']:.0f}, bowling {x['bowling']:.0f}, fielding {x['fielding']:.0f}"])
+                [f"{x['matches']} match{'es' if x['matches'] != 1 else ''} · batting {x['batting']:.0f}, bowling {x['bowling']:.0f}"])
         note = ("Every figure is the team's own in this competition and season, from the scorecards as printed. "
                 "Best game: the excitement rating out of 10 (Matches page). Player of the season: the most impact "
                 "points (below). * not out or unbroken.")

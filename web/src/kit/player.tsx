@@ -78,7 +78,7 @@ export function FormBars({ f, unit }: { f: FormT; unit: "runs" | "wickets" }) {
         axisLabel: { ...L.AX.axisLabel, interval: n > 40 ? Math.ceil(n / 20) - 1 : n > 20 ? 1 : 0 } },
       yAxis: { ...L.AX, axisLine: { show: false }, minInterval: 1 },
       series: [
-        { type: "bar", barWidth: n > 60 ? "70%" : "58%", data: f.values.map((v) => ({ value: v, itemStyle: { color: col(v), borderRadius: 0 } })) },
+        { type: "bar", barWidth: n > 60 ? "70%" : "58%", cursor: "pointer", data: f.values.map((v, i) => ({ value: v, match: f.ids?.[i], itemStyle: { color: col(v), borderRadius: 0 } })) },
         { type: "line", data: f.rolling, symbol: "none", smooth: 0.2, lineStyle: { color: t.led, width: 3 }, connectNulls: false, z: 5,
           ...(f.overall != null ? { markLine: { silent: true, symbol: "none", label: { show: false }, lineStyle: { color: t.ink, type: "dashed", width: 1.5, opacity: 0.55 },
             data: [{ yAxis: f.overall }] } } : {}) },
@@ -113,7 +113,7 @@ export function Funnel({ rows }: { rows: { mark: number; pct: number | null; all
 }
 
 /** One number a match: green for a win. */
-export function ImpactBars({ rows }: { rows: { label: string; value: number; won: boolean; note: string }[] }) {
+export function ImpactBars({ rows }: { rows: { label: string; value: number; won: boolean; note: string; id?: string }[] }) {
   const t = useTheme();
   const option = useMemo<Option>(() => {
     const L = look(t), n = rows.length;
@@ -123,7 +123,7 @@ export function ImpactBars({ rows }: { rows: { label: string; value: number; won
       xAxis: { type: "category", data: rows.map((_, i) => String(i + 1)), ...L.AX, splitLine: { show: false },
         axisLabel: { ...L.AX.axisLabel, interval: n > 40 ? Math.ceil(n / 20) - 1 : n > 20 ? 1 : 0 } },
       yAxis: { ...L.AX, axisLine: { show: false } },
-      series: [{ type: "bar", barWidth: "60%", data: rows.map((r) => ({ value: r.value, itemStyle: { color: r.won ? t.win : alpha(t.led, 0.6), borderRadius: 0 } })) }],
+      series: [{ type: "bar", barWidth: "60%", cursor: "pointer", data: rows.map((r) => ({ value: r.value, match: r.id, itemStyle: { color: r.won ? t.win : alpha(t.led, 0.6), borderRadius: 0 } })) }],
     };
   }, [t, rows]);
   return <EChart option={option} height={280} label="Match impact" />;

@@ -54,7 +54,7 @@ def test_careers_and_the_one_on_screen(live, pc):
     c = live.json("/api/career")
     assert c["name"] == "My career" and c["matches"] == 20
     assert c["my_teams"] == ["England"] and c["folder"] == str(pc[1])
-    assert c["sections"][0] == "Vijay Hazare Trophy" and set(c["sections"]) == {
+    assert c["sections"][:3] == ["Tests", "ODIs", "T20Is"] and set(c["sections"]) == {
         "Vijay Hazare Trophy", "Ranji Trophy", "ODIs", "Tests", "T20 Blast", "Indian Premier League", "T20Is"}
     # a second career; choosing it is remembered for next time (the current site opens on it too)
     store.save(Career.build("Second", [(FIXTURES[30].name, FIXTURES[30].read_bytes())]), CareerSettings(name="Second"))

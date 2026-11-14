@@ -28,6 +28,7 @@ from ccstats import logos as LG
 from ccstats import search as SR
 from ccstats.colours import TEAM_COLOURS
 from ccstats.local import CareerStore
+from ccstats.competitions import ordered as in_order
 
 from . import comppage, matchpage, myteam, plannerpage, playerpage, previewpage, reviewpage, rivalriespage, seasonpage, styleguide, teampage, tvtpage
 from .cache import kept
@@ -144,7 +145,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         m = c.matches
         order = m.sort_values(["date", "match_id"])
         return {"name": c.name, "matches": int(len(m)),
-                "sections": list(dict.fromkeys(order.section[::-1])),   # the latest played first
+                "sections": in_order(m, m.section.unique()),   # the agreed order (Tests, ODIs, T20Is, ...)
                 "seasons": sorted(map(str, m.season.unique()), reverse=True),
                 "my_teams": site.my_teams(c), "my_teams_picked": site.my_teams(c, unplayed=True),
                 "folder": s.folder if s else "", "checked_at": site.checked_at or None,
@@ -521,6 +522,19 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             return _error(f"{name or 'That player'} hasn't batted or bowled in this career.", 404)
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
+    async def player_part_(request: Request):
+        """One tile of the player page for the formats ticked on it (Country by country, Big-match, Bounce-back)."""
+        q = request.query_params
+        name, which = q.get("name", ""), q.get("part", "")
+        sections = [s for s in q.get("sections", "").split("|") if s]
+        try:
+            data = await _with_career(lambda c: playerpage.part(c, name, which, sections))()
+        except KeyError:
+            return _error(f"{name or 'That player'} hasn't batted or bowled in this career.", 404)
+        except ValueError as e:
+            return _error(str(e), 400)
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
     # ------------------------------------------------------------------ Inbox
     def _inbox(c) -> dict:
         """Your teams' messages, newest first, without the ones you removed, each marked read or not."""
@@ -710,6 +724,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/review", review_),
         Route("/api/honours", honours_),
         Route("/api/player", player_),
+        Route("/api/player_part", player_part_),
         Route("/api/events", events),
         Route("/api/problems", problems_, methods=["GET", "POST"]),
         Route("/api/remember", remember_, methods=["POST"]),

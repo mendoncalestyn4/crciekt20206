@@ -54,6 +54,7 @@ class Site:
             hit = self._careers.get(name)
             if hit is None or hit[0] != sig:
                 c, _ = self.store.load(name)
+                c.count_fielding = False   # no fielding anywhere on the new site (14 November; ccstats.stats)
                 self._careers[name] = (sig, c)
                 self._venues.pop(name, None)
             c = self._careers[name][1]
@@ -68,6 +69,7 @@ class Site:
                     adj = FX.with_venues(c, FX.track(c, fx))
                 except Exception:  # noqa: BLE001 - a schedule that can't be read must never stop the site
                     adj = c
+                adj.count_fielding = False
                 self._venues[name] = (key, adj)
             return self._venues[name][1]
 

@@ -55,14 +55,16 @@ def test_player_ratings(demo):
     t = R.player_ratings(demo, "Indian Premier League")
     bat, bowl = R.innings_points(demo, "Indian Premier League")
     assert (t.batting_innings.where(t.batting.notna(), R.MIN_INNINGS) >= R.MIN_INNINGS).all()
-    # 500 = the average of the better half
-    b = t.batting.dropna()
-    assert abs(b[b >= b.median()].mean() - 500) < 2
     # the rating is the recency-weighted points: check one player by hand
     p = t.sort_values("batting").player.iloc[-1]
     pts = bat[bat.player == p].points.to_numpy(float)
     w = R.DECAY ** np.arange(len(pts) - 1, -1, -1)
     raw_all = bat.groupby("player").points.apply(lambda s: R._weighted(s.to_numpy(float)) if len(s) >= R.MIN_INNINGS else np.nan)
+    # 500 = the average of the better half, measured on the exact points (the ratings are rounded to whole numbers, so
+    # picking the better half by the rounded ratings can tie one more player with the middle one)
+    raw = raw_all.dropna()
+    better = raw[raw >= raw.median()].index
+    assert abs(t.set_index("player").batting[better].mean() - 500) <= 0.5
     assert abs(t.set_index("player").batting[p] - round((pts * w).sum() / w.sum() / R._scale(raw_all) * 500)) <= 1
     # the history ends on the table's rating
     h = R.rating_history(demo, "Indian Premier League", [p])

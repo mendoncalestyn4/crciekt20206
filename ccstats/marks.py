@@ -7,7 +7,7 @@ Each match is measured against the match itself, so the same score can be worth 
   half the runs above (or below) what the match's own run rate would have made off the same balls.
 - **bowling:** the wickets as a share of the wickets his side took, and of the average side's (half each). In
   white-ball cricket the runs kept below (or let go above) the match's run rate count, at the match's runs per wicket.
-- **fielding:** a catch or stumping is a quarter of a wicket.
+- **fielding:** a catch or stumping is a quarter of a wicket (on the old site only: the new site counts no fielding).
 A rain-shortened white-ball game counts for the share of its overs that were bowled; a game with no result doesn't
 count, and neither does a game in which a player neither batted, bowled nor took a catch.
 
@@ -27,7 +27,7 @@ import pandas as pd
 
 from .analysis import BOWLER_BALLS
 from .records import by_played
-from .stats import BALL_QUOTA, KIND
+from .stats import BALL_QUOTA, KIND, counts_fielding, fielding_credits
 
 SPEED = 0.5            # how much of the runs above the match's run rate count for a batter (white-ball)
 CATCH = 0.25           # a catch or stumping, in wickets
@@ -82,7 +82,7 @@ def match_values(career, ids=None) -> pd.DataFrame:
     w = career.bowling[career.bowling.match_id.isin(ids) & (career.bowling.balls > 0)]
     bowl = w.groupby(key).agg(wickets=("wickets", "sum"), conceded=("runs", "sum"), balls_bowled=("balls", "sum"),
                               haul=("wickets", "max")).reset_index()
-    f = career.fielding[career.fielding.match_id.isin(ids) & career.fielding.resolved]
+    f = fielding_credits(career, ids)
     fld = f.groupby(key).size().rename("dismissals").reset_index()
     d = bat.merge(bowl, on=key, how="outer").merge(fld, on=key, how="outer")
     nums = ["runs", "balls", "outs", "top", "hundreds", "fifties", "wickets", "conceded", "balls_bowled", "haul", "dismissals"]
@@ -126,7 +126,7 @@ def series_marks(career, ids=None) -> pd.DataFrame:
     """Every player's mark out of 10 in every series or tournament (all teams), ranked within his side's series.
     For the whole career it's kept with the career until its matches change (a few seconds on a big one)."""
     if ids is None:
-        stamp = (id(career.matches), len(career.matches))
+        stamp = (id(career.matches), len(career.matches), counts_fielding(career))
         kept = getattr(career, "_series_marks", None)
         if kept is None or kept[0] != stamp:
             kept = (stamp, _series_marks(career, None))

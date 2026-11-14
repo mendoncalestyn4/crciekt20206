@@ -51,11 +51,12 @@ def test_impact_points_are_the_match_impact(demo):
 
 
 def test_a_name_in_two_teams_is_two_players(fixtures):
-    # "A Sharma" plays for Gujarat Titans and for Sunrisers Hyderabad in the sample IPL games
+    # "A Sharma" plays for Gujarat Titans and for Sunrisers Hyderabad in the sample IPL games: two players, split by
+    # name (14 November), each counted on his own
     d = MV.season_mvp(fixtures, IPL, "2026", "impact")
-    sharma = d[d.player == "A Sharma"]
-    assert set(sharma.team) >= {"Gujarat Titans", "Sunrisers Hyderabad"}
-    assert sharma.groupby("team").size().max() == 1
+    assert set(d[d.player == "A Sharma"].team) == {"Gujarat Titans"}
+    assert set(d[d.player == "A Sharma (Sunrisers Hyderabad)"].team) == {"Sunrisers Hyderabad"}
+    assert d.groupby(["player", "team"]).size().max() == 1
 
 
 def test_dot_balls_only_where_the_scorecards_print_them(fixtures):

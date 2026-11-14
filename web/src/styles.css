@@ -175,7 +175,7 @@ img.lg { vertical-align: middle; flex: none; object-fit: contain; }
   margin-top: 4px; }
 .msgrid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 28px; margin-top: 18px; align-items: start; }
 .inn + .inn { margin-top: 14px; }
-.inn .band { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto auto; align-items: center; gap: 16px;
+.inn .band { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto auto; align-items: center; gap: 16px;
   background: var(--tile2); border-left: 6px solid var(--line1); padding: 8px 20px 8px 16px; }
 .inn .band .tm { font: 400 36px/1 'Bebas Neue'; letter-spacing: .045em; word-spacing: .08em; }
 .inn .band .which { font: 600 17.2px Inter; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
@@ -343,7 +343,7 @@ ul.dots { margin: 10px 0 0 22px; font: 400 18px/1.7 Inter; color: var(--soft); }
 /* every country's row on one shared grid, so the name column is as wide as the longest name and the bars line up */
 .ctys { display: grid; grid-template-columns: max-content minmax(0, 1fr) 110px; }
 .cty { display: contents; } .cty > * { padding: 8px 0; border-top: 1px solid var(--edge); align-self: stretch; display: flex; align-items: center; }
-.cty > :not(.r) { padding-right: 14px; } .cty > .r { justify-content: flex-end; } .cty .slot { display: inline-flex; width: 30px; height: 30px; flex: none; }
+.cty > :not(.r) { padding-right: 14px; } .cty > .r { justify-content: flex-end; } .cty .slot { display: inline-flex; width: 40px; height: 40px; flex: none; }
 .cty .stack { display: flex; height: 22px; gap: 2px; }
 .cty .stack i { display: block; height: 100%; flex: 1; }
 .cty .r { font: 700 19px 'Space Grotesk'; color: var(--led); text-align: right; }
@@ -362,7 +362,7 @@ ul.dots { margin: 10px 0 0 22px; font: 400 18px/1.7 Inter; color: var(--soft); }
 .mw .n { font: 700 34px/1 'Space Grotesk'; color: var(--led); text-align: center; }
 .mw .n small { display: block; font: 400 15px 'Bebas Neue'; letter-spacing: .1em; color: var(--dim); margin-top: 2px; }
 .mw .hls { display: grid; gap: 4px; font: 500 15px/1.4 Inter; color: var(--soft); }
-.mw .hls span b { color: var(--dim); font-weight: 600; margin-right: 6px; }
+.mw .hls span b, .mw .hls a b { color: var(--dim); font-weight: 600; margin-right: 6px; }
 
 /* ------------------------------------------------------------------ stage 1: Matches */
 .explain { margin-top: 10px; display: grid; gap: 4px; font: 400 16.8px/1.45 Inter; color: var(--dim); }
@@ -512,10 +512,12 @@ table.tv tr.dim td { opacity: .45; }
 
 /* ------------------------------------------------------------------ stage 1: Players */
 .plist { margin-top: 14px; border-top: 1px solid var(--edge); }
-.pli { display: grid; grid-template-columns: 30px minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); gap: 14px; align-items: center;
+.pli { display: grid; grid-template-columns: 40px minmax(min-content, 1.3fr) minmax(0, 1.1fr) minmax(0, 1fr); gap: 14px; align-items: center;
   padding: 8px 6px; border-bottom: 1px solid var(--edge); text-decoration: none; color: var(--ink); }
 .pli:hover { background: var(--tile2); }
-.pli .pn { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+/* the name has its own column, at least as wide as its longest word: it wraps only between words (found by you, 14
+   November: searching "smith" squeezed the names into a column a letter or two wide) */
+.pli .pn { white-space: normal; overflow-wrap: normal; word-break: normal; }
 .pli .how { margin: 0; min-width: 0; }
 .won { display: grid; gap: 2px; }
 .won > div { padding: 7px 0; border-top: 1px solid var(--edge); }
@@ -627,12 +629,12 @@ table.c th.sortable { cursor: pointer; user-select: none; } table.c th.sortable.
 
 /* a team's name with its badge in a table cell */
 .badged { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; } .badged > span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.badged .slot { display: inline-flex; width: 28px; height: 28px; flex: none; }
+.badged .slot { display: inline-flex; width: 36px; height: 36px; flex: none; }
 .badged .vs { font-style: normal; color: var(--dim); margin: 0 2px; } .badged img.lg { flex: none; }
 
 /* the competition logo's place on a scoreboard row: kept for every row, so the rows line up with or without one */
-.cslot { display: inline-flex; width: 30px; height: 30px; flex: none; align-items: center; justify-content: center; }
-.cslot.sm { width: 24px; height: 24px; }
+.cslot { display: inline-flex; width: 40px; height: 40px; flex: none; align-items: center; justify-content: center; }
+.cslot.sm { width: 32px; height: 32px; }
 
 /* Season · calendar: the best month lit up, and a tournament's games just outside the season's months ("29 Mar") */
 .cm { position: relative; } .cm.best { box-shadow: 0 0 0 2px var(--led), 0 0 18px color-mix(in srgb, var(--led) 35%, transparent); }
@@ -654,3 +656,23 @@ table.c th.sortable { cursor: pointer; user-select: none; } table.c th.sortable.
   border-radius: 0 0 8px 8px; border: 1px solid var(--edge); border-top: 0; background: var(--tile2); color: var(--ink); cursor: pointer; }
 .savepic:hover { border-color: var(--led); color: var(--led); }
 .t:has([data-chart]):hover > .savepic { display: block; }   /* every chart marks its box with data-chart */
+
+/* the innings' best batter and bowler (★) and the player of the match (🏆), beside the name on the scorecard */
+.star { color: var(--gold, #e7b416); margin-left: 6px; font-size: 0.9em; }
+.pomk { margin-left: 6px; font-size: 0.85em; }
+
+/* format tick boxes on a tile (tick any formats: counted together) */
+.ticks { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: -2px 0 12px; }
+.tick { display: inline-flex; align-items: center; gap: 6px; font: 600 14px Inter; color: var(--dim); cursor: pointer; }
+.tick.on { color: var(--ink); }
+.tick input { accent-color: var(--gold); width: 15px; height: 15px; margin: 0; cursor: pointer; }
+
+/* a team the game has no logo picture for, where a logo always belongs (the match summary): its short name, round */
+.lgx { display: inline-grid; place-items: center; border-radius: 50%; background: var(--tile2); border: 1px solid var(--edge);
+  color: var(--ink); font-family: 'Bebas Neue'; letter-spacing: .04em; flex: none; }
+
+/* a row or line that opens its match: looks like the rest of the list, lights up when pointed at */
+a.lkrow, a.mlk { color: inherit; text-decoration: none; cursor: pointer; }
+a.lkrow:hover, a.mlk:hover { background: var(--tile2); }
+.hls a.lkrow { display: block; border-radius: 6px; }
+.ticker a.tk { color: inherit; text-decoration: none; }

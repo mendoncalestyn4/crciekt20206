@@ -7,7 +7,9 @@ import { GridComponent, LegendComponent, MarkAreaComponent, MarkLineComponent, M
 import * as echarts from "echarts/core";
 import { SVGRenderer } from "echarts/renderers";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router";
 import { useNames } from "../shell/names";
+import { useShell } from "../shell/Shell";
 import { ts } from "./look";
 
 echarts.use([BarChart, LineChart, PieChart, ScatterChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent,
@@ -89,13 +91,20 @@ export function EChart({ option, height, width, label }: { option: Option; heigh
   const names = useNames();
   const known = useRef(names.set);
   known.current = names.set;
+  const navigate = useNavigate();
+  const { nation } = useShell();
+  const go = useRef((id: string) => navigate(`/matches/${encodeURIComponent(id)}${nation ? `?nation=${encodeURIComponent(nation)}` : ""}`));
+  go.current = (id: string) => navigate(`/matches/${encodeURIComponent(id)}${nation ? `?nation=${encodeURIComponent(nation)}` : ""}`);
   useEffect(() => {
     if (!el.current) return;
     const c = echarts.init(el.current, null, { renderer: "svg" });
     chart.current = c;
-    // a click on a player's name (an axis label, or a bar or point named after them) opens the player menu there
+    // a click on a player's name (an axis label, or a bar or point named after them) opens the player menu there; a
+    // bar or point that is one match (its data item says which: `match`) opens that match (every match clickable)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     c.on("click", (p: any) => {
+      const match = p.data && typeof p.data === "object" ? p.data.match : undefined;
+      if (typeof match === "string" && match) { go.current(match); return; }
       const player = [p.value, p.name, p.seriesName].find((v) => typeof v === "string" && known.current.has(v));
       const ev = p.event?.event as MouseEvent | undefined;
       if (player && ev) window.dispatchEvent(new CustomEvent("player-menu", { detail: { player, x: ev.clientX, y: ev.clientY } }));

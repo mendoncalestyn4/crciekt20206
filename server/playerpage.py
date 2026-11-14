@@ -24,6 +24,7 @@ from ccstats import teamdeep as TD
 from ccstats.matchstory import pom_headline
 from ccstats.records import by_played
 from ccstats.stats import Scope, bars_for, player_tables, poss
+from ccstats.competitions import ordered as in_order
 
 from . import myteam
 from . import styleguide as SG
@@ -31,7 +32,7 @@ from .cache import kept
 
 BAT_HELP = {"Mat": "Matches played", "Inns": "Innings batted", "NO": "Not outs", "Runs": "Runs", "HS": "Highest score (* = not out)",
             "Avg": "Runs per dismissal", "BF": "Balls faced", "SR": "Runs per 100 balls", "100": "Hundreds",
-            "50": "Fifties (50-99)", "0": "Ducks", "4s": "Fours", "6s": "Sixes", "Ct": "Catches", "St": "Stumpings"}
+            "50": "Fifties (50-99)", "0": "Ducks", "4s": "Fours", "6s": "Sixes"}
 BOWL_HELP = {"Mat": "Matches played", "Inns": "Innings bowled in", "Overs": "Six-ball overs (The Hundred's balls are converted)",
              "Mdns": "Maidens (only printed on longer-format cards)", "Dots": "Dot balls (only printed on T20 and Hundred cards)",
              "Runs": "Runs conceded", "Wkts": "Wickets", "BBI": "Best bowling in an innings", "BBM": "Best bowling in a match",
@@ -73,7 +74,7 @@ def everyone(career) -> list[dict]:
         for p, g in rows.groupby("player", sort=False):
             teams = list(dict.fromkeys(g.team[::-1]))[::-1]
             out.append(dict(player=p, team=teams[-1], teams=teams, matches=int(g.match_id.nunique()),
-                            sections=list(g.drop_duplicates("match_id").section.value_counts().index)))
+                            sections=in_order(career.matches, g.section.unique())))   # the agreed order
         return out
     return kept(career, ("everyone",), make)
 
@@ -146,12 +147,13 @@ def table(df: pd.DataFrame, first: str, bowling: bool, fifties_first: bool = Fal
 
 
 def tables(career, section: str, season: str):
-    """The batting, bowling and fielding tables for a competition (and season), kept with the career."""
+    """The batting and bowling tables for a competition (and season), kept with the career (the engine's fielding
+    table comes with them; the new site shows none of it)."""
     return kept(career, ("player_tables", section, season),
                 lambda: player_tables(career, Scope(sections=[section], seasons=[season] if season else [])))
 
 
-def _form(values, outs=None, labels=()) -> dict:
+def _form(values, outs=None, labels=(), ids=()) -> dict:
     """Every innings oldest first, the rolling line over the last 10 (5 for a career under 20 innings), as the
     current site draws it: nothing until a full window; for batting runs over dismissals, for bowling the mean."""
     v = [int(x) for x in values]
@@ -172,7 +174,7 @@ def _form(values, outs=None, labels=()) -> dict:
         overall = round(float(np.mean(v)), 2) if n else None
     else:
         overall = round(sum(v) / max(sum(outs), 1), 1) if n else None
-    return dict(values=v, rolling=roll, labels=list(labels), window=w, overall=overall)
+    return dict(values=v, rolling=roll, labels=list(labels), window=w, overall=overall, ids=[str(x) for x in ids])
 
 
 # ------------------------------------------------------------------ the page
@@ -188,12 +190,12 @@ def page(career, player: str, section: str = "", season: str = "") -> dict:
     played = by_played(career, my_matches)
     team_of = pd.concat([bat_all[["match_id", "team"]], bowl_all[["match_id", "team"]]]).drop_duplicates("match_id").set_index("match_id").team
     teams = list(dict.fromkeys(team_of.reindex(played.match_id)[::-1].dropna()))[::-1]
-    keeper = bool((A.keepers(career, my_matches.match_id).player == player).any())
-    order = list(my_matches.section.value_counts().index)
-    section = section if section in order else order[0]
+    # the competitions in the agreed order (Tests, ODIs, T20Is, franchise, domestic); the page opens on the one played most
+    order = in_order(m, my_matches.section.unique())
+    section = section if section in order else my_matches.section.value_counts().index[0]
     seasons = sorted(my_matches[my_matches.section == section].season.unique(), reverse=True)
     season = season if season in seasons else ""
-    out: dict = dict(player=player, teams=teams, keeper=keeper, matches=len(my_matches), missing={},
+    out: dict = dict(player=player, teams=teams, matches=len(my_matches), missing={},
                      section=section, season=season or "All seasons", sections=order, seasons=["All seasons"] + seasons)
 
     def piece(name, fn):
@@ -205,7 +207,8 @@ def page(career, player: str, section: str = "", season: str = "") -> dict:
 
     by_order = lambda df: df.assign(_o=df.section.map(order.index)).sort_values("_o").drop(columns="_o")  # noqa: E731
     piece("card", lambda: _card(career, player, my_matches, bat_all, bowl_all))
-    bat_rec = by_order(A.batting_record(career, my_matches.match_id, player))
+    # no fielding anywhere on the new site (14 November): the record's catches and stumpings columns go
+    bat_rec = by_order(A.batting_record(career, my_matches.match_id, player)).drop(columns=["Ct", "St"])
     bowl_rec = by_order(A.bowling_record(career, my_matches.match_id, player))
     piece("bat_table", lambda: table(bat_rec, "section", False) if len(bat_rec) else None)
     piece("bowl_table", lambda: table(bowl_rec, "section", True) if len(bowl_rec) else None)
@@ -218,18 +221,24 @@ def page(career, player: str, section: str = "", season: str = "") -> dict:
     piece("journey", lambda: SG.rows(E.journey(career, player), ["first", "last", "team", "section", "season", "matches", "runs", "wickets"]))
 
     ids = m[(m.section == section) & ((m.season == season) if season else True)].match_id
-    bat_t, bowl_t, fld_t, base = tables(career, section, season)
+    bat_t, bowl_t, _, base = tables(career, section, season)
     kind = base.kind
     inns = A.batting_innings(career, ids, player)
     spells = A.bowling_spells(career, ids, player)
     roles = kept(career, ("roles", section, season), lambda: A.role_labels(career, ids, kind).set_index("player"))
     role = roles.loc[player] if player in roles.index else None
-    out["role"] = SG.clean(dict(role=role.role, tags=list(role.tags), usual_position=role.usual_position)) if role is not None else None
-    tabs = (["Batting"] if len(inns) else []) + (["Bowling"] if len(spells) else []) + ["Fielding"]
-    is_bowler = role.role == "Bowler" if role is not None else (inns.empty or inns.position.median() >= 8)
-    if is_bowler and "Bowling" in tabs:   # a bowler's page opens on their bowling, then fielding; batting comes last
-        tabs = ["Bowling", "Fielding"] + [t for t in tabs if t not in ("Bowling", "Fielding")]
-    out["tabs"] = tabs + ["Story"]
+    # (who keeps wicket is worked out quietly and never shown: no "Wicketkeeper" tag)
+    out["role"] = SG.clean(dict(role=role.role, tags=[t for t in role.tags if t != "Wicketkeeper"],
+                                usual_position=role.usual_position)) if role is not None else None
+    # the tabs (your answer of 14 November): an Overview, then each kind of stats on its own tab with everything of that
+    # kind, then the Story; the page opens on the player's main job (a batter on Batting, a bowler on Bowling, an
+    # all-rounder on the Overview)
+    batted = bool(bat_all.did_bat.any())
+    bowled = bool((bowl_all.balls > 0).any())
+    out["tabs"] = ["Overview"] + (["Batting"] if batted else []) + (["Bowling"] if bowled else []) + ["Story"]
+    job = role.role if role is not None else ("Bowler" if inns.empty or inns.position.median() >= 8 else "")
+    out["open"] = ("Bowling" if job == "Bowler" and bowled else "Overview" if job == "All-rounder" or not batted
+                   else "Batting")
     out["batting"] = out["bowling"] = out["bat_innings"] = out["bowl_innings"] = None
     if len(inns):
         piece("batting", lambda: _batting(career, player, section, season, ids, inns, bat_t, kind))
@@ -237,8 +246,6 @@ def page(career, player: str, section: str = "", season: str = "") -> dict:
     if len(spells):
         piece("bowling", lambda: _bowling(career, player, section, season, ids, spells, bowl_t, kind))
         piece("bowl_innings", lambda: _by_innings(career, player, section, season, ids, kind, bowling=True))
-    f = fld_t[fld_t.player == player]
-    out["fielding"] = SG.clean(dict(matches=f.matches.iloc[0], catches=f.catches.iloc[0], stumpings=f.stumpings.iloc[0])) if len(f) else None
     piece("story", lambda: _story(career, player, section, season, ids, kind, my_matches))
     # attributes and the scout report: for the competition (every season of it), not one season
     piece("profile", lambda: kept(career, ("profile", section, player), lambda: AT.profile(career, section, player)))
@@ -363,8 +370,8 @@ def _best_format_line(b) -> str:
 def all_formats(career, player) -> pd.DataFrame:
     """PD.all_formats (every format against its own average), from the competition tables kept with the career rather
     than working each one out again (tests/test_playerpage.py checks the two agree)."""
-    secs = career.matches[career.matches.match_id.isin(
-        set(career.batting[career.batting.player == player].match_id))].section.value_counts().index
+    secs = in_order(career.matches, career.matches[career.matches.match_id.isin(
+        set(career.batting[career.batting.player == player].match_id))].section.unique())
     rows = []
     for sec in secs:
         bat, bowl, _, base = tables(career, sec, "")
@@ -416,7 +423,7 @@ def _batting(career, player, section, season, ids, inns, bat_t, kind) -> dict:
     b = bat_t[bat_t.player == player].iloc[0]
     avg = float(b.average) if pd.notna(b.average) else None
     labels = [f"{r.runs}{'' if r.out else '*'} off {r.balls} v {r.opposition} · {r.date:%d %b %Y}" for r in inns.itertuples()]
-    form = _form(inns.runs, list(inns.out.astype(int)), labels)
+    form = _form(inns.runs, list(inns.out.astype(int)), labels, inns.match_id)
     n = min(form["window"], len(inns))
     last = inns.tail(n)
     recent = last.runs.sum() / max(last.out.sum(), 1)
@@ -452,7 +459,8 @@ def _batting(career, player, section, season, ids, inns, bat_t, kind) -> dict:
         for_="How bowlers get them out: a weakness to work on with your own players, or to attack in an opponent.")
     out["danger"] = _danger(career, ids, player)
     out["funnel"] = _funnel(career, ids, player)
-    out["season_table"] = table(A.batting_record(career, ids, player, by="season").sort_values("season", ascending=False),
+    out["season_table"] = table(A.batting_record(career, ids, player, by="season").drop(columns=["Ct", "St"])   # no fielding
+                                .sort_values("season", ascending=False),
                                 "season", False, fifties_first=kind == "t20")
     strength = kept(career, ("strength", section, season), lambda: A.team_strength(career, ids))
     splits = []
@@ -605,7 +613,7 @@ def _came_in(inns, kind, avg) -> dict:
 def _bowling(career, player, section, season, ids, spells, bowl_t, kind) -> dict:
     w = bowl_t[bowl_t.player == player].iloc[0]
     labels = [f"{r.wickets}/{r.runs} v {r.opposition} · {r.date:%d %b %Y}" for r in spells.itertuples()]
-    form = _form(spells.wickets, None, labels)
+    form = _form(spells.wickets, None, labels, spells.match_id)
     n = min(form["window"], len(spells))
     rw, aw = spells.tail(n).wickets.mean(), spells.wickets.mean()
     form["shows"] = (f"{len(spells)} innings bowled. Their last {n} average {rw:.2f} wickets an innings against {aw:.2f} overall"
@@ -624,7 +632,7 @@ def _bowling(career, player, section, season, ids, spells, bowl_t, kind) -> dict
     out["how_wickets"] = None if wt.empty else dict(
         rows=[dict(label=say(h), value=int(v)) for h, v in wt.items()],
         shows=f"{wt.iloc[0] / wt.sum() * 100:.0f}% of their {int(wt.sum())} wickets are {say(wt.index[0]).lower()}.",
-        for_="How they get batters out: bowled and lbw mean they hit the stumps; catches mean they need the fielders, so set the field for them.")
+        for_="How they get batters out: bowled and lbw mean they hit the stumps; caught means they need the fielders, so set the field for them.")
     out["match_pattern"] = None
     if kind == "multi":
         mp = kept(career, ("pattern", section, season), lambda: TD.bowler_match_pattern(career, ids, 1))
@@ -982,11 +990,11 @@ def _story(career, player, section, season, ids, kind, my_matches) -> dict:
         per = g.mean()[g.size() >= need]
         rank = int((per > mine.impact.mean()).sum()) + 1
         out["impact"] = dict(
-            rows=[dict(label=f"v {r.opponent} · {r.date:%d %b %Y}", value=round(float(r.impact)), won=bool(r.won),
+            rows=[dict(label=f"v {r.opponent} · {r.date:%d %b %Y}", value=round(float(r.impact)), won=bool(r.won), id=r.match_id,
                        note=f"{int(r.runs)} runs, {count(r.wickets, 'wkt')}") for r in mine.itertuples()],
             shows=f"Average {mine.impact.mean():.0f} a match, number {rank} of the {len(per)} players here with {need}+ matches. "
                   f"Best: {best.impact:.0f} v {best.opponent} ({int(best.runs)} runs, {count(best.wickets, 'wkt')}). Green bars are wins.",
-            for_="Puts batting, bowling and fielding on one scale: runs, plus each wicket worth the competition's runs per wicket"
+            for_="Puts batting and bowling on one scale: runs, plus each wicket worth the competition's runs per wicket"
                  + (", with scoring speed and economy counted in white-ball cricket." if mi.attrs["kind"] != "multi" else "."))
     rk = kept(career, ("rank_by_season", section, player), lambda: PD.rank_by_season(career, section, player))
     if rk.empty:
@@ -1068,3 +1076,28 @@ def _compare(career, player, section, my_matches) -> dict | None:
                 per[s][f"Bowling {col}"] = dict(v=v, text=fmt(v, dec) if v is not None else "–", better=better)
     return dict(seasons=seasons, per=per)
 
+
+
+# ------------------------------------------------------------------ one tile, for the formats ticked on it
+PARTS = ("countries", "big", "bounce")
+
+
+def part(career, player: str, which: str, sections: list[str]) -> dict:
+    """Country by country, Big-match player or Bounce-back for the formats ticked on that tile (your request of 14
+    November: buttons on the tile itself, any formats ticked together; it opens on the page's competition). Several
+    formats are counted together, each game as it was. KeyError for a player who hasn't played, ValueError for a part
+    or formats that can't be."""
+    if which not in PARTS:
+        raise ValueError(f"No such part: {which}")
+    mine = set(career.batting[career.batting.player == player].match_id) | set(
+        career.bowling[career.bowling.player == player].match_id)
+    if not mine:
+        raise KeyError(player)
+    m = career.matches
+    played = in_order(m, m[m.match_id.isin(mine)].section.unique())
+    sections = [s for s in played if s in set(sections)] or played[:1]
+    label = " + ".join(sections)
+    ids = set(m[m.section.isin(sections)].match_id)
+    fn = {"countries": _countries, "big": _big, "bounce": _bounce}[which]
+    return SG.clean(dict(part=which, sections=sections, played=played, label=label,
+                         data=kept(career, ("part", which, player, tuple(sections)), lambda: fn(career, player, label, ids))))

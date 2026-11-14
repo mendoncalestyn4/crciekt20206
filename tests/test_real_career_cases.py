@@ -232,7 +232,12 @@ def test_keep_apart_separates_a_shared_name():
     b = base.batting
     g_name = b[b.team == "Gujarat Titans"].player.iloc[0]
     s_name = b[b.team == "Sunrisers Hyderabad"].player.iloc[0]
-    c = Career.build("names", [(gt.name, gt.read_bytes()), (srh.name, srh.read_text().replace(s_name, g_name).encode())])
+    files = [(gt.name, gt.read_bytes()), (srh.name, srh.read_text().replace(s_name, g_name).encode())]
+    # split by itself since 14 November ("yeah, split them")
+    auto = Career.build("names", files)
+    assert checks.shared_names(auto).empty and list(auto.auto_splits.player) == [g_name]
+    # kept together by the user's choice, the old site's data check page still splits it with one click
+    c = Career.build("names", files, Fixes(keep_together=[g_name]))
     shared = checks.shared_names(c)
     assert list(shared.player) == [g_name]
     at = AppTest.from_file(str(ROOT / "views" / "data_check.py"), default_timeout=120)

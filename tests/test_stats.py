@@ -60,8 +60,12 @@ def test_engine_matches_the_raw_text(career, fmt):
     scope = Scope(competitions=["County Championship"]) if fmt == "First-class" else Scope(formats=[fmt])
     bat, bowl, _, _ = player_tables(career, scope)
     expected = count_from_text(fmt)
-    b = bat.set_index("player")
-    w = bowl.set_index("player")
+    # a printed name that played for two teams in one competition and season is split by team (14 November): the text
+    # counts the printed name, so its split players are added up
+    back = dict(zip(career.auto_splits.new_name, career.auto_splits.player))
+    printed = lambda p: back.get(p, p)  # noqa: E731
+    b = bat.assign(printed=bat.player.map(printed)).groupby("printed")[["runs", "balls", "fours", "sixes"]].sum()
+    w = bowl.assign(printed=bowl.player.map(printed)).groupby("printed")[["balls", "wickets"]].sum()
     for name, e in expected.items():
         if e["balls"] or e["runs"]:
             assert (b.loc[name, "runs"], b.loc[name, "balls"], b.loc[name, "fours"], b.loc[name, "sixes"]) == \

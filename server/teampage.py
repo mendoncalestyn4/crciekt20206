@@ -18,6 +18,7 @@ from ccstats import teamdeep as TD
 from ccstats import teamplay as TP
 from ccstats import winprob as WP
 from ccstats.stats import Scope, bars_for, kind_of, ordinal, player_tables, poss
+from ccstats.competitions import ordered as in_order
 
 from . import styleguide as SG
 from .cache import kept
@@ -68,13 +69,14 @@ def table(cols, rows, num=(), hi=None, links=None) -> dict:
 
 # --------------------------------------------------------------------------- the pickers
 def choices(career) -> dict:
-    """Every competition (most matches first) with its seasons (newest first) and teams (A to Z, those still to play
-    marked)."""
+    """Every competition (in the agreed order: Tests, ODIs, T20Is, franchise, domestic) with its seasons (newest first)
+    and teams (A to Z, those still to play marked)."""
     def make():
         m = career.matches
         counts = m.section.value_counts()
         out = []
-        for sec, n in counts.items():
+        for sec in in_order(m, counts.index):
+            n = counts[sec]
             here = m[m.section == sec]
             teams, todo = CAT.section_teams(here, sec, here)
             out.append(dict(section=sec, matches=int(n), seasons=sorted(map(str, here.season.unique()), reverse=True),
@@ -178,10 +180,6 @@ def overview(career, section, season, team, venue) -> dict:
     teams, _ = CAT.section_teams(career.matches[career.matches.section == section], section, here)
     P = _Parts()
 
-    def keepers():
-        k = A.keepers(career, tids, team)
-        return [dict(player=p, stumpings=int(n)) for p, n in zip(k.player, k.stumpings)]
-    P("keepers", keepers)
 
     def vs_average():
         avg = tbl.mean(numeric_only=True)
@@ -781,7 +779,7 @@ def squad_tab(career, section, season, team, venue) -> dict:
             return dict(title=title, none="Not enough games yet to pick an XI.")
         out = table(["", "Role", "Player", "Why"], [[i + 1, r.slot, r.player, r.why] for i, r in enumerate(xi.itertuples())],
                     num={0})
-        out.update(title=title, note=f"Picked by role: 2 openers, the middle order, a keeper (made a stumping), an all-rounder "
+        out.update(title=title, note=f"Picked by role: 2 openers, the middle order, a wicketkeeper, an all-rounder "
                    f"(bats in the top 8; runs per innings × bowling) and 4 bowlers. {XI_HOW[xi.attrs.get('kind', 't20')]} "
                    f"Needs {xi.attrs.get('need', 2)}+ games here. 'Best available': not enough players in that role, so the "
                    "best of the rest.")

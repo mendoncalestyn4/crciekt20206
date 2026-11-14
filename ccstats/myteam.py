@@ -9,7 +9,7 @@ import pandas as pd
 from . import teamplay as TP
 from .analysis import team_table
 from .records import played_order
-from .stats import Scope
+from .stats import Scope, counts_fielding
 
 
 def sections_of(career, team: str) -> list[str]:
@@ -192,7 +192,7 @@ def report_card(career, team: str, section: str, season: str) -> list[tuple[str,
     sids = Scope(sections=[section], seasons=[season]).match_ids(career.matches)
     fc = career.fielding[career.fielding.match_id.isin(sids) & (career.fielding.kind == "caught")]
     cpm = (fc.groupby("team").size() / tt.set_index("team").played).dropna()
-    if team in cpm.index and cpm.mean():
+    if team in cpm.index and cpm.mean() and counts_fielding(career):   # (no fielding on the new site)
         d = (cpm[team] - cpm.mean()) / cpm.mean() * 100
         out.append(("Fielding", _grade(d), f"{cpm[team]:.1f} catches a game, average team {cpm.mean():.1f}"))
     last5 = in_played_order(career, tg[tg.team == team]).tail(5)

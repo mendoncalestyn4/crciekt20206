@@ -19,7 +19,7 @@ export function Badged({ text, slot = false }: { text: string; slot?: boolean })
   const sides = text.split(" v ");
   // `slot`: some names in this table have a badge, so every name keeps the badge's room and they line up
   return <span className="badged">{sides.map((x, i) => <span key={i}>{i > 0 && <i className="vs">v</i>}
-    {slot ? <span className="slot"><Logo team={x} size={28} /></span> : <Logo team={x} size={28} />}<T>{x}</T></span>)}</span>;
+    {slot ? <span className="slot"><Logo team={x} size={36} /></span> : <Logo team={x} size={36} />}<T>{x}</T></span>)}</span>;
 }
 
 export function Grid({ t, keep = "" }: { t: GridT; keep?: string }) {

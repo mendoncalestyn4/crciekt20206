@@ -476,3 +476,40 @@ def fix_playoff_stages(games: list[dict]) -> None:
     for g in q1:
         if g is not real:
             g["stage"] = "Eliminator"
+
+
+# --------------------------------------------------------------------------- the order competitions are listed in
+INTERNATIONAL_ORDER = ("Tests", "ODIs", "T20Is")
+LEVEL_ORDER = {INTERNATIONAL: 0, FRANCHISE: 1, DOMESTIC: 2}
+
+
+def section_rank(matches) -> dict[str, tuple]:
+    """Each section's place in the one order every page lists competitions in (your rule of 14 November, "always"):
+    Tests, ODIs and T20Is first, in that order (any other international section after them), then the franchise
+    leagues, then the domestic competitions, then tour and exhibition games; within each group the most matches first,
+    then by name. `matches` is the career's matches table."""
+    if matches is None or len(matches) == 0:
+        return {}
+    g = matches.groupby("section").agg(level=("level", "first"), n=("match_id", "nunique"))
+    out = {}
+    for sec, r in g.iterrows():
+        intl = INTERNATIONAL_ORDER.index(sec) if sec in INTERNATIONAL_ORDER else len(INTERNATIONAL_ORDER)
+        group = LEVEL_ORDER.get(r.level, len(LEVEL_ORDER))
+        out[sec] = (group, intl if group == 0 else 0, -int(r.n), str(sec))
+    return out
+
+
+def ordered(matches, sections) -> list[str]:
+    """These sections in the agreed order (section_rank); one the career has no match in goes last, by name."""
+    rank = section_rank(matches)
+    return sorted(dict.fromkeys(sections), key=lambda s: rank.get(s, (9, 0, 0, str(s))))
+
+
+def event_rank(matches) -> dict[str, tuple]:
+    """Each competition as it's run (an event: the IPL, a World Cup, a county division) placed by its section's order,
+    then the most matches, then by name."""
+    if matches is None or len(matches) == 0:
+        return {}
+    rank = section_rank(matches)
+    g = matches.groupby("event").agg(section=("section", "first"), n=("match_id", "nunique"))
+    return {e: (*rank.get(r.section, (9, 0, 0, ""))[:3], -int(r.n), str(e)) for e, r in g.iterrows()}

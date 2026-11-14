@@ -85,7 +85,9 @@ def tokens(nation: str | None) -> dict:
         t["rail_on_ink"] = "#ffffff"
     else:                                 # a light page: light tiles, dark words, deep gold numbers
         tile = pal["panel"]
-        t.update(tile=tile, tile2=_mix(page, main, 0.07), edge=pal["panel_edge"], deep=_mix(page, main, 0.16),
+        # boxes inside a tile take the page's own colour (your choice of 14 November, every team's light look: no
+        # muddy mix of the main colour into the page), set apart from the tile by their thin edge
+        t.update(tile=tile, tile2=page, edge=pal["panel_edge"], deep=_mix(page, main, 0.16),
                  track=_mix(tile, main, 0.12), meter=_mix(tile, main, 0.16), ppl=_mix(page, main, 0.04),
                  ppl_edge=_mix(page, main, 0.30), split=pal["grid"], other=_mix(tile, main, 0.38),
                  ink=pal["ink"], dim=pal["muted"], soft=pal["ink2"], blue=_readable(main, tile, 3.0),

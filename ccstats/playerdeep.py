@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from .players import innings, kind_of_ids, spells
-from .stats import KIND
+from .stats import KIND, fielding_credits
 
 # --------------------------------------------------------------------------- #
 # 89 · danger zones
@@ -176,7 +176,7 @@ def match_impact(career, ids) -> pd.DataFrame:
     rpw = inn_all.runs.sum() / max(inn_all.wickets.sum(), 1)
     b = career.batting[career.batting.match_id.isin(ids) & career.batting.did_bat]
     w = career.bowling[career.bowling.match_id.isin(ids) & (career.bowling.balls > 0)]
-    f = career.fielding[career.fielding.match_id.isin(ids) & career.fielding.resolved]
+    f = fielding_credits(career, ids)   # none on the new site (no fielding anywhere)
     sr = b.runs.sum() / max(b.balls.sum(), 1)
     econ = w.runs.sum() / max(w.balls.sum(), 1)
     white = kind != "multi"
@@ -480,9 +480,10 @@ def all_formats(career, player: str) -> pd.DataFrame:
     """One row per section the player has played: batting and bowling against
     that section's average (so the formats can be compared), and the best one,
     each judged on what they're picked for there (see judged_on)."""
+    from .competitions import ordered
     from .stats import Scope, player_tables
-    secs = career.matches[career.matches.match_id.isin(
-        set(career.batting[career.batting.player == player].match_id))].section.value_counts().index
+    secs = ordered(career.matches, career.matches[career.matches.match_id.isin(   # the agreed order (14 November)
+        set(career.batting[career.batting.player == player].match_id))].section.unique())
     rows = []
     for sec in secs:
         bat, bowl, _, base = player_tables(career, Scope(sections=[sec]))

@@ -23,6 +23,7 @@ from ccstats import teamplay as TP
 from ccstats import winprob as WP
 from ccstats.competitions import with_stage
 from ccstats.stats import ordinal, poss
+from ccstats.competitions import ordered as in_order
 
 from . import styleguide as SG
 from .cache import aim_fits, kept
@@ -347,7 +348,7 @@ def head_to_head(career, ids, me, opp, where_note, mu, cur) -> dict:
             other = m[((m.home == me) & (m.away == opp)) | ((m.home == opp) & (m.away == me))]
             return dict(never=f"{me} and {opp} have never met in {where_note}. Here is what to expect from them instead: see "
                               "the other tabs for their form, key players and weak spots.",
-                        other=(f"They have met {len(other)} time(s) in other competitions: " + ", ".join(sorted(set(other.section)))
+                        other=(f"They have met {len(other)} time(s) in other competitions: " + ", ".join(in_order(m, other.section.unique()))
                                + ".") if len(other) else "")
         h, ty = mt["how"], mt["typical"]
         multi = TP.is_multi(TP.games(career, mt["games"].match_id))
@@ -508,8 +509,7 @@ def _danger_men(career, ids, opp, where_note) -> dict:
                         for i in x["innings"]]
         x["spells"] = [dict(w, date=f"{w['date']:%d %b %y}", text=f"{w['wickets']}-{w['runs']}") for w in x["spells"]]
         x["line"] = (f"{x['points']:.0f} impact points in {_n(x['matches'], 'match', 'matches')} "
-                     f"({x['batting']:.0f} batting, {x['bowling']:.0f} bowling"
-                     + (f", {x['fielding']:.0f} fielding" if round(x["fielding"]) else "") + ")")
+                     f"({x['batting']:.0f} batting, {x['bowling']:.0f} bowling)")
     return dict(none="", season=season, note=note, men=men,
                 shows=f"{poss(opp)} three players with the most impact points in {where_note} in {season} (the points "
                       f"of Season review's MVPs: runs and wickets, and how fast or cheaply they came), each with their "

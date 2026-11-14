@@ -311,7 +311,7 @@ export function StrengthDots({ rows, lanes, height = 360 }: { rows: Strength[]; 
       const room = (p: { x: number; y: number }) => Math.min(Infinity, ...placed.map((q) => dist(q, p)));
       const at = tries.find((p) => room(p) >= 20) ?? tries.reduce((a, b) => (room(b) > room(a) ? b : a));   // 18px dots, 2px apart
       placed.push(at);
-      return { value: [at.x, at.y], name: `${day(x.date)} v ${x.opp}`, gap: x.gap,
+      return { value: [at.x, at.y], name: `${day(x.date)} v ${x.opp}`, gap: x.gap, match: x.id,
         itemStyle: { color: x.outcome === "W" ? t.win : x.outcome === "L" ? t.loss : t.grey, borderColor: t.tile, borderWidth: 2 } };
     });
     return {

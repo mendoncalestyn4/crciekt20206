@@ -538,3 +538,25 @@ def test_win_chance_engine(season, career):
     assert abs(pr["win"] + pr["lose"] + pr["draw"] - 100) < 1e-6
     cb = WP.comebacks(season, ids)
     assert (cb.low < 25).all()
+
+
+def test_the_match_report_gives_one_innings_figures(career):
+    """Found by you (14 November): "N Shah took 7/158" was his match figure, said after the innings where he took
+    6/74. Every match report's figures are now one innings' spell (the best of the match), said after that innings,
+    with the innings named when a side bats twice; his match figures only as "(7/158 in the match)"."""
+    import re as _re
+    seen = 0
+    for mid in career.matches.match_id:
+        text = WP.match_report(career, mid)
+        m = _re.search(r"(?:^|\. )([^.]+?) took (\d+)/(\d+) for ([^.(]+?)( in (.+?)'s? (1st|2nd) innings)?( \((\d+)/(\d+) in the match\))?\.", text)
+        if not m:
+            continue
+        seen += 1
+        player, w, r, team = m.group(1), int(m.group(2)), int(m.group(3)), m.group(4).strip()
+        b = career.bowling[(career.bowling.match_id == mid) & (career.bowling.balls > 0)]
+        best = b.sort_values(["wickets", "runs", "balls"], ascending=[False, True, True]).iloc[0]
+        assert (best.player, best.team, best.wickets, best.runs) == (player, team, w, r), (mid, text)
+        if m.group(8):
+            mine = b[(b.player == player) & (b.team == team)]
+            assert (int(m.group(9)), int(m.group(10))) == (mine.wickets.sum(), mine.runs.sum()), (mid, text)
+    assert seen >= 10

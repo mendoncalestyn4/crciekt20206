@@ -59,21 +59,35 @@ export const score = (runs: number, wickets: number, allOut: boolean, declared =
 export const FORMAT: Record<string, string> = { T20Is: "T20I", ODIs: "ODI", Tests: "Test" };
 // a competition's short name, for labels in a small space (the full name stays in titles)
 const SHORT: Record<string, string> = {
-  "Indian Premier League": "IPL", "Big Bash League": "BBL", "The Hundred": "Hundred", "T20 Blast": "Blast",
-  "One-Day Cup": "ODC", "Marsh One-Day Cup": "Marsh", "Sheffield Shield": "Shield", "Ranji Trophy": "Ranji",
-  "Vijay Hazare Trophy": "VHT", "Syed Mushtaq Ali Trophy": "SMAT", "Super Smash": "Smash", "Plunket Shield": "Plunket",
-  "Ford Trophy": "Ford", "First-class": "FC",
+  // every competition in the game, shortened so it still reads (your request of 14 November: "COCD1" said nothing)
+  "County Championship": "County", "One-Day Cup": "One-Day Cup", "T20 Blast": "Blast", "The Hundred": "Hundred",
+  "Sheffield Shield": "Shield", "Marsh One-Day Cup": "Marsh Cup", "Big Bash League": "Big Bash",
+  "Ranji Trophy": "Ranji", "Vijay Hazare Trophy": "Vijay Hazare", "Syed Mushtaq Ali Trophy": "Mushtaq Ali",
+  "Indian Premier League": "IPL", "Plunket Shield": "Plunket", "Ford Trophy": "Ford Trophy", "Super Smash": "Super Smash",
+  "CSA 4-Day Series": "CSA 4-Day", "CSA One-Day Cup": "CSA One-Day", "CSA T20 Challenge": "CSA T20",
+  "CSA T20 Knock-Out": "CSA T20 KO", "SA20": "SA20", "West Indies Championship": "WI 4-Day", "Super50 Cup": "Super50",
+  "Caribbean Premier League": "CPL", "Quaid-e-Azam Trophy": "Quaid-e-Azam", "President's Trophy": "President's",
+  "Pakistan Cup": "Pakistan Cup", "National T20 Cup": "National T20", "Pakistan Super League": "PSL",
+  "National Cricket League": "NCL", "Dhaka Premier Division Cricket League": "Dhaka Premier", "NCL T20": "NCL T20",
+  "Bangladesh Premier League": "BPL", "Ahmad Shah Abdali First Class Tournament": "Ahmad Shah Abdali",
+  "Ghazi Amanullah Khan Regional One Day To": "Ghazi Amanullah",   // (the game cuts names at 40 letters) "Shpageeza Cricket League": "Shpageeza",
+  "Inter-Provincial Championship": "Inter-Pro 4-Day", "Inter-Provincial Cup": "Inter-Pro Cup",
+  "Inter-Provincial Trophy": "Inter-Pro T20", "Major League Tournament": "Major League",
+  "Major Clubs Limited Over Tournament": "Major Clubs 50", "Major Clubs T20 Tournament": "Major Clubs T20",
+  "Lanka Premier League": "LPL", "Logan Cup": "Logan Cup", "Pro50 Championship": "Pro50",
+  "Domestic T20 Competition": "Domestic T20", "First-class": "FC", "Tour matches": "Tour",
 };
-/** the format word for a section ('ODIs' -> 'ODI'), or a competition's short name ('County Championship · Division 1'
- *  -> 'CC D1', 'Pakistan Super League' -> 'PSL') */
-export const fmtOf = (section: string) => {
+/** the format word for a section ('ODIs' -> 'ODI'), or a competition's short name that still reads
+ *  ('County Championship · Division 1' -> 'County D1', 'CSA One-Day Cup · Division 1' -> 'CSA One-Day D1',
+ *  'Pakistan Super League' -> 'PSL'); a name the game may have that isn't listed keeps its full name. */
+export const fmtOf = (section: string): string => {
   if (FORMAT[section]) return FORMAT[section];
   if (SHORT[section]) return SHORT[section];
-  const div = /^County Championship · Division (\d)$/.exec(section);
-  if (div) return `CC D${div[1]}`;
-  if (section.length <= 7) return section;
-  const words = section.split(/\s+/).filter((w) => /^[A-Z0-9]/.test(w) && w !== "The");
-  return words.length > 1 ? words.map((w) => w[0]).join("") : section;
+  const div = /^(.*) · Division (\d)$/.exec(section);
+  if (div) return `${fmtOf(div[1]!)} D${div[2]}`;
+  const part = /^(.*) · (.*)$/.exec(section);   // 'Tour matches · First-class' -> 'Tour FC'
+  if (part && SHORT[part[1]!]) return `${SHORT[part[1]!]} ${SHORT[part[2]!] ?? part[2]}`;
+  return section;
 };
 
 /** What every page says on a career with no matches yet (the same words the server uses, server/styleguide.py). */

@@ -3,6 +3,7 @@ report, squad depth and the inbox (ccstats/attributes.py, ccstats/depth.py, serv
 asked the way the website asks, on the test scorecards."""
 
 import json
+import re
 
 import numpy as np
 import pandas as pd
@@ -98,7 +99,7 @@ def test_every_player_has_a_whole_page(career):
         d = PP.page(career, p)
         json.dumps(d)
         assert d["missing"] == {}, (p, d["missing"])
-        assert d["tabs"][-1] == "Story" and "Fielding" in d["tabs"]
+        assert d["tabs"][-1] == "Story" and "Fielding" not in d["tabs"] and "fielding" not in d
         if d["bat_table"]:
             cols = cols or d["bat_table"]["cols"]
             assert d["bat_table"]["cols"] == cols
@@ -369,8 +370,10 @@ def test_teams_page_opens_on_your_team_and_every_tab_works(live):
     d = live.json("/api/team")
     p = d["page"]
     assert p["team"] == "England" and p["tab"] == "Overview" and not p["head"]["none"]
-    counts = [c["matches"] for c in d["choices"]]
-    assert counts == sorted(counts, reverse=True)
+    # the agreed order (14 November): Tests, ODIs, T20Is, then franchise, then domestic, most matches first in each
+    from ccstats.competitions import ordered
+    secs = [c["section"] for c in d["choices"]]
+    assert secs == ordered(live.app.state.site.career().matches, secs)
     m = live.json("/api/career")
     for tab in p["tabs"]:
         for venue in ("", "home", "away"):
@@ -1285,3 +1288,108 @@ def test_the_new_charts_say_their_numbers_counted_another_way(every):
     played = sum(mo["played"] for mo in cal["grid"])
     won = sum(mo["won"] for mo in cal["grid"])
     assert f"played {played}, won {won}," in cal["shows"] and cal["for_"]
+
+
+# --------------------------------------------------------------------------- no fielding anywhere (14 November)
+FIELDING_KEYS = {"fielding", "catches", "stumpings", "keepers", "Ct", "St", "dismissals_ct", "keeper"}
+FIELDING_WORDS = re.compile(r"ct/st|\bcatches\b|\bstumpings?\b|\bfielding\b", re.I)
+# kept by your answers: a note saying no fielding is counted; how wickets fell ("share of wickets to catches", like the
+# how-batters-get-out charts); the best XI and squad depth having a keeper (worked out quietly from stumpings)
+SAYS_NONE = re.compile(r"no fielding is counted|without fielding|no fielding|wickets to catches", re.I)
+
+
+def _no_fielding(x, where="") -> list[str]:
+    """Every key or text in a page that shows a fielding figure: a catches or stumpings column, a keeper flag, a
+    fielding part, "ct/st" (a note that says no fielding is counted is fine)."""
+    bad = []
+    if isinstance(x, dict):
+        for k, v in x.items():
+            if k in FIELDING_KEYS:
+                bad.append(f"{where}.{k}")
+            bad += _no_fielding(v, f"{where}.{k}")
+    elif isinstance(x, list):
+        for i, v in enumerate(x):
+            bad += _no_fielding(v, f"{where}[{i}]")
+    elif isinstance(x, str) and FIELDING_WORDS.search(x) and not SAYS_NONE.search(x):
+        bad.append(f"{where}: {x[:120]}")
+    return bad
+
+
+def test_no_fielding_anywhere_on_the_new_site(every):
+    """Your decision of 14 November: no catches, stumpings or keepers shown anywhere on the new site. Every page and
+    tab for every team, a third of the players (each in every competition) and every match page is read, and no
+    fielding figure or column turns up (the scorecard itself still prints "c Smith b Jones": that's how the batter was
+    out)."""
+    from server.teampage import TABS
+    bad = []
+    c = every.app.state.site.career()
+    for path in ["/api/myteam", "/api/review", "/api/honours", "/api/season", "/api/preview", "/api/scouting",
+                 "/api/competition", "/api/rivalries", "/api/planner", "/api/teamvteam", "/api/matches/best"]:
+        bad += _no_fielding(every.json(path), path)
+    for team in sorted(set(c.matches.home) | set(c.matches.away))[::4]:
+        for tab in TABS:
+            bad += _no_fielding(every.json(f"/api/team?team={team}&tab={tab}"), f"team {team} {tab}")
+    for p in sorted(set(c.batting.player))[::3]:
+        d = every.json(f"/api/player?name={p}")
+        bad += _no_fielding({k: v for k, v in d.items()}, f"player {p}")
+    for mid in c.matches.match_id:
+        d = every.json(f"/api/match/{mid}")
+        d.pop("match", None)   # the scorecard as printed ("c Smith b Jones") is how the batter was out, kept
+        bad += _no_fielding(d, f"match {mid}")
+    assert bad == [], bad[:20]
+
+
+def test_no_fielding_in_marks_impact_or_mvp_on_the_new_site(career):
+    """Marks out of 10, match impact and MVP points count batting and bowling only on the new site (your answer of 14
+    November), the IPL points too; the old site counts catches as before. Checked player by player."""
+    from ccstats import marks as MK
+    from ccstats import mvp as MV
+    from ccstats import playerdeep as PDP
+    import copy
+    new = copy.copy(career)
+    new.count_fielding = False
+    old_v, new_v = MK.match_values(career), MK.match_values(new)
+    assert old_v.field.sum() > 0 and new_v.field.sum() == 0
+    assert np.allclose(new_v.value, new_v.bat + new_v.bowl)
+    ids = career.matches.match_id
+    assert PDP.match_impact(career, ids).field.sum() > 0 and PDP.match_impact(new, ids).field.sum() == 0
+    ipl = career.matches[career.matches.section == "Indian Premier League"]
+    for how in ("impact", "ipl"):
+        t = MV.season_mvp(new, "Indian Premier League", str(ipl.season.iloc[0]), how)
+        assert (t.fielding == 0).all() and np.allclose(t.points, t.batting + t.bowling), how
+    # the whole-career marks are kept with the career: counting or not keeps its own answer
+    assert MK.series_marks(new) is not MK.series_marks(career)
+
+
+def test_competitions_are_listed_in_the_agreed_order_on_every_page(every):
+    """Your rule of 14 November ("always"): wherever competitions are listed, Tests, ODIs and T20Is come first, then
+    the franchise leagues, then the domestic competitions, the most matches first within each group. Checked on
+    every page that lists them: the career, the competition pickers, Matches, My team, every player's page and row,
+    the search list, Season review's picker and Season's ranks."""
+    from ccstats.competitions import ordered, section_rank
+    c = every.app.state.site.career()
+    m = c.matches
+    rank = section_rank(m)
+
+    def in_order(secs, where):
+        secs = [s for s in secs if s in rank]
+        assert secs == ordered(m, secs), (where, secs)
+
+    in_order(every.json("/api/career")["sections"], "career")
+    assert every.json("/api/career")["sections"][:3] == [s for s in ("Tests", "ODIs", "T20Is") if s in rank]
+    in_order([x["section"] for x in every.json("/api/team")["choices"]], "team choices")
+    in_order(every.json("/api/matches")["sections"][1:], "matches")
+    in_order(every.json("/api/myteam")["sections"], "my team")
+    in_order([x["value"] for x in every.json("/api/search")["items"] if x["kind"] == "section"], "search")
+    ev = [x["event"] for x in every.json("/api/competition")["choices"]]
+    secs = m.drop_duplicates("event").set_index("event").section
+    assert [rank[secs[e]][:3] for e in ev] == sorted(rank[secs[e]][:3] for e in ev)
+    for p in every.json("/api/players")["players"]:
+        in_order(p["sections"], p["player"])
+    for name in sorted(set(c.batting.player))[::7]:
+        in_order(every.json(f"/api/player?name={name}")["sections"], name)
+    rv = [x["section"] for x in every.json("/api/review")["choices"] if x["section"] != "International cricket"]
+    in_order(list(dict.fromkeys(rv)), "review")
+    for team in ("England", "India", "Mumbai Indians"):
+        rows = every.json(f"/api/season?team={team}").get("ranks", {}) or {}
+        in_order([r["section"] for r in rows.get("rows", [])], f"season ranks {team}")

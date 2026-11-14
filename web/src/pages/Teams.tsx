@@ -147,9 +147,6 @@ function Body({ tab, b, team, keep, race }: { tab: string; b: TeamBody; team: st
   const t = useTheme();
   const m = b.missing;
   if (tab === "Overview") return <>
-    {(b.keepers ?? []).length > 0 && <Tile span={12} title={`🧤 Wicketkeeper${b.keepers!.length > 1 ? "s" : ""}`}>
-      <div className="plain"><T>{b.keepers!.map((k) => `${k.player} (${k.stumpings} stumping${k.stumpings !== 1 ? "s" : ""})`).join(", ")}</T></div>
-      <div className="note">The scorecards don't mark the keeper, so anyone who has made a stumping for this team is flagged as one.</div></Tile>}
     <Tile span={12} title={b.vs_average?.title ?? "Against the average team"}>
       {b.vs_average && <div className="how" style={{ marginTop: -4 }}>{b.vs_average.right}</div>}
       {b.vs_average ? <><SignedBars rows={b.vs_average.rows} /><Explain shows={<T>{b.vs_average.shows}</T>} for_={b.vs_average.for_} /></>

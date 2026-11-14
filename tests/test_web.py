@@ -20,7 +20,8 @@ sync_api = pytest.importorskip("playwright.sync_api")
 WEB = Path(__file__).parent.parent / "web" / "dist"
 FIT = (Path(__file__).parent / "fit_rules.js").read_text()
 CHROME = chrome()
-PAGES = ["/", "/inbox", "/style-guide", "/settings", "/players", "/players/J Bethell", "/matches", "/teams", "/teams?tab=How they win", "/teams?tab=Season",
+PAGES = ["/", "/inbox", "/style-guide", "/settings", "/players", "/players/J Bethell", "/players/J Bethell?view=overview",
+         "/players/J Bethell?view=bowling", "/players/J Bethell?view=story", "/players/K Rabada", "/matches", "/teams", "/teams?tab=How they win", "/teams?tab=Season",
          "/teams?tab=Squad&venue=home", "/teams/England", "/teams/vs",
          "/teams/vs?which=any", "/teams/preview", "/teams/preview?tab=About them", "/teams/preview?tab=Your best XI v them", "/teams/planner", "/teams/planner?tab=Batting order", "/teams/planner?tab=Partnerships", "/teams/rivalries", "/seasons", "/seasons?event=Indian Premier League&season=2026", "/seasons?event=T20 Blast&season=2026", "/seasons/season", "/seasons/season?view=month", "/seasons/season?team=All teams", "/seasons/season?tab=Series tracker", "/seasons/season?tab=Season progress", "/seasons/review", "/seasons/review?points=ipl", "/seasons/honours", "/seasons/honours?tab=Trophy cabinets", "/fixtures", "/leaders", "/insights", "/no-such-page"]
 
@@ -379,3 +380,96 @@ def test_a_chart_tile_saves_itself_as_a_picture(browser, site, tmp_path):
     assert struct.unpack(">II", head[16:24]) == (w * 2, h * 2)
     assert not said, said
     pg.close()
+
+
+# --------------------------------------------------------------------------- the fix round's looks (14 November)
+def _match_id(site, home, date):
+    live, _ = site
+    m = live.app.state.site.career().matches
+    return m[(m.home == home) & (m.date == date)].match_id.iloc[0]
+
+
+def test_double_click_never_selects_but_dragging_still_does(browser, site):
+    """Your request of 14 November: double- or triple-clicking anywhere never turns text blue; dragging across text
+    still selects it, so a name or a number can be copied; typing boxes work as usual."""
+    pg, said = open_page(browser, site, "/players/J Bethell")
+    try:
+        title = pg.locator(".hero h1, .hero .title, h1").first
+        title.dblclick()
+        assert pg.evaluate("String(window.getSelection())") == ""
+        title.click(click_count=3)
+        assert pg.evaluate("String(window.getSelection())") == ""
+        # a single press (the start of a drag) is never blocked, so dragging still selects; a press that is the second
+        # or third click of a double or triple click is; typing boxes are left alone
+        blocked = pg.evaluate("""() => { const el = document.querySelector('.part .note');
+            const press = (detail) => { const e = new MouseEvent('mousedown', { detail, bubbles: true, cancelable: true });
+                el.dispatchEvent(e); return e.defaultPrevented; };
+            const box = document.createElement('input'); document.body.appendChild(box);
+            const e = new MouseEvent('mousedown', { detail: 2, bubbles: true, cancelable: true }); box.dispatchEvent(e);
+            const typed = e.defaultPrevented; box.remove();
+            return [press(1), press(2), press(3), typed]; }""")
+        assert blocked == [False, True, True, False], blocked
+        assert said == [], said
+    finally:
+        pg.close()
+
+
+def test_the_scorecard_has_batting_on_the_left_and_marks_the_best(browser, site):
+    """Your requests of 14 November: batting on the left, bowling on the right; a ★ by each innings' best batter and
+    best bowler; the player of the match's 🏆 by his name, his rows shaded only where he earned it."""
+    mid = _match_id(site, "Kolkata Knight Riders", "2026-05-16")
+    pg, said = open_page(browser, site, f"/matches/{mid}?view=scorecard")
+    try:
+        bat = pg.locator(".t:has(.tl:text-matches('^Batting'))").first.bounding_box()
+        bowl = pg.locator(".t:has(.tl:text-matches('^Bowling'))").first.bounding_box()
+        assert bat["x"] < bowl["x"], (bat, bowl)
+        assert pg.locator(".star").count() >= 2
+        shaded = pg.evaluate("""[...document.querySelectorAll('tr.me')].map(r => r.textContent)""")
+        assert all("🏆" in s for s in shaded), shaded
+        assert said == [], said
+    finally:
+        pg.close()
+
+
+def test_the_player_page_tabs_each_show_their_own_kind(browser, site):
+    """Your answer of 14 November: Overview, Batting, Bowling and Story; Batting shows only batting (country by country
+    included), Bowling only bowling; a bowler's page opens on Bowling; the tile's format tick boxes count formats
+    together."""
+    live, _ = site
+    bowler = "K Rabada"
+    d = live.json(f"/api/player?name={bowler}")
+    assert d["tabs"][0] == "Overview" and d["tabs"][-1] == "Story" and d["open"] == "Bowling"
+    pg, said = open_page(browser, site, f"/players/{bowler}")
+    try:
+        titles = pg.evaluate("[...document.querySelectorAll('.t .tl')].map(e => e.textContent)")
+        assert any(t.startswith("Bowling · every competition") for t in titles) and not any(t.startswith("Batting ·") for t in titles)
+        pg.locator(".itabs button", has_text="Batting").first.click()
+        pg.wait_for_selector("body[data-ready='1']")
+        titles = pg.evaluate("[...document.querySelectorAll('.t .tl')].map(e => e.textContent)")
+        assert any(t.startswith("Batting · every competition") for t in titles)
+        assert not any("Bowling" in t and "every competition" in t for t in titles)
+        assert said == [], said
+    finally:
+        pg.close()
+    # a player with more than one competition: ticking a second one counts both on the tile
+    many = next(p for p in live.json("/api/players")["players"] if len(p["sections"]) >= 2)
+    secs = many["sections"][:2]
+    part = live.json(f"/api/player_part?name={many['player']}&part=countries&sections={secs[0]}|{secs[1]}")
+    assert part["sections"] == secs and part["label"] == " + ".join(secs)
+
+
+def test_find_a_player_keeps_each_name_in_its_own_column(browser, site):
+    """Found by you (14 November): searching "smith" squeezed the names into a column a letter or two wide (a team
+    with no logo let the name slide into the logo's place). Every name keeps its column and never breaks inside a
+    word, at every width."""
+    for width in (1280, 1920):
+        pg, said = open_page(browser, site, "/players", width)
+        try:
+            pg.locator("input.typed").fill("a")
+            pg.wait_for_selector(".pli")
+            # no name squeezed: each is at least as wide as its longest word (a name the width of a letter or two was the bug)
+            narrow = pg.evaluate("[...document.querySelectorAll('.pli .pn')].filter(e => e.getBoundingClientRect().width < 60).map(e => e.textContent)")
+            assert narrow == [], narrow
+            assert said == [], said
+        finally:
+            pg.close()

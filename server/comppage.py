@@ -12,6 +12,7 @@ from ccstats import players as PL
 from ccstats import seasonal as SN
 from ccstats import tables as T
 from ccstats import teamplay as TP
+from ccstats.competitions import event_rank
 
 from . import styleguide as SG
 from .cache import kept
@@ -30,11 +31,14 @@ def chance(v) -> str:
 
 
 def choices(career) -> list[dict]:
-    """Every competition as it's run, the most matches first, with its seasons (newest first)."""
+    """Every competition as it's run, in the agreed order (Tests, ODIs, T20Is, franchise, domestic; the most matches
+    first within each), with its seasons (newest first)."""
     m = career.matches
     counts = m.event.value_counts()
-    return [dict(event=str(e), matches=int(n), seasons=[str(s) for s in sorted(m[m.event == e].season.unique(), reverse=True)])
-            for e, n in counts.items()]
+    rank = event_rank(m)
+    return [dict(event=str(e), matches=int(counts[e]),
+                 seasons=[str(s) for s in sorted(m[m.event == e].season.unique(), reverse=True)])
+            for e in sorted(counts.index, key=lambda e: rank[e])]
 
 
 def _every(career) -> dict:

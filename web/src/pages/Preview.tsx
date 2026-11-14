@@ -123,7 +123,7 @@ export function Preview() {
                 <div className="plain"><b><T>{b.h2h.never}</T></b></div>{b.h2h.other && <div className="note">{b.h2h.other}</div>}</Tile> : null)}
               {b.h2h === null || !b.h2h || b.h2h.never ? <TheirRecord b={b} opp={d.opp} /> : null}
               {b.h2h && !b.h2h.never && <>
-                <Tile span={12} title={<span className="row2" style={{ gap: 10 }}><Logo team={me} size={30} />{me} v <Logo team={d.opp} size={30} />{d.opp}</span>}>
+                <Tile span={12} title={<span className="row2" style={{ gap: 10 }}><Logo team={me} size={40} />{me} v <Logo team={d.opp} size={40} />{d.opp}</span>}>
                   <div className="kpis">{b.h2h.kpis!.map((k) => <div key={k.k}><span>{k.k}</span><Num v={k.v} px={30} /></div>)}
                     <div><span>Last 5</span><Lamps seq={b.h2h.last5 as Outcome[]} /></div></div>
                   <div className="plain" style={{ marginTop: 8 }}><T>{b.h2h.how!}</T></div><div className="plain"><T>{b.h2h.typical!}</T></div>
@@ -228,7 +228,7 @@ export function Preview() {
 
 /** A tile's title with the team's badge in front (only teams that have one). */
 function Titled({ team, text }: { team: string; text: string }) {
-  return <span className="row2" style={{ gap: 10 }}><Logo team={team} size={30} />{text}</span>;
+  return <span className="row2" style={{ gap: 10 }}><Logo team={team} size={40} />{text}</span>;
 }
 
 /** "India's", "West Indies'" */

@@ -12,7 +12,7 @@ import pandas as pd
 
 from . import records as RC
 from .players import innings, kind_of_ids, spells
-from .stats import bars_for
+from .stats import bars_for, counts_fielding
 
 # --------------------------------------------------------------------------- #
 # 104 · record timeline
@@ -262,8 +262,12 @@ def best_xi(career, ids, team: str = "") -> pd.DataFrame:
                            lambda r: _bat_why(r, kind))
             else:
                 k_ok = keepers[keepers.games >= need]
+                # the keeper is found from stumpings quietly; with no fielding counted (the new site) his catches and
+                # stumpings aren't said
+                field = counts_fielding(career)
                 got = take(k_ok if len(k_ok) else keepers, ["bat_score", "stumpings"], slot, n,
-                           lambda r: f"{r.stumpings + r.catches} dismissals ({r.stumpings} st), " + _bat_why(r, kind))
+                           lambda r: (f"{r.stumpings + r.catches} dismissals ({r.stumpings} st), " if field else "")
+                           + _bat_why(r, kind))
         elif slot == "All-rounder":  # bats in the top 8 and bowls: both halves against the section's average
             both = d[(d.inns >= need) & (d.spells >= need) & (d.wkts > 0) & (d.pos <= 8)]
             both = both.assign(ar=(both.bat_rpi / base["bat_rpi"]).clip(lower=0)

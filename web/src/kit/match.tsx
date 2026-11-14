@@ -83,17 +83,21 @@ export function WicketClimb({ inn, par, height = 330 }: { inn: Wickets["innings"
   return <EChart option={option} height={height} label={`${inn.label} wicket by wicket`} />;
 }
 
-/** The excitement rating: the number out of 10, where it ranks, its four parts and the reasons. */
+/** The excitement rating: the number out of 10, where it ranks, its four parts and the reasons. Each part is shown out of
+ *  10 too (your choice, 14 November): the finish counts up to 7 of the overall, a comeback 2, the stakes 1 and big
+ *  moments ½, so a part's mark is its share of that times 10; the overall is unchanged. */
 export function ExcitementPanel({ ex, section }: { ex: Excitement; section: string }) {
-  const parts: [string, number, number][] = [["The finish", ex.finish, 7], ["A comeback", ex.comeback, 2], ["The stakes", ex.stakes, 1], ["Big moments", ex.show, 0.5]];
+  const parts: [string, number][] = [["The finish", (ex.finish / 7) * 10], ["A comeback", (ex.comeback / 2) * 10],
+    ["The stakes", (ex.stakes / 1) * 10], ["Big moments", (ex.show / 0.5) * 10]];
   return (
     <div className="exc" data-chart>
       <div className="exc-n"><Num v={f1(ex.rating)} px={64} /><span className="of">/ 10</span>
         <div className="s"><b>{ord(ex.rank)}</b> of {ex.of} in {section}</div></div>
-      <div className="exc-parts">{parts.map(([k, v, max]) => (
+      <div className="exc-parts">{parts.map(([k, v]) => (
         <div className="pbar small" key={k}><span className="k2">{k}</span>
-          <span className="tr2"><span className="fill" style={{ width: `${Math.min(100, (v / max) * 100)}%` }} /></span>
-          <span className="v"><b>{f1(v)}</b><small> / {max}</small></span></div>))}</div>
+          <span className="tr2"><span className="fill" style={{ width: `${Math.min(100, v * 10)}%` }} /></span>
+          <span className="v"><b>{f1(Math.min(10, v))}</b><small> / 10</small></span></div>))}</div>
+      <div className="note" style={{ gridColumn: "1 / -1" }}>The finish counts most: up to 7 of the 10, then a comeback up to 2, the stakes up to 1 and big moments up to ½.</div>
       {ex.why && <div className="note" style={{ gridColumn: "1 / -1" }}>Why: <T>{ex.why}</T>.</div>}
     </div>
   );
@@ -108,9 +112,9 @@ export function BestTable({ rows, showSection, keep }: { rows: BestGame[]; showS
           <td className="r"><Link to={`/matches/${r.id}${keep}`} className="rate">{f1(r.rating)}</Link>
             <div className="how">{ord(r.rank)} of {r.of}</div></td>
           <td><Link to={`/matches/${r.id}${keep}`} className="cell" style={{ textDecoration: "none" }}>
-            <Logo team={r.home} size={34} /><Name p={`${ab(r.home)} v ${ab(r.away)}`} px={22} /><Logo team={r.away} size={34} /></Link>
+            <Logo team={r.home} size={44} /><Name p={`${ab(r.home)} v ${ab(r.away)}`} px={22} /><Logo team={r.away} size={44} /></Link>
             <div className="how">{r.result}</div></td>
-          <td><span className="row2" style={{ gap: 8 }}><span className="cslot"><Logo comp={r.event} size={30} /></span><span><span className="tn dimn">{dayY(r.date)}</span>
+          <td><span className="row2" style={{ gap: 8 }}><span className="cslot"><Logo comp={r.event} size={40} /></span><span><span className="tn dimn">{dayY(r.date)}</span>
             <div className="how">{showSection ? r.name : r.name === r.section ? "" : r.name}</div></span></span></td>
           <td><span className="why">{r.why}</span></td></tr>))}</tbody></table>
   );

@@ -215,53 +215,82 @@ Wrong numbers and data:
       stays with the team it played most for, the others get the team added; undone with "keep together", saved with
       the career; the Player of the Match follows his side); tests in `tests/test_names.py` (split, undo, a transfer
       stays one, no name ever joined); your new set: 63 names split into 163 players, none left shared
-- [ ] No fielding anywhere: nothing shown (Fielding tab, catches and stumpings columns, records, Stat by stat,
+- [x] No fielding anywhere: nothing shown (Fielding tab, catches and stumpings columns, records, Stat by stat,
       Hall of fame pairs, Data check catch list) and nothing counted (marks, impact, MVP points); keepers worked out
-      quietly; scorecards and how-out charts kept as printed
+      quietly; scorecards and how-out charts kept as printed — ✓ the new site's careers count no fielding
+      (`ccstats/stats.py` counts_fielding / fielding_credits, used by marks, match impact, MVP and IPL points, the
+      report card and the team of the season's lines; `server/site.py` marks every career it opens); shown nowhere:
+      the Player page's Fielding tab, its catches and stumpings columns, the "wicketkeeper" label and tag, Teams'
+      keepers tile, the fielding parts of MVPs, Season wrapped and danger men, every note that counted catches;
+      keepers still found from stumpings for the best XI and scouting. Stat by stat, Hall of fame and the Data check
+      page are built without fielding in stages 3 and 4. The old site is left as it is. Tests: every page and tab of
+      the test career read for any fielding figure, and marks, impact and MVP checked player by player
+      (`tests/test_pages.py`)
 
 Pages and looks:
-- [ ] Player page: each tab shows only its own stats (Batting all batting, Bowling all bowling, country by country
-      included); an Overview tab for the rest; opens on the player's main job
-- [ ] Batting on the left, bowling on the right (the scorecard and everywhere they sit side by side)
-- [ ] Player of the match highlighted only where he earned it (found by you: M Beardman's 0 off 1 was shaded in the
+- [x] Player page: each tab shows only its own stats (Batting all batting, Bowling all bowling, country by country
+      included); an Overview tab for the rest; opens on the player's main job — ✓ Overview, Batting, Bowling,
+      Story (`server/playerpage.py` tabs and `open`; `web/src/pages/Players.tsx`): the name card on every tab;
+      Batting: its totals, last 10 innings, every competition, every format, country by country, big games and
+      bounce-back, then everything it had; Bowling the same; Overview: the totals of both, badges, match-winners, share
+      of the team, attributes and scout report, marks, career journey; a batter opens on Batting, a bowler on Bowling,
+      an all-rounder on the Overview; checked in `tests/test_web.py` (each tab's tiles, K Rabada opens on Bowling)
+- [x] Batting on the left, bowling on the right (the scorecard and everywhere they sit side by side) — ✓ the scorecard (`web/src/kit/blocks.tsx`); checked in the browser test
+- [x] Player of the match highlighted only where he earned it (found by you: M Beardman's 0 off 1 was shaded in the
       batting card though he won it with 9 wickets, 5/40 and 4/66): his bowling rows shaded when he took wickets, his
-      batting row when he made runs, both for an all-rounder; his mark is a small 🏆 (your choice)
-- [ ] A ★ by the best of every innings (your choice, 14 November): the innings' top run-scorer and its best bowler,
+      batting row when he made runs, both for an all-rounder; his mark is a small 🏆 (your choice) — ✓ scorecard; browser test: every shaded row is his
+- [x] A ★ by the best of every innings (your choice, 14 November): the innings' top run-scorer and its best bowler,
       on every scorecard; ties: more runs, then fewer balls (equal on both: both get one); bowling: most wickets, then
       fewest runs, then fewest balls; an innings where nobody took a wicket: the cheapest bowler who bowled at least a
-      fifth of its overs
-- [ ] Competition order everywhere: Tests, ODIs, T20Is, then franchise, then domestic
-- [ ] Inner boxes in the page's own colour on every team's light look (no muddy mixes)
-- [ ] Team logos about a third bigger in matches and tables; the competition logo on every franchise and domestic
-      match's scorecard and summary
-- [ ] No blue highlight on double- or triple-click (dragging still selects)
-- [ ] The match report gives each innings its own figures (found by you: Pakistan v South Africa, 11 Jun 2031, said
+      fifth of its overs — ✓ `starsOf` in `web/src/kit/blocks.tsx`
+- [x] Competition order everywhere: Tests, ODIs, T20Is, then franchise, then domestic — ✓ one order in the
+      engine (`ccstats/competitions.py` section_rank / ordered / event_rank) used by every list: the career, every
+      picker, Matches, My team and its Scouting tab, every player's page, row and every-format table, search, Season
+      review's picker, Season's ranks, Opponent preview's other meetings; test on every page that lists them
+- [x] Inner boxes in the page's own colour on every team's light look (no muddy mixes) — ✓ `server/theme.py`
+      (tile2 = the page colour, set apart by the thin edge); all 30 light looks checked: the edge still shows
+- [x] Team logos about a third bigger in matches and tables; the competition logo on every franchise and domestic
+      match's scorecard and summary — ✓ every size moved to the agreed one (tables 36, match lists 40, bracket
+      26, summary and innings headers 44-52); the competition logo on the summary and now the scorecard; every
+      franchise and domestic competition of your new set has its logo when the game has the picture (checked with a
+      stand-in set of the game's files; "Asia Trophy" has none known)
+- [x] No blue highlight on double- or triple-click (dragging still selects) — ✓ `web/src/main.tsx`; browser
+      test: double and triple clicks select nothing, a single press is never blocked, typing boxes untouched
+- [x] The match report gives each innings its own figures (found by you: Pakistan v South Africa, 11 Jun 2031, said
       "N Shah took 7/158" for South Africa's 1st innings, where he took 6/74; 7/158 is his match figure); match
-      figures only when said as such ("7/158 in the match")
-- [ ] The excitement rating (your choices, 14 November): the tile renamed "Excitement rating · out of 10"; each part
+      figures only when said as such ("7/158 in the match") — ✓ `ccstats/winprob.py` match_report: the best
+      spell of the match, said after its innings, with the innings named and match figures "in the match"; your
+      example now: "M Ismail took 7/71 for Pakistan in South Africa's 2nd innings (7/198 in the match)"; test checks
+      every report's figures against the spells
+- [x] The excitement rating (your choices, 14 November): the tile renamed "Excitement rating · out of 10"; each part
       shown out of 10 (the finish, a comeback, the stakes, big moments: for Pakistan v South Africa 11 Jun 2031,
       10, 1.5, 10 and 10), the overall unchanged (8.8), with one line saying the finish counts most; the same on
-      every page that shows the parts
-- [ ] Players · Find a player (found by you, 14 November, searching "smith"): the names squeezed into a column a
+      every page that shows the parts — ✓ `web/src/kit/match.tsx` (the only place the parts show)
+- [x] Players · Find a player (found by you, 14 November, searching "smith"): the names squeezed into a column a
       letter or two wide ("J / S / MI / TH"); the name gets its own column and never breaks inside a word; the
-      browser fit check now types a search before checking (it missed this)
-- [ ] The competitions listed on each player row in the agreed order (J Smith showed "ODI, Test, T20I")
-- [ ] Readable short competition names everywhere (C Smith showed "COCD1, C4SD1" for the CSA One-Day Cup Division 1
-      and the CSA 4-Day Series Division 1): e.g. "CSA One-Day D1", "CSA 4-Day D1"; checked for every competition
+      browser fit check now types a search before checking (it missed this) — ✓ the cause: a team without a
+      logo let the name slide into the logo's column; the logo now has a fixed slot, the name a column as wide as its
+      longest word; browser test types a search at 1280 and 1920
+- [x] The competitions listed on each player row in the agreed order (J Smith showed "ODI, Test, T20I") — ✓
+- [x] Readable short competition names everywhere (C Smith showed "COCD1, C4SD1" for the CSA One-Day Cup Division 1
+      and the CSA 4-Day Series Division 1): e.g. "CSA One-Day D1", "CSA 4-Day D1"; checked for every competition — ✓ `web/src/format.ts` fmtOf: a readable short name for every competition in the game, "· Division N" as
+      " DN", anything unknown keeps its full name
 - [ ] Every match mentioned anywhere opens its match page when clicked (found by you, 14 November: the Player page's
       Match-winners list, "Test v ENG · 31 Jul ..." wasn't clickable); checked on every page that names a match:
       lists, sentences, charts, inbox, records
-- [ ] Player page, Country by country (found by you, 14 November: showed only Tests): format buttons on the tile
+- [x] Player page, Country by country (found by you, 14 November: showed only Tests): format buttons on the tile
       itself (Tests, ODIs, T20Is, then the franchise and domestic competitions he played, agreed order, only ones he
-      played), opening on the page's competition; the same for Big-match player and Bounce-back; formats never mixed
+      played), opening on the page's competition; the same for Big-match player and Bounce-back; formats never mixed — ✓ tick boxes on each of the three tiles (your later decision: tick any formats, counted together), opening
+      on the page's competition (`/api/player_part`); test
 - [ ] Combine formats with tick boxes (your decision, 14 November: "tick any formats", "in all buttons where these
       formats are mentioned"): every format choice becomes tick boxes (Tests, ODIs, T20Is, each league), opening on one
       format; ticking more combines them (e.g. Tests + ODIs); "v the average" uses each format's own average, combined
       fairly. Where it can: the Player page and its tiles, Leaders, Stat by stat, records, team records, Team vs team,
       Rivalries, the match finder, Compare players, Player stories, Hall of fame. One at a time where combining has no
       meaning: points tables, title race, brackets, WTC, team ratings (Elo), score to aim for, season calendar views
-- [ ] Both team logos on every match summary (found by you: Pakistan v South Africa, 11 Jun 2031, showed empty gaps
-      where they go); checked on every summary
+- [x] Both team logos on every match summary (found by you: Pakistan v South Africa, 11 Jun 2031, showed empty gaps
+      where they go); checked on every summary — ✓ the gap was a team the game has no picture for: the summary
+      now shows a round badge with its short name there
 - [ ] Every chart: What it is / Who's best / What it's for, always shown, charts only
 
 Accuracy and keeping it right:

@@ -442,17 +442,33 @@ def match_report(career, match_id: str, line: pd.DataFrame | None = None) -> str
     else:
         s += lead_by
     sents.append(s + ".")
-    # the best bowling of the match
-    wb = bowl.groupby(["player", "team"])[["wickets", "runs"]].sum().reset_index().sort_values(
-        ["wickets", "runs"], ascending=[False, True])
-    if len(wb) and wb.wickets.iloc[0] >= 3:
-        x = wb.iloc[0]
-        sents.append(f"{x.player} took {int(x.wickets)}/{int(x.runs)} for {x.team}.")
+    # the best bowling: the best figures in one innings (found by you, 14 November: "N Shah took 7/158" was his
+    # match figure, said after South Africa's 1st innings where he took 6/74). It's said after the innings it came
+    # in; in a match where a side bats twice, with which innings, and his match figures only said as such.
+    spells = bowl[bowl.balls > 0].sort_values(["wickets", "runs", "balls"], ascending=[False, True, True])
+    best = None
+    if len(spells) and spells.wickets.iloc[0] >= 3:
+        x = spells.iloc[0]
+        two = bool(inn.team.duplicated().any())
+        batting = inn.set_index("innings_no")
+        if two:
+            n_ = int(batting.team_innings[x.innings_no])
+            where = f" in {poss(batting.team[x.innings_no])} {'1st' if n_ == 1 else '2nd'} innings"
+        else:
+            where = ""
+        match = spells[(spells.player == x.player) & (spells.team == x.team)]
+        also = (f" ({int(match.wickets.sum())}/{int(match.runs.sum())} in the match)"
+                if two and len(match) > 1 else "")
+        best = (int(x.innings_no), f"{x.player} took {int(x.wickets)}/{int(x.runs)} for {x.team}{where}{also}.")
+    if best and best[0] == int(first.innings_no):
+        sents.append(best[1])
     # the rest of the innings
     for i in inn.iloc[1:].itertuples():
         t = bat[bat.innings_no == i.innings_no].sort_values("runs", ascending=False).head(1)
         lead = f", led by {poss(t.player.iloc[0])} {t.runs.iloc[0]}{'' if t.out.iloc[0] else '*'}" if len(t) and t.runs.iloc[0] >= 30 else ""
         sents.append(f"{i.team} replied with {tot(i)}{lead}." if i.innings_no == 2 else f"{i.team} then made {tot(i)}{lead}.")
+        if best and best[0] == int(i.innings_no):
+            sents.append(best[1])
     # the result, and the turning point
     res = r.result
     if line is not None and len(line) > 2:

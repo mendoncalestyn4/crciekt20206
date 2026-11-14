@@ -1,11 +1,13 @@
 // The page's building blocks: tiles, the hero panel, numbers and names in their fonts, won / lost lamps, logos.
 import { useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Link } from "react-router";
 import type { Outcome } from "../api";
 import { useShell } from "../shell/Shell";
 import { savePicture, slugOf } from "./savepic";
 import { useTheme } from "../theme";
 import { sc, ts } from "./look";
 import { T } from "../shell/names";
+import { ab } from "../format";
 
 /** A number in Space Grotesk, gold: px is the mock-up's size (the approved scale is applied). */
 export function Num({ v, px, style }: { v: ReactNode; px: number; style?: CSSProperties }) {
@@ -79,14 +81,27 @@ export function Hero({ logo, px = 180, kicker, title, size, side, sideName, h }:
 
 /** A team's emblem or a competition's logo, from your Cricket Captain files, in the look for this page. Nothing at
  *  all when there's no picture (never another team's). */
-export function Logo({ team, comp, size }: { team?: string; comp?: string; size: number }) {
+export function Logo({ team, comp, size, fallback }: { team?: string; comp?: string; size: number; fallback?: boolean }) {
   const t = useTheme();
   const { logos } = useShell();
   const [gone, setGone] = useState(false);
   const name = team ?? comp ?? "";
-  if (!name || gone || !(team ? logos.teams : logos.comps).has(name)) return null;   // only the ones with a picture
+  if (!name || gone || !(team ? logos.teams : logos.comps).has(name)) {   // only the ones with a picture
+    // where a logo always belongs (a match summary: found by you, 14 November, empty gaps where they go), a team the
+    // game has no picture for gets a round badge with its short name instead
+    return fallback && team ? <span className="lgx" style={{ width: size, height: size, fontSize: Math.round(size * 0.3) }} title={team}>{ab(team)}</span> : null;
+  }
   const src = `/api/logo/${team ? "team" : "comp"}/${encodeURIComponent(name)}.png?size=${size}&page=${t.dark ? "dark" : "light"}`;
   return <img className="lg" src={src} width={size} height={size} alt="" title={name} onError={() => setGone(true)} />;
+}
+
+/** A match named anywhere opens its match page when clicked (your request of 14 November: every match clickable),
+ *  keeping the look you picked. */
+export function MatchLink({ id, className, title, style, children }: { id: string | null | undefined; className?: string; title?: string;
+  style?: CSSProperties; children: ReactNode }) {
+  const { nation } = useShell();
+  if (!id) return <>{children}</>;
+  return <Link className={className ?? "mlk"} style={style} title={title ?? "Open the match"} to={`/matches/${encodeURIComponent(id)}${nation ? `?nation=${encodeURIComponent(nation)}` : ""}`}>{children}</Link>;
 }
 
 /** What a piece says when the career doesn't have enough for it yet. */
@@ -94,9 +109,16 @@ export function Missing({ why }: { why?: string }) {
   return <div className="empty">{why ?? "Not enough matches for this yet."}</div>;
 }
 
-/** Under a chart: what it shows (with its numbers) and what it's for, as on the current site. */
-export function Explain({ shows, for_ }: { shows: ReactNode; for_: ReactNode }) {
+/** Under every chart, three short lines (your choice of 14 November), small and dim like notes: What it is (what the
+ *  chart draws), Who's best (the leader with their number; on a chart with no player or team at the top, the top
+ *  thing, labelled for it: "Best month", "Most often"...) and What it's for. All three are written by the server. */
+export function Explain({ is_, best, best_label, shows, for_ }: { is_?: ReactNode; best?: ReactNode; best_label?: string;
+  shows?: ReactNode; for_: ReactNode }) {
+  const top = best ?? shows;
   return (
-    <div className="explain"><div><b>What it shows:</b> <T>{shows}</T></div><div><b>What it's for:</b> {for_}</div></div>
+    <div className="explain">
+      {is_ ? <div><b>What it is:</b> <T>{is_}</T></div> : null}
+      {top ? <div><b>{best_label ?? (best != null ? "Who's best" : "What it shows")}:</b> <T>{top}</T></div> : null}
+      <div><b>What it's for:</b> {for_}</div></div>
   );
 }

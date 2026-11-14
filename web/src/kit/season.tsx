@@ -6,7 +6,7 @@ import type { BatFirst, Brief, Calendar, Form, Innings, Outcome, Result, Run, Sc
 import { ab, day, dayer, fmtOf, ord, plural, rnd } from "../format";
 import { useTheme } from "../theme";
 import { useShell } from "../shell/Shell";
-import { Lamp, Logo, Name, Num, PName } from "./base";
+import { Lamp, Logo, MatchLink, Name, Num, PName } from "./base";
 import { FormLine, StrengthDots } from "./charts";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -176,7 +176,7 @@ export function Streaks({ cal }: { cal: Pick<Calendar, "results" | "streaks"> })
       <div className="strip" data-chart ref={strip} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
         {segs.map((s, i) => <div className="brk" key={i} style={{ left: s.left, width: s.width, top: s.top, borderColor: s.colour }}>
           {s.text && <span style={{ color: s.colour }}>{s.text}</span>}</div>)}
-        {rs.map((r) => <div className="cellx" key={r.id}><Lamp o={r.outcome} /><small className="f">{fmtOf(r.section)}</small><small>{ab(r.opp)}</small><small>{day(r.date)}</small>{multi && <small>’{r.date.slice(2, 4)}</small>}</div>)}
+        {rs.map((r) => <MatchLink key={r.id} id={r.id} className="cellx lkrow"><Lamp o={r.outcome} /><small className="f">{fmtOf(r.section)}</small><small>{ab(r.opp)}</small><small>{day(r.date)}</small>{multi && <small>’{r.date.slice(2, 4)}</small>}</MatchLink>)}
       </div>
     </>
   );
@@ -227,8 +227,8 @@ export function ScoreRows({ results, scores, narrow }: { results: Result[]; scor
         const a = o ? x(o.runs) : null, b = th ? x(th.runs) : null;
         return (
           <div className="db-row" style={cols} key={`${r.id}-${k}`}>
-            <span className="db-when"><b>{day(r.date)}</b>{n > 1 ? `${ord(k + 1)} inns` : `${fmtOf(r.section)}${r.no ? ` ${r.no}` : ""}`}</span>
-            <span className="db-who"><Lamp o={r.outcome} />{!narrow && <Logo team={r.opp} size={28} />}<Name p={narrow ? ab(r.opp) : r.opp} px={16} /></span>
+            <MatchLink id={r.id} className="db-when lkrow"><b>{day(r.date)}</b>{n > 1 ? `${ord(k + 1)} inns` : `${fmtOf(r.section)}${r.no ? ` ${r.no}` : ""}`}</MatchLink>
+            <span className="db-who"><Lamp o={r.outcome} />{!narrow && <Logo team={r.opp} size={36} />}<Name p={narrow ? ab(r.opp) : r.opp} px={16} /></span>
             <div className="db-trk">
               {a != null && b != null && <span className="ln" style={{ left: `${Math.min(a, b)}%`, width: `${Math.abs(a - b)}%`, background: colourOf(t, r.outcome) }} />}
               {a != null && <><span className="dot" style={{ left: `${a}%`, background: t.led }} />{lab(a, b, true, score(o), t.led)}</>}
@@ -301,7 +301,7 @@ export function VenueRecord({ v, team, who }: { v: Venues; team: string; who?: b
         <Side title="Away" rec={v.away} sub={v.nation ? "In the other side's country" : "On the other side's ground"} />
         <Side title="Neutral" rec={v.neutral} sub="World Cups, finals and the like" /></div>
       <div className="ctys" data-chart style={{ marginTop: 16 }}>{v.hosts.map((h) => (
-        <div className="cty" key={h.host || "neutral"}><span className="row2" style={{ gap: 10 }}>{slot && <span className="slot">{h.host && <Logo team={h.host} size={30} />}</span>}<Name p={name(h)} px={17} /></span>
+        <div className="cty" key={h.host || "neutral"}><span className="row2" style={{ gap: 10 }}>{slot && <span className="slot">{h.host && <Logo team={h.host} size={40} />}</span>}<Name p={name(h)} px={17} /></span>
           <div><div className="stack" style={{ width: `${(h.played / top) * 100}%` }}>{h.outcomes.map((o, i) => <i key={i} style={{ background: colourOf(t, o) === t.dim ? t.grey : colourOf(t, o) }} />)}</div></div>
           <span className="r">{h.won}–{h.lost}<small>{h.played}</small></span></div>))}</div>
     </>
@@ -314,7 +314,7 @@ export function MatchWinners({ w }: { w: Winners }) {
   return <>{w.players.map(({ player, matches }) => (
     <div className="mw" data-chart key={player}><span className="n">{matches.length}<small>{matches.length > 1 ? "wins" : "win"}</small></span>
       <div><PName p={player} px={22} /><div className="bar" style={{ marginTop: 8 }}><i style={{ width: `${(matches.length / most) * 100}%` }} /></div></div>
-      <div className="hls">{matches.map((x) => <span key={x.id}><b>{fmtOf(x.section)} v {ab(x.opp)} · {day(x.date)}</b>{x.headline}</span>)}</div></div>))}
+      <div className="hls">{matches.map((x) => <MatchLink key={x.id} id={x.id} className="lkrow"><b>{fmtOf(x.section)} v {ab(x.opp)} · {day(x.date)}</b>{x.headline}</MatchLink>)}</div></div>))}
     {w.others > 0 && <div className="note">{plural(w.others, "other win")}: the player of the match was on the other side, or none was named.</div>}</>;
 }
 

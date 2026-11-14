@@ -63,8 +63,8 @@ export function MatchesHome() {
           <div className="mlist">{hits.slice(0, shown).map((m) => (
             <Link key={m.id} to={`/matches/${m.id}${keep}`} className="mli">
               <span className="when">{m.label.split(" · ")[0]}</span>
-              <span className="cell"><Logo team={m.home} size={30} /><Name p={`${m.home} v ${m.away}`} px={21} /><Logo team={m.away} size={30} /></span>
-              <span className="how row2" style={{ gap: 8 }}><span className="cslot"><Logo comp={m.event} size={30} /></span>{m.name}</span><span className="res">{m.result}</span></Link>))}
+              <span className="cell"><Logo team={m.home} size={40} /><Name p={`${m.home} v ${m.away}`} px={21} /><Logo team={m.away} size={40} /></span>
+              <span className="how row2" style={{ gap: 8 }}><span className="cslot"><Logo comp={m.event} size={40} /></span>{m.name}</span><span className="res">{m.result}</span></Link>))}
             {!hits.length && <div className="empty">No match fits "{typed}".</div>}</div>
           {hits.length > shown && <div className="field"><button className="btn quiet" onClick={() => setShown(shown + 30)}>Show 30 more</button>
             <span className="note" style={{ marginTop: 0 }}>Showing the newest {shown} of {hits.length.toLocaleString("en-GB")}; type to narrow the list.</span></div>}
@@ -118,7 +118,7 @@ export function MatchView() {
           {d.corrected?.length ? <Tile span={12} title="✎ Scorecard put right">
             <div className="plain">The game's scorecard didn't add up; the card itself shows what happened, so it's counted this way:</div>
             {d.corrected.map((x) => <div className="how" key={x}>{x}.</div>)}</Tile> : null}
-          <Tile span={7} title="Match report · excitement" right="out of 10">
+          <Tile span={7} title="Excitement rating · out of 10">
             {d.excitement ? <ExcitementPanel ex={d.excitement} section={d.section} /> : <Missing why="Too few matches in this competition to rate yet." />}
             {!d.match.pom && <div className="deck" style={{ marginTop: 12 }}><T>{d.report}</T></div>}
           </Tile>
@@ -132,13 +132,13 @@ export function MatchView() {
           <Tile span={6} title="Top scores">
             <table className="c"><thead><tr><th>Batter</th><th className="r">Score</th><th className="r">Balls</th></tr></thead>
               <tbody>{d.top_scores.map((r) => (
-                <tr key={r.player + r.team}><td><span className="cell"><Logo team={r.team} size={30} /><PName p={r.player} px={21} /></span></td>
+                <tr key={r.player + r.team}><td><span className="cell"><Logo team={r.team} size={40} /><PName p={r.player} px={21} /></span></td>
                   <td className="r"><span className="tn">{r.score}</span></td><td className="r"><span className="tn dimn">{r.balls}</span></td></tr>))}</tbody></table>
           </Tile>
           <Tile span={6} title="Best bowling">
             <table className="c"><thead><tr><th>Bowler</th><th className="r">Figures</th><th className="r">Overs</th></tr></thead>
               <tbody>{d.best_bowling.map((r) => (
-                <tr key={r.player + r.team}><td><span className="cell"><Logo team={r.team} size={30} /><PName p={r.player} px={21} /></span></td>
+                <tr key={r.player + r.team}><td><span className="cell"><Logo team={r.team} size={40} /><PName p={r.player} px={21} /></span></td>
                   <td className="r"><span className="tn">{r.figures}</span></td><td className="r"><span className="tn dimn">{r.overs}</span></td></tr>))}</tbody></table>
           </Tile>
           {d.sides.map((s) => (
@@ -149,7 +149,7 @@ export function MatchView() {
                   <div className="bwr" key={b.player}><span>🔻</span><PName p={b.player} px={22} /><span className="how">{b.figures}</span></div>))
                   : <div className="note">Everyone who batted or bowled chipped in.</div>}</div></div>
               <div className="note">By match impact (as on the player pages): runs, with a strike-rate part in white-ball cricket; wickets worth the
-                competition's runs per wicket, with an economy part; a little for catches. Did least: of those who batted in the top seven or bowled.</div>
+                competition's runs per wicket, with an economy part (no fielding is counted). Did least: of those who batted in the top seven or bowled.</div>
             </Tile>))}
         </>}
         {tab === 1 && <Scorecard m={m} />}
