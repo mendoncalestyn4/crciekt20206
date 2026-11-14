@@ -207,8 +207,20 @@ At the end:
 - [ ] One clean package for your PC that opens on your new scorecards with one double-click, with what to try
 - [ ] One screenshot of each new or reworked thing
 
-Saved for later (not this round): the speed work (right after this round, its own list in the plan); the program
-(.exe) that updates itself, with Streamlit removed (stage 5); everything smaller (stage 6).
+Right after this round, the speed work (your words: "when I open it, all the site starts opening"):
+- [ ] The moment the site opens it starts getting every page ready in the background (every team, competition,
+      season and player), your team and players first, using the whole processor; usable meanwhile, a small progress
+      bar, a page not ready yet fills in by itself
+- [ ] Everything kept on disk, so it happens once; later starts instant; a new match redoes only what it changes
+- [ ] The slow sums fixed at the root; pages appear at once with the last numbers, tiles fill in on their own; pages
+      fetched before you click; only what's on screen worked out; logos made once; long lists row by row; pages sent
+      squeezed; the browser opens at once on a "starting..." screen; heavy work in its own lane
+- [ ] Every page under a second (a speed guard in the tests), every number exactly the same before and after
+      (the five accuracy promises), a self-check on new matches, smooth (no jumping, reopens where you left off),
+      safety copies before updates
+
+Later stages: the program (.exe) that updates itself, with Streamlit and Plotly removed (stage 5); everything smaller
+so more fits (stage 6).
 
 ## 11. How it's built and checked (sections 5, 7, 9, 10)
 
