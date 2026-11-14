@@ -214,6 +214,9 @@ Pages and looks:
 - [ ] The competitions listed on each player row in the agreed order (J Smith showed "ODI, Test, T20I")
 - [ ] Readable short competition names everywhere (C Smith showed "COCD1, C4SD1" for the CSA One-Day Cup Division 1
       and the CSA 4-Day Series Division 1): e.g. "CSA One-Day D1", "CSA 4-Day D1"; checked for every competition
+- [ ] Every match mentioned anywhere opens its match page when clicked (found by you, 14 November: the Player page's
+      Match-winners list, "Test v ENG · 31 Jul ..." wasn't clickable); checked on every page that names a match:
+      lists, sentences, charts, inbox, records
 - [ ] Both team logos on every match summary (found by you: Pakistan v South Africa, 11 Jun 2031, showed empty gaps
       where they go); checked on every summary
 - [ ] Every chart: What it is / Who's best / What it's for, always shown, charts only
