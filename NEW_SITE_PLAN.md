@@ -510,6 +510,14 @@ or a choice in Settings, is asked before it's built; checked at every screen wid
   **And (your picks, 14 November):** the browser keeps the site's own files between starts (refreshed only after an
   update), so the screen appears at once; each page is sent exactly the numbers it shows; and the site learns which
   pages you open most and refreshes those first after each new match. Not picked: starting with Windows by the clock.
+  **Faster sums while keeping pandas (14 November, your go-ahead after the risks were explained):** (1) each
+  competition's tables cut out once and shared, handed to pages read-only, rebuilt when a match arrives, with quick
+  lookups that never line figures up by label by mistake; (2) player, team and competition names stored as short
+  codes, with tests for no ghost rows, A-to-Z order kept and new players added safely, on pandas 2.3 and 3.1;
+  (3) whole-table sums only where timing finds a slow spot (ties, never-out batters, empty groups and rounding
+  checked); not pyarrow (it changes how pandas treats text, and would need a new package). Each change only counts
+  as done when every page's numbers on your scorecards are identical before and after, the hand-worked matches and
+  odd cases still give their saved answers, and every test passes, on Windows too; every step can be undone.
 
 **Bug found by you (14 November, trying the preview): scouting advice "Replace T Head with A Sharma".** The scorecards
 print only initials and surname, so "A Sharma" is several men in your save (an Indian international, a Victoria
