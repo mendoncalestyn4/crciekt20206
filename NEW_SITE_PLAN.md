@@ -474,6 +474,17 @@ or a choice in Settings, is asked before it's built; checked at every screen wid
   a quicker-to-read copy of the career (made by Python itself, nothing new to install) for a near-instant start;
   pages sent squeezed; and a speed guard in the tests: any page over a second on a big test career fails, so the
   site can't quietly get slow again.
+  **Accuracy kept exactly the same (your question, 14 November; ticked before the speed work counts as done):**
+  (1) every page's numbers recorded on your new scorecards before the work (every team, competition, season, tab and
+  option) and again after: they must match to the last decimal, apart from the agreed bug fixes, each listed for you;
+  (2) everything kept on disk is stamped with the exact scorecards and the site's version, and redone before use when
+  either changes (a new match, a Data check choice, an update), so old numbers are never shown as current; (3) "redo
+  only what changed" compared with a full redo from scratch after matches are added one by one: identical, as an
+  automatic test; (4) the instant last-page view is marked "updating…" until the fresh answer replaces it completely;
+  (5) the parity tests, the counted-another-way checks and the full test suite all run on the faster site; the speed
+  guard only adds a time limit.
+  **Also suggested (14 November, not decided yet):** each tile loading on its own, the heavy work in its own lane,
+  working out only what's on screen, and the browser opening at once on a "starting…" screen.
 
 **Bug found by you (14 November, trying the preview): scouting advice "Replace T Head with A Sharma".** The scorecards
 print only initials and surname, so "A Sharma" is several men in your save (an Indian international, a Victoria
