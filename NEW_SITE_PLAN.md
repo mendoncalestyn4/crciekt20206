@@ -507,6 +507,14 @@ or a choice in Settings, is asked before it's built; checked at every screen wid
   and compared line by line with the original, with an alarm for anything unfamiliar and every rare dismissal tested;
   shortened names matched to exactly one player or flagged; a browser test that every number on screen equals the
   site's own figure; one name, unit and meaning per stat everywhere ("–" doesn't apply, 0 is zero).
+  **When something doesn't fit (your question, 14 November): never guess, never hide, keep everything else
+  working.** While building: a failed check blocks the change, the cause is fixed at the root and becomes a test. On
+  your PC: a scorecard that doesn't read back exactly keeps what was read for certain, loses its ✓, shows "⚠ something
+  in this scorecard couldn't be read for sure" and goes on the Problems list with the exact line; an unfamiliar line
+  or dismissal is flagged word for word and the rest counts; a shortened name that could be two players gives the
+  credit to neither (team totals stay right) and is flagged; a scorecard that doesn't add up is corrected only when it
+  proves the answer itself, otherwise flagged with ⚠ on its figures; a figure from very few games carries the
+  "few games" note. Nothing is needed from you; the Problems list keeps the record for the next fix.
   **And these four (your picks, 14 November):** each tile loads on its own (a page appears at once and its tiles
   fill in as each is ready, so quick parts never wait for slow ones); the heavy preparation runs in its own lane,
   separate from your clicks, so the site never feels stuck; tabs you haven't opened and tiles far down are worked out
