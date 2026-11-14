@@ -291,17 +291,29 @@ Right after this round, the speed work (your words: "when I open it, all the sit
 Later stages: the program (.exe) that updates itself, with Streamlit and Plotly removed (stage 5); everything smaller
 so more fits (stage 6).
 
-## Paused 14 November (your request: limits): where the checks on your new scorecards stopped
+## Checks on your new scorecards: finished 14 November (2,720 matches, playing as Australia)
 
-Done: every number recomputed another way (0 problems); the browser check of 70 pages at 1280 and 1920, dark and
-light (no layout or error problems; 8 pages timed out on their first, cold open while the server was flooded: the
-first-time slowness the speed work fixes); the scorecards read (2,720, none rejected; the five that don't add up, the
-Afghanistan double-booking and the name issues are in section 12). Stopped: sweep 1, every stage 1 page, at
-"progress: 15000 requests" with 0 problems (about 8,000 pages left: the last players, every match page, the match finder,
-My team and Scouting for every team). Not started: sweep 2 (every stage 2 page and option) and sweep 3 (junk and
-load). To resume: start the test server on the "New set" career (scratchpad newset/home, port 8670) and run
-newset_seq.sh (one sweep at a time, each problem written the moment it's found); then time the slow pages on a quiet
-server and send the full list. Nothing is fixed until you start the fix round.
+**0 errors anywhere.** Every number recomputed another way: 0 problems. The browser at 1280 and 1920, dark and
+light, 70 pages: no layout or error problems. Every stage 1 page: 19,101 (every player in every competition and two
+seasons, all 2,720 match pages, the match finder, best games, My team and Scouting for all 137 teams): 0 problems.
+Every stage 2 page and option: 11,946 (Teams 5,554, Team v team 1,748, Opponent preview 1,033, Planner 1,595,
+Rivalries 710, Competitions 111, Season 464, Season review and Honours 731): 0 problems. Junk and load: 8,800 (7,603
+player pages, the finder for 25 competitions and 476 lists, search for all 2,242 players, 137 teams and every
+competition, 32 kinds of junk in 12 places): 0 problems.
+
+**Slow pages (40 over 20 seconds, all the first time a page was worked out, under the load of three checks at once):**
+player pages 25-74 s, the 2026 Syed Mushtaq Ali Trophy 56 s, the 2028 T20 World Cup 26 s, My team for India with a
+junk competition name in the address 25-55 s. **On a quiet fresh server (the before-numbers for the speed work):**
+start 2.9 s; My team 18.3 s first time, 0.13 s after; a player (S Smith) 13.5 s, then 0.01 s; a match 15.1 s, then
+0.5 s; Players 3.5 s; Opponent preview 1.9 s; Teams 1.6 s; Season review 1.2 s; everything else under 1 s; My team
+with a junk competition name 6.2 s once, 0.03 s after.
+
+**Found, for the fix round:**
+- [ ] A junk or unknown competition name in an address is treated as the normal page straight away (today each new
+      junk name is worked out from scratch once: 6 s quiet, up to 55 s under load)
+- [ ] The server writes its errors to its log, so later checks can read them (today the log holds only the start-up
+      lines; the checks rely on the error answers, which were all clean)
+- The first-time slowness above is the speed work's job (its before-numbers are these)
 
 ## 11. How it's built and checked (sections 5, 7, 9, 10)
 
