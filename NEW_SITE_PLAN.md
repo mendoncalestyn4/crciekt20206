@@ -460,7 +460,15 @@ players), but then counted every "A Sharma" game in the Big Bash as his, though 
 fixed **in the fix round**, first thing after your "go" (your choice), with a test that a shared name's franchise
 games are never counted for the wrong country. How exactly (asked, not answered yet): 1) count only the games that are
 surely that country's man and suggest him only if that's enough, marked "shared name" (my suggestion), or 2) never
-suggest a shared name. Not answered; I'll build 1) unless you say otherwise.
+suggest a shared name. **Your answer (14 November): make it 100% safe, all of it together, and check whether the player
+plays for any other international team.** The rule for suggesting a player to a national side: (1) a name that has
+played for any other national side is never suggested (A Sharma has played for India and the UAE, so never for
+Australia); (2) a player who has only played in franchise leagues is never suggested for a national side (they take
+overseas players, so that can't prove the country; the old "going by the league" guess goes); (3) for a name shared
+by two uncapped players, only games that prove the country count (domestic sides that take no overseas players),
+franchise games of a shared name count for nobody, and a suggestion is marked "shared name". A player must pass all
+three. The cost, told to you: a player who switched countries is never suggested. Franchise and domestic sides you
+manage aren't affected (overseas players are allowed there). Tests: the A Sharma case and each rule.
 
 **Colours, found by you (14 November, trying the preview):** on Australia's light look the boxes inside tiles
 (scorecard rows, Player of the match, cards) were a muddy olive-yellow, because their shade mixes a little of the
