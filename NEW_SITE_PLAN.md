@@ -507,6 +507,19 @@ page's innings headers and summary 34-40 to 44-52; rows grow only as much as the
 width so nothing gets cut off. In stage 6, when everything gets smaller, logos keep this size next to the text. Done
 in the fix round.
 
+**Two playthroughs counted together, found by you (14 November, trying the preview; wrong numbers):** My team's
+Season tile showed 16-22 in 38 matches for April 2028 to March 2029, while the format tiles beside it showed 2032 and
+the "latest result" was 27 March 2029 though the strip above showed December 2032. Cause: you played the 2029 save,
+then loaded an older save and played on to 2032 in the same game, so one Scorecards folder holds both playthroughs.
+A replayed match with the same file name replaces the old file, but where the replay brought different fixtures the
+old playthrough's files stay, and the site counted both (38 games in that season; your 2029 save alone has 32, the
+2032 save 32). The engine already sets aside leftovers from an earlier playthrough, but only for knockout games.
+**The fix (in the fix round, in the engine, so both sites get it):** spot leftovers of every kind of match from the
+files' saved times: when the game went back in time and played on, every file from before the rewind that the new
+playthrough didn't replace is left out of all figures and listed on the Data check page, where it can be counted
+back. Tested on your saves and on a made-up folder mixing two playthroughs; then My team's tiles checked to add up
+(the Season tile, the format tiles, the latest result and the strip all from the same playthrough).
+
 **Colours, found by you (14 November, trying the preview):** on Australia's light look the boxes inside tiles
 (scorecard rows, Player of the match, cards) were a muddy olive-yellow, because their shade mixes a little of the
 team's main colour (green) into the page colour (yellow). **Your answers:** inner boxes take **the page's own
