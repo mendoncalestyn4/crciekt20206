@@ -483,6 +483,15 @@ or a choice in Settings, is asked before it's built; checked at every screen wid
   automatic test; (4) the instant last-page view is marked "updating…" until the fresh answer replaces it completely;
   (5) the parity tests, the counted-another-way checks and the full test suite all run on the faster site; the speed
   guard only adds a time limit.
+  **More accuracy checks (your picks, 14 November; built in the fix round's checks, before the speed work, so they
+  guard it):** (1) the same number on every page: a player's or team's figure is identical wherever it shows, and
+  totals are built from their parts (career = seasons = innings; a points table = its results; a team's record = its
+  matches), for everyone in your career; (2) every scorecard checks itself: batting plus extras = total, overs =
+  balls, the fall of wickets climbs to the total, and the printed result and margin match the scores, on every
+  scorecard and on each new match the day it arrives, anything odd on the Problems list; (3) about ten of your real
+  matches of every kind worked out by hand, every figure locked into permanent tests; (4) a library of odd cases from
+  your own scorecards (tie, super over, rain, abandoned, follow-on, declaration, retired hurt, a shared name, a renamed
+  team), each with its correct answers saved as a test.
   **Also suggested (14 November, not decided yet):** each tile loading on its own, the heavy work in its own lane,
   working out only what's on screen, and the browser opening at once on a "starting…" screen.
 

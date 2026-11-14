@@ -175,6 +175,9 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
 - [ ] Parity tests: each page's numbers against the old site's page for the same career; any difference that is an
       old-site bug listed for you, not copied (16)
 - [ ] Every number of every new piece checked against the scorecards counted another way
+- [ ] Accuracy checks picked 14 November: the same number on every page, totals built from their parts; every
+      scorecard checks itself (totals, overs, fall of wickets, result and margin), new matches too; about ten
+      hand-worked matches locked into tests; the odd-cases library from the owner's scorecards
 - [ ] The browser through every page, tab and option, at 1280, 1366, 1440, 1600 and 1920, dark and light (18)
 - [ ] The test data (changed 14 November: your old saves, zips and odd saves were deleted from this machine at your
       request; the checks use the new set of scorecards you're sending instead), with the
