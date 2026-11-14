@@ -217,6 +217,9 @@ Pages and looks:
 - [ ] Every match mentioned anywhere opens its match page when clicked (found by you, 14 November: the Player page's
       Match-winners list, "Test v ENG · 31 Jul ..." wasn't clickable); checked on every page that names a match:
       lists, sentences, charts, inbox, records
+- [ ] Player page, Country by country (found by you, 14 November: showed only Tests): format buttons on the tile
+      itself (Tests, ODIs, T20Is, then the franchise and domestic competitions he played, agreed order, only ones he
+      played), opening on the page's competition; the same for Big-match player and Bounce-back; formats never mixed
 - [ ] Both team logos on every match summary (found by you: Pakistan v South Africa, 11 Jun 2031, showed empty gaps
       where they go); checked on every summary
 - [ ] Every chart: What it is / Who's best / What it's for, always shown, charts only
