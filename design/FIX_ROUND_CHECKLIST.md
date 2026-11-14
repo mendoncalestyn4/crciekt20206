@@ -261,6 +261,10 @@ Accuracy and keeping it right:
       unit per stat everywhere, "–" for doesn't apply and 0 for zero, checked on every page
 
 Zero errors (your approval, 14 November):
+- [ ] Working faster never means checking less (your words, 14 November: "ensure this still does the work well and
+      finds bugs and fixes them"): no check is skipped or cut short to save time, however slow; every helper's work is
+      read line by line by me before it goes in; a piece isn't finished until its own checks pass, and the round isn't
+      finished until the full sweep passes with nothing left over
 - [ ] Every error found, by my checks or by you in the preview, fixed at its root (never patched over), each with a
       test that recreates it so it can't come back
 - [ ] The full sweep at the end of this round and of every stage: every page and option on your scorecards (each
