@@ -169,6 +169,47 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
       - Found and fixed on the way: My team's "Our score v theirs" averaged T20I and ODI totals together (formats
         mixed); averages are now only worked out within one competition, and each competition's own are in the line
 
+## 12. Added 14 November: your preview finds and decisions (details in NEW_SITE_PLAN.md)
+
+Wrong numbers and data:
+- [ ] Two playthroughs counted together: leftovers of every kind of match set aside from the game's file times
+      (listed on Data check, can be counted back); a team double-booked by the game counts both matches
+- [ ] My team's T20I, ODI and Test tiles on the Season tile's April-to-March season, so they add up to it
+- [ ] The five scorecards that don't add up: retired hurt reprinted in the 2nd innings counted out to the bowler with
+      the extra wicket ("out, how not printed"); SA20 no-balls recorded as not charged to any bowler
+- [ ] Scouting fully safe for national sides: never a name capped by another country, never a franchise-only player,
+      shared names on sure games only (the 8 unsafe suggestions found on your saves, including Head -> A Sharma)
+- [ ] Names: a name playing for two teams in one competition and season split automatically (listed on Data check,
+      can be undone); different printed names never merged
+- [ ] No fielding anywhere: nothing shown (Fielding tab, catches and stumpings columns, records, Stat by stat,
+      Hall of fame pairs, Data check catch list) and nothing counted (marks, impact, MVP points); keepers worked out
+      quietly; scorecards and how-out charts kept as printed
+
+Pages and looks:
+- [ ] Player page: each tab shows only its own stats (Batting all batting, Bowling all bowling, country by country
+      included); an Overview tab for the rest; opens on the player's main job
+- [ ] Batting on the left, bowling on the right (the scorecard and everywhere they sit side by side)
+- [ ] Competition order everywhere: Tests, ODIs, T20Is, then franchise, then domestic
+- [ ] Inner boxes in the page's own colour on every team's light look (no muddy mixes)
+- [ ] Team logos about a third bigger in matches and tables; the competition logo on every franchise and domestic
+      match's scorecard and summary
+- [ ] No blue highlight on double- or triple-click (dragging still selects)
+- [ ] Every chart: What it is / Who's best / What it's for, always shown, charts only
+
+Accuracy and keeping it right:
+- [ ] The same number on every page; totals built from their parts
+- [ ] Every scorecard checks itself (totals, overs, fall of wickets, result and margin), new matches too
+- [ ] About ten hand-worked matches and an odd-cases library locked into tests
+- [ ] Impossible-value guard; a match saved twice counted once; a "checked ✓" mark on each match
+- [ ] Every change tested automatically on Windows with Python 3.14.7 and pandas 3.1
+
+At the end:
+- [ ] One clean package for your PC that opens on your new scorecards with one double-click, with what to try
+- [ ] One screenshot of each new or reworked thing
+
+Saved for later (not this round): the speed work (right after this round, its own list in the plan); the program
+(.exe) that updates itself, with Streamlit removed (stage 5); everything smaller (stage 6).
+
 ## 11. How it's built and checked (sections 5, 7, 9, 10)
 
 - [ ] The new sums in the engine (`ccstats/`) with tests, and the server page files' existing sums moved there (17)
