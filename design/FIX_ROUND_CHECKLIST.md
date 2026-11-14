@@ -240,6 +240,12 @@ Accuracy and keeping it right:
       averages, strike rates, economy, records), compared after every change; "how it's worked out" on every number
       (point at it: "845 runs ÷ 21 dismissals in 23 innings = 40.2"); the same "few games: treat with care" note on
       every figure resting on very few games
+- [ ] Reading and showing (your picks, 14 November): every scorecard read back (written out again from what the site
+      understood and compared line by line with the original; any difference flagged), with an alarm for any
+      unfamiliar line or rare dismissal (hit wicket, obstructing, timed out, retired out, absent hurt, handled the
+      ball, each tested); shortened names ("c K'r Singh") must match exactly one player in the match or are flagged;
+      a browser test reads every number off every page and checks it against the site's own figures; one name and
+      unit per stat everywhere, "–" for doesn't apply and 0 for zero, checked on every page
 
 Zero errors (your approval, 14 November):
 - [ ] Every error found, by my checks or by you in the preview, fixed at its root (never patched over), each with a

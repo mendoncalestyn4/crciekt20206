@@ -502,6 +502,11 @@ or a choice in Settings, is asked before it's built; checked at every screen wid
   teams, date and scores) counted once, the copy listed on the Data check page; (7) a small "checked ✓" mark on each
   match page when its scorecard passed every self-check, or a warning saying what didn't (a small new feature, your
   yes). Not picked: comparing with the game's own statistics screens; looking for a full-names file in the game.
+  **Reliability, also picked by you (14 November):** a second, separate counter for every main figure, compared after
+  every change; "how it's worked out" on every number; the same "few games" note everywhere; every scorecard read back
+  and compared line by line with the original, with an alarm for anything unfamiliar and every rare dismissal tested;
+  shortened names matched to exactly one player or flagged; a browser test that every number on screen equals the
+  site's own figure; one name, unit and meaning per stat everywhere ("–" doesn't apply, 0 is zero).
   **And these four (your picks, 14 November):** each tile loads on its own (a page appears at once and its tiles
   fill in as each is ready, so quick parts never wait for slow ones); the heavy preparation runs in its own lane,
   separate from your clicks, so the site never feels stuck; tabs you haven't opened and tiles far down are worked out
