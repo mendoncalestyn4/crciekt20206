@@ -520,6 +520,11 @@ or a choice in Settings, is asked before it's built; checked at every screen wid
   final and never redone, new matches redo only the current season, and career totals are the stored past plus this
   season (checked identical to a full redo); the page on your screen gets its new numbers first when matches arrive.
   Not picked: lowering the site's priority while the game runs.
+  **Keeping stored numbers right over time (14 November, "do what you feel is best": both added):** a weekly full
+  recheck, run only while the site is idle: everything worked out again from scratch and compared with what's stored;
+  any drift (a bug in an update, a file changed outside the game) caught, put right automatically and noted on the
+  Problems list; and every stored file sealed with a fingerprint, so a damaged one (a crash mid-save, a disk problem)
+  is noticed on opening and simply worked out again instead of being shown.
   **When something doesn't fit (your question, 14 November): never guess, never hide, keep everything else
   working.** While building: a failed check blocks the change, the cause is fixed at the root and becomes a test. On
   your PC: a scorecard that doesn't read back exactly keeps what was read for certain, loses its ✓, shows "⚠ something
