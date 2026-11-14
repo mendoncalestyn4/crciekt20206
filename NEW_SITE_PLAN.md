@@ -646,6 +646,18 @@ what the scorecards record (no overs for wickets, no grounds, no toss).
 13. Team leaders with "All teams": **your team first, then A to Z**.
 14. Charts: **stronger and weaker sides on Rankings and Insights; batting first v chasing on Insights; the
     match-winners chart on Analytics**.
+15. "Plays like" matches players **inside the same competition only** (a T20I batter with T20I batters, an IPL batter
+    with IPL batters), not across the same length of game as first planned on 26 October (14 November).
+16. "Plays like" **works for bowlers too**, when Compare is on Bowling: average, economy, strike rate and when in
+    the innings they bowl (new ball or later, from the bowling order) (14 November).
+17. Player stories, Batter v bowler: the **"Every competition" switch goes**; a batter's meetings with a bowler are
+    counted one competition at a time, like the rest of the site (14 November: "no, separate").
+Decided by me, told to you (14 November): the pages sit where section 4's site map puts them (Stat by stat, Records,
+Hall of fame and Rankings under Leaders and records; Insights and Analytics under Insights; Compare players and Player
+stories under Players; Team leaders under Teams); Compare players compares players inside one competition and season,
+as the old page does; Stat by stat keeps "each season's own average" and the competitions inside a section (an ODI
+World Cup apart from bilateral series), as those stay inside one competition; every chart gets the three lines (What
+it is / Who's best / What it's for).
 Everything else as in stages 1 and 2 (remembered picks, nothing lost, What it shows / What it's for, save picture,
 badges, donuts for shares, parity tests, sums in the engine, layout checks, stress test, screenshots). Stage 3 starts
 once the stage 0-2 fix round is approved.
