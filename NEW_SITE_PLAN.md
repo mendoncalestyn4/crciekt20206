@@ -524,6 +524,10 @@ manage aren't affected (overseas players are allowed there). Tests: the A Sharma
   other-national-side check. Among everyone offered (not only the suggestions): 2029, 68 caught by rule 1, 35 by
   rule 2, 63 by rule 3 of 2,607; 2032, 129, 64 and 117 of 3,701 (a player can be caught by more than one).
 
+**After the fix round, a clean package for your PC (your request, 14 November):** one zip, built and tested here
+first, that opens the preview on your new scorecards with a single double-click (its own career folder, nothing old
+mixed in, no career to pick); with it, the short list of what to try on your PC.
+
 **Competition order, your rule (14 November, "always"):** everywhere competitions are listed (tables such as the
 Player page's "every competition", pickers, buttons, chips, search), **Tests, ODIs, T20Is always come first**, in that
 order; then the **franchise leagues** (IPL, Big Bash, The Hundred...), then the **domestic** competitions (Sheffield
