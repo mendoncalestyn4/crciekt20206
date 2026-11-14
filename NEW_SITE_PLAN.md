@@ -446,6 +446,11 @@ every share of the team counted on runs off the bat (section 14) | 5–6 days |
   and fills in by itself. Everything worked out is kept on disk, so every later start is instant, and a new match
   redoes only what it changes. Goal: every page and option under a second after that one-time preparation, checked on
   your biggest save and on your PC.
+  **Also in the speed work (your picks, 14 November):** every page and option timed on your biggest save and the slow
+  sums fixed at the root (no repeated work for every team or match); the one-time preparation using every core of
+  the processor; the site starting in a second or two (a ready-to-read copy of the careers on disk); a page fetched as
+  you point at its link, and each page loading only its own part of the website. Not picked: the shorter install list
+  (the first install stays as it is for now).
 
 ---
 
