@@ -256,6 +256,18 @@ Right after this round, the speed work (your words: "when I open it, all the sit
 Later stages: the program (.exe) that updates itself, with Streamlit and Plotly removed (stage 5); everything smaller
 so more fits (stage 6).
 
+## Paused 14 November (your request: limits): where the checks on your new scorecards stopped
+
+Done: every number recomputed another way (0 problems); the browser check of 70 pages at 1280 and 1920, dark and
+light (no layout or error problems; 8 pages timed out on their first, cold open while the server was flooded: the
+first-time slowness the speed work fixes); the scorecards read (2,720, none rejected; the five that don't add up, the
+Afghanistan double-booking and the name issues are in section 12). Stopped: sweep 1, every stage 1 page, at
+"progress: 15000 requests" with 0 problems (about 8,000 pages left: the last players, every match page, the match finder,
+My team and Scouting for every team). Not started: sweep 2 (every stage 2 page and option) and sweep 3 (junk and
+load). To resume: start the test server on the "New set" career (scratchpad newset/home, port 8670) and run
+newset_seq.sh (one sweep at a time, each problem written the moment it's found); then time the slow pages on a quiet
+server and send the full list. Nothing is fixed until you start the fix round.
+
 ## 11. How it's built and checked (sections 5, 7, 9, 10)
 
 - [ ] The new sums in the engine (`ccstats/`) with tests, and the server page files' existing sums moved there (17)
