@@ -519,6 +519,18 @@ files' saved times: when the game went back in time and played on, every file fr
 playthrough didn't replace is left out of all figures and listed on the Data check page, where it can be counted
 back. Tested on your saves and on a made-up folder mixing two playthroughs; then My team's tiles checked to add up
 (the Season tile, the format tiles, the latest result and the strip all from the same playthrough).
+**Your new set of scorecards (sent 14 November, read only):** 2,720 scorecards, 28 March 2026 to 8 July 2031, every
+one read (none rejected): 1,097 international (465 ODIs, 359 T20Is, 273 Tests), 261 franchise (IPL 148 in 2026-27,
+Big Bash 44, SA20 34, The Hundred 34, Lanka Premier League 1) and 1,361 domestic (each domestic competition for one or
+two seasons only: India's three 2026-28, South Africa's 2028-29, Australia's 2029-30, England's 2030). Five
+scorecards don't add up in the game's own files (listed on the Problems list as usual). **Two things found that
+shape the fix above:** (1) the file times in the zip are when the files were copied (all this morning, in no match
+order), not when the game saved them, so a zip can't show a rewind by its times; (2) Afghanistan played a Test v
+South Africa (9 Sep 2027) and Asia Cup ODIs on 9 and 11 September with 9 of the same 11 players, and two ODIs on
+18 September with all 11 the same: impossible in one playthrough, so either one is a leftover or the game
+double-booked them. So the leftover fix also uses a second clue that needs no file times: **the same players in two
+matches at once**. Such games are flagged on the Data check page for you to choose, never dropped silently without
+proof from the file times.
 
 **Competition logo on every franchise and domestic match (your request, 14 November):** the scorecard and the
 summary of every franchise and domestic game (IPL, Big Bash, Sheffield Shield, County Championship...) show that
