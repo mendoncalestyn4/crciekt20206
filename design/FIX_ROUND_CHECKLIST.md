@@ -173,9 +173,13 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
 
 How this round is worked (your choice, 14 November): **fewer stops**: every decision is saved, so the list is worked
 through with very few questions, stopping only for a real choice of yours; **faster checks**: every full check runs
-side by side on separate test servers, each problem and each slow page written down the moment it's found. Nothing
-moved to other stages; no helper copies (they'd use your limits faster). Pushed after every finished piece, wrong
-numbers first.
+side by side on separate test servers, each problem and each slow page written down the moment it's found;
+**helper copies working side by side (your choice, 14 November: "limits I don't mind, but it's faster")**: pieces
+that don't touch the same pages (e.g. the fielding removal, the chart descriptions, the logos and colours) are done
+at the same time by helpers, each in its own copy of the project; I check every helper's work, run every check on it
+(every page's numbers before and after, all tests, the full sweep, the Windows tests) and only then combine it;
+pieces that share a page are done one after another. Nothing moved to other stages. Pushed after every finished
+piece, wrong numbers first.
 
 Wrong numbers and data:
 - [ ] Two playthroughs counted together: leftovers of every kind of match set aside from the game's file times
