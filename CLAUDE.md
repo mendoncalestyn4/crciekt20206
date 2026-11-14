@@ -52,7 +52,11 @@ Read these at the start of every session. They come from the owner and hold unti
   working until the switch-over (stage 5). At the switch-over it is deleted completely, with no backup launcher (chosen
   31 October).
 - Desktop only. Every feature must work for every team and competition: national, franchise and domestic.
-- Formats are never mixed: Tests, ODIs and T20Is apart; each domestic competition on its own.
+- Formats are apart by default: Tests, ODIs and T20Is apart; each domestic competition on its own. **Changed 14
+  November (owner):** wherever format buttons appear, tick boxes let the owner combine any formats (e.g. Tests + ODIs);
+  pages open on one format; comparisons with the average use each format's own average, combined fairly. Pages where
+  combining has no meaning stay one at a time: points tables, title race, brackets, WTC, team ratings (Elo), score
+  to aim for, the season calendar's competition views.
 - No fielding anywhere on the new site (14 November): no catches, stumpings or run-out credits shown, and none in any
   calculation (marks, impact, MVP points); only who keeps wicket is worked out quietly. A name playing for two teams in
   the same competition and season is split automatically (listed on Data check, can be undone).

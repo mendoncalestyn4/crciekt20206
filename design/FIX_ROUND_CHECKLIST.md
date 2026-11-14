@@ -220,6 +220,12 @@ Pages and looks:
 - [ ] Player page, Country by country (found by you, 14 November: showed only Tests): format buttons on the tile
       itself (Tests, ODIs, T20Is, then the franchise and domestic competitions he played, agreed order, only ones he
       played), opening on the page's competition; the same for Big-match player and Bounce-back; formats never mixed
+- [ ] Combine formats with tick boxes (your decision, 14 November: "tick any formats", "in all buttons where these
+      formats are mentioned"): every format choice becomes tick boxes (Tests, ODIs, T20Is, each league), opening on one
+      format; ticking more combines them (e.g. Tests + ODIs); "v the average" uses each format's own average, combined
+      fairly. Where it can: the Player page and its tiles, Leaders, Stat by stat, records, team records, Team vs team,
+      Rivalries, the match finder, Compare players, Player stories, Hall of fame. One at a time where combining has no
+      meaning: points tables, title race, brackets, WTC, team ratings (Elo), score to aim for, season calendar views
 - [ ] Both team logos on every match summary (found by you: Pakistan v South Africa, 11 Jun 2031, showed empty gaps
       where they go); checked on every summary
 - [ ] Every chart: What it is / Who's best / What it's for, always shown, charts only

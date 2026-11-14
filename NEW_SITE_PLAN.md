@@ -565,6 +565,14 @@ took a wicket, the cheapest bowler who bowled at least a fifth of its overs. Don
 (names, numbers, tiles, buttons, tabs, menus) never selects text; dragging across text still selects it, so a name or
 number can still be copied. Done in the fix round, checked in the browser test.
 
+**Combining formats (your decision, 14 November):** "formats are never mixed" becomes "apart by default": wherever
+format buttons appear, tick boxes let you combine any formats ("tick any formats", "in all buttons where these formats
+are mentioned"); pages open on one format, and comparisons with the average use each format's own average, combined
+fairly. Pages where combining has no meaning stay one at a time: points tables, the title race, brackets, the WTC,
+team ratings (Elo), the score to aim for and the season calendar's competition views. Stage 3's pages are built with
+it (your earlier answers 11 and 17, dropping "Combine sections" and the Batter v bowler switch, are replaced by these
+tick boxes). Done in the fix round for stages 1-2.
+
 **Competition order, your rule (14 November, "always"):** everywhere competitions are listed (tables such as the
 Player page's "every competition", pickers, buttons, chips, search), **Tests, ODIs, T20Is always come first**, in that
 order; then the **franchise leagues** (IPL, Big Bash, The Hundred...), then the **domestic** competitions (Sheffield
