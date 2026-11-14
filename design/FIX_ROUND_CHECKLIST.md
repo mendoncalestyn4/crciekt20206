@@ -171,6 +171,12 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
 
 ## 12. Added 14 November: your preview finds and decisions (details in NEW_SITE_PLAN.md)
 
+How this round is worked (your choice, 14 November): **fewer stops**: every decision is saved, so the list is worked
+through with very few questions, stopping only for a real choice of yours; **faster checks**: every full check runs
+side by side on separate test servers, each problem and each slow page written down the moment it's found. Nothing
+moved to other stages; no helper copies (they'd use your limits faster). Pushed after every finished piece, wrong
+numbers first.
+
 Wrong numbers and data:
 - [ ] Two playthroughs counted together: leftovers of every kind of match set aside from the game's file times
       (listed on Data check, can be counted back); a team double-booked by the game counts both matches
