@@ -551,7 +551,11 @@ everywhere batting and bowling sit side by side on the site. Done in the fix rou
 **Player of the match highlighted only where he earned it (found by you, 14 November):** on the scorecard the
 award shaded M Beardman's 0 off 1 in Australia's batting card, though he won it with 9 wickets (5/40 and 4/66). His
 bowling rows are shaded when he took wickets, his batting row when he made runs (both for an all-rounder), and
-anywhere else he gets just a small ★ by his name. Done in the fix round.
+anywhere else he gets just a small 🏆 by his name (your choice: 🏆 for the Player of the Match, so it isn't confused
+with the ★ below). **And a ★ by the best of every innings (your choice):** each innings' top run-scorer and its best
+bowler get a ★ by their name on every scorecard. Decided by me: ties go to more runs then fewer balls (equal on both,
+both get one); the best bowler has the most wickets, then fewest runs, then fewest balls; in an innings where nobody
+took a wicket, the cheapest bowler who bowled at least a fifth of its overs. Done in the fix round.
 
 **No blue highlight on double-click (your request, 14 November):** double- or triple-clicking anywhere on the site
 (names, numbers, tiles, buttons, tabs, menus) never selects text; dragging across text still selects it, so a name or
