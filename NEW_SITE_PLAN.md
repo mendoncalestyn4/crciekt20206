@@ -520,6 +520,12 @@ playthrough didn't replace is left out of all figures and listed on the Data che
 back. Tested on your saves and on a made-up folder mixing two playthroughs; then My team's tiles checked to add up
 (the Season tile, the format tiles, the latest result and the strip all from the same playthrough).
 
+**Competition logo on every franchise and domestic match (your request, 14 November):** the scorecard and the
+summary of every franchise and domestic game (IPL, Big Bash, Sheffield Shield, County Championship...) show that
+competition's logo, from your game's own pictures in the chosen look, as the team logos are; checked on every
+franchise and domestic competition in your saves, with a list of any competition the game has no logo picture for
+(none is ever borrowed from another). Done in the fix round.
+
 **Colours, found by you (14 November, trying the preview):** on Australia's light look the boxes inside tiles
 (scorecard rows, Player of the match, cards) were a muddy olive-yellow, because their shade mixes a little of the
 team's main colour (green) into the page colour (yellow). **Your answers:** inner boxes take **the page's own
