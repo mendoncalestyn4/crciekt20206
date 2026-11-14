@@ -414,7 +414,10 @@ install, no black window), built automatically on GitHub's Windows machines; Win
 once, as it isn't signed. Until then the .bat stays, for testing the preview only. **And (your yes, 14 November):** Streamlit and Plotly come off the install list then, with
 everything else of the old site; only what the new site needs is bundled. Stage 4 comes first, so adding careers,
 uploads, your teams, backups, Data check and Fixtures are all on the new site before the old one goes. Then the new site becomes that program (in place of `Start Stats Pack.bat`), the old site (Streamlit) is deleted completely with no backup launcher (your choice, 31 October), and the README is rewritten. | 3–4 days |
-| **6. A note for every section (added 31 October; done last, after stage 5)** | Every section on every page gets a plain note saying what it is and how to read it, every column and number included, so each one is understood well (the innings-by-innings tile's sections too). **Also (added 14 November, your request after trying the preview on your PC): everything smaller** (the fonts,
+| **6. A note for every section (added 31 October; done last, after stage 5)** | Every section on every page gets a plain note saying what it is and how to read it, every column and number included, so each one is understood well (the innings-by-innings tile's sections too). **Also (added 14 November, your request): the colour for numbers and chart bars on light looks.** On a light
+team look (Australia's yellow) the approved gold is too faint to read, so the site darkens it automatically and it
+turns a muddy brown (nobody chose it). In stage 6 you're shown side-by-side pictures of the choices before deciding:
+the team's own main colour, a rich amber gold, or as it is now. **Also (added 14 November, your request after trying the preview on your PC): everything smaller** (the fonts,
 the numbers, the tiles, the gaps) so more fits on the screen at once. How much smaller, and whether it's one setting
 or a choice in Settings, is asked before it's built; checked at every screen width so nothing gets cut off. Not before stage 6. (Player art behind the pages was tried as mock-ups on 6 and 7 November and dropped on 12 November, your choice: no players in the background.) | to size then |
 
