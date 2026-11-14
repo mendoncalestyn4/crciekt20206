@@ -530,6 +530,16 @@ manage aren't affected (overseas players are allowed there). Tests: the A Sharma
   other-national-side check. Among everyone offered (not only the suggestions): 2029, 68 caught by rule 1, 35 by
   rule 2, 63 by rule 3 of 2,607; 2032, 129, 64 and 117 of 3,701 (a player can be caught by more than one).
 
+**Keeping the site up to date, flawless, fast and smooth (your picks, 14 November; nothing needs input from you:
+"I don't do any input, only you do it"):** (1) every change I push is tested automatically by GitHub on a Windows
+machine with Python 3.14.7 and pandas 3.1 (your set-up), so a breaking change never reaches you (fix round, with the
+checks); (2) from stage 5 the program updates itself: it offers "Update" and does it all, backing up your careers
+first; (3) whenever new matches arrive, every scorecard check and the speed guard run by themselves and anything odd
+goes on the Problems list (with the speed work); (4) smooth to use: pages never jump while tiles fill in (space kept
+for each), the site reopens where you left off (same page and picks), page changes without a flash of empty screen;
+and a safety copy of your careers is made automatically before every update and every Data check change (with the
+speed work, and stage 4 for Data check).
+
 **After the fix round, a clean package for your PC (your request, 14 November):** one zip, built and tested here
 first, that opens the preview on your new scorecards with a single double-click (its own career folder, nothing old
 mixed in, no career to pick); with it, the short list of what to try on your PC.

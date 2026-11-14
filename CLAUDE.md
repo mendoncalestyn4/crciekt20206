@@ -40,6 +40,8 @@ Read these at the start of every session. They come from the owner and hold unti
      these three checks by hand, every time, before saying a page or stage is finished.
   3. **Each stage's "what was built" section in the plan has a line for every promise:** built, where, and how it was
      checked.
+- **No input from the owner** (14 November: "I don't do any input, only you do it"): suggest only things that run by
+  themselves or that Claude does; never ideas that need the owner's screenshots, files or regular effort.
 - Explain in plain words, not code words.
 - Commit and push after every finished piece (on the branch you were told to use), so a machine reset loses nothing.
   No pull request unless asked.
