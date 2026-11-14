@@ -487,6 +487,20 @@ Shield, Marsh Cup, County Championship...); within each group, the most matches 
 engine, so every page follows it; done in the fix round, with a test that checks it on every page that lists
 competitions.
 
+**Player page tabs, found by you (14 November, trying the preview):** clicking Batting, Bowling or Fielding showed
+the same page, because about ten shared tiles (every competition, every format, match-winners, big games, country by
+country, bounce-back, marks, career journey) came first on every tab and the tab's own content sat far below. **Your
+answer:** "if I select bowling I want to only see his bowling stats, around the world bowling, everything bowling,
+and batting the same way". So: the name card stays on top of every tab; then each tab shows only its own kind of
+stats, everything of that kind: **Batting**: the batting totals, last 10 innings, batting in every competition and
+every format, batting country by country ("around the world"), in big games, bouncing back after a low score, and
+everything the tab already had; **Bowling**: the same, all bowling (bowling totals, every competition and format,
+country by country, big games, bouncing back after a wicketless game...); **Fielding**: catches, stumpings and the
+fielding parts; **Story**: as now; and an **Overview** tab for what is neither (match-winners, marks out of 10,
+career journey, badges, the totals of both). The page **opens on the player's main job** (a batter on Batting, a
+bowler on Bowling, as you asked on 30 October; an all-rounder on Overview). Nothing is lost: every tile is on one of
+the tabs. Done in the fix round.
+
 **Colours, found by you (14 November, trying the preview):** on Australia's light look the boxes inside tiles
 (scorecard rows, Player of the match, cards) were a muddy olive-yellow, because their shade mixes a little of the
 team's main colour (green) into the page colour (yellow). **Your answers:** inner boxes take **the page's own
