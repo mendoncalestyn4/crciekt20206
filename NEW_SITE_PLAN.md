@@ -501,6 +501,12 @@ career journey, badges, the totals of both). The page **opens on the player's ma
 bowler on Bowling, as you asked on 30 October; an all-rounder on Overview). Nothing is lost: every tile is on one of
 the tabs. Done in the fix round.
 
+**Team logos a little bigger in matches and tables (your request, 14 November, trying the preview):** about a
+third bigger: in tables 28 to 36 pixels, in match lists 30 to 40, in the knockout bracket 20 to 26, and on the match
+page's innings headers and summary 34-40 to 44-52; rows grow only as much as the logo needs, checked at every screen
+width so nothing gets cut off. In stage 6, when everything gets smaller, logos keep this size next to the text. Done
+in the fix round.
+
 **Colours, found by you (14 November, trying the preview):** on Australia's light look the boxes inside tiles
 (scorecard rows, Player of the match, cards) were a muddy olive-yellow, because their shade mixes a little of the
 team's main colour (green) into the page colour (yellow). **Your answers:** inner boxes take **the page's own
