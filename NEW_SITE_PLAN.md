@@ -555,8 +555,11 @@ dismissals, and exactly one bowler has one wicket more than he's credited with, 
 bowler ("out, how not printed"); the scorecard is then corrected, not a problem, and the correction is listed on the
 Data check page. (2) **One can't be put right:** Cape Town v Joburg Super Kings (SA20, 27 Dec 2028): Joburg's bowlers
 add up to 112 of 114; the gap is exactly the 2 no-ball runs, which the game left off the bowlers' figures, and the
-scorecard doesn't say who bowled them. The total and the batting are right; the bowlers' figures stay as printed,
-and the Problems list says exactly that instead of "doesn't add up". Done in the fix round, with tests on these
+scorecard doesn't say who bowled them. The total and the batting are right. **The fix (14 November):** those 2 runs
+are recorded as "no-balls not charged to any bowler" in that innings, so the scorecard adds up (112 + 2 = 114) and it
+becomes a corrected scorecard listed on the Data check page, off the Problems list; no bowler is given runs he may
+not have conceded, so every bowler's figures stay exactly as printed. The same rule for any innings where the
+bowlers' runs fall short of the total by exactly its no-balls or wides. Done in the fix round, with tests on these
 five scorecards.
 
 **Competition logo on every franchise and domestic match (your request, 14 November):** the scorecard and the
