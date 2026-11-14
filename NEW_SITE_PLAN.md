@@ -492,6 +492,12 @@ or a choice in Settings, is asked before it's built; checked at every screen wid
   matches of every kind worked out by hand, every figure locked into permanent tests; (4) a library of odd cases from
   your own scorecards (tie, super over, rain, abandoned, follow-on, declaration, retired hurt, a shared name, a renamed
   team), each with its correct answers saved as a test.
+  **And (your picks, 14 November):** (5) an impossible-value guard (more than 11 batters or 10 wickets in an innings,
+  a bowler over his format's overs, an innings longer than the format allows, a match dated before the career began
+  or in the future), anything found on the Problems list; (6) a match saved twice under different file names (same
+  teams, date and scores) counted once, the copy listed on the Data check page; (7) a small "checked ✓" mark on each
+  match page when its scorecard passed every self-check, or a warning saying what didn't (a small new feature, your
+  yes). Not picked: comparing with the game's own statistics screens; looking for a full-names file in the game.
   **And these four (your picks, 14 November):** each tile loads on its own (a page appears at once and its tiles
   fill in as each is ready, so quick parts never wait for slow ones); the heavy preparation runs in its own lane,
   separate from your clicks, so the site never feels stuck; tabs you haven't opened and tiles far down are worked out
