@@ -277,6 +277,17 @@ It is a **hard gate**:
 
 **Charts and tables**
 - [ ] Under every chart: "What it shows" (with its numbers) and "What it's for".
+  **Changed 14 November (your choice):** every chart on every page, My team's included, has three lines under it:
+  **What it is** (one short sentence on what the chart draws), **Who's best** (the leader with their number; on a
+  chart with no player or team at the top, the top thing, labelled for it: "Best month", "Most often", "On top"...)
+  and **What it's for**. The old "What it shows" line becomes "Who's best". All three are written by the server.
+  Your answers (14 November): the lines are **always shown**, small and dim like notes; **charts only** (bars, rings,
+  lines, calendars, ladders), tables keep their notes; on a chart of your team against everyone, "Who's best" names
+  **the top of all, then where your team is** ("Australia, 1,412 · India 3rd, 1,288"). Decided by me and told to you:
+  lower-is-better charts name the lowest; ties name up to three, then "and N others"; the chart's own minimum to
+  qualify applies; a one-player chart names that player's top thing (their best season); names open the player menu;
+  one short sentence a line; a saved picture includes the lines; an empty chart shows its "not enough yet" message
+  instead; the style guide and the stage 3 pages follow the same rule; the old site gets nothing.
 - [ ] Save any chart as a picture, and download tables as CSV.
 - [ ] One stat per chart, top-N limits and a minimum to qualify. Baselines always come from the section, and sections are never merged.
 
