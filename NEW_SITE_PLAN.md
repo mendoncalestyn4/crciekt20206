@@ -516,6 +516,10 @@ or a choice in Settings, is asked before it's built; checked at every screen wid
   it runs, so no work is done 30 times over. Pages stay usable ("updating…", then the new numbers by themselves).
   Tested in the speed work with 1, 10 and 30 of your matches dropped in: each visible within seconds, the final
   numbers identical to a full redo from scratch, all timed.
+  **And (your picks, 14 November):** finished seasons are locked: once a season is over its numbers are stored as
+  final and never redone, new matches redo only the current season, and career totals are the stored past plus this
+  season (checked identical to a full redo); the page on your screen gets its new numbers first when matches arrive.
+  Not picked: lowering the site's priority while the game runs.
   **When something doesn't fit (your question, 14 November): never guess, never hide, keep everything else
   working.** While building: a failed check blocks the change, the cause is fixed at the root and becomes a test. On
   your PC: a scorecard that doesn't read back exactly keeps what was read for certain, loses its ✓, shows "⚠ something
