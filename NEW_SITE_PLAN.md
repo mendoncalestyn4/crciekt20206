@@ -277,6 +277,13 @@ It is a **hard gate**:
   N Kumar Reddy and N Reddy stay two players with their own numbers. The site never joins names by itself, on
   either site; only your own click on the Data check page can, and a pair that played in the same match can never
   be joined. A test checks that no name is ever joined without your saved choice.
+  **And names shared by different players are split automatically (your answer, 14 November: "yeah, split them"):**
+  when one printed name plays for two or more teams in the same competition and season (A Benkenstein for Paarl
+  Royals and Pretoria Capitals in the SA20 2028/29; A Khan for Afghanistan, India and the UAE in ODIs), those are
+  different men, so the site splits them by itself, the usual way: the name stays with the team it played most for,
+  and the player at each other team gets the team added ("A Benkenstein (Pretoria Capitals)"). Each split is listed
+  on the Data check page and can be undone there. A name that changes team only between seasons (a transfer) stays one
+  player. On your new set: 63 names, 216 competition-seasons. Done in the fix round, in the engine (both sites).
 - [ ] Notes on matches and series, goals, and schedule edits with undo.
 
 **Charts and tables**
@@ -557,6 +564,17 @@ summary of every franchise and domestic game (IPL, Big Bash, Sheffield Shield, C
 competition's logo, from your game's own pictures in the chosen look, as the team logos are; checked on every
 franchise and domestic competition in your saves, with a list of any competition the game has no logo picture for
 (none is ever borrowed from another). Done in the fix round.
+
+**No fielding anywhere on the site (your decision, 14 November):** catches, stumpings and run-outs are removed from
+everything shown (the Player page's Fielding tab, the catches and stumpings columns in every table, "most catches"
+records and leaders, Stat by stat's Fielding option, Hall of fame's catcher-and-bowler pairs, danger men's fielding,
+fielding badges and every other place) **and from every calculation** (your answer): marks out of 10, match impact and
+MVP points count batting and bowling only, and the IPL MVP points too, so they differ from the IPL's own formula.
+**Kept quietly (your answer):** who keeps wicket is still worked out from stumpings and catches, never shown, so the
+best XI has a keeper and scouting finds keepers. **Removed (your answer):** the Data check page's list of catches
+printed with only a surname. The Player page's tabs become Overview, Batting, Bowling and Story. Stage 3's pages are
+built without fielding. The old site is left as it is. Done in the fix round, with a check of every page that no
+catch or stumping number shows anywhere.
 
 **Colours, found by you (14 November, trying the preview):** on Australia's light look the boxes inside tiles
 (scorecard rows, Player of the match, cards) were a muddy olive-yellow, because their shade mixes a little of the

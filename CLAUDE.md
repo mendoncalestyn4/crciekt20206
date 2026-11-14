@@ -51,6 +51,9 @@ Read these at the start of every session. They come from the owner and hold unti
   31 October).
 - Desktop only. Every feature must work for every team and competition: national, franchise and domestic.
 - Formats are never mixed: Tests, ODIs and T20Is apart; each domestic competition on its own.
+- No fielding anywhere on the new site (14 November): no catches, stumpings or run-out credits shown, and none in any
+  calculation (marks, impact, MVP points); only who keeps wicket is worked out quietly. A name playing for two teams in
+  the same competition and season is split automatically (listed on Data check, can be undone).
 - Different printed names are never merged automatically (14 November: "they could be different people"); only the
   owner's own choice on the Data check page joins two names.
 - Competition order everywhere (14 November, "always"): Tests, ODIs, T20Is first, then franchise leagues, then
