@@ -480,6 +480,13 @@ manage aren't affected (overseas players are allowed there). Tests: the A Sharma
   other-national-side check. Among everyone offered (not only the suggestions): 2029, 68 caught by rule 1, 35 by
   rule 2, 63 by rule 3 of 2,607; 2032, 129, 64 and 117 of 3,701 (a player can be caught by more than one).
 
+**Competition order, your rule (14 November, "always"):** everywhere competitions are listed (tables such as the
+Player page's "every competition", pickers, buttons, chips, search), **Tests, ODIs, T20Is always come first**, in that
+order; then the **franchise leagues** (IPL, Big Bash, The Hundred...), then the **domestic** competitions (Sheffield
+Shield, Marsh Cup, County Championship...); within each group, the most matches first. One shared order in the
+engine, so every page follows it; done in the fix round, with a test that checks it on every page that lists
+competitions.
+
 **Colours, found by you (14 November, trying the preview):** on Australia's light look the boxes inside tiles
 (scorecard rows, Player of the match, cards) were a muddy olive-yellow, because their shade mixes a little of the
 team's main colour (green) into the page colour (yellow). **Your answers:** inner boxes take **the page's own

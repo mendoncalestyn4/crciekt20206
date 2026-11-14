@@ -51,6 +51,8 @@ Read these at the start of every session. They come from the owner and hold unti
   31 October).
 - Desktop only. Every feature must work for every team and competition: national, franchise and domestic.
 - Formats are never mixed: Tests, ODIs and T20Is apart; each domestic competition on its own.
+- Competition order everywhere (14 November, "always"): Tests, ODIs, T20Is first, then franchise leagues, then
+  domestic competitions; most matches first within each group.
 - The plan, stages and approvals: `NEW_SITE_PLAN.md`.
 - Tests: `python3 -m pytest -q` (the browser tests are `tests/test_web.py`). The owner's PC has Python 3.14;
   `requirements.txt` pins pandas 3.1 (chosen 31 October, every test passing on Python 3.14); the code also works on
