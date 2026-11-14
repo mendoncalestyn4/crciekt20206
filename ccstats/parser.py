@@ -94,6 +94,10 @@ class Innings:
     counted_in_balls: bool = False  # The Hundred: "(6 wkts, 100 balls)"
     declared: bool = False
     follow_on: bool = False
+    # runs the game left off every bowler's figures though they're bowlers' runs (no-balls or wides), recorded as
+    # "not charged to any bowler" so the card adds up (see _correct)
+    uncharged: int = 0
+    uncharged_kind: str = ""
 
 
 @dataclass
@@ -119,6 +123,8 @@ class Match:
     # the real ones.  They decide the match but, as in real cricket, don't count in
     # anyone's figures, so they are kept apart from `innings`.
     super_overs: list[Innings] = field(default_factory=list)
+    # what was put right in a scorecard that didn't add up, each proven by the card itself (see _correct)
+    corrections: list[str] = field(default_factory=list)
 
 
 class ScorecardError(ValueError):
@@ -367,11 +373,11 @@ def validate_match(match: "Match") -> list[str]:
         if extras and extras != inn.extras:
             problems.append(f"{where}: extras breakdown does not match the extras total")
         if inn.bowling:
-            if sum(b.runs for b in inn.bowling) + inn.byes + inn.leg_byes + inn.penalties != inn.total:
+            if sum(b.runs for b in inn.bowling) + inn.byes + inn.leg_byes + inn.penalties + inn.uncharged != inn.total:
                 problems.append(f"{where}: bowling runs do not add up to the total")
             if sum(b.balls for b in inn.bowling) != inn.balls:
                 problems.append(f"{where}: bowlers' overs do not add up to the innings overs")
-            run_outs = sum(b.how_out in ("run out", "timed out", "obstructing", "retired out") for b in batted)
+            run_outs = sum(b.how_out in RUN_OUTS for b in batted)
             if sum(b.wickets for b in inn.bowling) + run_outs != inn.wickets:
                 problems.append(f"{where}: bowlers' wickets do not match the wickets that fell")
         if sum(1 for b in batted if not b.not_out) != inn.wickets:
@@ -617,7 +623,63 @@ def parse_scorecard(text: str, source: str = "") -> Match:
     match.__dict__.update(parse_result(match.result, teams))
     _fix_follow_on(match)
     _check_margin(match)
+    _correct(match)
     return match
+
+
+CREDITED = ("caught", "bowled", "lbw", "stumped", "hit wicket")   # dismissals the bowler gets the wicket for
+NOT_PRINTED = "out, how not printed"
+RUN_OUTS = ("run out", "timed out", "obstructing", "retired out")
+
+
+def _correct(match: Match) -> None:
+    """Put right two mistakes the game makes in its own scorecards, only where the card itself proves the answer;
+    each is noted in match.corrections (listed on the data check page) and the card then adds up.
+
+    1. **A batter reprinted "retired hurt".** A batter who retired hurt in his 1st innings is sometimes printed
+       "retired hurt" again in the 2nd, while the total, the fall of wickets and the bowlers' figures all count him
+       out. When exactly one batter in the innings is printed retired hurt, the total, the fall of wickets and the
+       bowlers' wickets (with the run-outs) all count one wicket more than the batting card's dismissals, and exactly
+       one bowler has one wicket more than the batting card credits him with (every other bowler matching), the
+       batter counts as out to that bowler, how not printed.
+    2. **No-balls or wides left off the bowlers.** When the bowlers' runs (with the byes, leg-byes and penalties) fall
+       short of the total by exactly the innings' no-balls, or exactly its wides, those runs are recorded as not
+       charged to any bowler; no bowler is given runs he may not have conceded."""
+    for inn in match.innings:
+        where = f"{inn.team} innings {inn.team_innings}"
+        batted = [b for b in inn.batting if b.did_bat]
+        hurt = [b for b in batted if b.how_out == "retired hurt" and b.not_out]
+        outs = sum(1 for b in batted if not b.not_out)
+        run_outs = sum(b.how_out in RUN_OUTS for b in batted)
+        if (len(hurt) == 1 and inn.bowling and outs + 1 == inn.wickets and len(inn.fow) == inn.wickets
+                and sum(w.wickets for w in inn.bowling) + run_outs == inn.wickets):
+            credited: dict[str, int] = {}
+            for b in batted:
+                if not b.not_out and b.how_out in CREDITED and b.bowler:
+                    credited[b.bowler] = credited.get(b.bowler, 0) + 1
+            gap = {w.player: w.wickets - credited.get(w.player, 0) for w in inn.bowling}
+            ones = [p for p, v in gap.items() if v == 1]
+            if len(ones) == 1 and all(v == 0 for p, v in gap.items() if p != ones[0]) and set(credited) <= set(gap):
+                who = ones[0]
+                b = hurt[0]
+                b.not_out, b.how_out, b.bowler = False, NOT_PRINTED, who
+                match.corrections.append(
+                    f"{where}: {b.player} is printed retired hurt, but the total, the fall of wickets and the bowlers' "
+                    f"figures all count him out, and {who} has one wicket more than the batting card credits him "
+                    f"with: counted out to {who}, how not printed")
+        if inn.bowling:
+            short = inn.total - (sum(w.runs for w in inn.bowling) + inn.byes + inn.leg_byes + inn.penalties)
+            if short > 0:
+                nb, wd = short == inn.no_balls, short == inn.wides
+                kind = "no-ball or wide" if nb and wd else "no-ball" if nb else "wide" if wd else ""
+                if kind:
+                    inn.uncharged, inn.uncharged_kind = short, kind
+                    match.corrections.append(
+                        f"{where}: {inn.bowling_team}'s bowlers' runs add up to "
+                        f"{inn.total - short - inn.byes - inn.leg_byes - inn.penalties}, {short} short of what they "
+                        f"conceded: exactly the innings' {kind} runs, which the game "
+                        f"left off every bowler's figures. Recorded as {short} {kind} run{'s' if short != 1 else ''} "
+                        f"not charged to any bowler; every bowler's figures stay as printed")
 
 
 def _check_margin(match: Match) -> None:

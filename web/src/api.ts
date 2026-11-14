@@ -150,7 +150,7 @@ export type Wickets = { innings: { innings_no: number; team: string; total: stri
   par: { wicket: number; par: number; innings: number }[] | null; section: string; shows: string; for_: string };
 export type MatchPage = {
   id: string; kicker: string; name: string; series: string; date: string; section: string; event: string; stage: string;
-  home: string; away: string; home_score: string; away_score: string; result: string; player_of_match: string; rain: string;
+  home: string; away: string; home_score: string; away_score: string; result: string; player_of_match: string; rain: string; corrected?: string[];
   source: string; note: string; match: Match; report: string; excitement: Excitement | null; win: WinChance | null; wickets: Wickets;
   sides: { team: string; best: { player: string; figures: string }[]; worst: { player: string; figures: string }[] }[];
   top_scores: { player: string; team: string; score: string; balls: number }[];
@@ -160,7 +160,7 @@ export type MatchPage = {
 // ------------------------------------------------------------------ My team (server/myteam.py)
 export type MarkRow = { player: string; mark: number; rank: number; of: number; games: number; line: string; best: string; best_match: string };
 export type Pick = { player: string; role: string; gain: number; clears: boolean; keeper: boolean; spinner: boolean; country: string;
-  capped: boolean; unsure: boolean; how: string; also: string; side: string; where: string; bat: string; bowl: string; raw_bat: string; raw_bowl: string };
+  capped: boolean; shared: boolean; how: string; side: string; where: string; bat: string; bowl: string; raw_bat: string; raw_bowl: string };
 export type ScoutingPage = { team: string; sections: { section: string; series: string; advice: Advice[]; none: string }[] };
 export type Advice = { player: string; role: string; why: string; verdict: string; elsewhere?: string; own: { bat: string; bowl: string; raw_bat: string; raw_bowl: string }; picks: Pick[] };
 export type ReportCard = { series: string; label: string; format: string; among: string; section: string; start: string; end: string; players: MarkRow[];

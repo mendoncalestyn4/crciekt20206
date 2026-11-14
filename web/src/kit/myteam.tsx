@@ -40,7 +40,7 @@ export function AdviceList({ items }: { items: Advice[]; keep?: string }) {
         <div className={`pickx ${p.clears ? "ok" : ""}`} key={p.player}>
           <span className="n">{i + 1}</span>
           <div><PName p={p.player} px={22} />
-            <span className="tagx">{p.role}{p.capped ? " · capped" : ""}{p.spinner ? " · spin" : ""}{p.unsure ? " · country a guess" : ""}</span>
+            <span className="tagx">{p.role}{p.capped ? " · capped" : ""}{p.spinner ? " · spin" : ""}{p.shared ? " · shared name" : ""}</span>
             <div className="how">At this level: {[p.bat, p.bowl].filter(Boolean).join(" · ")}</div>
             <div className="how">Domestic, last two seasons, as it is{p.side ? ` (now at ${p.side})` : ""}: {[p.raw_bat, p.raw_bowl].filter(Boolean).join(" · ")}</div></div>
           <span className="gain">{p.gain >= 0 ? "+" : ""}{rnd(p.gain * 100)}%</span></div>))}

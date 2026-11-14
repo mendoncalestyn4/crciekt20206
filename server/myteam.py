@@ -52,8 +52,25 @@ def _odds_text(ch) -> str:
             f"; chance of topping the table {pc(ch['top'])}")
 
 
-def banner(career, team: str) -> dict:
+def _season_record(rs: list[dict]) -> dict:
+    o = [r["outcome"] for r in rs]
+    return dict(played=len(o), won=o.count("W"), lost=o.count("L"), drawn=o.count("D"), tied=o.count("T"),
+                no_result=o.count("NR"))
+
+
+def banner(career, team: str, cal: dict | None = None) -> dict:
+    """A tile for each competition: its record, rating (Elo) and rank, and table position. The record counts the same
+    April-to-March season as the Season tile (`cal`, the team's calendar), so the tiles add up to it (your answer, 14
+    November); the rating and rank are the latest."""
     bn = kept(career, ("banner", team), lambda: MT.banner(career, team))
+    if cal:
+        y, rs = cal["year"], cal["results"]
+        label = f"Apr {y} – Mar {y + 1}"
+        played = {r["section"] for r in rs}
+        # the competitions played this season first (most games first), then the rest
+        bn = sorted(bn, key=lambda b: (b["section"] not in played, -sum(r["section"] == b["section"] for r in rs)))
+        bn = [dict(b, record=_season_record([r for r in rs if r["section"] == b["section"]]), season=label,
+                   position=b["position"] if b["section"] in played else None) for b in bn]
     tiles, caps = [], []
     for b in bn:
         elo = (f"Elo {b['elo']:.0f} {'▲' if b['moved'] > 0 else '▼' if b['moved'] < 0 else '▬'}{abs(b['moved']):.0f}"
@@ -328,13 +345,13 @@ def page(career, team: str, section: str, mine: list[str], notes: dict, sched: l
             out[name] = None
             out["missing"][name] = f"Couldn't be worked out ({type(e).__name__}: {e})"
 
-    piece("banner", lambda: banner(career, team))
+    piece("season", lambda: kept(career, ("calendar", team), lambda: SG.calendar(career, team)))
+    piece("banner", lambda: banner(career, team, out.get("season")))
     piece("ticker", lambda: SG.results(career, team)[:12])
     piece("latest", lambda: latest(career, team))
     piece("after", lambda: after(career, team))
     piece("next_up", lambda: next_up(career, team, sched))
     piece("report", lambda: report_card(career, team))
-    piece("season", lambda: kept(career, ("calendar", team), lambda: SG.calendar(career, team)))
     rs = (out.get("season") or {}).get("results", [])
     piece("forms", lambda: forms(career, team, rs))
     piece("series", lambda: series_list(rs, team))

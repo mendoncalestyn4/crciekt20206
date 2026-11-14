@@ -1,12 +1,19 @@
 """Scouting: the best players who could come into your side, their domestic numbers converted to the level of the
 cricket they'd play, and who to bring in when one of your players is struggling.
 
-**Who belongs to which country.** A player capped by a country (he has played for its national side in this career)
-belongs to it; if two countries capped the name, the one he played for most (often two men sharing a name). An
-uncapped player belongs to the country whose domestic sides he plays for; if he has played in two countries, the
-competitions that take no overseas players win (England's county cricket takes them). Franchise leagues are full of
-overseas players, so they decide nothing, except for a player who has played nowhere else (marked "going by the
-league").
+**Who belongs to which country.** The scorecards print only initials and a surname, so one printed name can be
+several men (an Indian "A Sharma" and a Victorian one). A player capped by a country (he has played for its national
+side in this career) belongs to it; an uncapped one to the country whose domestic sides he plays for, the
+competitions that take no overseas players first (England's county cricket takes them). A name is **shared** when it
+shows two men for sure: capped by two countries, domestic cricket in two countries, capped by one country while
+playing domestic cricket that takes no overseas players in another, or two sides in one competition and season.
+
+**Who can be suggested for a national side (100% safe, your rule of 14 November).** All three must hold:
+(1) a name that has played for any other national side is never suggested (so a player who switched countries never
+is); (2) a player who has only played in franchise leagues is never suggested (they take overseas players, so they
+can't prove a country); (3) a shared name counts only the games that prove the country (that side's own domestic
+cricket that takes no overseas players): its franchise games count for nobody, and it's marked "shared name".
+Franchise and domestic sides aren't affected: they can take anyone.
 
 **The conversion.** A domestic average isn't a Test average. The gap is measured from the players who have played in
 both (their averages here and there, weighted by how much they played), pulled towards a minimum when few players
@@ -75,8 +82,19 @@ def _memo(career, key, make):
 
 # --------------------------------------------------------------------------- who belongs where
 def countries(career) -> pd.DataFrame:
-    """player, country, capped (played for that national side), how (how it was decided), unsure."""
+    """player, country (to show), capped (played for that national side), how (in words), shared (the name is two men
+    for sure), nations (every national side that capped the name), homes (every country whose domestic cricket he
+    played), closed (those of them whose domestic cricket takes no overseas players)."""
     return _memo(career, "countries", lambda: _countries(career))
+
+
+def _two_sides(career) -> set:
+    """Names that played for two sides in one competition and season: two men (until they're split by name)."""
+    m = career.matches[["match_id", "section", "season", "level"]]
+    rows = career.batting[["match_id", "team", "player"]].drop_duplicates().merge(m, on="match_id")
+    rows = rows[rows.level.isin(["International", "Domestic", "Franchise"])]
+    n = rows.groupby(["player", "section", "season"]).team.nunique()
+    return set(n[n > 1].index.get_level_values("player"))
 
 
 def _countries(career) -> pd.DataFrame:
@@ -84,30 +102,50 @@ def _countries(career) -> pd.DataFrame:
     rows = career.batting[["match_id", "team", "player"]].drop_duplicates().merge(m, on="match_id")
     rows["country"] = np.where(rows.level == "International", rows.team, rows.country)
     n = rows.groupby(["player", "level", "country"]).match_id.nunique().rename("games").reset_index()
+    two = _two_sides(career)
     out = []
     for p, g in n.groupby("player"):
-        nat = g[g.level == "International"].sort_values("games", ascending=False)
-        dom = g[g.level == "Domestic"].sort_values("games", ascending=False)
-        fr = g[g.level == "Franchise"].sort_values("games", ascending=False)
-        # domestic cricket that takes no overseas players, in another country than the one that capped the name: the
-        # name is two players (an Indian S Sharma in the Ranji Trophy and a Canadian one in T20Is), so the domestic
-        # one is that country's too
+        nat = g[g.level == "International"].sort_values("games", ascending=False, kind="stable")
+        dom = g[g.level == "Domestic"].sort_values("games", ascending=False, kind="stable")
+        fr = g[g.level == "Franchise"].sort_values("games", ascending=False, kind="stable")
         closed = dom[~dom.country.isin(NO_OVERSEAS_FIRST)]
+        nations, homes, shut = tuple(nat.country), tuple(dom.country), tuple(closed.country)
+        shared = (len(nations) > 1 or len(homes) > 1 or bool(nations and set(shut) - set(nations)) or p in two)
         if len(nat):
-            cap = nat.country.iloc[0]
-            also = closed[closed.country != cap]
-            if len(also):
-                out.append((p, cap, True, f"played for {cap}; also plays domestic cricket in {also.country.iloc[0]}, "
-                            f"which takes no overseas players (likely two players with one name)", True,
-                            also.country.iloc[0]))
-            else:
-                out.append((p, cap, True, f"played for {cap}", len(nat) > 1, ""))
+            country, capped, how = nat.country.iloc[0], True, "played for " + " and ".join(nations)
         elif len(dom):
             pick = closed if len(closed) else dom
-            out.append((p, pick.country.iloc[0], False, "domestic cricket", len(dom) > 1, ""))
+            country, capped, how = pick.country.iloc[0], False, "domestic cricket in " + " and ".join(homes)
         elif len(fr):
-            out.append((p, fr.country.iloc[0], False, "going by the league", True, ""))
-    return pd.DataFrame(out, columns=["player", "country", "capped", "how", "unsure", "also"])
+            country, capped, how = fr.country.iloc[0], False, "only franchise cricket"
+        else:
+            continue
+        if shared:
+            how += " (a shared name: more than one player)"
+        out.append((p, country, capped, how, shared, nations, homes, shut))
+    return pd.DataFrame(out, columns=["player", "country", "capped", "how", "shared", "nations", "homes", "closed"])
+
+
+def national_ok(c, team: str) -> bool:
+    """Whether a player (a row of countries()) can be suggested for `team`'s national side: never capped by another
+    country, proven to be the team's (capped by it, or its domestic cricket; for a shared name only domestic cricket
+    that takes no overseas players proves it), never franchise cricket alone."""
+    nations = c["nations"] if isinstance(c["nations"], tuple) else ()
+    if any(x != team for x in nations):
+        return False
+    if team in nations:
+        return True
+    proof = c["closed"] if bool(c["shared"]) else c["homes"]
+    return isinstance(proof, tuple) and team in proof
+
+
+def proving_sections(career, team: str) -> set:
+    """The competitions whose games prove a shared name is `team`'s: its own country's domestic cricket that takes no
+    overseas players (none for England, whose county cricket takes them)."""
+    if team in NO_OVERSEAS_FIRST:
+        return set()
+    s = sections(career)
+    return set(s[(s.level == "Domestic") & (s.country == team)].index)
 
 
 # --------------------------------------------------------------------------- which competitions feed which
@@ -250,6 +288,16 @@ def _spinners(career) -> set:
     return _memo(career, "spinners", lambda: set(career.batting[career.batting.how_out == "stumped"].bowler.dropna()))
 
 
+def _keepers_in(career, ids) -> set:
+    f = career.fielding
+    return set(f[f.match_id.isin(ids) & f.resolved & (f.kind == "stumped")].player)
+
+
+def _spinners_in(career, ids) -> set:
+    b = career.batting
+    return set(b[b.match_id.isin(ids) & (b.how_out == "stumped")].bowler.dropna())
+
+
 # --------------------------------------------------------------------------- settled numbers
 def _settled(d: pd.DataFrame, base: dict, kind: str, runs: str, balls: str, conceded: str, bowled: str) -> pd.DataFrame:
     """Average, strike rate, bowling average and economy, each with SHRINK dismissals (or wickets) at the base level
@@ -278,18 +326,27 @@ def converted(career, team: str, target: str) -> pd.DataFrame:
 
 def _converted(career, team: str, target: str) -> pd.DataFrame:
     kind = sections(career).kind[target]
-    rows_b, rows_w, ids_all, bases = [], [], [], []
+    national = sections(career).level[target] == "International"
+    who = countries(career).set_index("player")
+    shared = set(who.index[who.shared]) if national else set()
+    proving = proving_sections(career, team) if national else set()
+    rows_b, rows_w, ids_all, ids_sure, bases = [], [], [], [], []
     for f in feeders(career, team, target):
         conv = conversion(career, target, f)
         ids = _window(career, f)
         ids_all += list(ids)
+        sure = f in proving
+        if sure:
+            ids_sure += list(ids)
         b = _bat(career, ids)
         b["c_runs"] = b.runs * (1 - conv["bat"])
         b["c_balls"] = b.balls * (1 - conv["bat"]) / (1 - conv["sr"])
-        rows_b.append(b)
         w = _bowl(career, ids)
         w["c_runs"] = w.runs * (1 + conv["bowl"])
         w["c_balls"] = w.balls * (1 + conv["bowl"]) / (1 + conv["econ"])
+        if not sure:   # a shared name's games here could be another man's: they count for nobody
+            b, w = b[~b.index.isin(shared)], w[~w.index.isin(shared)]
+        rows_b.append(b)
         rows_w.append(w)
         base = _base(career, ids)
         bases.append(dict(avg=base["avg"] * (1 - conv["bat"]), rpb=base["rpb"] * (1 - conv["sr"]),
@@ -299,21 +356,39 @@ def _converted(career, team: str, target: str) -> pd.DataFrame:
         return pd.DataFrame()
     b = pd.concat(rows_b).groupby(level=0).sum()
     w = pd.concat(rows_w).groupby(level=0).sum()
-    d = b.add_prefix("bat_").join(w.add_prefix("bowl_"), how="outer").fillna(0)
+    d = b.add_prefix("bat_").join(w.add_prefix("bowl_"), how="outer").astype("float64").fillna(0)
     wsum = sum(x["weight"] for x in bases)
     base = {k: sum(x[k] * x["weight"] for x in bases) / wsum for k in ("avg", "rpb", "bowl_avg", "bowl_rpb")}
     d = _settled(d, base, kind, "bat_c_runs", "bat_c_balls", "bowl_c_runs", "bowl_c_balls")
+    d = d[(d.bat_inns > 0) | (d.bowl_balls > 0)]
     roles = role_labels(career, pd.Index(ids_all), kind).set_index("player")
+    side = _last_side(career, pd.Index(ids_all))
+    keepers, spinners = _keepers(career), _spinners(career)
+    if shared:
+        # a shared name's role, keeping, spin and latest side come from its sure games only
+        sure = pd.Index(ids_sure)
+        r2 = role_labels(career, sure, kind).set_index("player")
+        roles = _swap(roles, r2, shared)
+        side = _swap(side, _last_side(career, sure), shared)
+        keepers = (keepers - shared) | (_keepers_in(career, sure) & shared)
+        spinners = (spinners - shared) | (_spinners_in(career, sure) & shared)
     d = d.join(roles[["role", "usual_position"]], how="left")
-    d["keeper"] = d.index.isin(_keepers(career))
-    d["spinner"] = d.index.isin(_spinners(career))
-    d = d.join(countries(career).set_index("player"), how="left")
-    d = d.join(_last_side(career, pd.Index(ids_all)), how="left")
+    d["keeper"] = d.index.isin(keepers)
+    d["spinner"] = d.index.isin(spinners)
+    d = d.join(who, how="left")
+    d = d.join(side, how="left")
     enough = ENOUGH[kind]
     d["enough_bat"] = d.bat_inns >= enough["inns"]
     d["enough_bowl"] = d.bowl_balls >= enough["balls"]
     d.attrs["base"] = base
     return d
+
+
+def _swap(a: pd.DataFrame, b: pd.DataFrame, names: set) -> pd.DataFrame:
+    """`a` with the rows of `names` taken from `b` instead (left out where `b` has none)."""
+    keep, take = a[~a.index.isin(names)], b[b.index.isin(names)]
+    parts = [x for x in (keep, take) if len(x)]
+    return pd.concat(parts) if len(parts) > 1 else parts[0] if parts else a.iloc[:0]
 
 
 def _last_side(career, ids) -> pd.DataFrame:
@@ -442,15 +517,15 @@ def taken(career, team: str, target: str) -> set:
 
 
 def candidates(career, team: str, target: str) -> pd.DataFrame:
-    """Who can come in: the feeder competitions' players who are eligible (a national side: its own country's
-    players; a franchise: anyone not under contract at another side in the league), and aren't in your side's latest
+    """Who can come in: the feeder competitions' players who are eligible (a national side: only players surely its
+    own, see national_ok; a franchise: anyone not under contract at another side in the league), and aren't in your side's latest
     series."""
     pool = converted(career, team, target)
     if pool.empty:
         return pool
     _, in_side = _latest_side(career, team, target)
     if sections(career).level[target] == "International":
-        pool = pool[(pool.country == team) | (pool.also == team)]
+        pool = pool[[national_ok(r, team) for _, r in pool.iterrows()]]
     pool = pool[~pool.index.isin(taken(career, team, target))]
     return pool[~pool.index.isin(in_side)]
 
@@ -583,15 +658,16 @@ def lines(r, kind: str, job: str = "both") -> dict:
 
 
 def _who(r) -> dict:
-    """Where a candidate comes from: country (and how that was decided), capped or not, their latest side."""
+    """Where a candidate comes from: country (and how that was decided), capped or not, a shared name or not, their
+    latest side."""
     def flag(v):
         return bool(v) if pd.notna(v) else False
 
     def text(v):
         return v if isinstance(v, str) else ""
     # by name, not as attributes: a row's .where is pandas' own where()
-    return dict(country=text(r["country"]), capped=flag(r["capped"]), unsure=flag(r["unsure"]), how=text(r["how"]),
-                also=text(r["also"]), side=text(r["side"]), where=text(r["where"]))
+    return dict(country=text(r["country"]), capped=flag(r["capped"]), shared=flag(r["shared"]), how=text(r["how"]),
+                side=text(r["side"]), where=text(r["where"]))
 
 
 def index(d, job: str, kind: str):

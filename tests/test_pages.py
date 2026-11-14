@@ -282,6 +282,30 @@ def test_my_team_has_its_squad_depth(live):
     assert w["matches"] > 0 and w["sections"] >= 1 and w["runs"] > w["wickets"] > 0 and isinstance(w["headlines"], list)
 
 
+def test_my_team_format_tiles_add_up_to_the_season_tile(live):
+    """Found by you (14 November): the Season tile counted April to March while the format tiles each counted their
+    competition's own season, so they didn't add up. Now every tile counts the Season tile's April-to-March season,
+    for every team that has played: their wins, losses and games add up to it, and each says which season."""
+    teams = sorted({t for m in live.json("/api/matches")["matches"] for t in (m["home"], m["away"])})
+    checked = 0
+    for team in teams:
+        d = live.json(f"/api/myteam?team={team}")
+        if not d.get("season") or not d.get("banner"):
+            continue
+        rs, cal = d["season"]["results"], d["season"]
+        tiles = d["banner"]["tiles"]
+        label = f"Apr {cal['year']} – Mar {cal['year'] + 1}"
+        assert sum(t["record"]["played"] for t in tiles) == len(rs), team
+        assert sum(t["record"]["won"] for t in tiles) == sum(r["outcome"] == "W" for r in rs), team
+        assert sum(t["record"]["lost"] for t in tiles) == sum(r["outcome"] == "L" for r in rs), team
+        assert all(t["season"] == label for t in tiles), team
+        # the competitions played this season come first, so the three tiles shown are this season's
+        played = [t["record"]["played"] for t in tiles]
+        assert played == sorted(played, reverse=True), team
+        checked += 1
+    assert checked == len(teams) >= 5
+
+
 def test_my_team_for_a_team_not_in_this_career_shows_yours_and_says_so(live):
     """Found by the stress test: an old link naming a team that hasn't played in this career (another career's team, or
     one since changed) gave a "not found" and a dead end on the home page. Now it's your own team's page, saying so."""

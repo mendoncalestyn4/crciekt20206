@@ -3,7 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from ccstats.parser import parse_dismissal, parse_scorecard, resolve_candidates, resolve_name
+from ccstats.loader import Career
+from ccstats.parser import parse_dismissal, parse_scorecard, resolve_candidates, resolve_name, validate_match
 
 FIXTURES = sorted((Path(__file__).parent / "fixtures").glob("*.txt"))
 
@@ -220,3 +221,64 @@ def test_a_side_with_a_long_name_is_read_in_full(card, old):
 
     assert len(b.innings) == len(a.innings) >= 2
     assert figures(a, old) == figures(b, new)
+
+
+# --------------------------------------------------------------------------- scorecards that don't add up (14 Nov)
+IPL_CARD = Path(__file__).parent / "fixtures" / "16_may_2026-klk_v_gjt_ipl.txt"
+
+
+def _card(*swaps: tuple[str, str]) -> str:
+    text = IPL_CARD.read_text()
+    for old, new in swaps:
+        assert text.count(old) == 1, old
+        text = text.replace(old, new)
+    return text
+
+
+def test_a_batter_reprinted_retired_hurt_is_counted_out_to_the_bowler_the_card_proves():
+    """Four of your scorecards (14 November): a batter printed "retired hurt" though the total, the fall of wickets
+    and the bowlers' figures all count him out, and exactly one bowler (here R Ravindra, 3 wickets) has one wicket
+    more than the batting card credits him with. He counts out to that bowler, how not printed; the card adds up."""
+    text = _card(("K Kushagra      lbw b Ravindra            6", "K Kushagra      retired hurt              6"))
+    m = parse_scorecard(text, "x.txt")
+    k = next(b for b in m.innings[0].batting if b.player == "K Kushagra")
+    assert (k.not_out, k.how_out, k.bowler, k.dismissal) == (False, "out, how not printed", "R Ravindra", "retired hurt")
+    assert validate_match(m) == [] and len(m.corrections) == 1
+    assert "K Kushagra is printed retired hurt" in m.corrections[0] and "counted out to R Ravindra" in m.corrections[0]
+    # in the career: out, the wicket the bowler's own figures already had, listed as corrected, not as a problem
+    c = Career.build("c", [("x.txt", text.encode())])
+    b = c.batting.set_index("player").loc["K Kushagra"]
+    assert bool(b.out) and b.bowler == "R Ravindra" and c.problems.empty
+    assert list(c.corrections.correction) == m.corrections
+    assert c.bowling.set_index("player").wickets["R Ravindra"] == 3
+
+
+def test_a_real_retired_hurt_is_left_alone():
+    """A genuine retired hurt (the total and the bowlers count him not out) stays not out, and two batters printed
+    retired hurt in an innings that's a wicket short can't say which one was out: nothing is changed, the card stays
+    on the problems list."""
+    m = parse_scorecard(_card(("J Holder        not out ", "J Holder        retired hurt")), "x.txt")
+    j = next(b for b in m.innings[0].batting if b.player == "J Holder")
+    assert j.not_out and j.how_out == "retired hurt" and m.corrections == [] and validate_match(m) == []
+    two = parse_scorecard(_card(("K Kushagra      lbw b Ravindra            6", "K Kushagra      retired hurt              6"),
+                                ("J Holder        not out ", "J Holder        retired hurt")), "x.txt")
+    assert two.corrections == [] and any("dismissals do not match" in p for p in validate_match(two))
+
+
+def test_no_balls_left_off_every_bowler_are_recorded_as_not_charged():
+    """Your SA20 scorecard (14 November): the bowlers' runs fell short of the total by exactly the innings' no-balls.
+    They're recorded as no-balls not charged to any bowler, so the card adds up; every bowler stays as printed."""
+    text = _card(("Extras: (nb1,w1)                          2\nTOTAL: (all out, 17.3 overs)              73",
+                  "Extras: (nb2,w1)                          3\nTOTAL: (all out, 17.3 overs)              74"),
+                 ("K Rabada        4      14    16", "K Rabada        4      14    15"),
+                 ("10-73", "10-74"), ("won by 132 runs", "won by 131 runs"))
+    m = parse_scorecard(text, "x.txt")
+    inn = m.innings[1]
+    assert (inn.uncharged, inn.uncharged_kind) == (2, "no-ball") and validate_match(m) == []
+    assert "Recorded as 2 no-ball runs not charged to any bowler" in m.corrections[0]
+    c = Career.build("c", [("x.txt", text.encode())])
+    assert c.innings.set_index("innings_no").uncharged.tolist() == [0, 2] and c.problems.empty
+    assert c.bowling.set_index("player").runs["K Rabada"] == 15
+    # short by an amount that is neither the no-balls nor the wides: not put right, still a problem
+    off = parse_scorecard(_card(("K Rabada        4      14    16", "K Rabada        4      14    13")), "x.txt")
+    assert off.innings[1].uncharged == 0 and any("bowling runs" in p for p in validate_match(off))

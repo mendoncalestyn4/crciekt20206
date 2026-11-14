@@ -256,3 +256,93 @@ def test_a_substitute_fielders_catch_is_not_an_unclear_catch():
     assert len(out) == 1 and out.how_out.iloc[0] == "caught"
     assert not (c.fielding.printed == "Sub").any() and not (c.fielding.player == "Sub").any()
     assert not (checks.uncredited(c).printed == "Sub").any()
+
+
+# --------------------------------------------------------------------------- two playthroughs in one folder
+ALL = sorted(FIX.glob("*.txt"))
+
+
+def _dated(p: Path, days: int = 0, name: str = "") -> tuple[str, bytes, pd.Timestamp]:
+    """A fixture with its date moved by `days` (another game: a replay that didn't happen the same way), under
+    another file name if given; with its new date."""
+    lines = p.read_text().split("\n")
+    head, _, date = lines[2].rpartition(" - ")
+    new = pd.Timestamp(date) + pd.Timedelta(days=days)
+    lines[2] = f"{head} - {new.day} {new:%b %Y}"
+    return name or p.name, "\n".join(lines).encode(), new
+
+
+def _in_order() -> list[tuple[str, bytes, pd.Timestamp]]:
+    return sorted((_dated(p) for p in ALL), key=lambda x: (x[2], x[0]))
+
+
+def test_every_kind_of_match_from_an_earlier_playthrough_is_left_out():
+    """Your bug of 14 November: two playthroughs in one Scorecards folder were counted together. Playthrough one saves
+    every game in order; then an older save is loaded and play goes on from the 30th game's date: the games that
+    happen the same way are saved again over their old files, the others (every second one here: a day later, so
+    another file) leave their old files behind. Every one of those is left out, whatever its kind (Tests, ODIs,
+    T20Is, leagues, knockouts), with the reason; the games before the rewind, and every game of the second
+    playthrough, count."""
+    first = _in_order()
+    k = 30
+    second = sorted(((n, b, d) if i % 2 == 0 else _dated(Path(FIX / n), 1, "replay_" + n)
+                     for i, (n, b, d) in enumerate(first[k:])), key=lambda x: (x[2], x[0]))   # saved in play order
+    d0, d1 = min(d for *_, d in second), max(d for *_, d in second)
+    files = [(n, b, 1_790_000_000 + 60 * i) for i, (n, b, _) in enumerate(first)]
+    files += [(n, b, 1_790_100_000 + 60 * i) for i, (n, b, _) in enumerate(second)]
+    c = Career.build("two playthroughs", files)
+    resaved = {n for n, *_ in second}
+    expect = {n for n, _, d in first if n not in resaved and d0 < d <= d1}
+    assert set(c.leftovers.source) == expect and len(expect) >= 10
+    assert c.leftovers.auto.all() and c.leftovers.reason.str.startswith("From an earlier playthrough").all()
+    kinds = set(c.matches[c.matches.source.isin(resaved)].format)
+    assert len(kinds) >= 3                                               # Tests, ODIs and T20s among them
+    assert not c.batting.match_id.isin(c.leftovers.match_id).any()      # left out of every figure
+    assert len(c.matches) == len(set(n for n, *_ in files)) - len(expect)
+    # and counted again by the user's choice
+    back = c.with_fixes(Fixes(include=list(c.leftovers.match_id)))
+    assert back.leftovers.empty and len(back.matches) == len(set(n for n, *_ in files))
+
+
+def test_a_few_older_scorecards_copied_in_later_are_not_a_replay():
+    """Copying a few older scorecards into the folder gives them later times than games played after them; that's
+    not a replay (a replay saves every game the world plays again), so nothing is set aside."""
+    first = _in_order()
+    late = first[10:13]
+    files = [(n, b, 1_790_000_000 + 60 * i) for i, (n, b, _) in enumerate(first) if (n, b, _) not in late]
+    files += [(n, b, 1_790_900_000 + i) for i, (n, b, _) in enumerate(late)]
+    c = Career.build("copied in", files)
+    assert c.leftovers.empty and len(c.matches) == len(first)
+
+
+def test_copied_files_prove_nothing():
+    """Files copied or unzipped carry the time they were copied, in no match order (your new set of scorecards):
+    the times prove nothing, so nothing is set aside by them, even with games from two playthroughs."""
+    import random
+    first = _in_order()
+    second = [_dated(Path(FIX / n), 1, "replay_" + n) for n, _, _ in first[30:]]
+    files = [(n, b) for n, b, _ in first + second]
+    stamps = list(range(len(files)))
+    random.Random(7).shuffle(stamps)
+    c = Career.build("copied", [(n, b, 1_790_000_000 + 2 * t) for (n, b), t in zip(files, stamps)])
+    assert c.leftovers.empty and len(c.matches) == len(files)
+
+
+def test_a_double_booked_team_and_a_multi_day_game_saved_late_count():
+    """The game sometimes double-books a side: two of its matches on the same day both count (your answer of 14
+    November, "use them as double"). A Test is saved when it ends, after games played during it: nothing is set
+    aside, nor for a game saved a few days ahead (the game does that)."""
+    test = FIX / "22_aug_2026-aus_v_ban_2nd_tst.txt"
+    odi = FIX / "1_oct_2026-rsa_v_aus_1st_odi.txt"
+    t_name, t_bytes, t_date = _dated(test)
+    o_days = (t_date - pd.Timestamp("2026-10-01")).days
+    # Australia in both on the same day, saved in order
+    same = Career.build("double", [(t_name, t_bytes, 1_790_000_000), (*_dated(odi, o_days)[:2], 1_790_000_100)])
+    assert same.leftovers.empty and len(same.matches) == 2
+    # the ODI three days into the Test, saved before the Test ended
+    late = Career.build("late", [(*_dated(odi, o_days + 3)[:2], 1_790_000_000), (t_name, t_bytes, 1_790_000_100)])
+    assert late.leftovers.empty and len(late.matches) == 2
+    # the game saves some games a few days ahead: a week after the Test ended is still no proof
+    ahead = Career.build("ahead", [(*_dated(odi, o_days + 12)[:2], 1_790_000_000), (t_name, t_bytes, 1_790_000_100)])
+    assert ahead.leftovers.empty
+

@@ -8,6 +8,7 @@ automatically, and a career can be saved as one small "career pack" zip.
 
 from __future__ import annotations
 
+import dataclasses
 import io
 import json
 import re
@@ -22,7 +23,7 @@ import pandas as pd
 
 from .competitions import (EXHIBITION, FIRST_CLASS, INTERNATIONAL, INTERNATIONAL_SECTION, TEST, TOUR, assign_seasons,
                            assign_series, classify, event_of, fix_playoff_stages, section_of)
-from .parser import Match, ScorecardError, parse_scorecard, validate_match
+from .parser import Innings, Match, ScorecardError, parse_scorecard, validate_match
 
 MULTI_DAY = {TEST, FIRST_CLASS}
 SUB_RE = re.compile(r"^(sub|substitute)\b", re.I)  # "c Sub b Cook": taken by a substitute fielder
@@ -52,16 +53,20 @@ class Fixes:
     suggested: list[str] = field(default_factory=list)
     include: list[str] = field(default_factory=list)  # match ids: count these even though they look like leftovers
     exclude: list[str] = field(default_factory=list)  # match ids: leave these out of every figure
+    # names the user chose to keep as one player, though they played for two teams in one competition and season
+    # (the automatic split undone on the data check page)
+    keep_together: list[str] = field(default_factory=list)
 
     def to_json(self) -> str:
         return json.dumps({"merges": self.merges, "splits": self.splits, "credits": self.credits,
-                           "suggested": self.suggested, "include": self.include, "exclude": self.exclude}, indent=1)
+                           "suggested": self.suggested, "include": self.include, "exclude": self.exclude,
+                           "keep_together": self.keep_together}, indent=1)
 
     @classmethod
     def from_json(cls, text: str) -> "Fixes":
         d = json.loads(text or "{}")
         return cls(d.get("merges", {}), d.get("splits", []), d.get("credits", {}), d.get("suggested", []),
-                   d.get("include", []), d.get("exclude", []))
+                   d.get("include", []), d.get("exclude", []), d.get("keep_together", []))
 
     def rename(self, name: str, team: str) -> str:
         for s in self.splits:
@@ -146,6 +151,8 @@ PACK_FIXES = "fixes.json"
 PACK_INFO = "career.json"
 PACK_SOURCES = "sources.json"  # stored file name -> the scorecard's own file name
 PACK_TIMES = "times.json"  # stored file name -> when the game saved it
+CORRECTION_COLUMNS = ["match_id", "source", "correction"]
+AUTO_SPLIT_COLUMNS = ["player", "team", "new_name", "keep", "games", "where"]
 LEFTOVER_COLUMNS = ["match_id", "source", "date", "competition", "stage", "home", "away", "result", "saved", "reason", "auto"]
 
 
@@ -166,6 +173,10 @@ class Career:
     # matches kept in the career but left out of every figure: games from an earlier
     # playthrough of a season, and any the user left out on the data check page
     leftovers: pd.DataFrame = field(default_factory=lambda: pd.DataFrame(columns=LEFTOVER_COLUMNS))
+    # scorecards that didn't add up, put right where the card itself proves the answer (listed on the data check page)
+    corrections: pd.DataFrame = field(default_factory=lambda: pd.DataFrame(columns=CORRECTION_COLUMNS))
+    # names split automatically: one printed name for two teams in one competition and season (two players)
+    auto_splits: pd.DataFrame = field(default_factory=lambda: pd.DataFrame(columns=AUTO_SPLIT_COLUMNS))
 
     # ------------------------------------------------------------ building
     @classmethod
@@ -314,42 +325,98 @@ class Career:
 # --------------------------------------------------------------------------- #
 
 SAVE_SLACK = 5  # seconds: files saved together can carry slightly different times
+MULTI_DAY_SPAN = timedelta(days=5)  # a multi-day game is saved when it ends, up to five days after its date
+# the game saves some games a few days ahead of others (your new set: a Bangladesh v New Zealand series saved up to 3
+# days before league games played earlier), so only a jump back of more than this proves a rewind
+REWIND = timedelta(days=10)
+# a replay saves every game the world plays from the date it went back to, so a real one soon has many files; a few
+# older scorecards copied into the folder later are not a replay
+MIN_REPLAY = 10
+
+
+def _span(c) -> timedelta:
+    return MULTI_DAY_SPAN if c.format in MULTI_DAY else timedelta(0)
+
+
+def play_runs(items: list[tuple], cls: list, saved: dict[str, float]) -> list[dict]:
+    """The playthroughs the file times show: for each run of files in play order, when its first file was saved
+    (`t`) and the dates of its games (`dates`). The game saves every match as it's played, so in one playthrough
+    later-saved files are never much earlier games (a multi-day game is saved up to five days after its date, and
+    some games a few days ahead of others, see REWIND); a later-saved file more than that earlier starts a new run:
+    a reloaded save."""
+    rows = sorted((saved[src], m.date, m.date + _span(c)) for (src, m), c in zip(items, cls) if src in saved)
+    runs: list[dict] = []
+    top = None
+    for t, start, end in rows:
+        if top is None or end + REWIND < top:
+            runs.append(dict(t=t, dates=[start]))
+            top = start
+        else:
+            top = max(top, start)
+            runs[-1]["dates"].append(start)
+    return runs
+
+
+def times_in_play_order(runs: list, files: int) -> bool:
+    """Whether the files' saved times follow the order the games were played, apart from a few rewinds. Files copied
+    in no match order carry times that prove nothing (about one run for every two files): then no game is set aside
+    by them. Trusted when there are at most max(3, files / 40) runs."""
+    return bool(runs) and len(runs) <= max(3, files // 40)
 
 
 def find_leftovers(parsed: dict[str, Match], saved: dict[str, float], fixes: Fixes) -> dict[str, tuple[str, bool]]:
     """{source: (reason, found automatically)} for matches left out of every figure.
 
-    When a save is reloaded and part of a season played again, the game writes each
-    replayed match over its old file, but a knockout game with different teams gets
-    a new file name, so the old one stays in the folder (e.g. three IPL finals).
-    Such a game gives itself away by the file times: another match of the same
-    competition and season, played *before* it, was saved *after* it (the season
-    was rewound past it), or a knockout on the same day with one of the same teams
-    was saved after it.  Only knockout games are judged, and only with file times.
-    The user can count any of them again, or leave out any other match, on the
-    data check page."""
+    When a save is reloaded and play goes on from an earlier date, the game writes each replayed match over its old
+    file, but a match that didn't happen the same way the second time (other fixtures, a knockout with other teams,
+    a different series) keeps its old file, so the folder holds games from both playthroughs. Such a game gives
+    itself away by the file times: games played well *before* it were saved *after* it (the career was rewound past
+    it, see play_runs), or, for a knockout, a game of its competition and season played before it, or another
+    knockout on the same day with one of the same teams, was saved after it. Every kind of match is judged, only with
+    file times, and only when the times follow the order of play (files copied in no order prove nothing, see
+    times_in_play_order). The same team in two matches at once is never a sign by itself:
+    the game sometimes double-books a side, and both matches count. The user can count any of them again, or leave
+    out any other match, on the data check page."""
     out: dict[str, tuple[str, bool]] = {}
     items = list(parsed.items())
     cls = [classify(m) for _, m in items]
-    seasons = assign_seasons([(c.competition, m.date) for c, (_, m) in zip(cls, items)])
-    groups: dict[tuple, list[int]] = {}
-    for i, (c, season) in enumerate(zip(cls, seasons)):
-        groups.setdefault((c.competition, season), []).append(i)
 
     def when(t: float) -> str:
         return time.strftime("%d %b %Y", time.localtime(t)).lstrip("0")
 
+    runs = play_runs(items, cls, saved)
+    trusted = times_in_play_order(runs, len(saved))
+    if trusted:
+        # each rewind: the new playthrough has played from the date it went back to (d0) up to its latest game (d1);
+        # every file saved before the rewind of a game in between is from the earlier playthrough (the replayed games
+        # were saved again over their old files; these weren't). A real replay saves every game the world plays again
+        # (at least MIN_REPLAY files), most of them the same games, so its own games outnumber those left over; a few
+        # older scorecards copied into the folder later don't, and set nothing aside.
+        for run in runs[1:]:
+            t_back, d0, d1 = run["t"], min(run["dates"]), max(run["dates"])
+            old = [src for (src, m) in items if src not in out and src in saved
+                   and saved[src] < t_back - SAVE_SLACK and d0 < m.date <= d1]
+            if old and len(run["dates"]) >= MIN_REPLAY and len(run["dates"]) > len(old):
+                for src in old:
+                    out[src] = (f"From an earlier playthrough: saved {when(saved[src])}, before the career was played "
+                                f"again from {d0.day} {d0:%b %Y} (saved {when(t_back)}).", True)
+    # a knockout with other teams the second time gets a new file name, so even a short rewind leaves it behind: a
+    # knockout is also judged within its own competition and season, where any game played before it but saved after
+    # it gives it away, and so does another knockout on the same day with one of the same teams saved after it
+    seasons = assign_seasons([(c.competition, m.date) for c, (_, m) in zip(cls, items)])
+    groups: dict[tuple, list[int]] = {}
+    for i, (c, season) in enumerate(zip(cls, seasons)):
+        groups.setdefault((c.competition, season), []).append(i)
     for idxs in groups.values():
         for i in idxs:
             src, m = items[i]
-            if not cls[i].knockout or src not in saved:
+            if not trusted or src in out or not cls[i].knockout or src not in saved:
                 continue
-            span = timedelta(days=5) if cls[i].format in MULTI_DAY else timedelta(0)  # a multi-day game can end later
             for j in idxs:
                 other, o = items[j]
                 if j == i or other not in saved or saved[other] <= saved[src] + SAVE_SLACK:
                     continue
-                rewound = o.date + span < m.date
+                rewound = o.date + _span(cls[i]) < m.date
                 clash = cls[j].knockout and o.date == m.date and {o.team1, o.team2} & {m.team1, m.team2}
                 if rewound or clash:
                     later = "played again" if rewound else "replayed from this round"
@@ -389,6 +456,67 @@ def divisions_of(games: list[tuple]) -> list[str]:
     return out
 
 
+def _batting_raw(inn: Innings) -> list[str]:
+    """The name each batting line counts under: two players the game prints the same way in one XI are told apart,
+    the one lower in the order getting " (2)"."""
+    seen: dict[str, int] = {}
+    out = []
+    for b in inn.batting:
+        seen[b.player] = seen.get(b.player, 0) + 1
+        out.append(b.player if seen[b.player] == 1 else f"{b.player} ({seen[b.player]})")
+    return out
+
+
+def _bowling_raw(inn: Innings) -> list[str]:
+    """The name each bowling line counts under. Two players the game prints the same way ("K Mendis" for Kusal and
+    Kamindu) can both bowl in one innings. Like the batting list, where the one lower in the order is "K Mendis (2)",
+    they are kept apart. The scorecard can't say which bowling line is whose, so the one who bowled more is taken to be
+    the one who bats lower (specialist bowlers bat lower down)."""
+    by_name: dict[str, list[int]] = {}
+    for j, w in enumerate(inn.bowling):
+        by_name.setdefault(w.player, []).append(j)
+    out = [""] * len(inn.bowling)
+    for name, idx in by_name.items():
+        for n, j in enumerate(sorted(idx, key=lambda j: inn.bowling[j].balls), start=1):
+            out[j] = name if n == 1 else f"{name} ({n})"
+    return out
+
+
+def auto_splits(parsed: list[Match], where: list[tuple[str, str]], fixes: Fixes) -> list[dict]:
+    """Names shared by different players, split automatically (your answer of 14 November: "yeah, split them"). A
+    printed name that played for two or more teams in the same competition and season is different men: the name
+    stays with the team it played most games for (over the whole career), and the player at each other team of those
+    gets the team added ("A Benkenstein (Pretoria Capitals)"). A team that never shared a competition and season with
+    another team of the name keeps the name (a transfer between seasons is one player). Names the user chose to keep
+    together (fixes.keep_together) aren't split. Different printed names are never joined. `where`: each match's
+    (section, season)."""
+    seen: dict[tuple, set] = {}            # (name, section, season) -> teams
+    games: dict[tuple, set] = {}           # (name, team) -> match ids
+    places: dict[tuple, list] = {}         # (name, team) -> "section season" it clashed in
+    for m, (section, season) in zip(parsed, where):
+        for inn in m.innings:
+            names = [(inn.team, fixes.rename(p, inn.team)) for p in _batting_raw(inn)]
+            names += [(inn.bowling_team, fixes.rename(p, inn.bowling_team)) for p in _bowling_raw(inn)]
+            for team, name in names:
+                if not name or not team:
+                    continue
+                seen.setdefault((name, section, season), set()).add(team)
+                games.setdefault((name, team), set()).add(m.match_id)
+    clash: dict[str, set] = {}
+    for (name, section, season), teams in seen.items():
+        if len(teams) > 1 and name not in fixes.keep_together:
+            clash.setdefault(name, set()).update(teams)
+            for t in teams:
+                places.setdefault((name, t), []).append(f"{section} {season}")
+    out = []
+    for name in sorted(clash):
+        order = sorted(clash[name], key=lambda t: (-len(games[(name, t)]), t))
+        for t in order[1:]:
+            out.append(dict(player=name, team=t, new_name=f"{name} ({t})", keep=order[0],
+                            games=len(games[(name, t)]), where=", ".join(dict.fromkeys(places[(name, t)]))))
+    return out
+
+
 def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
     parsed = sorted(parsed, key=lambda m: (m.date, m.source))
     cls = [classify(m) for m in parsed]
@@ -416,7 +544,14 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
     divisions = divisions_of([(c.competition, seasons[i], stages[i], m.team1, m.team2)
                               for i, (c, m) in enumerate(zip(cls, parsed))])
 
-    M, I, B, W, F, FOW, P = [], [], [], [], [], [], []
+    where = [(section_of(c.competition, divisions[i] or stages[i], c.format, c.level), seasons[i])
+             for i, c in enumerate(cls)]
+    split = auto_splits(parsed, where, fixes)
+    if split:   # the user's own splits first, then the automatic ones (the user's choices are never changed)
+        fixes = dataclasses.replace(fixes, splits=list(fixes.splits) + [
+            dict(player=x["player"], team=x["team"], new_name=x["new_name"]) for x in split])
+
+    M, I, B, W, F, FOW, P, C = [], [], [], [], [], [], [], []
     for i, (m, c) in enumerate(zip(parsed, cls)):
         multi = c.format in MULTI_DAY
         batted_first = m.innings[0].team if m.innings else ""
@@ -440,9 +575,12 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
             result_type=result_type, result=_corrected_result(m), tiebreak_winner=tiebreak,
             margin_runs=m.margin_runs, margin_wickets=m.margin_wickets, innings_win=m.innings_win,
             margin_note=m.margin_note, super_over=_super_over_text(m), rain=_rain(m, c.format, result_type),
-            player_of_match=fixes.rename(m.player_of_match, ""), batted_first=batted_first, source=m.source))
+            player_of_match=fixes.rename(m.player_of_match, _team_of(m, m.player_of_match)), batted_first=batted_first,
+            source=m.source))
         for p in validate_match(m):
             P.append(dict(match_id=m.match_id, source=m.source, problem=p))
+        for x in m.corrections:
+            C.append(dict(match_id=m.match_id, source=m.source, correction=x))
         last_no = len(m.innings)
         for inn in m.innings:
             all_out = _all_out(inn)
@@ -452,7 +590,7 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
                 opposition=inn.bowling_team, runs=inn.total, wickets=inn.wickets, balls=inn.balls,
                 all_out=all_out, declared=declared or inn.declared,
                 counted_in_balls=inn.counted_in_balls, extras=inn.extras, byes=inn.byes, leg_byes=inn.leg_byes,
-                wides=inn.wides, no_balls=inn.no_balls,
+                wides=inn.wides, no_balls=inn.no_balls, uncharged=inn.uncharged,
                 home=inn.team == m.team1 and not c.neutral, batting_first=inn.team == batted_first))
             fell = set()
             for w, score in inn.fow:
@@ -460,10 +598,7 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
                     continue  # a wicket listed twice: keep the first (a later list belongs to something else)
                 fell.add(w)
                 FOW.append(dict(match_id=m.match_id, innings_no=inn.number, team=inn.team, wicket=w, score=score))
-            seen: dict[str, int] = {}
-            for b in inn.batting:
-                seen[b.player] = seen.get(b.player, 0) + 1
-                raw = b.player if seen[b.player] == 1 else f"{b.player} ({seen[b.player]})"
+            for b, raw in zip(inn.batting, _batting_raw(inn)):
                 player = fixes.rename(raw, inn.team)
                 bowler = fixes.rename(b.bowler, inn.bowling_team) if b.bowler else ""
                 key = f"{m.match_id}|{inn.number}|{b.position}"
@@ -484,26 +619,14 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
                         match_id=m.match_id, innings_no=inn.number, team=inn.bowling_team,
                         opposition=inn.team, player=fielder if resolved else "", printed=b.fielder if not resolved else fielder,
                         kind=b.how_out, batter=player, bowler=bowler, resolved=resolved, credit_key=key))
-            # Two players the game prints the same way ("K Mendis" for Kusal and Kamindu) can
-            # both bowl in one innings.  Like the batting list, where the one lower in the
-            # order is "K Mendis (2)", they are kept apart.  The scorecard can't say which
-            # bowling line is whose, so the one who bowled more is taken to be the one who
-            # bats lower (specialist bowlers bat lower down).
-            suffix: dict[int, str] = {}
-            by_name: dict[str, list[int]] = {}
-            for j, w in enumerate(inn.bowling):
-                by_name.setdefault(w.player, []).append(j)
-            for name, idx in by_name.items():
-                for n, j in enumerate(sorted(idx, key=lambda j: inn.bowling[j].balls), start=1):
-                    suffix[j] = name if n == 1 else f"{name} ({n})"
-            for j, w in enumerate(inn.bowling):
-                raw = suffix[j]
+            for w, raw in zip(inn.bowling, _bowling_raw(inn)):   # (two bowlers printed alike: see _bowling_raw)
                 W.append(dict(
                     match_id=m.match_id, innings_no=inn.number, team=inn.bowling_team, opposition=inn.team,
                     player=fixes.rename(raw, inn.bowling_team), balls=w.balls, runs=w.runs,
                     wickets=w.wickets, maidens=w.maidens, dots=w.dots, counted_in_balls=inn.counted_in_balls))
 
     frames = dict(
+        auto_splits=pd.DataFrame(split, columns=AUTO_SPLIT_COLUMNS),
         matches=pd.DataFrame(M, columns=MATCH_COLUMNS),
         innings=pd.DataFrame(I, columns=INNINGS_COLUMNS),
         batting=pd.DataFrame(B, columns=BATTING_COLUMNS),
@@ -511,6 +634,7 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
         fielding=pd.DataFrame(F, columns=FIELDING_COLUMNS),
         fow=pd.DataFrame(FOW, columns=["match_id", "innings_no", "team", "wicket", "score"]),
         problems=pd.DataFrame(P, columns=["match_id", "source", "problem"]),
+        corrections=pd.DataFrame(C, columns=CORRECTION_COLUMNS),
     )
     for name, types in TYPES.items():   # a career with no matches yet gets the same column types as a full one
         if frames[name].empty:
@@ -529,7 +653,7 @@ TYPES = {
     "matches": dict(date=_DATE, knockout=_B, neutral=_B, recognised=_B, margin_runs=_F, margin_wickets=_F,
                     innings_win=_B, rain=_B),
     "innings": dict(innings_no=_I, team_innings=_I, runs=_I, wickets=_I, balls=_I, all_out=_B, declared=_B,
-                    counted_in_balls=_B, extras=_I, byes=_I, leg_byes=_I, wides=_I, no_balls=_I, home=_B,
+                    counted_in_balls=_B, extras=_I, byes=_I, leg_byes=_I, wides=_I, no_balls=_I, uncharged=_I, home=_B,
                     batting_first=_B),
     "batting": dict(innings_no=_I, position=_I, did_bat=_B, runs=_I, balls=_I, fours=_I, sixes=_I, out=_B,
                     fielder_resolved=_B),
@@ -575,6 +699,15 @@ def _one_row_per_key(frames: dict[str, pd.DataFrame]) -> None:
             frames[name] = df.drop_duplicates(keys).reset_index(drop=True)
     if extra:
         frames["problems"] = pd.concat([frames["problems"], pd.DataFrame(extra)], ignore_index=True)
+
+
+def _team_of(m: Match, name: str) -> str:
+    """The side a printed name played for in this match ("" when it's in neither XI, or in both)."""
+    if not name:
+        return ""
+    teams = {inn.team for inn in m.innings if name in [b.player for b in inn.batting]}
+    teams |= {inn.bowling_team for inn in m.innings if name in [w.player for w in inn.bowling]}
+    return next(iter(teams)) if len(teams) == 1 else ""
 
 
 def _super_over_text(m: Match) -> str:
@@ -640,7 +773,8 @@ MATCH_COLUMNS = [
     "batted_first", "source"]
 INNINGS_COLUMNS = [
     "match_id", "innings_no", "team_innings", "team", "opposition", "runs", "wickets", "balls", "all_out",
-    "declared", "counted_in_balls", "extras", "byes", "leg_byes", "wides", "no_balls", "home", "batting_first"]
+    "declared", "counted_in_balls", "extras", "byes", "leg_byes", "wides", "no_balls", "uncharged", "home",
+    "batting_first"]
 BATTING_COLUMNS = [
     "match_id", "innings_no", "team", "opposition", "player", "position", "did_bat", "runs", "balls", "fours",
     "sixes", "out", "how_out", "dismissal", "bowler", "fielder", "fielder_resolved"]

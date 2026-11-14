@@ -185,15 +185,36 @@ the speed work, so the new safety nets guard the speed changes). Nothing moved t
 piece, wrong numbers first.
 
 Wrong numbers and data:
-- [ ] Two playthroughs counted together: leftovers of every kind of match set aside from the game's file times
-      (listed on Data check, can be counted back); a team double-booked by the game counts both matches
-- [ ] My team's T20I, ODI and Test tiles on the Season tile's April-to-March season, so they add up to it
-- [ ] The five scorecards that don't add up: retired hurt reprinted in the 2nd innings counted out to the bowler with
-      the extra wicket ("out, how not printed"); SA20 no-balls recorded as not charged to any bowler
-- [ ] Scouting fully safe for national sides: never a name capped by another country, never a franchise-only player,
-      shared names on sure games only (the 8 unsafe suggestions found on your saves, including Head -> A Sharma)
-- [ ] Names: a name playing for two teams in one competition and season split automatically (listed on Data check,
-      can be undone); different printed names never merged
+- [x] Two playthroughs counted together: leftovers of every kind of match set aside from the game's file times
+      (listed on Data check, can be counted back); a team double-booked by the game counts both matches — ✓ engine
+      (`ccstats/loader.py` find_leftovers, play_runs): a rewind is a jump back of more than 10 days in the files'
+      saved order (your new set showed the game saving some games up to 3 days ahead, so smaller steps prove
+      nothing), backed by a real replay (at least 10 new files, outnumbering the old ones it sets aside); copied files
+      in no order and a few older scorecards copied in later set nothing aside; knockouts keep their stricter checks;
+      the same team in two matches at once is never a sign. Tests: a made-up two-playthrough folder (every kind of
+      match), copied files, copied-in files, a double-booked team, a Test saved late (`tests/test_real_career_cases.py`);
+      your new set: 0 set aside (correct: one playthrough)
+- [x] My team's T20I, ODI and Test tiles on the Season tile's April-to-March season, so they add up to it — ✓
+      `server/myteam.py` banner: each tile counts the calendar's season and says "Apr 2031 – Mar 2032", the
+      competitions played this season first; test `test_my_team_format_tiles_add_up_to_the_season_tile`; all 137 teams
+      of your new set add up (Australia: Tests 5–1, ODIs 4–2, T20Is 4–0 = the Season tile's 16)
+- [x] The five scorecards that don't add up: retired hurt reprinted in the 2nd innings counted out to the bowler with
+      the extra wicket ("out, how not printed"); SA20 no-balls recorded as not charged to any bowler — ✓ engine
+      (`ccstats/parser.py` _correct; the career's corrections list for the data check page; the match page says
+      "✎ Scorecard put right" with what was done); your new set: exactly the five (S Singh to V Manoj, K R'h Reddy to
+      P Karia, T Ward to T da Silva, A Vaughan to M Cohen; 2 uncharged no-balls in the SA20), 0 problems left;
+      tests on made-up cards of each kind, and that a real retired hurt or an unproven gap is left alone
+- [x] Scouting fully safe for national sides: never a name capped by another country, never a franchise-only player,
+      shared names on sure games only (the 8 unsafe suggestions found on your saves, including Head -> A Sharma) — ✓
+      `ccstats/scouting.py` (national_ok, proving_sections; "shared name" mark on the pick); tests: the A Sharma case
+      and each rule, and every player offered to every national side in the test scorecards; your new set: 3,345
+      offered, 0 break a rule; gone: Australia T20Is "Replace Z Coates with J Iqbal" (Iqbal only ever played in the
+      Big Bash)
+- [x] Names: a name playing for two teams in one competition and season split automatically (listed on Data check,
+      can be undone); different printed names never merged — ✓ engine (`ccstats/loader.py` auto_splits: the name
+      stays with the team it played most for, the others get the team added; undone with "keep together", saved with
+      the career; the Player of the Match follows his side); tests in `tests/test_names.py` (split, undo, a transfer
+      stays one, no name ever joined); your new set: 63 names split into 163 players, none left shared
 - [ ] No fielding anywhere: nothing shown (Fielding tab, catches and stumpings columns, records, Stat by stat,
       Hall of fame pairs, Data check catch list) and nothing counted (marks, impact, MVP points); keepers worked out
       quietly; scorecards and how-out charts kept as printed

@@ -45,13 +45,81 @@ def test_who_belongs_to_which_country():
     one(b, "r9", "2026-11-09", "Mumbai", "Delhi", "U", "Delhi", section="Ranji Trophy", fmt="First-class",
         level="Domestic", country="India")
     c = SC.countries(b.career()).set_index("player")
-    assert c.loc["P"].tolist() == ["India", True, "played for India", False, ""]
-    assert c.loc["Q"].tolist() == ["UAE", True, "played for UAE", True, ""]
-    assert c.loc["R"].tolist() == ["India", False, "domestic cricket", True, ""]
-    assert c.loc["S"].tolist() == ["India", False, "going by the league", True, ""]
-    assert c.loc["T"].tolist() == ["England", False, "domestic cricket", False, ""]
-    assert c.loc["U"].tolist() == ["Canada", True, "played for Canada; also plays domestic cricket in India, which "
-                                   "takes no overseas players (likely two players with one name)", True, "India"]
+    cols = ["country", "capped", "how", "shared", "nations", "homes", "closed"]
+    assert c.loc["P", cols].tolist() == ["India", True, "played for India", False, ("India",), ("India",), ("India",)]
+    shared = " (a shared name: more than one player)"
+    assert c.loc["Q", cols].tolist() == ["UAE", True, "played for UAE and India" + shared, True, ("UAE", "India"), (), ()]
+    assert c.loc["R", cols].tolist() == ["India", False, "domestic cricket in England and India" + shared, True, (),
+                                         ("England", "India"), ("India",)]
+    assert c.loc["S", cols].tolist() == ["India", False, "only franchise cricket", False, (), (), ()]
+    assert c.loc["T", cols].tolist() == ["England", False, "domestic cricket in England", False, (), ("England",), ()]
+    assert c.loc["U", cols].tolist() == ["Canada", True, "played for Canada" + shared, True, ("Canada",), ("India",),
+                                         ("India",)]
+    # who can be suggested for a national side (your rules of 14 November)
+    ok = {(p, t): SC.national_ok(c.loc[p], t) for p in c.index for t in ("India", "England", "UAE", "Canada")}
+    assert {k for k, v in ok.items() if v} == {("P", "India"), ("R", "India"), ("T", "England"), ("U", "Canada")}
+    # rule 1: Q played for India and the UAE, so for neither; U played for Canada, so never for India though he plays
+    # in the Ranji Trophy; rule 2: S only ever played in the IPL, so for nobody
+
+
+def _season(b, k, sec, fmt, level, country, home, away, players, team, runs=60, balls=40):
+    """Five games of `sec` in which each of `players` scores `runs` off `balls` for `team` and is out."""
+    for g in range(5):
+        mid = f"{sec[:3]}{k}{g}"
+        b.match(mid, f"2030-0{g + 1}-1{k}", home, away, section=sec, fmt=fmt, level=level, country=country)
+        b.inns(mid, 1, team, away if team == home else home, [(p, runs, balls, True) for p in players])
+
+
+def test_a_shared_name_is_never_suggested_for_the_wrong_country():
+    """Your bug of 14 November: "Replace T Head with A Sharma". A Sharma played for India, so he is never suggested
+    for Australia, however well an "A Sharma" did in the Big Bash and the Sheffield Shield; a name shared by two
+    uncapped men counts only its Shield games for Australia (its Big Bash games could be the other man's); a player
+    who only played in the Big Bash is never suggested; a plain Australian domestic player counts all his games."""
+    b = Book()
+    # Australia's T20Is and Tests, with T Head in the side
+    for g in range(3):
+        b.match(f"t{g}", f"2031-0{g + 1}-01", "Australia", "England", section="T20Is", fmt="T20")
+        b.inns(f"t{g}", 1, "Australia", "England", [("T Head", 5, 10, True)])
+        b.match(f"x{g}", f"2031-0{g + 4}-01", "Australia", "England", section="Tests", fmt="Test")
+        b.inns(f"x{g}", 1, "Australia", "England", [("T Head", 5, 10, True)])
+    b.match("ind", "2029-01-01", "India", "England", section="T20Is", fmt="T20")
+    b.inns("ind", 1, "India", "England", [("A Sharma", 30, 20, True)])
+    bbl, shield, ranji = ("Big Bash League", "T20", "Franchise"), ("Sheffield Shield", "First-class", "Domestic"), \
+        ("Ranji Trophy", "First-class", "Domestic")
+    _season(b, 1, *bbl, "Australia", "Sixers", "Thunder", ["A Sharma", "X Shared", "F Only", "G Good"], "Sixers", runs=90)
+    _season(b, 2, *shield, "Australia", "Victoria", "Queensland", ["A Sharma", "X Shared", "G Good"], "Victoria")
+    _season(b, 3, *ranji, "India", "Mumbai", "Delhi", ["X Shared"], "Mumbai")
+    c = b.career()
+    who = SC.countries(c).set_index("player")
+    assert who.shared["A Sharma"] and who.shared["X Shared"] and not who.shared["G Good"] and not who.shared["F Only"]
+    t20 = SC.candidates(c, "Australia", "T20Is")
+    assert "A Sharma" not in t20.index and "F Only" not in t20.index     # rules 1 and 2
+    assert "X Shared" not in t20.index    # rule 3: his only T20 games are Big Bash games, which count for nobody
+    assert "G Good" in t20.index and t20.bat_inns["G Good"] == 5          # a sure Australian: his Big Bash games count
+    tests = SC.candidates(c, "Australia", "Tests")
+    assert "A Sharma" not in tests.index
+    assert tests.bat_inns["X Shared"] == 5 and tests.bat_runs["X Shared"] == 300 and tests.shared["X Shared"]
+    assert SC._who(tests.loc["X Shared"])["shared"] and SC._who(tests.loc["X Shared"])["where"] == "Sheffield Shield"
+    # a franchise side can take anyone: the Big Bash's own scouting counts every game of every name
+    assert SC.converted(c, "Thunder", "Big Bash League").bat_inns["A Sharma"] == 5
+
+
+def test_no_suggestion_for_a_national_side_breaks_the_three_rules(fixtures_career):
+    """Every player offered to every national side in the test scorecards passes all three rules, and a shared name's
+    numbers come only from its own country's domestic cricket that takes no overseas players."""
+    c = fixtures_career
+    who = SC.countries(c).set_index("player")
+    s = SC.sections(c)
+    checked = 0
+    for target in s[s.level == "International"].index:
+        teams = set(c.matches[c.matches.section == target].home) | set(c.matches[c.matches.section == target].away)
+        for team in sorted(teams):
+            pool = SC.candidates(c, team, target)
+            for p in pool.index:
+                assert SC.national_ok(who.loc[p], team), (team, target, p)
+                assert not who.capped[p] or who.nations[p] == (team,)
+                checked += 1
+    assert checked > 0
 
 
 def test_a_measured_gap_is_pulled_to_the_minimum_and_never_below_it():
@@ -222,7 +290,7 @@ def test_candidates_are_eligible_and_not_in_the_side(fixtures_career):
             pool = SC.candidates(c, team, target)
             _, in_side = SC._latest_side(c, team, target)
             if len(pool):
-                assert (pool.country == team).all() and not (set(pool.index) & in_side)
+                assert all(SC.national_ok(r, team) for _, r in pool.iterrows()) and not (set(pool.index) & in_side)
                 # converted numbers are never better than the same numbers as they were (settled the same way)
                 gap = {f: SC.conversion(c, target, f) for f in SC.feeders(c, team, target)}
                 assert all(g["bat"] >= SC.MIN_GAP_INTERNATIONAL[SC.sections(c).kind[target]] for g in gap.values())

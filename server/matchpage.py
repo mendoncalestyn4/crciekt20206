@@ -209,6 +209,8 @@ def page(career, match_id: str, mine: list[str], notes: dict) -> dict:
         home_score=SG.score_of(career, match_id, row.home), away_score=SG.score_of(career, match_id, row.away),
         result=row.result + (f" (super over: {row.super_over})" if row.super_over else ""),
         player_of_match=row.player_of_match or "", rain=_rain(row), source=row.source,
+        corrected=list(career.corrections[career.corrections.match_id == match_id].correction)
+        if hasattr(career, "corrections") else [],
         note=notes.get(row.source, ""), match=card, report=W.match_report(career, match_id, line), excitement=ex,
         win=_win_chance(career, row, line, kind), wickets=_wickets(career, match_id, row, inns), sides=sides,
         top_scores=[dict(player=r.player, team=r.team, score=f"{r.runs}{'' if r.out else '*'}", balls=int(r.balls))

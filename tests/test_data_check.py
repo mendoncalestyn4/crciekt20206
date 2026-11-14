@@ -42,11 +42,17 @@ def test_crediting_a_catch_moves_it_and_undo_restores_it(career):
 
 
 def test_split_suggestions_and_splitting(career):
-    s = checks.split_suggestions(career)
+    """A name for two teams in one season is now split by itself (14 November); kept together by the user's choice,
+    it's suggested as before, and the user's own split works the same way."""
+    a = career.auto_splits[career.auto_splits.player == "A Sharma"]
+    assert a["where"].str.contains("Indian Premier League 2026").any()
+    assert checks.split_suggestions(career).empty
+    together = career.with_fixes(Fixes(keep_together=["A Sharma"]))
+    s = checks.split_suggestions(together)
     ipl = s[s.section == "Indian Premier League"]
     assert "A Sharma" in set(ipl.player)
-    fixed = career.with_fixes(Fixes(splits=[{"player": "A Sharma", "team": "Gujarat Titans",
-                                             "new_name": "A Sharma (Gujarat Titans)"}]))
+    fixed = career.with_fixes(Fixes(keep_together=["A Sharma"], splits=[
+        {"player": "A Sharma", "team": "Gujarat Titans", "new_name": "A Sharma (Gujarat Titans)"}]))
     b = fixed.batting
     assert set(b[b.player == "A Sharma (Gujarat Titans)"].team) == {"Gujarat Titans"}
     assert "Gujarat Titans" not in set(b[b.player == "A Sharma"].team)

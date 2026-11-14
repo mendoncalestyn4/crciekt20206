@@ -115,6 +115,9 @@ export function MatchView() {
         {tab === 0 && <>
           <Tile span={12}><MatchSummary m={m} /></Tile>
           {d.rain && <Tile span={12} title="🌧️ Rain"><div className="plain">{d.rain}</div></Tile>}
+          {d.corrected?.length ? <Tile span={12} title="✎ Scorecard put right">
+            <div className="plain">The game's scorecard didn't add up; the card itself shows what happened, so it's counted this way:</div>
+            {d.corrected.map((x) => <div className="how" key={x}>{x}.</div>)}</Tile> : null}
           <Tile span={7} title="Match report · excitement" right="out of 10">
             {d.excitement ? <ExcitementPanel ex={d.excitement} section={d.section} /> : <Missing why="Too few matches in this competition to rate yet." />}
             {!d.match.pom && <div className="deck" style={{ marginTop: 12 }}><T>{d.report}</T></div>}

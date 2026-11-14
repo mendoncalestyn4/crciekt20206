@@ -137,3 +137,64 @@ def test_resolved_fielders_always_belong_to_the_fielding_xi():
                     unresolved.append((path.name, b.dismissal))
     # only genuinely ambiguous surnames are left (two Khans, two Singhs, ...)
     assert len(unresolved) < 40, unresolved
+
+
+# --------------------------------------------------------------------------- shared names split, never merged (14 Nov)
+from ccstats.loader import Career, Fixes, auto_splits  # noqa: E402
+
+IPL_CARD = Path(__file__).parent / "fixtures" / "16_may_2026-klk_v_gjt_ipl.txt"
+
+
+def _both_sides_named(name_kkr: str = "R Singh") -> bytes:
+    """The IPL card with Kolkata's R Singh printed "S Gill", like Gujarat's opener: one printed name for two teams in
+    one competition and season."""
+    text = IPL_CARD.read_text()
+    assert text.count(f"{name_kkr}         c Gill b Rabada") == 1
+    return text.replace(f"{name_kkr}         c Gill b Rabada", "S Gill          c Gill b Rabada").encode()
+
+
+def test_a_name_playing_for_two_teams_in_one_season_is_split():
+    """Your answer of 14 November ("yeah, split them"): one printed name for two teams in the same competition and
+    season is two players. The name stays with the team it played most for (level here: the first by name), the
+    other gets the team added; their numbers are kept apart and the split is listed (for the data check page)."""
+    c = Career.build("c", [(IPL_CARD.name, _both_sides_named())])
+    bat = c.batting.set_index(["team", "player"])
+    assert bat.runs[("Gujarat Titans", "S Gill")] == 69
+    assert bat.runs[("Kolkata Knight Riders", "S Gill (Kolkata Knight Riders)")] == 9
+    assert ("Kolkata Knight Riders", "S Gill") not in bat.index
+    a = c.auto_splits.iloc[0]
+    assert (a.player, a.team, a.new_name, a.keep, a.games, a["where"]) == (
+        "S Gill", "Kolkata Knight Riders", "S Gill (Kolkata Knight Riders)", "Gujarat Titans", 1,
+        "Indian Premier League 2026")
+    # undone on the data check page: one player again, and the choice is saved with the career
+    kept = c.with_fixes(Fixes(keep_together=["S Gill"]))
+    assert kept.auto_splits.empty and set(kept.batting[kept.batting.player == "S Gill"].team) == {
+        "Gujarat Titans", "Kolkata Knight Riders"}
+    assert Career.from_pack(kept.to_pack()).auto_splits.empty
+
+
+def test_a_transfer_between_seasons_stays_one_player():
+    """A name that changes team only between seasons is one player who moved: not split."""
+    m1 = parse_scorecard(IPL_CARD.read_text(), "a.txt")
+    m2 = parse_scorecard(_both_sides_named().decode().replace("16 May 2026", "16 May 2027"), "b.txt")
+    m2.innings[0].batting = [b for b in m2.innings[0].batting if b.player != "S Gill"]   # only Kolkata's S Gill now
+    assert auto_splits([m1, m2], [("Indian Premier League", "2026"), ("Indian Premier League", "2027")], Fixes()) == []
+    # the same two games in one season: two teams at once, so split
+    assert len(auto_splits([m1, m2], [("Indian Premier League", "2026")] * 2, Fixes())) == 1
+
+
+def test_different_printed_names_are_never_joined():
+    """Your rule of 14 November ("they could be different people"): every printed name in every scorecard is still a
+    player of its own (or split into one per team); no name is ever joined to another without your saved choice."""
+    from serverkit import FIXTURES
+    c = Career.build("c", [(f.name, f.read_bytes()) for f in FIXTURES])
+    printed = set()
+    for f in FIXTURES:
+        m = parse_scorecard(f.read_text(), f.name)
+        for inn in m.innings:
+            printed |= {b.player for b in inn.batting}
+    players = set(c.batting.player)
+    split = {f"{r.player} ({r.team})" for r in c.auto_splits.itertuples()}
+    for name in printed:
+        assert name in players or any(s.startswith(name + " (") for s in split), name
+    assert not c.fixes.merges
