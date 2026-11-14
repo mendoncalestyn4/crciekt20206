@@ -507,6 +507,9 @@ or a choice in Settings, is asked before it's built; checked at every screen wid
   separate from your clicks, so the site never feels stuck; tabs you haven't opened and tiles far down are worked out
   only when you go there; and starting the Stats Pack opens the browser at once on a small "starting…" screen that
   becomes My team when ready.
+  **And (your picks, 14 November):** the browser keeps the site's own files between starts (refreshed only after an
+  update), so the screen appears at once; each page is sent exactly the numbers it shows; and the site learns which
+  pages you open most and refreshes those first after each new match. Not picked: starting with Windows by the clock.
 
 **Bug found by you (14 November, trying the preview): scouting advice "Replace T Head with A Sharma".** The scorecards
 print only initials and surname, so "A Sharma" is several men in your save (an Indian international, a Victoria

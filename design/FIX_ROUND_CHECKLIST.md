@@ -252,6 +252,8 @@ Right after this round, the speed work (your words: "when I open it, all the sit
 - [ ] Every page under a second (a speed guard in the tests), every number exactly the same before and after
       (the five accuracy promises), a self-check on new matches, smooth (no jumping, reopens where you left off),
       safety copies before updates
+- [ ] Also (your picks, 14 November): the browser keeps the site's own files between starts; each page sent only
+      what it shows; your most-used pages refreshed first after each new match
 
 Later stages: the program (.exe) that updates itself, with Streamlit and Plotly removed (stage 5); everything smaller
 so more fits (stage 6).
