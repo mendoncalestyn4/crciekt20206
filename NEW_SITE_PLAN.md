@@ -289,7 +289,7 @@ It is a **hard gate**:
   one short sentence a line; a saved picture includes the lines; an empty chart shows its "not enough yet" message
   instead; the style guide and the stage 3 pages follow the same rule; the old site gets nothing.
   Also your answers (14 November): **no samples first**, every chart done in one go; at the end of the fix round,
-  screenshots of **only what changed** (the new and reworked parts), sent in the chat. Decided by me: the chart lines
+  screenshots of **only what changed**: one picture of each new or reworked thing, sent in the chat, once it's all done. Decided by me: the chart lines
   are done first, so every later check covers them; the tests are also run on your PC's set-up (Python 3.14, pandas
   3.1) in a separate place on this machine.
 - [ ] Save any chart as a picture, and download tables as CSV.
