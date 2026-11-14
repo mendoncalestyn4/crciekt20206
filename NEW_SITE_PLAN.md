@@ -544,6 +544,10 @@ speed work, and stage 4 for Data check).
 first, that opens the preview on your new scorecards with a single double-click (its own career folder, nothing old
 mixed in, no career to pick); with it, the short list of what to try on your PC.
 
+**Batting on the left, bowling on the right (your request, 14 November, on the match scorecard):** the scorecard
+shows each innings' batting card on the left (still the wider side) and the bowling card on the right; the same order
+everywhere batting and bowling sit side by side on the site. Done in the fix round, checked at every screen width.
+
 **No blue highlight on double-click (your request, 14 November):** double- or triple-clicking anywhere on the site
 (names, numbers, tiles, buttons, tabs, menus) never selects text; dragging across text still selects it, so a name or
 number can still be copied. Done in the fix round, checked in the browser test.
