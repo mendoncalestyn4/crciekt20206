@@ -531,6 +531,22 @@ South Africa (9 Sep 2027) and Asia Cup ODIs on 9 and 11 September with 9 of the 
 double-booked them. So the leftover fix also uses a second clue that needs no file times: **the same players in two
 matches at once**. Such games are flagged on the Data check page for you to choose, never dropped silently without
 proof from the file times.
+**The five scorecards that don't add up (your request "try to fix", 14 November):** found why, in the game's own
+files. (1) **Four are one game mistake:** a batter who retired hurt in the 1st innings is printed "retired hurt"
+again in the 2nd (S Singh, Jharkhand v Maharashtra 1 Nov 2027; K Rashid Reddy, Andhra v Saurashtra 16 Nov 2027;
+T Ward, Queensland v Tasmania 15 Oct 2029; A Vaughan, Kent v Somerset 10 Apr 2030), while the total, the fall of
+wickets and the bowlers' figures all count him out, with no run-out to explain it. Of the 79 retired-hurt innings in
+your scorecards, the other 75 are genuine. In each of the four exactly one bowler has one more wicket in his figures
+than the batting list credits (V Manoj, P Karia, T da Silva, M Cohen), so who got him out is certain; how (caught,
+bowled...) isn't printed. **Fix (in the engine, so both sites get it):** when a batter is printed retired hurt but
+the total, the fall of wickets and the bowlers' wickets all count one wicket more than the batting list's
+dismissals, and exactly one bowler has one wicket more than he's credited with, the batter counts as out to that
+bowler ("out, how not printed"); the scorecard is then corrected, not a problem, and the correction is listed on the
+Data check page. (2) **One can't be put right:** Cape Town v Joburg Super Kings (SA20, 27 Dec 2028): Joburg's bowlers
+add up to 112 of 114; the gap is exactly the 2 no-ball runs, which the game left off the bowlers' figures, and the
+scorecard doesn't say who bowled them. The total and the batting are right; the bowlers' figures stay as printed,
+and the Problems list says exactly that instead of "doesn't add up". Done in the fix round, with tests on these
+five scorecards.
 
 **Competition logo on every franchise and domestic match (your request, 14 November):** the scorecard and the
 summary of every franchise and domestic game (IPL, Big Bash, Sheffield Shield, County Championship...) show that
