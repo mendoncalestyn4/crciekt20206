@@ -460,7 +460,13 @@ players), but then counted every "A Sharma" game in the Big Bash as his, though 
 fixed **in the fix round**, first thing after your "go" (your choice), with a test that a shared name's franchise
 games are never counted for the wrong country. How exactly (asked, not answered yet): 1) count only the games that are
 surely that country's man and suggest him only if that's enough, marked "shared name" (my suggestion), or 2) never
-suggest a shared name.
+suggest a shared name. Not answered; I'll build 1) unless you say otherwise.
+
+**Colours, found by you (14 November, trying the preview):** on Australia's light look the boxes inside tiles
+(scorecard rows, Player of the match, cards) were a muddy olive-yellow, because their shade mixes a little of the
+team's main colour (green) into the page colour (yellow). **Your answers:** inner boxes take **the page's own
+colour** (the bright background you like), with a thin edge so they still stand apart from the tile; **on every
+team's light look** (one rule for all 31 nations, checked on each). Done in the fix round, after the shared-name fix.
 
 ---
 
