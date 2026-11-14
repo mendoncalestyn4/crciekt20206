@@ -434,7 +434,8 @@ one after another); every page's checks are written before it's built (its nothi
 against the old site, its numbers counted another way) and it's built until they pass; every new page and option
 joins the full sweeps as it's built, so the stage-end sweep runs side by side with no extra setup; and every page gets
 a self-review with cricket sense on your scorecards before you see it (misleading figures, wrong emphasis such as a
-bowler's page leading with batting, match versus innings figures, odd layout).
+bowler's page leading with batting, match versus innings figures, odd layout). **Stages are never overlapped (your rule, 14
+November: "it'll cause errors in the end"):** each stage is finished, checked and approved before the next begins.
 
 1. **List what the old page shows:** that page's part of `design/INVENTORY.md` (every number, table, chart, option, help text and explanation, from the code and from the live page). This is the checklist for that page.
 2. **The server answers with exactly those numbers,** straight from the engine. The website never does its own cricket maths.
