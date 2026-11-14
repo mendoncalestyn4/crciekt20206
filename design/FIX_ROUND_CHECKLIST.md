@@ -204,6 +204,10 @@ Pages and looks:
 - [ ] The match report gives each innings its own figures (found by you: Pakistan v South Africa, 11 Jun 2031, said
       "N Shah took 7/158" for South Africa's 1st innings, where he took 6/74; 7/158 is his match figure); match
       figures only when said as such ("7/158 in the match")
+- [ ] The excitement rating (your choices, 14 November): the tile renamed "Excitement rating · out of 10"; each part
+      shown out of 10 (the finish, a comeback, the stakes, big moments: for Pakistan v South Africa 11 Jun 2031,
+      10, 1.5, 10 and 10), the overall unchanged (8.8), with one line saying the finish counts most; the same on
+      every page that shows the parts
 - [ ] Both team logos on every match summary (found by you: Pakistan v South Africa, 11 Jun 2031, showed empty gaps
       where they go); checked on every summary
 - [ ] Every chart: What it is / Who's best / What it's for, always shown, charts only
