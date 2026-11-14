@@ -201,6 +201,11 @@ Pages and looks:
 - [ ] Team logos about a third bigger in matches and tables; the competition logo on every franchise and domestic
       match's scorecard and summary
 - [ ] No blue highlight on double- or triple-click (dragging still selects)
+- [ ] The match report gives each innings its own figures (found by you: Pakistan v South Africa, 11 Jun 2031, said
+      "N Shah took 7/158" for South Africa's 1st innings, where he took 6/74; 7/158 is his match figure); match
+      figures only when said as such ("7/158 in the match")
+- [ ] Both team logos on every match summary (found by you: Pakistan v South Africa, 11 Jun 2031, showed empty gaps
+      where they go); checked on every summary
 - [ ] Every chart: What it is / Who's best / What it's for, always shown, charts only
 
 Accuracy and keeping it right:
