@@ -492,8 +492,11 @@ or a choice in Settings, is asked before it's built; checked at every screen wid
   matches of every kind worked out by hand, every figure locked into permanent tests; (4) a library of odd cases from
   your own scorecards (tie, super over, rain, abandoned, follow-on, declaration, retired hurt, a shared name, a renamed
   team), each with its correct answers saved as a test.
-  **Also suggested (14 November, not decided yet):** each tile loading on its own, the heavy work in its own lane,
-  working out only what's on screen, and the browser opening at once on a "starting…" screen.
+  **And these four (your picks, 14 November):** each tile loads on its own (a page appears at once and its tiles
+  fill in as each is ready, so quick parts never wait for slow ones); the heavy preparation runs in its own lane,
+  separate from your clicks, so the site never feels stuck; tabs you haven't opened and tiles far down are worked out
+  only when you go there; and starting the Stats Pack opens the browser at once on a small "starting…" screen that
+  becomes My team when ready.
 
 **Bug found by you (14 November, trying the preview): scouting advice "Replace T Head with A Sharma".** The scorecards
 print only initials and surname, so "A Sharma" is several men in your save (an Indian international, a Victoria
