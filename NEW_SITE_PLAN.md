@@ -469,6 +469,14 @@ by two uncapped players, only games that prove the country count (domestic sides
 franchise games of a shared name count for nobody, and a suggestion is marked "shared name". A player must pass all
 three. The cost, told to you: a player who switched countries is never suggested. Franchise and domestic sides you
 manage aren't affected (overseas players are allowed there). Tests: the A Sharma case and each rule.
+  **Checked on your saves (14 November, read only, nothing changed):** every player offered to every national side,
+  and every "replace X with Y" suggestion. 2029 save: 40 suggestions, 3 unsafe (Australia T20Is: T Head and
+  D H'nboezem -> A Sharma, a name that played for India and the UAE; India ODIs: W Sundar -> A Shukla, a name that
+  played for Hong Kong). 2032 save: 51 suggestions, 5 unsafe, one of them the main advice (South Africa T20Is: O Bacher
+  -> C De Freitas, a name that played for Ireland; the others: Bangladesh -> A Sheikh (Nepal), India Tests -> S Ahmed
+  (Oman) and S Sharma (Canada), South Africa Tests -> A Zadran (Afghanistan)). All 8 are stopped by rule 1, the
+  other-national-side check. Among everyone offered (not only the suggestions): 2029, 68 caught by rule 1, 35 by
+  rule 2, 63 by rule 3 of 2,607; 2032, 129, 64 and 117 of 3,701 (a player can be caught by more than one).
 
 **Colours, found by you (14 November, trying the preview):** on Australia's light look the boxes inside tiles
 (scorecard rows, Player of the match, cards) were a muddy olive-yellow, because their shade mixes a little of the
