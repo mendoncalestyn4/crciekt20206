@@ -529,7 +529,9 @@ old playthrough's files stay, and the site counted both (38 games in that season
 files' saved times: when the game went back in time and played on, every file from before the rewind that the new
 playthrough didn't replace is left out of all figures and listed on the Data check page, where it can be counted
 back. Tested on your saves and on a made-up folder mixing two playthroughs; then My team's tiles checked to add up
-(the Season tile, the format tiles, the latest result and the strip all from the same playthrough).
+(the Season tile, the format tiles, the latest result and the strip all from the same playthrough). **And the format tiles on the same season (your answer, 14 November):** My team's T20I, ODI and
+Test tiles count the same April-to-March season as the Season tile (not each competition's own season label), so
+their wins and losses always add up to it; checked by a test.
 **Your new set of scorecards (sent 14 November, read only):** 2,720 scorecards, 28 March 2026 to 8 July 2031, every
 one read (none rejected): 1,097 international (465 ODIs, 359 T20Is, 273 Tests), 261 franchise (IPL 148 in 2026-27,
 Big Bash 44, SA20 34, The Hundred 34, Lanka Premier League 1) and 1,361 domestic (each domestic competition for one or
@@ -577,7 +579,10 @@ MVP points count batting and bowling only, and the IPL MVP points too, so they d
 best XI has a keeper and scouting finds keepers. **Removed (your answer):** the Data check page's list of catches
 printed with only a surname. The Player page's tabs become Overview, Batting, Bowling and Story. Stage 3's pages are
 built without fielding. The old site is left as it is. Done in the fix round, with a check of every page that no
-catch or stumping number shows anywhere.
+catch or stumping number shows anywhere. **Kept (your answer):** the scorecard exactly as the game printed it ("c Smith b Jones") and
+the how-batters-get-out charts (caught, bowled, lbw): that's how the batter was out, not fielding stats; no catch
+counts for any fielder anywhere. The fielding lines of the nothing-lost checklist are marked "removed by your choice,
+14 November".
 
 **Colours, found by you (14 November, trying the preview):** on Australia's light look the boxes inside tiles
 (scorecard rows, Player of the match, cards) were a muddy olive-yellow, because their shade mixes a little of the
