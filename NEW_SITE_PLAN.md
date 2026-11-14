@@ -418,7 +418,8 @@ uploads, your teams, backups, Data check and Fixtures are all on the new site be
 team look (Australia's yellow) the approved gold is too faint to read, so the site darkens it automatically and it
 turns a muddy brown (nobody chose it). In stage 6 you're shown side-by-side pictures of the choices before deciding:
 the team's own main colour, a rich amber gold, or as it is now. **Also (added 14 November, your request after trying the preview on your PC): everything smaller** (the fonts,
-the numbers, the tiles, the gaps) so more fits on the screen at once. How much smaller, and whether it's one setting
+the numbers, the tiles, the gaps) so more fits on the screen at once. Named by you as too big (14 November): the match summary (its innings rows and headings) and above all the
+Player of the Match panel (the huge name, the giant figures, the long report). How much smaller, and whether it's one setting
 or a choice in Settings, is asked before it's built; checked at every screen width so nothing gets cut off. Not before stage 6. (Player art behind the pages was tried as mock-ups on 6 and 7 November and dropped on 12 November, your choice: no players in the background.) | to size then |
 
 **Total:** about 4 weeks of work (3½ to 5), plus the time you take to approve each stage. After stage 1 you can already use the new Home, Player and Match pages next to the old site.
