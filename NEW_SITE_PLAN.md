@@ -539,9 +539,9 @@ shape the fix above:** (1) the file times in the zip are when the files were cop
 order), not when the game saved them, so a zip can't show a rewind by its times; (2) Afghanistan played a Test v
 South Africa (9 Sep 2027) and Asia Cup ODIs on 9 and 11 September with 9 of the same 11 players, and two ODIs on
 18 September with all 11 the same: impossible in one playthrough, so either one is a leftover or the game
-double-booked them. So the leftover fix also uses a second clue that needs no file times: **the same players in two
-matches at once**. Such games are flagged on the Data check page for you to choose, never dropped silently without
-proof from the file times.
+double-booked them. **Your answer (14 November): "use them as double"**: the game double-booked them, so both
+matches count. So the same players in two matches at once is never treated as a leftover: only proof from the
+game's file times (a rewind) sets a game aside.
 **The five scorecards that don't add up (your request "try to fix", 14 November):** found why, in the game's own
 files. (1) **Four are one game mistake:** a batter who retired hurt in the 1st innings is printed "retired hurt"
 again in the 2nd (S Singh, Jharkhand v Maharashtra 1 Nov 2027; K Rashid Reddy, Andhra v Saurashtra 16 Nov 2027;
