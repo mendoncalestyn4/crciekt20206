@@ -208,6 +208,12 @@ Pages and looks:
       shown out of 10 (the finish, a comeback, the stakes, big moments: for Pakistan v South Africa 11 Jun 2031,
       10, 1.5, 10 and 10), the overall unchanged (8.8), with one line saying the finish counts most; the same on
       every page that shows the parts
+- [ ] Players · Find a player (found by you, 14 November, searching "smith"): the names squeezed into a column a
+      letter or two wide ("J / S / MI / TH"); the name gets its own column and never breaks inside a word; the
+      browser fit check now types a search before checking (it missed this)
+- [ ] The competitions listed on each player row in the agreed order (J Smith showed "ODI, Test, T20I")
+- [ ] Readable short competition names everywhere (C Smith showed "COCD1, C4SD1" for the CSA One-Day Cup Division 1
+      and the CSA 4-Day Series Division 1): e.g. "CSA One-Day D1", "CSA 4-Day D1"; checked for every competition
 - [ ] Both team logos on every match summary (found by you: Pakistan v South Africa, 11 Jun 2031, showed empty gaps
       where they go); checked on every summary
 - [ ] Every chart: What it is / Who's best / What it's for, always shown, charts only
