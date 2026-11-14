@@ -178,7 +178,10 @@ side by side on separate test servers, each problem and each slow page written d
 that don't touch the same pages (e.g. the fielding removal, the chart descriptions, the logos and colours) are done
 at the same time by helpers, each in its own copy of the project; I check every helper's work, run every check on it
 (every page's numbers before and after, all tests, the full sweep, the Windows tests) and only then combine it;
-pieces that share a page are done one after another. Nothing moved to other stages. Pushed after every finished
+pieces that share a page are done one after another; **quick checks per piece (the safest of the two, your
+question)**: after each piece the pages it touches are checked, the full test suite runs on every change, and the full
+every-page sweep runs after each big group of pieces and at the end. The agreed order stays (accuracy checks before
+the speed work, so the new safety nets guard the speed changes). Nothing moved to other stages. Pushed after every finished
 piece, wrong numbers first.
 
 Wrong numbers and data:
