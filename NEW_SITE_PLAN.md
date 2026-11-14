@@ -548,6 +548,11 @@ mixed in, no career to pick); with it, the short list of what to try on your PC.
 shows each innings' batting card on the left (still the wider side) and the bowling card on the right; the same order
 everywhere batting and bowling sit side by side on the site. Done in the fix round, checked at every screen width.
 
+**Player of the match highlighted only where he earned it (found by you, 14 November):** on the scorecard the
+award shaded M Beardman's 0 off 1 in Australia's batting card, though he won it with 9 wickets (5/40 and 4/66). His
+bowling rows are shaded when he took wickets, his batting row when he made runs (both for an all-rounder), and
+anywhere else he gets just a small ★ by his name. Done in the fix round.
+
 **No blue highlight on double-click (your request, 14 November):** double- or triple-clicking anywhere on the site
 (names, numbers, tiles, buttons, tabs, menus) never selects text; dragging across text still selects it, so a name or
 number can still be copied. Done in the fix round, checked in the browser test.

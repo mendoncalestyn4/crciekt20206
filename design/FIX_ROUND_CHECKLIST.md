@@ -189,6 +189,9 @@ Pages and looks:
 - [ ] Player page: each tab shows only its own stats (Batting all batting, Bowling all bowling, country by country
       included); an Overview tab for the rest; opens on the player's main job
 - [ ] Batting on the left, bowling on the right (the scorecard and everywhere they sit side by side)
+- [ ] Player of the match highlighted only where he earned it (found by you: M Beardman's 0 off 1 was shaded in the
+      batting card though he won it with 9 wickets, 5/40 and 4/66): his bowling rows shaded when he took wickets, his
+      batting row when he made runs, both for an all-rounder; elsewhere just a small ★ by his name
 - [ ] Competition order everywhere: Tests, ODIs, T20Is, then franchise, then domestic
 - [ ] Inner boxes in the page's own colour on every team's light look (no muddy mixes)
 - [ ] Team logos about a third bigger in matches and tables; the competition logo on every franchise and domestic
