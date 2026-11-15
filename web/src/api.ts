@@ -204,6 +204,8 @@ export type Bar = { label: string; value: number | null; note?: string; n?: numb
 /** The player against everyone here, for one band or position; `key`: the band that matters most in this format. */
 export type Pair = { label: string; me: number | null; all: number | null; note?: string; key?: boolean };
 export type Split = { title?: string; rows: Bar[]; shows: string; for_: string };
+/** The three lines under a chart (design/CHART_LINES.md), written by the server; `shows` is the older second line. */
+export type Lines = { is_?: string; best?: string; best_label?: string; shows?: string; for_?: string };
 export type FormT = { values: number[]; rolling: (number | null)[]; labels: string[]; ids?: string[]; window: number; overall: number | null; shows: string; for_: string };
 /** The standard batting or bowling table: `first` is "section" or "season", every other column a number as printed. */
 export type RecordTableT = { cols: string[]; first: string; help: Record<string, string>; rows: Record<string, string | number | null>[] };
@@ -214,14 +216,14 @@ export type PlayersLanding = {
 };
 export type Batting = {
   kpis: { innings: number; runs: number; average: number | null; strike_rate: number | null; high_score: string; hundreds: number; fifties: number };
-  form: FormT; compare: { pool: number; values: Record<string, number> } | null;
-  runs_from: { fours: number; sixes: number; running: number; n4: number; n6: number; shows?: string; for_?: string };
+  form: FormT; compare: ({ pool: number; values: Record<string, number> } & Lines) | null;
+  runs_from: { fours: number; sixes: number; running: number; n4: number; n6: number; shows?: string; for_?: string; empty?: boolean } & Lines;
   seasons: Split; how_out: Split | null;
   danger: { key: string; rows: Pair[]; shows: string; for_: string } | null;
   funnel: { rows: { mark: number; pct: number | null; all_pct: number | null; highlight: boolean }[]; extra: string; shows: string; for_: string } | null;
   season_table: RecordTableT;
   splits: { overall: number | null; stronger: string; rows: Split[] };
-  positions: { rows: Pair[]; best: number | null; shows: string; for_: string;
+  positions: { rows: Pair[]; best_position: number | null; is_?: string; best?: string; best_label?: string; shows: string; for_: string;
     table: { position: number; innings: number; runs: number; not_outs: number; average: number | null; strike_rate: number | null;
       fifties: number; hundreds: number; high: string; all_average: number | null; edge: number | null; best: boolean; small: boolean }[] } | null;
   came_in: Split & { press: number; rescue: { at: string; score: string; balls: number; against: string; date: string }[] };
@@ -240,7 +242,7 @@ export type Bowling = {
 };
 export type Story = {
   impact: { rows: { label: string; value: number; won: boolean; note: string; id?: string }[]; shows: string; for_: string } | null;
-  rank: { rows: { season: string; runs_rank: number | null; runs_of: number | null; wickets_rank: number | null; wickets_of: number | null }[]; shows: string; for_: string } | null;
+  rank: { rows: { season: string; runs_rank: number | null; runs_of: number | null; wickets_rank: number | null; wickets_of: number | null }[]; shows: string; for_: string; empty?: boolean } & Lines | null;
   milestones: { unit: string; rows: { milestone: string; took: string; fastest: string; date: string }[] };
   badges: { badge: string; detail: string; id: string; date: string }[];
   firsts: { date: string; what: string; detail: string; id: string; against: string }[];
@@ -253,7 +255,7 @@ export type Bounce = { shown: boolean; poor: number; followed: number; after: st
 export type PlayerPage = {
   player: string; teams: string[]; matches: number; missing: Record<string, string>;
   card: { matches: number; sections: number; runs: number; best_score: string; wickets: number; best_bowling: string; badges: number;
-    last10: number[]; badge_list: { badge: string; detail: string; times: number }[] } | null;
+    last10: number[]; last10_is?: string; last10_best?: string; last10_for?: string; badge_list: { badge: string; detail: string; times: number }[] } | null;
   bat_table: RecordTableT | null; bowl_table: RecordTableT | null;
   formats: { rows: { section: string; matches: number; runs: number; average: number | null; bat_vs: number | null; strike_rate: number | null;
     sr_vs: number | null; wickets: number; bowl_average: number | null; bowl_vs: number | null; best: boolean }[]; shows: string; for_: string } | null;
@@ -272,7 +274,7 @@ export type PlayerPage = {
   tabs: string[]; open: string; batting: Batting | null; bowling: Bowling | null;
   bat_innings?: ByInnings | null; bowl_innings?: ByInnings | null;
   story: Story | null;
-  profile?: { attributes: Attributes; report: ScoutReport; show: ("bat" | "bowl")[]; other: string } | null;
+  profile?: ({ attributes: Attributes; report: ScoutReport; show: ("bat" | "bowl")[]; other: string } & Lines) | null;
 };
 
 // ------------------------------------------------------------------ Innings by innings (ccstats/byinnings.py): sections the tile switches

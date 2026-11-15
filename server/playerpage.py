@@ -115,6 +115,20 @@ def split_shows(t: pd.DataFrame, col: str, value: str, overall: float, what: str
     return out + "."
 
 
+def split_best(t: pd.DataFrame, col: str, value: str, low_better: bool = False, dec: int = 1, count: str = "innings",
+               minimum: int = 2) -> str:
+    """The "Who's best" line of a split chart (design/CHART_LINES.md): its best part with the number, from parts with
+    `minimum` innings (or overs, `count`) when there are any; lower is better for economy."""
+    t = t[t[value].notna()]
+    if (t[count] >= minimum).any():
+        t = t[t[count] >= minimum]
+    return (SG.best_line([(say(str(r[col])), r[value]) for _, r in t.iterrows()], fmt=lambda v: fmt(v, dec), lower=low_better)
+            or NOT_YET)
+
+
+NOT_YET = "Not enough yet to name one (no average: never out in these innings)."
+
+
 def bars(t: pd.DataFrame, label: str, value: str, notes) -> list[dict]:
     return [dict(label=str(r[label]), value=SG.clean(r[value]), note=n) for (_, r), n in zip(t.iterrows(), notes)]
 
@@ -248,13 +262,23 @@ def page(career, player: str, section: str = "", season: str = "") -> dict:
         piece("bowl_innings", lambda: _by_innings(career, player, section, season, ids, kind, bowling=True))
     piece("story", lambda: _story(career, player, section, season, ids, kind, my_matches))
     # attributes and the scout report: for the competition (every season of it), not one season
-    piece("profile", lambda: kept(career, ("profile", section, player), lambda: AT.profile(career, section, player)))
+    piece("profile", lambda: _profile(kept(career, ("profile", section, player), lambda: AT.profile(career, section, player))))
     # the moments that matter, in the competition (every season of it): big games, each country, after a poor game
     sec_ids = set(m[m.section == section].match_id)
     piece("big", lambda: _big(career, player, section, sec_ids))
     piece("countries", lambda: _countries(career, player, section, sec_ids))
     piece("bounce", lambda: _bounce(career, player, section, sec_ids))
     return out
+
+
+def _profile(p: dict) -> dict:
+    """The attributes chart with its three lines (design/CHART_LINES.md): the player's top attribute of those shown."""
+    a = p.get("attributes") or {}
+    shown = [x for k in (p.get("show") or ["bat", "bowl"]) for x in (a.get(k) or []) if x.get("score") is not None]
+    top = max(shown, key=lambda x: x["score"]) if shown else None
+    return dict(p, is_="Their attributes here out of 20, each measured against everyone in the competition (10 is the middle).",
+                best_label="Their best", best=f"{top['name']}: {top['score']:.0f} out of 20" if top else "",
+                for_="Their strengths and weaknesses at a glance, the way the game's own player screens show them.")
 
 
 def _bat_text(x: dict) -> str:
@@ -341,6 +365,9 @@ def _card(career, player, my_matches, bat_all, bowl_all) -> dict:
                 wickets=int(allw.wickets.sum()),
                 best_bowling=f"{int(bb.wickets.iloc[0])}/{int(bb.runs.iloc[0])}" if len(bb) else "–",
                 badges=len(mine), last10=[int(x) for x in allb.runs.tail(10)],
+                last10_is="Their last innings in any competition, oldest first (green: 50 or more).",
+                last10_best=(lambda t: f"{int(t.runs.max())}{'' if t.loc[t.runs.idxmax(), 'out'] else '*'}" if len(t) else "")(allb.tail(10)),
+                last10_for="Shows their form right now, wherever they played.",
                 badge_list=[dict(badge=b, times=int(r.times), detail=r.detail) for b, r in grouped.head(6).iterrows()])
 
 
@@ -409,6 +436,9 @@ def _winners(career, player, my_matches, team_of) -> dict:
     return dict(players=[dict(player=player, matches=won)] if won else [], wins=wins, others=0,
                 line=(f"Player of the match in {count(len(won), 'win')} of the {count(wins, 'win')} their side had in the games "
                       f"they played ({len(won) / wins * 100:.0f}%)." if wins else "Their side hasn't won a game they played yet."),
+                is_="The wins they were player of the match in, and what they did each time.",
+                best_label="Their share",
+                best=(f"{count(len(won), 'win')} of the {count(wins, 'win')} their side had ({len(won) / wins * 100:.0f}%)" if wins else ""),
                 for_="How often they win games on their own: the matches their side won with them as player of the match.")
 
 
@@ -430,6 +460,10 @@ def _batting(career, player, section, season, ids, inns, bat_t, kind) -> dict:
     form["shows"] = (f"{len(inns)} innings. Their last {n} average {recent:.1f} against {fmt(avg)} overall "
                      f"({(recent - avg) / avg * 100:+.0f}%)." if avg else f"{len(inns)} innings, never dismissed.")
     form["for_"] = "Shows whether they are in form right now, not just how good they are over the whole career."
+    form["is_"] = f"Their runs in every innings here, oldest first; the line is their average over the last {form['window']}."
+    top_i = inns.assign(_k=inns.runs * 2 + ~inns.out).sort_values("_k").iloc[-1]
+    form["best_label"] = "Best innings"
+    form["best"] = f"{top_i.runs}{'' if top_i.out else '*'} off {top_i.balls} v {top_i.opposition}, {top_i.date:%d %b %Y}"
     out: dict = dict(kpis=dict(innings=int(b.innings), runs=int(b.runs), average=SG.clean(b.average), strike_rate=SG.clean(b.strike_rate),
                                high_score=b.high_score_text, hundreds=int(b.hundreds), fifties=int(b.fifties)), form=form)
     pool = bat_t[bat_t.innings >= 3]
@@ -439,23 +473,38 @@ def _batting(career, player, section, season, ids, inns, bat_t, kind) -> dict:
     out["compare"] = (dict(pool=int(len(pool)), values={k: round(float((pool[v] <= me[v].iloc[0]).mean() * 100))
                                                          for k, v in stats.items() if v in pool and pd.notna(me[v].iloc[0])})
                       if len(pool) >= 8 and len(me) else None)
+    if out["compare"] and out["compare"]["values"]:
+        top_k = max(out["compare"]["values"], key=lambda k: out["compare"]["values"][k])
+        out["compare"].update(is_="Where they rank among the batters here with 3 or more innings, measure by measure (100 is the best).",
+                              best_label="Their strongest", best=f"{top_k}: better than or level with {out['compare']['values'][top_k]}% of them",
+                              for_="Shows what kind of batter they are against everyone else here.")
     n4, n6 = int(inns.fours.sum()), int(inns.sixes.sum())
     rf = dict(fours=n4 * 4, sixes=n6 * 6, running=int(inns.runs.sum()) - n4 * 4 - n6 * 6, n4=n4, n6=n6)
     tot = rf["fours"] + rf["sixes"] + rf["running"]
     rf["shows"] = (f"{rf['fours'] / tot * 100:.0f}% of their {tot:,} runs came in fours, {rf['sixes'] / tot * 100:.0f}% in sixes "
                    f"and {rf['running'] / tot * 100:.0f}% from running between the wickets." if tot > 0 else "No runs yet.")
     rf["for_"] = "How they score: a boundary hitter, or someone who works the ones and twos."
+    rf["is_"] = "Their runs split into fours, sixes and running between the wickets."
+    if tot > 0:
+        part = max((("fours", rf["fours"]), ("sixes", rf["sixes"]), ("running", rf["running"])), key=lambda x: x[1])
+        rf["best_label"], rf["best"] = "Most runs from", f"{part[0]}: {part[1]:,} ({part[1] / tot * 100:.0f}%)"
+    else:   # an empty chart says so instead of the three lines
+        rf["empty"] = True
     out["runs_from"] = rf
     ss = A.split_batting(inns, "season").sort_values("season", ascending=False)
     top = ss.sort_values("runs", ascending=False).iloc[0]
     out["seasons"] = dict(rows=bars(ss, "season", "runs", [f"{i} innings · average {fmt(a)}" for i, a in zip(ss.innings, ss.average)]),
                           shows=f"Most runs in {top.season}: {top.runs} ({top.runs / max(ss.runs.sum(), 1) * 100:.0f}% of their "
                                 f"{ss.runs.sum()} here), average {fmt(top.average)}.",
+                          is_="Their runs in each season here, the latest first.", best_label="Best season",
+                          best=f"{top.season}: {top.runs:,} runs, average {fmt(top.average)}",
                           for_="Shows whether they are getting better or fading, season by season.")
     ho = A.how_out(inns)
     out["how_out"] = None if ho.empty else dict(
         rows=[dict(label=say(h), value=int(v)) for h, v in ho.items()],
         shows=f"{ho.iloc[0] / ho.sum() * 100:.0f}% of their {int(ho.sum())} dismissals are {say(ho.index[0]).lower()}.",
+        is_="How they have been out, by kind of dismissal.", best_label="Most often",
+        best=f"{say(ho.index[0]).lower()}: {int(ho.iloc[0])} of {int(ho.sum())} ({ho.iloc[0] / ho.sum() * 100:.0f}%)",
         for_="How bowlers get them out: a weakness to work on with your own players, or to attack in an opponent.")
     out["danger"] = _danger(career, ids, player)
     out["funnel"] = _funnel(career, ids, player)
@@ -475,7 +524,9 @@ def _batting(career, player, section, season, ids, inns, bat_t, kind) -> dict:
         t = A.split_batting(d, "s")
         splits.append(dict(title=title, rows=bars(t, "s", "average", [f"{n} innings, {r} runs, strike rate {fmt(s)}"
                                                                       for n, r, s in zip(t.innings, t.runs, t.strike_rate)]),
-                           shows=split_shows(t, "s", "average", avg, "innings"), for_=why))
+                           shows=split_shows(t, "s", "average", avg, "innings"), for_=why,
+                           is_=f"Their batting average {title[0].lower() + title[1:]}; the dashed line is their average overall.",
+                           best_label="Best", best=split_best(t, "s", "average")))
     med = np.median(list(strength.values())) if strength else 0
     out["splits"] = dict(overall=avg, rows=splits,
                          stronger=", ".join(sorted(t for t, v in strength.items() if v > med)) or "–")
@@ -490,6 +541,8 @@ def _batting(career, player, section, season, ids, inns, bat_t, kind) -> dict:
         rows=[dict(label=r.bowler, value=int(r.dismissals)) for r in nm.itertuples()],
         shows=f"{nm.bowler.iloc[0]} has got them out {count(nm.dismissals.iloc[0], 'time')}, "
               f"{nm.dismissals.iloc[0] / max(outs, 1) * 100:.0f}% of their {outs} dismissals.",
+        is_="The bowlers who have got them out most here.", best_label="Their nemesis",
+        best=SG.best_line([(r.bowler, r.dismissals) for r in nm.itertuples()], fmt=lambda v: count(v, "time")),
         for_="The bowlers who have their number: keep them away from these bowlers, or bring these bowlers on when this batter comes in.")
     out["streaks"] = E.batting_streaks(inns, kind)
     ch = kept(career, ("chasing", section, season), lambda: E.chasing(career, ids, min_innings=1))
@@ -499,6 +552,9 @@ def _batting(career, player, section, season, ids, inns, bat_t, kind) -> dict:
     out["against"] = dict(rows=bars(t, "opposition", "average", [f"{n} innings, {r} runs, best {h}" for n, r, h in zip(t.innings, t.runs, t.high)]),
                           shows=split_shows(t[t.innings >= 2] if (t.innings >= 2).any() else t, "opposition", "average", avg, "innings")
                           + " (teams they have batted against at least twice)",
+                          is_="Their batting average against each team here; the dashed line is their average overall.",
+                          best_label="Best against", best=(lambda x: x if x == NOT_YET or not (t.innings >= 2).any()
+                                                           else x + " (2+ innings)")(split_best(t, "opposition", "average")),
                           for_="Shows which opponents they like and which ones keep them quiet.")
     return out
 
@@ -538,7 +594,12 @@ def _positions(career, ids, inns) -> dict | None:
         shows = "No position with 2 innings yet, so no best one to name."
     return dict(rows=[dict(label=f"No. {x['position']}", me=x["average"], all=x["all_average"], key=x["best"],
                            note=f"{x['innings']} innings, {x['runs']} runs, strike rate {fmt(x['strike_rate'])}") for x in rows],
-                table=rows, best=best["position"] if best else None, shows=shows,
+                table=rows, best_position=best["position"] if best else None, shows=shows,
+                is_="Their average at each batting position here (gold), against the average batter at that position (grey).",
+                best_label="Best position",
+                best=(f"no. {best['position']}: {best['runs']} runs"
+                      + (f" at {fmt(best['average'])}" if best["average"] is not None else ", never out")
+                      + f", {best['edge']:+.0f}% on the average no. {best['position']} (settled)") if best else shows,
                 for_="Tells you where to bat them: each position against the average batter there (gold is them, grey the "
                      "average batter at that position). 'They are' is settled: a few innings at the usual level for that "
                      "position are added before comparing, so two big scores count for a lot but can't decide it alone; "
@@ -563,6 +624,9 @@ def _danger(career, ids, player) -> dict | None:
                 shows=f"{dz.pct.iloc[0]:.0f}% of their {dz.attrs['dismissals']} dismissals come before 10 (every batter here: "
                       f"{dz.all_pct.iloc[0]:.0f}%). Their most dangerous band compared with others is {worst.zone}: "
                       f"{worst.pct:.0f}% against {worst.all_pct:.0f}%.",
+                is_="The share of their dismissals at each score, against every batter here.",
+                best_label="Most dangerous for them",
+                best=f"{worst.zone}: {worst.pct:.0f}% of their dismissals, every batter here {worst.all_pct:.0f}%",
                 for_="Shows when to attack this batter (or when to protect your own): a big share early means they're vulnerable "
                      "before they're set. The bands follow the format.")
 
@@ -586,6 +650,10 @@ def _funnel(career, ids, player) -> dict | None:
     return dict(rows=[dict(mark=int(r.mark), pct=SG.clean(r.pct), all_pct=SG.clean(r.all_pct), highlight=bool(r.highlight))
                       for r in fn.itertuples()], extra=extra,
                 shows=lead + ("; ".join(parts) + "." if parts else ""),
+                is_="The share of their innings that reach each score, against every batter here (grey dots).",
+                best_label="Biggest edge",
+                best=(lambda e: f"{int(e.mark)}+ in {e.pct:.0f}% of their innings (everyone here {e.all_pct:.0f}%)")(
+                    fn.assign(_g=fn.pct - fn.all_pct).sort_values(["_g", "mark"], ascending=[False, True]).iloc[0]),
                 for_="Shows whether they turn starts into big scores. Key marks: " + ", ".join(str(k) for k in keys)
                      + " in this format; the grey dots are every batter here.")
 
@@ -604,6 +672,8 @@ def _came_in(inns, kind, avg) -> dict:
         shows += f" On average they came in at {ci.came_in_score.mean():.0f} for {fmt(wk, 0 if wk.is_integer() else 1)}."
     r = ci[ci.situation.str.startswith("Under")].sort_values("runs", ascending=False).head(5)
     return dict(rows=bars(t, "situation", "average", [f"{n} innings" for n in t.innings]), shows=shows,
+                is_="Their batting average by the score when they walked in; the dashed line is their average overall.",
+                best_label="Best", best=split_best(t, "situation", "average"),
                 for_="Shows whether they handle pressure. The score comes from the fall of wickets: the number 5 walks in when the 3rd wicket falls.",
                 press=press, rescue=[dict(at=f"{int(x.came_in_score)}/{int(x.came_in_wickets)}", score=f"{x.runs}{'' if x.out else '*'}",
                                           balls=int(x.balls), against=x.opposition, date=SG.clean(x.date)) for x in r.itertuples()])
@@ -619,6 +689,10 @@ def _bowling(career, player, section, season, ids, spells, bowl_t, kind) -> dict
     form["shows"] = (f"{len(spells)} innings bowled. Their last {n} average {rw:.2f} wickets an innings against {aw:.2f} overall"
                      + (f" ({(rw - aw) / aw * 100:+.0f}%)." if aw else "."))
     form["for_"] = "Shows whether they are taking wickets right now, not just over the whole career."
+    form["is_"] = f"Their wickets in every innings they bowled here, oldest first; the line is their wickets an innings over the last {form['window']}."
+    top_s = spells.assign(_k=spells.wickets * 1000 - spells.runs).sort_values("_k").iloc[-1]
+    form["best_label"] = "Best spell"
+    form["best"] = f"{int(top_s.wickets)}/{int(top_s.runs)} v {top_s.opposition}, {top_s.date:%d %b %Y}"
     econ = float(w.economy) if pd.notna(w.economy) else None
     out: dict = dict(kpis=dict(wickets=int(w.wickets), average=SG.clean(w.average), economy=SG.clean(w.economy),
                                strike_rate=SG.clean(w.strike_rate), best=w.best, hauls=int(w.hauls)), form=form)
@@ -627,11 +701,15 @@ def _bowling(career, player, section, season, ids, spells, bowl_t, kind) -> dict
     out["seasons"] = dict(rows=bars(ss, "season", "wickets", [f"average {fmt(a)} · economy {fmt(e, 2)}" for a, e in zip(ss.average, ss.economy)]),
                           shows=f"Most wickets in {top.season}: {int(top.wickets)} ({top.wickets / max(ss.wickets.sum(), 1) * 100:.0f}% of "
                                 f"their {int(ss.wickets.sum())} here), economy {fmt(top.economy, 2)}.",
+                          is_="Their wickets in each season here, the latest first.", best_label="Best season",
+                          best=f"{top.season}: {int(top.wickets)} wickets, economy {fmt(top.economy, 2)}",
                           for_="Shows whether they are getting better or fading, season by season.")
     wt = A.wicket_types(career, ids, player)
     out["how_wickets"] = None if wt.empty else dict(
         rows=[dict(label=say(h), value=int(v)) for h, v in wt.items()],
         shows=f"{wt.iloc[0] / wt.sum() * 100:.0f}% of their {int(wt.sum())} wickets are {say(wt.index[0]).lower()}.",
+        is_="How they get their wickets, by kind of dismissal.", best_label="Most often",
+        best=f"{say(wt.index[0]).lower()}: {int(wt.iloc[0])} of {int(wt.sum())} ({wt.iloc[0] / wt.sum() * 100:.0f}%)",
         for_="How they get batters out: bowled and lbw mean they hit the stumps; caught means they need the fielders, so set the field for them.")
     out["match_pattern"] = None
     if kind == "multi":
@@ -670,6 +748,9 @@ def _bowling(career, player, section, season, ids, spells, bowl_t, kind) -> dict
               dict(label="Tail (8-11)", value=q["tail"])],
         shows=f"{q['top_seven_pct']:.0f}% of their {q['total']} wickets are specialist batters (positions 1-7): {q['top_order']} top "
               f"order, {q['middle_order']} middle order, {q['tail']} tail.",
+        is_="Where the batters they got out bat: top order, middle order or tail.", best_label="Most wickets",
+        best=SG.best_line([("Top order (1-3)", q["top_order"]), ("Middle order (4-7)", q["middle_order"]), ("Tail (8-11)", q["tail"])],
+                          fmt=lambda v: f"{v:.0f} of {q['total']}"),
         for_="Shows whether their wickets are the ones that matter or mostly tail-enders.")
     bn = A.bunnies(career, ids, player).head(6)
     tw = int(spells.wickets.sum())
@@ -677,6 +758,8 @@ def _bowling(career, player, section, season, ids, spells, bowl_t, kind) -> dict
         rows=[dict(label=r.player, value=int(r.dismissals)) for r in bn.itertuples()],
         shows=f"They have got {bn.player.iloc[0]} out {count(bn.dismissals.iloc[0], 'time')}, "
               f"{bn.dismissals.iloc[0] / max(tw, 1) * 100:.0f}% of their {tw} wickets.",
+        is_="The batters they have got out most here.", best_label="Their bunny",
+        best=SG.best_line([(r.player, r.dismissals) for r in bn.itertuples()], fmt=lambda v: count(v, "time")),
         for_="The batters they have the wood on: bring them on when these batters come in.")
     out["streaks"] = E.bowling_streaks(spells, kind)
     splits = []
@@ -689,7 +772,11 @@ def _bowling(career, player, section, season, ids, spells, bowl_t, kind) -> dict
                                              econ if econ is not None else np.nan,
                                              "overs", low_better=True, dec=2) + " Lower is better.",
                            for_="Shows whether they bowl better defending a total or chasing one." if i == 0 else
-                                "Shows which teams they keep quiet and which ones get after them."))
+                                "Shows which teams they keep quiet and which ones get after them.",
+                           is_=f"Their economy {'by whether their side batted or bowled first' if i == 0 else 'against each team'}; "
+                               "the dashed line is their economy overall (lower is better).",
+                           best_label="Cheapest",
+                           best=split_best(t.assign(overs=t.balls / 6), col, "economy", low_better=True, dec=2, count="overs")))
     out["splits"] = dict(overall=econ, rows=splits)
     return out
 
@@ -994,6 +1081,8 @@ def _story(career, player, section, season, ids, kind, my_matches) -> dict:
                        note=f"{int(r.runs)} runs, {count(r.wickets, 'wkt')}") for r in mine.itertuples()],
             shows=f"Average {mine.impact.mean():.0f} a match, number {rank} of the {len(per)} players here with {need}+ matches. "
                   f"Best: {best.impact:.0f} v {best.opponent} ({int(best.runs)} runs, {count(best.wickets, 'wkt')}). Green bars are wins.",
+            is_="Their match impact in every match here, oldest first (green: a win).", best_label="Best match",
+            best=f"{best.impact:.0f} v {best.opponent}, {best.date:%d %b %Y} ({int(best.runs)} runs, {count(best.wickets, 'wkt')})",
             for_="Puts batting and bowling on one scale: runs, plus each wicket worth the competition's runs per wicket"
                  + (", with scoring speed and economy counted in white-ball cricket." if mi.attrs["kind"] != "multi" else "."))
     rk = kept(career, ("rank_by_season", section, player), lambda: PD.rank_by_season(career, section, player))
@@ -1012,6 +1101,8 @@ def _story(career, player, section, season, ids, kind, my_matches) -> dict:
         peaks = sorted((rk[col].min(), f"{ordinal(rk[col].min())} for {word} ({rk.season[rk[col].idxmin()]})")
                        for col, word in (("runs_rank", "runs"), ("wickets_rank", "wickets")) if rk[col].notna().any())
         out["rank"] = dict(rows=SG.rows(rk, ["season", "runs_rank", "runs_of", "wickets_rank", "wickets_of"]),
+                           is_="Where they finished each season here, for runs and for wickets (1 is the top).",
+                           best_label="Best finish", best="; ".join(t for _, t in peaks) if peaks else "", empty=not peaks,
                            shows=(f"In {r0.season}: " + (", ".join(bits) or "no runs or wickets") + "."
                                   + (f" Best: {'; '.join(t for _, t in peaks)}." if peaks else "")),
                            for_="A career story at a glance: when they peaked and whether they're climbing or fading.")

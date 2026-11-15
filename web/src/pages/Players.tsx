@@ -5,7 +5,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
-import { get, type ByInnings, type InningsCol, type InningsMarks, type PlayerPage, type PlayersLanding, type Split, remember } from "../api";
+import { get, type ByInnings, type InningsCol, type InningsMarks, type Lines, type PlayerPage, type PlayersLanding, type Split, remember } from "../api";
 import { Explain, Hero, Logo, Missing, Name, Num, PName, Sub, Tile } from "../kit/base";
 import { PercentileBars } from "../kit/blocks";
 import { RingList } from "../kit/charts";
@@ -71,8 +71,10 @@ export function PlayersHome() {
 
 const Box = ({ title, right, span = 6, children }: { title: string; right?: string; span?: number; children: ReactNode }) =>
   <Tile span={span} title={title} right={right}>{children}</Tile>;
+/** A chart's three lines (What it is, Who's best, What it's for: design/CHART_LINES.md), as the server wrote them. */
+const lines = (x: Lines) => ({ is_: x.is_, best: x.best, best_label: x.best_label, shows: x.shows, for_: x.for_ ?? "" });
 const Sp = ({ s, overall, dec = 1, unit, low }: { s: Split; overall?: number | null; dec?: number; unit?: string; low?: boolean }) =>
-  <><SplitBars rows={s.rows} reference={overall} dec={dec} unit={unit} lowBetter={low} /><Explain shows={s.shows} for_={s.for_} /></>;
+  <><SplitBars rows={s.rows} reference={overall} dec={dec} unit={unit} lowBetter={low} /><Explain {...lines(s)} /></>;
 const KP = ({ items }: { items: [string, ReactNode][] }) => (
   <Sub cols={items.length}>{items.map(([k, v]) => <Tile span={1} key={k} title={k}><Num v={v} px={56} /></Tile>)}</Sub>);
 
@@ -121,7 +123,7 @@ export function PlayerView() {
           {c && c.badge_list.length > 0 && <Tile span={12} title="Badges" right="every competition">
             <div className="row2" style={{ flexWrap: "wrap", gap: 10 }}>{c.badge_list.map((x) => <span key={x.badge} className="tag" title={x.detail}>🏅 {x.badge}{x.times > 1 ? ` ×${x.times}` : ""}</span>)}</div></Tile>}
           {d.winners ? <Tile span={12} title="Match-winners" right="player of the match in a win, and what they did">
-            {d.winners.players.length ? <MatchWinners w={d.winners} /> : null}<Explain shows={d.winners.line} for_={d.winners.for_} /></Tile>
+            {d.winners.players.length ? <MatchWinners w={d.winners} /> : null}<Explain {...lines({ ...d.winners, shows: d.winners.line })} /></Tile>
             : d.missing.winners ? <Tile span={12} title="Match-winners"><Missing why={d.missing.winners} /></Tile> : null}
           {d.share && d.share.length > 0 && <Tile span={12} title="Share of the team" right="each competition and season">
             <table className="c"><thead><tr><th>Season</th><th>Competition</th><th className="r">Matches</th><th className="r">Runs</th><th>of the team's</th><th className="r">Wkts</th><th>of the team's</th></tr></thead>
@@ -133,7 +135,8 @@ export function PlayerView() {
             <div className="note">Their runs out of all the runs the team's batters made that season there (off the bat: extras are no one's), and their
               wickets out of all the wickets the team took; matches: theirs of the team's.</div></Tile>}
           {d.profile && <Tile span={7} title={`Attributes in ${d.section}`} right="out of 20 · against everyone there">
-            <AttrGrid a={d.profile.attributes} show={d.profile.show} other={d.profile.other} section={d.section} /></Tile>}
+            <AttrGrid a={d.profile.attributes} show={d.profile.show} other={d.profile.other} section={d.section} />
+            {d.profile.best && <Explain {...lines(d.profile)} />}</Tile>}
           {d.profile && <Tile span={5} title="Scout report" right={d.profile.report.role ?? ""}><ScoutText r={d.profile.report} />
             {d.season !== "All seasons" && <div className="note">Over every season of {d.section}, not just {d.season}.</div>}</Tile>}
           {d.marks && d.marks.length > 0 && <Tile span={12} title="Marks out of 10 · every series" right="newest first">
@@ -159,7 +162,8 @@ export function PlayerView() {
           {c && c.last10.length > 1 && <Tile span={12} title={`Last ${c.last10.length} innings`} right="every competition">
             <div className="row2" style={{ flexWrap: "wrap", gap: 10 }}><span className="l5" style={{ height: 40 }}>{c.last10.map((r, i) => (
               <i key={i} className={r >= 50 ? "g" : ""} style={{ height: Math.max(3, Math.min(40, (r / Math.max(...c.last10, 1)) * 40)) }} title={String(r)} />))}</span>
-              <span className="l5t">{c.last10.join(" ")}</span></div></Tile>}
+              <span className="l5t">{c.last10.join(" ")}</span></div>
+            <Explain is_={c.last10_is} best={c.last10_best} best_label="Best of them" for_={c.last10_for ?? ""} /></Tile>}
           <Tile span={12} title="Batting · every competition">
             {d.bat_table ? <RecordTable t={d.bat_table} /> : <Missing why={d.missing.bat_table} />}
             <div className="note">Same columns in every competition. Hover a column name for what it means.</div></Tile>
@@ -186,19 +190,20 @@ export function PlayerView() {
             <FormBars f={b.form} unit="runs" />
             <div className="legend"><span><i style={{ background: t.led }} />each innings (green: 50 or more)</span><span><i className="ln" style={{ background: t.led }} />average over the last {b.form.window} innings</span>
               <span><i className="ln" style={{ background: t.ink, opacity: 0.6 }} />their average over every innings shown</span></div>
-            <Explain shows={b.form.shows} for_={b.form.for_} /></Box>
+            <Explain {...lines(b.form)} /></Box>
           {b.compare && <Box span={7} title={`How they compare · v ${b.compare.pool} batters here`}><PercentileBars values={b.compare.values} />
+            {b.compare.best && <Explain {...lines(b.compare)} />}
             <div className="note">Percentiles among the batters here with 3+ innings: 100 = the best, 50 = the middle of the pack.</div></Box>}
           <Box span={b.compare ? 5 : 6} title="Where the runs come from"><RingList items={[["Fours", b.runs_from.fours, pal[0]!], ["Sixes", b.runs_from.sixes, pal[1]!], ["Running", b.runs_from.running, pal[2]!]]}
             centre={String(b.kpis.runs)} sub="runs" /><div className="note">{plural(b.runs_from.n4, "four")} and {plural(b.runs_from.n6, "six", "sixes")}.</div>
-            {b.runs_from.shows && <Explain shows={b.runs_from.shows} for_={b.runs_from.for_} />}</Box>
+            {b.runs_from.empty ? <div className="note">No runs yet.</div> : <Explain {...lines(b.runs_from)} />}</Box>
           <Box title="Season by season · runs"><Sp s={b.seasons} dec={0} /></Box>
           <Box title="How they get out">{b.how_out ? <><RingList items={b.how_out.rows.map((r, i) => [r.label, r.value ?? 0, pal[i % pal.length]!])} centre={String(b.how_out.rows.reduce((a, r) => a + (r.value ?? 0), 0))} sub="dismissals" />
-            <Explain shows={b.how_out.shows} for_={b.how_out.for_} /></> : <div className="note">Never dismissed.</div>}</Box>
+            <Explain {...lines(b.how_out)} /></> : <div className="note">Never dismissed.</div>}</Box>
           <Box title="Danger zones" right="when they get out">{b.danger ? <>{b.danger.key && <div className="keyz">⭐ {b.danger.key}</div>}
-            <PairedBars rows={b.danger.rows} me={d.player} unit="%" dec={0} /><Explain shows={b.danger.shows} for_={b.danger.for_} /></> : <div className="note">Never dismissed here.</div>}</Box>
+            <PairedBars rows={b.danger.rows} me={d.player} unit="%" dec={0} /><Explain {...lines(b.danger)} /></> : <div className="note">Never dismissed here.</div>}</Box>
           <Box title="Conversion" right="% of innings reaching each score">{b.funnel ? <><Funnel rows={b.funnel.rows} />{b.funnel.extra && <div className="plain">{b.funnel.extra}</div>}
-            <Explain shows={b.funnel.shows} for_={b.funnel.for_} /></> : <div className="note">No innings yet.</div>}</Box>
+            <Explain {...lines(b.funnel)} /></> : <div className="note">No innings yet.</div>}</Box>
           <Box span={12} title={`Every season in ${d.section}`} right="the same columns as the table at the top"><RecordTable t={b.season_table} /></Box>
           {d.bat_innings && <InningsTile x={d.bat_innings} />}
           <div className="part"><span className="tl2" style={{ fontSize: 32 }}>Average in different situations</span>
@@ -206,7 +211,7 @@ export function PlayerView() {
           {b.splits.rows.map((s) => <Box key={s.title} title={s.title!}><Sp s={s} overall={b.splits.overall} /></Box>)}
           <Tile span={12}><div className="plain">Stronger and weaker teams: teams ranked by their win % here (each counted as if it had already won 2 and lost 2,
             so one win in one game doesn't make a side strong); the top half are the stronger teams. Stronger half: <b>{b.splits.stronger}</b>.</div></Tile>
-          {b.positions && <Box span={12} title="At each batting position" right={b.positions.best ? `best at no. ${b.positions.best}` : "against the average batter there"}>
+          {b.positions && <Box span={12} title="At each batting position" right={b.positions.best_position ? `best at no. ${b.positions.best_position}` : "against the average batter there"}>
             <PairedBars rows={b.positions.rows} me={d.player} others="Average batter there" />
             <table className="c" style={{ marginTop: 10 }}><thead><tr><th>Position</th><th className="r">Inns</th><th className="r">Runs</th><th className="r">NO</th>
               <th className="r">HS</th><th className="r">Avg</th><th className="r">SR</th><th className="r">50s</th><th className="r">100s</th><th className="r">Average batter there</th><th className="r" title="Settled: a few innings at the usual level for that position added before comparing">They are (settled)</th></tr></thead>
@@ -218,7 +223,7 @@ export function PlayerView() {
                   <td className="r"><span className="tn dimn">{r.fifties}</span></td><td className="r"><span className="tn dimn">{r.hundreds}</span></td>
                   <td className="r"><span className="tn dimn">{f1(r.all_average)}</span></td>
                   <td className="r"><span className="tn">{r.edge == null ? "–" : `${r.edge >= 0 ? "+" : ""}${rnd(r.edge)}%`}</span></td></tr>))}</tbody></table>
-            <Explain shows={b.positions.shows} for_={b.positions.for_} /></Box>}
+            <Explain {...lines(b.positions)} /></Box>}
           <Box title="Average by the situation they walked into"><Sp s={b.came_in} overall={b.splits.overall} /></Box>
           <Box title="Best rescue innings" right={`came in 3+ down for ${b.came_in.press} or fewer`}>{b.came_in.rescue.length ? <table className="c"><thead><tr><th>Came in at</th><th className="r">Score</th><th className="r">Balls</th><th>Against</th><th>Date</th></tr></thead>
             <tbody>{b.came_in.rescue.map((r, i) => <tr key={i}><td><span className="tn">{r.at}</span></td><td className="r"><span className="tn">{r.score}</span></td><td className="r"><span className="tn dimn">{r.balls}</span></td>
@@ -241,10 +246,10 @@ export function PlayerView() {
           <Box span={12} title="Form · wickets in every innings bowled" right="oldest first"><FormBars f={w.form} unit="wickets" />
             <div className="legend"><span><i style={{ background: t.led }} />wickets in each innings (green: 4 or more)</span><span><i className="ln" style={{ background: t.led }} />wickets an innings over the last {w.form.window}</span>
               <span><i className="ln" style={{ background: t.ink, opacity: 0.6 }} />over everything shown</span></div>
-            <Explain shows={w.form.shows} for_={w.form.for_} /></Box>
+            <Explain {...lines(w.form)} /></Box>
           <Box title="Season by season · wickets"><Sp s={w.seasons} dec={0} /></Box>
           <Box title="How they take wickets">{w.how_wickets ? <><RingList items={w.how_wickets.rows.map((r, i) => [r.label, r.value ?? 0, pal[i % pal.length]!])} centre={String(w.kpis.wickets)} sub="wickets" />
-            <Explain shows={w.how_wickets.shows} for_={w.how_wickets.for_} /></> : <div className="note">No wickets yet.</div>}</Box>
+            <Explain {...lines(w.how_wickets)} /></> : <div className="note">No wickets yet.</div>}</Box>
           {w.match_pattern && <Box title="Over a match" right="first bowling innings v the second">{w.match_pattern.none ? <div className="note">{w.match_pattern.none}</div> : <>
             <table className="c"><tbody>{([["First innings", w.match_pattern.first], ["Second innings", w.match_pattern.second], ["Wickets in both innings", w.match_pattern.both], ["Best match figures", w.match_pattern.best]] as [string, string][]).map(([k, v]) =>
               <tr key={k}><td><span className="why">{k}</span></td><td className="r"><span className="tn">{v}</span></td></tr>)}</tbody></table>
@@ -263,9 +268,9 @@ export function PlayerView() {
         </>}
 
         {tab === "Story" && st && <>
-          <Box title={`Match impact · ${d.section}`} right="one number a match">{st.impact ? <><ImpactBars rows={st.impact.rows} /><Explain shows={st.impact.shows} for_={st.impact.for_} /></>
+          <Box title={`Match impact · ${d.section}`} right="one number a match">{st.impact ? <><ImpactBars rows={st.impact.rows} /><Explain {...lines(st.impact)} /></>
             : <div className="note">No matches yet.</div>}</Box>
-          <Box title="Rank over time" right={`where they finished in ${fmtOf(d.section)}`}>{st.rank ? <><RankLines rows={st.rank.rows} /><Explain shows={st.rank.shows} for_={st.rank.for_} /></>
+          <Box title="Rank over time" right={`where they finished in ${fmtOf(d.section)}`}>{st.rank && !st.rank.empty ? <><RankLines rows={st.rank.rows} /><Explain {...lines(st.rank)} /></>
             : <div className="note">No seasons yet.</div>}</Box>
           <Box title="Milestones" right={`how many ${st.milestones.unit} it took`}>{st.milestones.rows.length ? <table className="c"><thead><tr><th>Milestone</th><th className="r">Took</th><th className="r">Fastest</th><th>Reached</th></tr></thead>
             <tbody>{st.milestones.rows.map((r) => <tr key={r.milestone}><td><Name p={r.milestone} px={19} /></td><td className="r"><span className="tn">{r.took}</span></td><td className="r"><span className="tn dimn">{r.fastest}</span></td><td><span className="tn dimn">{dayY(r.date)}</span></td></tr>)}</tbody></table>
