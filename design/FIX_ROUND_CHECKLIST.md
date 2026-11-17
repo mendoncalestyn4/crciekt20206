@@ -171,7 +171,12 @@ Not in this round: Team leaders and the rest of stage 3; to-dos B to E (after st
 
 ## 12. Added 14 November: your preview finds and decisions (details in NEW_SITE_PLAN.md)
 
-How this round is worked (your choice, 14 November): **fewer stops**: every decision is saved, so the list is worked
+**Changed 17 November (your rule): none of the four ways to go faster any more** ("keep what's there, from now
+don't use any of those 4, do as you did earlier"): no helper copies (all work done by me, one piece after another;
+the two helpers' copies are kept untouched, unused); every choice that is yours asked as before; the full test suite
+after every piece, not only the pages it touched; the big checks one at a time. Everything already built stays.
+
+Before 17 November, how this round was worked (your choice, 14 November): **fewer stops**: every decision is saved, so the list is worked
 through with very few questions, stopping only for a real choice of yours; **faster checks**: every full check runs
 side by side on separate test servers, each problem and each slow page written down the moment it's found;
 **helper copies working side by side (your choice, 14 November: "limits I don't mind, but it's faster")**: pieces
