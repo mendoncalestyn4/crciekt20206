@@ -231,6 +231,9 @@ def _mvp(career, section, season, how) -> dict:
                         + (f". Best per match among regulars: {best_pm.iloc[0].player} on {best_pm.iloc[0].per_match:.1f}"
                            if len(best_pm) else "") + ".")
         res["for_"] = "One number for who mattered most this season, with bat and ball together."
+        res.update(is_="The top ten players by " + ("IPL MVP points" if how_ == "ipl" else "impact points") + " this season, "
+                       "bat and ball together.",
+                   best=SG.best_line(zip(mvp.player, mvp.points), fmt=lambda v: f"{v:,.0f} points"))
         res["note"] = ("IPL MVP points, as the IPL counts them, without fielding: 3.5 a wicket, 1 a dot ball, 2.5 a four "
                        "and 3.5 a six (the IPL also gives 2.5 a catch and a stumping; no fielding is counted here)."
                        if how_ == "ipl" else

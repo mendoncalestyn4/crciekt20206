@@ -216,7 +216,8 @@ def test_the_style_guide_draws_every_piece_from_the_career(browser, site):
         second = buttons.nth(1).inner_text()
         buttons.nth(1).click()
         assert "on" in (buttons.nth(1).get_attribute("class") or "")
-        assert second.split(" · ")[-1].split(" ")[0] in pg.locator(".itabs + .grid .tl").nth(1).inner_text().title()
+        # the batting tile is first (batting on the left: your request of 14 November) and names the side batting
+        assert second.split(" · ")[-1].split(" ")[0] in pg.locator(".itabs + .grid .tl").nth(0).inner_text().title()
     finally:
         pg.close()
 

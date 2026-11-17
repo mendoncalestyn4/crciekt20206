@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { get, type SeasonPage } from "../api";
-import { Explain, Missing, Num, Tile } from "../kit/base";
+import { Explain, Missing, Num, three, Tile } from "../kit/base";
 import { f0, ord } from "../format";
 import { MonthGrid } from "../kit/calendar";
 import { TugOfWar } from "../kit/charts";
@@ -74,7 +74,7 @@ export function Season() {
             {cal.view === "season" ? <div className="cms" data-chart>{cal.grid.map((mo) => <MonthGrid key={mo.key} mo={mo} keep={keep} today={cal.today} />)}</div>
               : cal.grid[0] && <div data-chart><MonthGrid mo={cal.grid[0]} big keep={keep} today={cal.today} /></div>}
             {cal.caption && <div className="note">{cal.caption}</div>}
-            {cal.shows && <Explain shows={cal.shows} for_={cal.for_} />}
+            {cal.best && <Explain {...three(cal)} />}
           </Tile>)}
           {sr && (sr.none ? <Tile span={12}><Missing why={sr.none} /></Tile> : <>
             {sr.live && <Tile span={12} title="Still going · each side's chance of winning the series"><Grid t={sr.live} />
@@ -83,7 +83,7 @@ export function Season() {
               right={tg.story.complete ? "finished" : "under way"}>
               <TugOfWar matches={tg.matches} progress={tg.progress} team={tg.team ?? ""} opp={tg.opp} height={280} />
               <div className="note">Above the line {tg.team} lead, below it {tg.opp} do. <T>{tg.title}</T></div>
-              {tg.shows && <Explain shows={tg.shows} for_={tg.for_} />}</Tile>)}
+              {tg.lines && <Explain {...tg.lines} />}</Tile>)}
             <Tile span={12} title="Finished series · newest first">
               {sr.done ? <Grid t={sr.done} /> : <div className="plain">None finished yet.</div>}
               {sr.note && <div className="note">{sr.note}</div>}</Tile>

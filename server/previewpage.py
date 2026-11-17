@@ -314,6 +314,14 @@ def _their_record(career, ids, opp, where_note, part) -> None:
                                 f"(not only you), with the totals they defended, lost with, chased down and failed to chase.",
                  for_=f"Whether they would rather set a total or chase one, and the totals that have been enough against "
                       f"them: think about it at the toss.")
+        def share(r):
+            return r["won"] / (r["won"] + r["lost"]) * 100 if r["won"] + r["lost"] else None
+        a, c = share(x["first"]), share(x["chase"])
+        each = [f"batting first, {a:.0f}% won" if a is not None else "", f"{second}, {c:.0f}% won" if c is not None else ""]
+        x.update(is_=f"{poss(opp)} wins and defeats batting first and {second} in {where_note}, with the totals that decided them.",
+                 best_label="Better at",
+                 best=(each[0] if c is None or (a is not None and a > c) else each[1] if a is None or c > a else
+                       f"level, {a:.0f}% won each way") if a is not None or c is not None else "No wins or defeats yet.")
         return x
     part("bat_first", bat_first)
 
@@ -329,6 +337,7 @@ def _their_record(career, ids, opp, where_note, part) -> None:
                                 f"grounds, then {'country' if v['nation'] else 'ground'} by {'country' if v['nation'] else 'ground'} "
                                 f"(each bar every match there in order, green won, red lost).",
                  for_="How much they rely on home, and how they travel: where your match is decides which record counts.")
+        v.update(is_=v["lines"]["is_"], best=v["lines"]["best"], best_label=v["lines"]["best_label"])
         return v
     part("where", where)
 
@@ -593,6 +602,8 @@ def about_them(career, ids, me, opp, where_note, mu, cur, last=False) -> dict:
             return dict(rows=[dict(player=r.player, team=opp, runs=int(r.runs)) for r in top.itertuples()],
                         notes=[f"{i} innings · average {fmt(a, 1)} · strike rate {fmt(s, 1)} · best {b}"
                                for i, a, s, b in zip(top.innings, top.average, top.strike_rate, top.best)],
+                        is_=f"Runs by {poss(opp)} batters in their last 10 games here, the top six.",
+                        best=SG.best_line(zip(pv["batters"].player, pv["batters"].runs), fmt=lambda v: f"{v:,.0f} runs" + (f" ({v / tot * 100:.0f}% of theirs)" if tot else "")),
                         shows=f"{top.player.iloc[0]} has {top.runs.iloc[0]} runs in their last 10 games, {share:.0f}% of the "
                               f"{tot} runs {poss(opp)} batters made in that time.",
                         for_="Who is scoring for them right now: the batters to plan for and get out early.")
@@ -601,6 +612,10 @@ def about_them(career, ids, me, opp, where_note, mu, cur, last=False) -> dict:
         return dict(rows=[dict(player=r.player, team=opp, wickets=int(r.wickets)) for r in top.itertuples()],
                     notes=[f"{i} innings · economy {fmt(e, 2)} · average {fmt(a, 1)}"
                            for i, e, a in zip(top.innings, top.economy, top.average)],
+                    is_=f"Wickets by {poss(opp)} bowlers in their last 10 games here, the top six.",
+                    best=SG.best_line(zip(pv["bowlers"].player, pv["bowlers"].wickets),
+                                      fmt=lambda v: f"{v:,.0f} wicket{'s' if v != 1 else ''}" + (f" ({v / totw * 100:.0f}% of theirs)" if totw else ""),
+                                      minimum=lambda _, v: v > 0),
                     shows=f"{top.player.iloc[0]} has {int(top.wickets.iloc[0])} wickets in their last 10 games, {share:.0f}% of "
                           f"the {int(totw)} {opp} took.",
                     for_="Who is taking their wickets right now: the bowlers to see off or play carefully.")
@@ -625,6 +640,9 @@ def about_them(career, ids, me, opp, where_note, mu, cur, last=False) -> dict:
         best_, worst_ = ws.sort_values("vs").iloc[-1], ws.sort_values("vs").iloc[0]
         return dict(rows=[dict(label=f"{ordinal(int(w))} wicket", value=v, text=f"{v:+.0f}% · {a:.0f} v {b:.0f}", note=f"{int(n)} stands")
                           for w, v, a, b, n in zip(ws.wicket, ws.vs, ws.average, ws["all"], ws.stands)],
+                    is_="Their average stand for each wicket here, above (blue) or below (red) every team's average for that wicket.",
+                    best_label="Weakest stand",
+                    best=f"the {ordinal(int(worst_.wicket))} wicket, {worst_.vs:+.0f}% ({worst_.average:.0f} v {worst_['all']:.0f} runs)",
                     shows=f"Their {ordinal(int(best_.wicket))} wicket stand is {best_.vs:+.0f}% against every team's "
                           f"({best_.average:.0f} v {best_['all']:.0f} runs); the {ordinal(int(worst_.wicket))} is {worst_.vs:+.0f}% "
                           f"({worst_.average:.0f} v {worst_['all']:.0f}). Blue: better than average; red: worse.",
@@ -708,6 +726,8 @@ def about_them(career, ids, me, opp, where_note, mu, cur, last=False) -> dict:
             return None
         n = pv["how_out_n"]
         return dict(rows=[dict(label=say(h), value=float(v), n=int(n[h])) for h, v in how.items()], outs=int(n.sum()),
+                    is_="How their batters got out here, as a share of all their dismissals (run-outs included).",
+                    best_label="Most often", best=f"{say(how.index[0]).lower()}, {how.iloc[0]:.0f}% ({int(n[how.index[0]])})",
                     shows=f"{how.iloc[0]:.0f}% of their dismissals are {say(how.index[0]).lower()}"
                           + (f" and {how.iloc[1]:.0f}% {say(how.index[1]).lower()}" if len(how) > 1 else "") + ".",
                     for_="How to get them out: a high bowled or lbw share means attacking the stumps works; a high caught "
@@ -723,6 +743,8 @@ def about_them(career, ids, me, opp, where_note, mu, cur, last=False) -> dict:
         if len(dep):
             d0 = dep.sort_values("share", ascending=False).iloc[0]
             out_["shows"] = f"{d0.share:.0f}% of their runs come from the {d0.group.lower()} ({d0.runs} runs)."
+            out_.update(is_="Their runs here by where they bat, as a share of all their runs.", best_label="Most runs from",
+                        best=f"the {d0.group.lower()}, {d0.share:.0f}% ({d0.runs:,} runs)")
             out_["for_"] = ("If most runs come from the top order, early wickets hurt them most; if the middle or tail score "
                             "a lot, keep attacking after the top order is gone.")
         return out_

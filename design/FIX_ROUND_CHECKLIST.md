@@ -296,7 +296,19 @@ Pages and looks:
 - [x] Both team logos on every match summary (found by you: Pakistan v South Africa, 11 Jun 2031, showed empty gaps
       where they go); checked on every summary — ✓ the gap was a team the game has no picture for: the summary
       now shows a round badge with its short name there
-- [ ] Every chart: What it is / Who's best / What it's for, always shown, charts only
+- [x] Every chart: What it is / Who's best / What it's for, always shown, charts only — ✓ written by the server for
+      every chart: the Player page (tests/test_chart_lines_players.py); My team (season ring, form in each format, runs
+      of results, our score v theirs, home and away, the series score, match-winners, where you rank, top run-scorers
+      and wicket-takers); Matches (our score v theirs, excitement, win chance, wicket by wicket); Opponent preview
+      (batters and bowlers in form, weak spot, how their batters get out, where their runs come from, batting first or
+      chasing, home and away); Teams (against the average team, runs of results, stronger and weaker sides, home and
+      away, top run-scorers and wicket-takers, batting depth, stands, every player's contribution, how they play,
+      discipline, the league race); Team v team (tale of the tape, batting first, both dot charts, runs above average,
+      runs saved); Competitions (title race, series ladder); Season (calendar, series score); Season review (most
+      valuable players, match-winners). Rivalries, Honours and the Planner show tables only, which keep their notes.
+      Checked on your new set (63 charts, none without its lines) and in tests/test_chart_lines_pages.py, with
+      "Who's best" counted again from the scorecards (top run-scorers and wicket-takers, highest totals, the season's
+      record, the biggest stand from the fall of wickets)
 
 Accuracy and keeping it right:
 - [ ] The same number on every page; totals built from their parts

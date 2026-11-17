@@ -73,7 +73,7 @@ export function MatchesHome() {
           {d.scores ? <><ScoreRows results={d.scores.results} scores={d.scores.summary} />
             <div className="note">Both totals on one line for each match: {d.scores.team}'s in gold, the other side's in blue, joined in green when they won and
               red when they lost; a Test's innings each on its own line. Games shortened by rain are left out of the averages.</div>
-            {d.scores.summary.shows && <Explain shows={d.scores.summary.shows} for_={d.scores.summary.for_} />}</>
+            {d.scores.summary.lines && <Explain {...d.scores.summary.lines} />}</>
             : <div className="plain">{all ? "Pick one competition and a team to see their totals against the other side's, match by match (formats are never mixed)."
               : "Pick a team to see its totals against the other side's, match by match."}</div>}
         </Tile>
@@ -119,7 +119,8 @@ export function MatchView() {
             <div className="plain">The game's scorecard didn't add up; the card itself shows what happened, so it's counted this way:</div>
             {d.corrected.map((x) => <div className="how" key={x}>{x}.</div>)}</Tile> : null}
           <Tile span={7} title="Excitement rating · out of 10">
-            {d.excitement ? <ExcitementPanel ex={d.excitement} section={d.section} /> : <Missing why="Too few matches in this competition to rate yet." />}
+            {d.excitement ? <><ExcitementPanel ex={d.excitement} section={d.section} />{d.excitement.lines && <Explain {...d.excitement.lines} />}</>
+              : <Missing why="Too few matches in this competition to rate yet." />}
             {!d.match.pom && <div className="deck" style={{ marginTop: 12 }}><T>{d.report}</T></div>}
           </Tile>
           <Tile span={5} title="📝 Your notes on this match"><NoteBox mid={d.id} note={d.note} /></Tile>
@@ -127,7 +128,7 @@ export function MatchView() {
             {d.win.none ? <Missing why={d.win.none} /> : <>
               <WinChanceChart win={d.win} mine={career?.my_teams ?? []} />
               <div className="note">At the start of each innings and after every wicket ({d.win.team1} batted first); dotted lines: a new innings. The last point is the result.</div>
-              <Explain shows={d.win.shows} for_={d.win.for_} /></>}
+              <Explain is_={d.win.is_} best={d.win.best} best_label={d.win.best_label} for_={d.win.for_} /></>}
           </Tile>}
           <Tile span={6} title="Top scores">
             <table className="c"><thead><tr><th>Batter</th><th className="r">Score</th><th className="r">Balls</th></tr></thead>
@@ -166,7 +167,7 @@ export function MatchView() {
               ahead of the game, below it behind. A late wicket's par comes only from the innings that got that far, so it stops where too
               few do.</div> : <div className="plain">No par line yet: too few {d.wickets.section} matches to say what's usual.</div>}
             <div className="plain">The scorecard gives the score at each wicket but not the over, so this shows wickets, not overs.</div>
-            {d.wickets.shows && <Explain shows={d.wickets.shows} for_={d.wickets.for_} />}
+            {d.wickets.innings.some((i) => i.steps.length) && <Explain is_={d.wickets.is_} best={d.wickets.best} best_label={d.wickets.best_label} for_={d.wickets.for_} />}
           </Tile>
         </>}
       </div>

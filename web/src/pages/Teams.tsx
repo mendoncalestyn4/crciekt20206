@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { get, type GridT, type NGrid, type Outcome, type TeamBody, type TeamPage, remember } from "../api";
-import { Explain, Lamps, Logo, Missing, Num, Tile } from "../kit/base";
+import { Explain, Lamps, Logo, Missing, Num, three, Tile } from "../kit/base";
 import { LeaderBars, RingList, ShareRing } from "../kit/charts";
 import { SplitBars } from "../kit/player";
 import { StrengthPanel, Streaks, VenueRecord } from "../kit/season";
@@ -139,7 +139,7 @@ function Contributions({ c }: { c: NonNullable<TeamBody["contribution"]> }) {
           <td className="r"><span className="tn">{r.wickets}</span></td><td>{bar(r.wicket_share, topW)}</td></tr>)}</tbody></table>
         {rows.length > 15 && !all && <button className="btn quiet" style={{ marginTop: 10 }} onClick={() => setAll(true)}>All {rows.length} players</button>}</div>
     </div>
-    <Explain shows={<T>{c.shows}</T>} for_={c.for_} />
+    <Explain {...three(c)} />
   </>;
 }
 
@@ -149,32 +149,32 @@ function Body({ tab, b, team, keep, race }: { tab: string; b: TeamBody; team: st
   if (tab === "Overview") return <>
     <Tile span={12} title={b.vs_average?.title ?? "Against the average team"}>
       {b.vs_average && <div className="how" style={{ marginTop: -4 }}>{b.vs_average.right}</div>}
-      {b.vs_average ? <><SignedBars rows={b.vs_average.rows} /><Explain shows={<T>{b.vs_average.shows}</T>} for_={b.vs_average.for_} /></>
+      {b.vs_average ? <><SignedBars rows={b.vs_average.rows} /><Explain {...three(b.vs_average)} /></>
         : <Missing why={m.vs_average} />}</Tile>
     <Tile span={12} title="Runs of results" right="every match in order">
-      {b.streaks ? <><Streaks cal={b.streaks} /><Explain shows={<T>{b.streaks.shows}</T>} for_={b.streaks.for_} /></>
+      {b.streaks ? <><Streaks cal={b.streaks} /><Explain {...three(b.streaks)} /></>
         : m.streaks ? <Missing why={m.streaks} /> : <div className="plain">No matches yet.</div>}</Tile>
     <Tile span={12} title="Against stronger and weaker sides" right="by the ratings (Elo) just before each match">
-      {b.strength ? <><StrengthPanel rows={b.strength.rows} lanes={b.strength.lanes} /><Explain shows={<T>{b.strength.shows}</T>} for_={b.strength.for_} /></>
+      {b.strength ? <><StrengthPanel rows={b.strength.rows} lanes={b.strength.lanes} /><Explain {...three(b.strength)} /></>
         : m.strength ? <Missing why={m.strength} /> : <div className="plain">No rated matches yet (a no-result isn't rated).</div>}</Tile>
     <Tile span={12} title="Home, away and neutral">
       {b.venues ? <><VenueRecord v={b.venues} team={team} />
         <div className="note">The scorecards don't name the ground, so it goes by the home side{b.venues.nation ? "'s country" : ""}.</div>
-        <Explain shows={<T>{b.venues.shows}</T>} for_={b.venues.for_} /></>
+        <Explain {...three(b.venues)} /></>
         : m.venues ? <Missing why={m.venues} /> : <div className="plain">No matches yet.</div>}</Tile>
     <Tile span={6} title="Top run-scorers">
       {b.top_bat ? (b.top_bat.rows.length ? <><LeaderBars rows={b.top_bat.rows} value="runs" mine={team} height={44 * b.top_bat.rows.length + 16} noTeam label="Top run-scorers" />
-        <Explain shows={<T>{b.top_bat.shows}</T>} for_={b.top_bat.for_} /></> : <div className="plain">No runs yet.</div>) : <Missing why={m.top_bat} />}</Tile>
+        <Explain {...three(b.top_bat)} /></> : <div className="plain">No runs yet.</div>) : <Missing why={m.top_bat} />}</Tile>
     <Tile span={6} title="Top wicket-takers">
       {b.top_bowl ? (b.top_bowl.rows.length ? <><LeaderBars rows={b.top_bowl.rows} value="wickets" mine={team} height={44 * b.top_bowl.rows.length + 16} noTeam label="Top wicket-takers" />
-        <Explain shows={<T>{b.top_bowl.shows}</T>} for_={b.top_bowl.for_} /></> : <div className="plain">No wickets yet.</div>) : <Missing why={m.top_bowl} />}</Tile>
+        <Explain {...three(b.top_bowl)} /></> : <div className="plain">No wickets yet.</div>) : <Missing why={m.top_bowl} />}</Tile>
     <Tile span={6} title="Batting depth" right="share of the runs">
       {b.depth ? <><ShareRing rows={b.depth.rows} count={(r) => r.runs ?? 0} centre={String(b.depth.rows.reduce((a, r) => a + (r.runs ?? 0), 0))} sub="runs" />
         <div className="note">The average team here: {b.depth.rows.map((r) => `${r.label.toLowerCase()} ${rnd(r.ref ?? 0)}%`).join(", ")}.</div>
-        {b.depth.shows && <Explain shows={<T>{b.depth.shows}</T>} for_={b.depth.for_} />}</>
+        {b.depth.best && <Explain {...three(b.depth)} />}</>
         : m.depth ? <Missing why={m.depth} /> : <div className="plain">No runs yet.</div>}</Tile>
     <Tile span={6} title="Average partnership for each wicket">
-      {b.stands ? <><SplitBars rows={b.stands.rows} dec={1} />{b.stands.shows && <Explain shows={<T>{b.stands.shows}</T>} for_={b.stands.for_} />}</>
+      {b.stands ? <><SplitBars rows={b.stands.rows} dec={1} />{b.stands.best && <Explain {...three(b.stands)} />}</>
         : <Missing why={m.stands} />}</Tile>
     <GridTile g={b.collapses} title="Collapses" sub="4 or more wickets lost for 30 runs or fewer" none="No collapses. Nice." keep={keep} missing={m.collapses} />
     <GridTile g={b.big_stands} title="Big stands" sub="the team's biggest partnerships here (* not out)" none="No stands yet." keep={keep} missing={m.big_stands} />
@@ -191,12 +191,12 @@ function Body({ tab, b, team, keep, race }: { tab: string; b: TeamBody; team: st
         : <div className="plain">No wickets have fallen yet.</div>}</Tile>
     {b.how_they_play !== null && <Tile span={7} title={`How ${team} play`}>
       <div className="how" style={{ marginTop: -4 }}>More (right) or less (left) than the average team, not better or worse{b.how_they_play?.every ? " · every game here" : ""}</div>
-      {b.how_they_play ? <><SignedBars rows={b.how_they_play.rows} colour={t.orange} /><Explain shows={<T>{b.how_they_play.shows}</T>} for_={b.how_they_play.for_} /></>
+      {b.how_they_play ? <><SignedBars rows={b.how_they_play.rows} colour={t.orange} /><Explain {...three(b.how_they_play)} /></>
         : <Missing why={m.how_they_play} />}</Tile>}
     {b.discipline !== null && <Tile span={5} title="Discipline">
       <div className="how" style={{ marginTop: -4 }}>Extras given away per match, fewest first{b.discipline?.every ? " · every game here" : ""}</div>
       {b.discipline ? <><LeaderBars rows={b.discipline.rows} value="extras" mine={team} height={34 * b.discipline.rows.length + 16} noTeam nameSize={17} valSize={20}
-        fmt={(v) => fx(v, 1)} label="Discipline" />{b.discipline.shows && <Explain shows={<T>{b.discipline.shows}</T>} for_={b.discipline.for_} />}</>
+        fmt={(v) => fx(v, 1)} label="Discipline" />{b.discipline.best && <Explain {...three(b.discipline)} />}</>
         : <Missing why={m.discipline} />}</Tile>}
     <GridTile g={b.every_team} title="Every team" span={12} keep={keep} missing={m.every_team} />
   </>;
@@ -224,7 +224,7 @@ function Body({ tab, b, team, keep, race }: { tab: string; b: TeamBody; team: st
           <select id="tm-race" className="pick" value={b.race.picked} onChange={(e) => race(e.target.value)}>
             {b.race.options.map((o) => <option key={o}>{o}</option>)}</select></div>
         {b.race.none ? <div className="plain">{b.race.none}</div> : <><PositionRace lines={b.race.lines} team={team} />
-          <Explain shows={<T>{b.race.shows}</T>} for_={b.race.for_} /></>}</> : <div className="plain">{b.race.none}</div>) : <Missing why={m.race} />}
+          <Explain {...three(b.race)} /></>}</> : <div className="plain">{b.race.none}</div>) : <Missing why={m.race} />}
     </Tile>
     <GridTile g={b.halves} title="Early or late starters" sub="league games in the first and second half of each season" span={12}
       none="No league games yet." keep={keep} missing={m.halves} />

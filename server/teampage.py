@@ -205,7 +205,10 @@ def overview(career, section, season, team, venue) -> dict:
             word = "better" if r["value"] >= 0 else "worse"
             parts.append(f"{abs(r['value']):.0f}% {word} than the average team on {r['label'].lower()} ({team} {r['vt']}, "
                          f"average team {r['at']}" + ("" if r["better"] == "high" else "; lower is better here") + ")")
-        return dict(title=f"{team} against the average team in {section}", right=f"% better or worse than the average of "
+        three = dict(is_=f"{team} against the average of all {len(tbl)} teams in {section} on each measure: how much better "
+                         "(blue) or worse (red).", best_label="Strongest at",
+                     best=f"{good['label'].lower()}, {good['value']:+.0f}% ({good['vt']} v {good['at']})" if good else "")
+        return dict(**three, title=f"{team} against the average team in {section}", right=f"% better or worse than the average of "
                     f"all {len(tbl)} teams", rows=[{k: r[k] for k in ("label", "value", "text", "note")} for r in rows],
                     shows=f"{team} are " + ", and ".join(parts) + "." if parts else "Not enough games yet.",
                     for_=f"Shows at a glance where {team} are strong and weak against the other {len(tbl) - 1} teams. Each "
@@ -227,6 +230,10 @@ def overview(career, section, season, team, venue) -> dict:
                             f"{poss(team)} {team_runs} runs; the top {len(mb)} together make "
                             f"{mb.runs.sum() / team_runs * 100:.0f}%.")
             out["for_"] = "Who carries the batting, and how much the team leans on its top run-scorers."
+            allb = bat_t[bat_t.team == team]
+            out.update(is_=f"Runs by {poss(team)} players here, the top six.",
+                       best=SG.best_line(zip(allb.player, allb.runs),
+                                         fmt=lambda v: f"{v:,.0f} runs ({v / team_runs * 100:.0f}% of the team's)"))
         return out
     P("top_bat", top_bat)
 
@@ -241,6 +248,10 @@ def overview(career, section, season, team, venue) -> dict:
                             f"{mw.wickets.iloc[0] / team_w * 100:.0f}% of {poss(team)} {int(team_w)}; the top {len(mw)} "
                             f"take {mw.wickets.sum() / team_w * 100:.0f}%.")
             out["for_"] = "Who takes the wickets, and whether the attack is spread or rests on one or two bowlers."
+            allw = bowl_t[bowl_t.team == team]
+            out.update(is_=f"Wickets by {poss(team)} bowlers here, the top six.",
+                       best=SG.best_line(zip(allw.player, allw.wickets), minimum=lambda _, v: v > 0,
+                                         fmt=lambda v: f"{v:,.0f} wicket{'s' if v != 1 else ''} ({v / team_w * 100:.0f}% of the team's)"))
         return out
     P("top_bowl", top_bowl)
 
@@ -259,6 +270,9 @@ def overview(career, section, season, team, venue) -> dict:
                             f"team: {ref.get(top_g.group, 0):.0f}%). The tail (8-11) makes {dep.share.iloc[-1]:.0f}%.")
             out["for_"] = ("Shows how deep the batting goes: if the top order makes most of the runs, early wickets hurt "
                            "this team more than most.")
+            out.update(is_=f"{poss(team)} runs by where they bat, as a share of all their runs, with the average team's.",
+                       best_label="Most runs from",
+                       best=f"the {top_g.group.lower()}, {top_g.share:.0f}% (the average team {ref.get(top_g.group, 0):.0f}%)")
         return out
     P("depth", depth)
 
@@ -274,6 +288,8 @@ def overview(career, section, season, team, venue) -> dict:
             out["shows"] = (f"Their best stand is for the {ordinal(int(b_.wicket))} wicket: {b_.average:.1f} runs on "
                             f"average over {int(b_.stands)} stands (best {best_txt[list(pw.index).index(i_)]})."
                             + (f" The opening stand averages {pw.average.iloc[0]:.1f}." if int(pw.wicket.iloc[0]) == 1 else ""))
+            out.update(is_=f"{poss(team)} average partnership for each wicket here.", best_label="Best stand",
+                       best=f"the {ordinal(int(b_.wicket))} wicket, {b_.average:.1f} runs on average over {int(b_.stands)} stands")
             out["for_"] = ("Shows which partnerships hold the innings together and where it tends to fall apart. An "
                            "unbroken stand (*) counts its runs; the average is over the stands that were broken, as a "
                            "batting average is over the times out.")
@@ -328,7 +344,13 @@ def overview(career, section, season, team, venue) -> dict:
         def rec(x, word):
             return (f"against sides rated {word} them they won {sum(r['outcome'] == 'W' for r in x)} of {len(x)}" if x else
                     f"they haven't played a side rated {word} them")
+        wins = [r for r in rows if r["outcome"] == "W"]
+        top = max(wins, key=lambda r: (r["gap"], r["date"])) if wins else None
         return dict(rows=rows, lanes=[section],
+                    is_=f"Every {team} match in {scope_words}, placed by how much stronger (right) or weaker (left) the other "
+                        "side was rated just before it.", best_label="Best win",
+                    best=(f"v {top['opp']}, rated {abs(top['gap'])} {'above' if top['gap'] >= 0 else 'below'} them, "
+                          f"{SG._day(top['date'])}") if top else "No wins yet.",
                     shows=f"In {scope_words}, {rec(up, 'above')}; {rec(down, 'below')}. Each dot is a match, placed by how "
                           f"much stronger (right) or weaker (left) the other side was rated just before it.",
                     for_="Whether they beat the strong sides or only the weak ones, and their best win and worst defeat by "
@@ -344,6 +366,7 @@ def overview(career, section, season, team, venue) -> dict:
         v.update(shows=f"{poss(team)} record at home, away and on neutral grounds in {scope_words}, then {unit} by {unit}: "
                        f"each bar every match there in order, green won, red lost.",
                  for_="How much they rely on home, and where they travel well or badly.")
+        v.update(is_=v["lines"]["is_"], best=v["lines"]["best"], best_label=v["lines"]["best_label"])
         return v
     P("venues", venues_)
 
@@ -351,7 +374,12 @@ def overview(career, section, season, team, venue) -> dict:
         """Every match in order, the longest runs marked, and the run they're on."""
         if not rs:
             return None
-        return dict(results=rs, streaks=SG.runs_of([r["outcome"] for r in rs]),
+        runs = SG.runs_of([r["outcome"] for r in rs])
+        w = max((r for r in runs if r["o"] == "W"), key=lambda r: (r["end"] - r["start"], -r["start"]), default=None)
+        return dict(results=rs, streaks=runs,
+                    is_=f"Every {team} match in {scope_words} in the order played.", best_label="Longest winning run",
+                    best=(f"{w['end'] - w['start'] + 1} in a row, {SG._day(rs[w['start']]['date'])} to "
+                          f"{SG._day(rs[w['end']]['date'])}") if w else "No wins yet.",
                     shows=f"Every {team} match in {scope_words} in the order played, with the longest winning and losing "
                           f"runs marked, and the run they're on now.",
                     for_="Form at a glance: whether they're on a run, and how long their best and worst runs lasted.")
@@ -401,6 +429,9 @@ def overview(career, section, season, team, venue) -> dict:
                 for p, n, r, rs, w, ws in zip(sh.player, sh.matches, sh.runs, sh.run_share, sh.wickets, sh.wicket_share)]
         top = sh.head(5)
         return dict(rows=rows, team_runs=int(tr), team_wickets=int(tw),
+                    is_=f"{poss(team)} runs off the bat, the top six run-scorers and everyone else, beside every player's share "
+                        "of the runs and of the wickets.",
+                    best=SG.best_line(zip(sh.player, sh.runs), fmt=lambda v: f"{v:,.0f} runs ({v / tr * 100:.0f}%)" if tr else f"{v:,.0f} runs"),
                     shows=f"All {len(sh)} players {team} used in {scope_words}: {tr} runs off the bat and {tw} wickets "
                           f"between them. The top five run-scorers make {top.run_share.sum():.0f}% of the runs.",
                     for_="Everyone's part, not only the main players: who chips in, and how much rests on a few. Click a "
@@ -462,6 +493,9 @@ def overview(career, section, season, team, venue) -> dict:
             rows.append(dict(label=label, value=d, text=f"{d:+.0f}% · {fmt(v, 1)} v {fmt(a, 1)}"))
         i_max = int(np.argmax([abs(r["value"]) for r in rows])) if rows else 0
         return dict(rows=rows, every=venue != "all",
+                    is_=f"How {team} play against the average team here on each measure: more (right) or less (left).",
+                    best_label="Biggest difference",
+                    best=f"{rows[i_max]['label'].lower()}, {rows[i_max]['value']:+.0f}%" if rows else "Not enough games yet.",
                     shows=(f"{poss(team)} biggest difference is {rows[i_max]['label'].lower()}: {rows[i_max]['value']:+.0f}% "
                            "against the average team.") if rows else "Not enough games yet.",
                     for_="Shows how they play, not how well: a team can win either way. Each bar compares this team's "
@@ -486,6 +520,9 @@ def overview(career, section, season, team, venue) -> dict:
                             f"wides, {fmt(r.no_balls_per_match, 1)} no-balls), "
                             f"{(r.extras_per_match - avg_x) / avg_x * 100:+.0f}% against the average of {fmt(avg_x, 1)}: "
                             f"{int(list(disc.team).index(team)) + 1} of {len(disc)} for discipline.")
+        out.update(is_="Extras each team gives away per match here, fewest first.", best_label="Fewest extras",
+                   best=SG.best_line(zip(disc.team, disc.extras_per_match), lower=True, mine=team,
+                                     fmt=lambda v: f"{v:.1f} a match"))
         return out
     P("discipline", discipline)
 
@@ -699,6 +736,11 @@ def season_tab(career, section, season, team, venue, race: str = "") -> dict:
         mine = rc[rc.team == team].sort_values("round")
         out["shows"] = (f"{team} are {int(mine.position.iloc[-1])} of {rc.team.nunique()} after {int(mine.played.iloc[-1])} "
                         f"games; their best was {int(mine.position.min())} and their lowest {int(mine.position.max())}.")
+        final = rc.sort_values("round").groupby("team").tail(1)
+        leaders = list(final[final.position == final.position.min()].team)
+        pos = int(mine.position.iloc[-1])
+        out.update(is_=f"Every team's place in the {pick[0]} {pick[1]} table after each match day.", best_label="On top",
+                   best=(" and ".join(leaders[:3]) if leaders else "") + (f" · {team} {ordinal(pos)}" if team not in leaders else ""))
         out["for_"] = (f"Shows how the season unfolded: when {team} climbed or slipped. Positions follow the league table "
                        "(points, then net run rate). Hover a line for points.")
         return out

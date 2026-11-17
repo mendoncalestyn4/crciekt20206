@@ -86,7 +86,17 @@ def banner(career, team: str, cal: dict | None = None) -> dict:
     caption = (" · ".join(caps) + ". ▲▼ = rating change over the last 5 games."
                + (" Chances: the rest of the season played out 2,000 times (Seasons → title race)."
                   if any(b.get("chances") for b in bn) else "")) if caps else ""
-    return dict(tiles=tiles, caption=caption)
+    ranked = [t for t in tiles if t.get("rank") is not None]
+    top = min((t["rank"] for t in ranked), default=None)
+    best = [t for t in ranked if t["rank"] == top]
+    names = [t["section"] for t in best]
+    who = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1] if names else ""
+    return dict(tiles=tiles, caption=caption,
+                lines=SG.lines(f"Where {team} stand in each competition's team ratings (Elo) now: the bar is every team in it, "
+                               "the dot their place.",
+                               (f"{who}, {SG._ordinal(top)} of {best[0]['teams']}" if len(best) == 1 else
+                                f"{who}, {SG._ordinal(top)} in each") if best else "",
+                               "Shows where the side is strongest and where it has ground to make up.", "Best placed"))
 
 
 def latest(career, team: str) -> dict | None:
@@ -279,6 +289,14 @@ def section_block(career, team: str, section: str, notes: dict, sched: list) -> 
         bat=SG.rows(sq.sort_values("runs", ascending=False).head(3), ["player", "runs", "average", "form"]),
         bowl=SG.rows(sq[sq.wickets > 0].sort_values("wickets", ascending=False).head(3), ["player", "wickets", "economy"])))
     piece("alerts", lambda: MT.alerts(career, team, section, season))
+    where = f"{team}'s players in {section} {season}"
+    piece("lines_runs", lambda: SG.lines(f"Runs by {where}, the top five.",
+                                         SG.best_line(zip(sq.player, sq.runs), fmt=lambda v: f"{v:,.0f} run{'s' if v != 1 else ''}"),
+                                         "Who is carrying the batting this season."))
+    piece("lines_wickets", lambda: SG.lines(f"Wickets by {where}, the top five.",
+                                            SG.best_line(zip(sq.player, sq.wickets), fmt=lambda v: f"{v:,.0f} wicket{'s' if v != 1 else ''}",
+                                                         minimum=lambda _, v: v > 0),
+                                            "Who is taking the wickets this season."))
     piece("headlines", lambda: E.headlines(career, n_matches=8, limit=6, team=team))
 
     def milestones():

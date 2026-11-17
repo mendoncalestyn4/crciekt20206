@@ -348,6 +348,9 @@ def _race(career, event, season, q, mine) -> dict:
                                 f"{chance(best[col])} (after {best.date:%d %b}), {chance(mine_h[col].iloc[-1])} "
                                 f"{'at the end' if decided else 'now'}. {fav_days.index[0]} were the favourites most "
                                 f"often ({fav_days.iloc[0]} of {known.date.nunique()} match days).")
+                res.update(is_=f"Each side's chance of {what} after every match day.", best_label="Favourite most often",
+                           best=f"{fav_days.index[0]}, {fav_days.iloc[0]} of {known.date.nunique()} match days"
+                                + (f" · {pick} at best {chance(best[col])}" if pick != fav_days.index[0] else ""))
             res["for_"] = f"See when the race for {what} turned, and how much each result moved a side's chances."
         limited = career.matches[career.matches.event == event].format.iloc[0] in T.LIMITED
         res["note"] = ("How it's worked out: each game still to play is decided by the two sides' team ratings (the Elo on "

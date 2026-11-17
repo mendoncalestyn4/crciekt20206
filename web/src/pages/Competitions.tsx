@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { get, type CompPage, remember } from "../api";
-import { Explain, Logo, Missing, Tile } from "../kit/base";
+import { Explain, Logo, Missing, three, Tile } from "../kit/base";
 import { Bracket, OddsRace } from "../kit/comp";
 import { TvTable } from "../kit/blocks";
 import { Ladder } from "../kit/season";
@@ -87,7 +87,7 @@ export function Competitions() {
             {r.groups.map((g, i) => <div key={i}>{g.label && <div className="glabel">{g.label}</div>}<Grid t={g} /></div>)}
             {r.caption && <div className="note">{r.caption}</div>}
             {r.lines.length > 0 && <><OddsRace lines={r.lines} team={r.pick} what={r.what} />
-              {r.shows && <Explain shows={r.shows} for_={r.for_ ?? ""} />}</>}
+              {r.best && <Explain {...three(r)} />}</>}
             <div className="note">{r.note}</div>
           </Tile>)}
           {m.knockouts ? <Tile span={12} title="Knockouts"><Missing why={m.knockouts} /></Tile> : d.knockouts && <Tile span={12} title="Knockouts">
@@ -105,7 +105,7 @@ export function Competitions() {
                 if (!e) return null;
                 return <>
                   {l ? <><div className="glabel">The series score after each match{l.decider ? " · the decider marked" : ""}</div><Ladder s={l} team={one!.team} />
-                    {l.shows && <Explain shows={l.shows} for_={l.for_} />}</>
+                    {l.lines && <Explain {...l.lines} />}</>
                     : one?.missing.ladder ? <Missing why={one.missing.ladder} /> : null}
                   <div className="glabel" style={{ marginTop: 16 }}>Every match</div><Grid t={e.matches} keep={keep} />
                 </>; })()}

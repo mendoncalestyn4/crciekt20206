@@ -112,6 +112,10 @@ export function Missing({ why }: { why?: string }) {
 /** Under every chart, three short lines (your choice of 14 November), small and dim like notes: What it is (what the
  *  chart draws), Who's best (the leader with their number; on a chart with no player or team at the top, the top
  *  thing, labelled for it: "Best month", "Most often"...) and What it's for. All three are written by the server. */
+/** A part's three lines (design/CHART_LINES.md) when the server keeps them beside its other fields: pass to Explain. */
+export const three = (x: { is_?: string; best?: string; best_label?: string; shows?: ReactNode; for_?: ReactNode }) =>
+  ({ is_: x.is_, best: x.best, best_label: x.best_label, shows: x.shows, for_: x.for_ ?? "" });
+
 export function Explain({ is_, best, best_label, shows, for_ }: { is_?: ReactNode; best?: ReactNode; best_label?: string;
   shows?: ReactNode; for_: ReactNode }) {
   const top = best ?? shows;

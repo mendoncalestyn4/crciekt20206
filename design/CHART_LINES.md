@@ -26,3 +26,12 @@ Rules (owner's answers and the decisions told to him):
 - An empty chart shows its "not enough yet" message instead of the lines.
 - No fielding anywhere; competitions in the agreed order; formats never mixed in an average.
 - Every number in "Who's best" is checked in a test against the data counted another way.
+
+Where the lines live (how it was built, 17 November):
+- The Player page and most page parts keep the three lines beside their other fields (`is_`, `best`, `best_label`,
+  `for_`); the page passes them with `three(x)` (`web/src/kit/base.tsx`).
+- The shared pieces in `server/styleguide.py` (form, the season calendar, home and away, our score v theirs,
+  match-winners, the series score) keep theirs under their own `lines` key (`record_lines` and `runs_lines` for the
+  season ring and the runs of results), because `best` already means something else there; the page passes
+  `{...x.lines}`.
+- Tests: `tests/test_chart_lines_players.py` and `tests/test_chart_lines_pages.py`.

@@ -68,6 +68,7 @@ export function MyTeam() {
             <div className="s"><b>{rs.length}</b> matches · won <b>{won + lost ? `${rnd((won / (won + lost)) * 100)}%` : "–"}</b></div></div></div>
           {rs.length ? <Ring won={won} lost={lost} other={rs.length - won - lost} /> : <Missing why={miss.season} />}
           <div className="note">Every format, April to March{cal ? ` (Apr ${cal.year} – Mar ${cal.year + 1})` : ""}.</div>
+          {rs.length > 0 && cal?.record_lines && <Explain {...cal.record_lines} />}
         </Tile>
         <div className="sub" style={{ gridColumn: "span 8", gridTemplateColumns: `repeat(${Math.max(1, Math.min(3, tiles.length))}, minmax(0, 1fr))` }}>
           {tiles.slice(0, 3).map((t) => (
@@ -117,14 +118,16 @@ export function MyTeam() {
 
         {d.forms?.map((f) => (
           <Tile key={f.section} span={d.forms!.length === 1 ? 12 : d.forms!.length === 2 ? 6 : 4} title={`Form · ${f.section}`}>
-            <FormCard results={f.results} form={f.form} /></Tile>))}
+            <FormCard results={f.results} form={f.form} />{f.form.trend && f.form.lines && <Explain {...f.form.lines} />}</Tile>))}
         {rs.length > 0 && cal && <Tile span={12} title={`Runs of results · every format · ${label}`}><Streaks cal={cal} />
-          <div className="note">Every match in order; the longest runs marked; the run you're on at the end.</div></Tile>}
+          <div className="note">Every match in order; the longest runs marked; the run you're on at the end.</div>
+          {cal.runs_lines && <Explain {...cal.runs_lines} />}</Tile>}
         {rs.length > 0 && <Tile span={7} rows={2} title="Our score v theirs" right="this season">
           <ScoreRows results={rs.slice(-14)} scores={d.scores} />
           <div className="note">Both totals on one line for each match (the latest {Math.min(14, rs.length)}); green won, red lost; a Test's innings each on its own line.</div>
-          {d.scores?.shows && <Explain shows={d.scores.shows} for_={d.scores.for_} />}</Tile>}
-        {d.venues && <Tile span={5} title="Home, away and neutral"><VenueRecord v={d.venues} team={d.team} /></Tile>}
+          {d.scores?.lines && <Explain {...d.scores.lines} />}</Tile>}
+        {d.venues && <Tile span={5} title="Home, away and neutral"><VenueRecord v={d.venues} team={d.team} />
+          {d.venues.lines && <Explain {...d.venues.lines} />}</Tile>}
         {d.series && <Tile span={5} title="Series this season">
           <div className="list">{d.series.slice(0, 6).map((s) => (
             <div className="li" key={s.key}><span>{s.opp ? <Logo team={s.opp} size={44} /> : null}</span>
@@ -134,11 +137,12 @@ export function MyTeam() {
         {d.tug && <Tile span={7} title={`Series score · v ${d.tug.opp}`} right={d.tug.story.complete ? "finished" : "under way"}>
           <TugOfWar matches={d.tug.matches} progress={d.tug.progress} team={d.team} opp={d.tug.opp} height={300} />
           <div className="note">Above the line {d.team} lead, below it {d.tug.opp} do.</div>
-          {d.tug.shows && <Explain shows={d.tug.shows} for_={d.tug.for_} />}</Tile>}
+          {d.tug.lines && <Explain {...d.tug.lines} />}</Tile>}
         {d.winners && <Tile span={12} title="Match-winners" right="your players of the match in your wins"><MatchWinners w={d.winners} />
-          {d.winners.shows && <Explain shows={d.winners.shows} for_={d.winners.for_} />}</Tile>}
+          {d.winners.lines && <Explain {...d.winners.lines} />}</Tile>}
         {tiles.some((t) => t.rank != null) && <Tile span={12} title={`Where ${d.team} rank · team rating (Elo)`}>
-          <RankTrack banner={tiles} height={Math.max(150, 80 + tiles.length * 60)} /></Tile>}
+          <RankTrack banner={tiles} height={Math.max(150, 80 + tiles.length * 60)} />
+          {d.banner?.lines && <Explain {...d.banner.lines} />}</Tile>}
 
         {b && <>
           <div className="part"><span className="tl2">{b.section} {b.season}</span>
@@ -160,8 +164,10 @@ export function MyTeam() {
             {b.alerts && b.alerts.length > 0 && <><div className="k3" style={{ marginTop: 14 }}>Worth a look</div>{b.alerts.map((a) => <div className="plain" key={a}><T>{a}</T></div>)}</>}
           </Tile>
           {sq.length > 0 && <>
-            <Tile span={4} title="Top run-scorers"><TopList rows={[...sq].sort((x, y) => y.runs - x.runs).slice(0, 5)} value="runs" /></Tile>
-            <Tile span={4} title="Top wicket-takers">{sq.some((x) => x.wickets > 0) ? <TopList rows={[...sq].filter((x) => x.wickets > 0).sort((x, y) => y.wickets - x.wickets).slice(0, 5)} value="wickets" gold /> : <Missing why="No wickets yet." />}</Tile>
+            <Tile span={4} title="Top run-scorers"><TopList rows={[...sq].sort((x, y) => y.runs - x.runs).slice(0, 5)} value="runs" />
+              {b.lines_runs && <Explain {...b.lines_runs} />}</Tile>
+            <Tile span={4} title="Top wicket-takers">{sq.some((x) => x.wickets > 0) ? <TopList rows={[...sq].filter((x) => x.wickets > 0).sort((x, y) => y.wickets - x.wickets).slice(0, 5)} value="wickets" gold /> : <Missing why="No wickets yet." />}
+              {sq.some((x) => x.wickets > 0) && b.lines_wickets && <Explain {...b.lines_wickets} />}</Tile>
             <Tile span={4} title="How you win">{b.how_you_win ? <>
               <div className="plain">Batting first <b>{b.how_you_win.first.pct}</b> ({b.how_you_win.first.won} of {b.how_you_win.first.decided}) · {b.how_you_win.second.word} <b>{b.how_you_win.second.pct}</b> ({b.how_you_win.second.won} of {b.how_you_win.second.decided}).</div>
               {b.how_you_win.extra && <div className="note">{b.how_you_win.extra}</div>}</> : <Missing why="No decided games here yet." />}</Tile>

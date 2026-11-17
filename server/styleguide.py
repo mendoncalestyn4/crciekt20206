@@ -284,8 +284,21 @@ def series_of(career, sid: str, team: str) -> dict:
                 shows=_series_shows(team, opp, played, progress, decider, bool(story["complete"])),
                 for_="How the series swung: the score after every match, so you can see when it was won or lost and "
                      "whether it went to a decider.",
+                lines=(lambda b: lines(f"The series score after every match, from {team}'s side.", b[0],
+                                       "How the series swung: the score after every match, so you can see when it was won "
+                                       "or lost and whether it went to a decider.", b[1]))(
+                    _series_best(team, opp, progress, bool(story["complete"]))),
                 most_runs=rows(sb, ["player", "team", "runs", "balls", "inns", "outs", "hs"]),
                 most_wickets=rows(sw, ["player", "team", "wickets", "runs", "balls", "economy"]))
+
+
+def _series_best(team: str, opp: str, progress: list[dict], done: bool) -> tuple[str, str]:
+    """(who's best, its label) for a series: the winner, or who leads, with the score."""
+    w, lo = progress[-1]["won"], progress[-1]["lost"]
+    if w == lo:
+        return f"level, {w}–{lo}", "Series"
+    who, a, b = (team, w, lo) if w > lo else (opp, lo, w)
+    return f"{who}, {a}–{b}", "Won by" if done else "Leading"
 
 
 def _series_shows(team: str, opp: str, played: list[dict], progress: list[dict], decider: bool, done: bool) -> str:
@@ -311,6 +324,17 @@ def _series_shows(team: str, opp: str, played: list[dict], progress: list[dict],
                         out += f" It was settled after the {_ordinal(i + 1)} match."
                     break
     return out
+
+
+def lines(is_: str, best: str, for_: str, best_label: str | None = None) -> dict:
+    """A chart's three lines (design/CHART_LINES.md), kept together under the chart's `lines` key; an empty `best`
+    (nothing to name yet) leaves the chart's own "not enough yet" message to say so."""
+    return dict(is_=is_, best=best, for_=for_, **({"best_label": best_label} if best_label else {}))
+
+
+def _day(d) -> str:
+    t = pd.Timestamp(d)
+    return f"{t.day} {t:%b %Y}"
 
 
 def best_line(rows, fmt=lambda v: f"{v:,.0f}", lower: bool = False, mine: str | None = None, minimum=None) -> str:
@@ -406,7 +430,14 @@ def form(rs: list[dict], n: int = FORM_GAMES) -> dict:
     for g in groups:
         o = [x["outcome"] for x in rs[g["start"]: g["end"] + 1]]
         g.update(won=o.count("W"), lost=o.count("L"))
-    return dict(n=n, pct=pct, best=best, worst=worst, trend=trend, groups=groups)
+    top = rs[best] if best is not None else None
+    return dict(n=n, pct=pct, best=best, worst=worst, trend=trend, groups=groups,
+                lines=lines(f"The share of the last {n} matches won, after each match in order.",
+                            f"{pct[best]}% won, the {n} matches up to v {top['opp']}" + (f", {_day(top['date'])}" if top.get("date") else "")
+                            if top else
+                            f"Not yet: the line starts after {n} matches." if len(rs) < n else "No wins or defeats yet, only draws or no results.",
+                            "Shows whether the side is on the way up or down right now, and when it was at its best.",
+                            f"Best run of {n}"))
 
 
 def calendar(career, team: str) -> dict:
@@ -444,8 +475,22 @@ def calendar(career, team: str) -> dict:
         kind[r["section"]] = KIND.get(fm.get(r["id"], ""), "t20")
     order = {"multi": 0, "one": 1, "t20": 2}
     formats = [dict(section=s, kind=kind[s]) for s in sorted(count, key=lambda s: (order[kind[s]], -count[s], s))]
-    return dict(year=y, start=start, end=end, results=rs, months=months, best=best, formats=formats,
-                streaks=runs_of([r["outcome"] for r in rs]))
+    runs = runs_of([r["outcome"] for r in rs])
+    rec = _record(rs)
+    longest = max((r for r in runs if r["o"] == "W"), key=lambda r: (r["end"] - r["start"], -r["start"]), default=None)
+    month = months[best] if best is not None else None
+    return dict(year=y, start=start, end=end, results=rs, months=months, best=best, formats=formats, streaks=runs,
+                lines=lines(f"Every match of {team}'s season, April to March, month by month.",
+                            f"{pd.Timestamp(month['year'], month['month'], 1):%B}: won {month['won']}, lost {month['lost']}"
+                            if month else "", "Shows when the season went well and when it didn't.", "Best month"),
+                record_lines=lines(f"{team}'s results this season in every format, April to March.",
+                                   f"won {rec['won']} of {rec['played']}" + (f" ({rec['won'] / (rec['won'] + rec['lost']) * 100:.0f}% "
+                                   "of those with a winner)" if rec["won"] + rec["lost"] else ""),
+                                   "The season at a glance.", "Record"),
+                runs_lines=lines("Every match of the season in order, with the longest winning and losing runs marked.",
+                                 (f"{longest['end'] - longest['start'] + 1} in a row, {_day(rs[longest['start']]['date'])} to "
+                                  f"{_day(rs[longest['end']]['date'])}") if longest else "",
+                                 "Shows streaks: how long the good and bad spells lasted.", "Longest winning run"))
 
 
 def venues(rs: list[dict], team: str) -> dict:
@@ -459,6 +504,15 @@ def venues(rs: list[dict], team: str) -> dict:
                                  outcomes=[r["outcome"] for r in x], **_record(x)) for h, x in hosts.items()]),
                           key=lambda h: (-h["played"], h["venue"] != "home", h["host"]))
     out["nation"] = nation_of([team]) == team
+    # the best place: the highest share of games won, from 2 games there (fewer only when there are no others)
+    def share(h):
+        decided = h["won"] + h["lost"]
+        return h["won"] / decided * 100 if decided else None
+    hs = [h for h in out["hosts"] if h["played"] >= 2] or out["hosts"]
+    where = lambda h: "neutral grounds" if not h["host"] else h["host"] + (" (home)" if h["venue"] == "home" else "")  # noqa: E731
+    out["lines"] = lines(f"{team}'s record at home, away and on neutral grounds, then {'country by country' if out['nation'] else 'ground by ground'}.",
+                         best_line([(where(h), share(h)) for h in hs], fmt=lambda v: f"{v:.0f}% of the games with a winner won"),
+                         "Shows how much home helps and where the side struggles away.", "Best place")
     return out
 
 
@@ -534,6 +588,14 @@ def scores(rs: list[dict], team: str | None = None, where: str | None = None, ra
                 shows += " Their average score to the other side's, each competition apart (rain left out): " + "; ".join(each) + "."
         out.update(shows=shows, for_="Whether the totals are winning ones: how far ahead or behind the other side's "
                                      "score each game finished, and where the gap was too much.")
+        # the highest total, each competition on its own (a T20 total is never set against a Test one)
+        tops = []
+        for sec in secs:
+            b = max(((x["runs"], r) for r in rs if r["section"] == sec for x in r["ours"]), key=lambda t: t[0], default=None)
+            if b:
+                tops.append(f"{b[0]} v {b[1]['opp']}" if single else f"{sec} {b[0]} v {b[1]['opp']}")
+        out["lines"] = lines(f"{team}'s total (gold) and the other side's (blue) in each match, joined green for a win and "
+                             "red for a defeat.", "; ".join(tops), out["for_"], "Highest total")
     return out
 
 
@@ -560,7 +622,11 @@ def match_winners(rs: list[dict], team: str) -> dict:
     else:
         shows = f"{team} have no wins with a player of the match yet."
     return dict(players=players, wins=wins, others=others, shows=shows,
-                for_="Who wins the games: one player carrying the side, or the wins shared around.")
+                for_="Who wins the games: one player carrying the side, or the wins shared around.",
+                lines=lines(f"{team}'s players of the match in their wins, the most first, with each win.",
+                            best_line([(p["player"], len(p["matches"])) for p in players],
+                                      fmt=lambda v: f"{v:.0f} win{'s' if v != 1 else ''}"),
+                            "Who wins the games: one player carrying the side, or the wins shared around."))
 
 
 def ratings(career, section: str) -> dict:

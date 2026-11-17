@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { get, type TvtPage, remember } from "../api";
-import { Explain, Logo, Missing, Num, Tile } from "../kit/base";
+import { Explain, Logo, Missing, Num, three, Tile } from "../kit/base";
 import { BatFirstSides } from "../kit/season";
 import { Grid, TapeBars, TeamBars, TwoScatter } from "../kit/teams";
 import { dayY, NO_MATCHES } from "../format";
@@ -85,7 +85,7 @@ export function TeamVsTeam() {
             </Tile>)) : <Tile span={12}><Missing why={m.tiles} /></Tile>}
           <Tile span={7} title="Tale of the tape">
             {b.tape ? <><div className="plain"><b>{b.tape.verdict}</b></div><TapeBars rows={b.tape.rows} a={p.a} b={p.b} />
-              <Explain shows={<T>{b.tape.shows}</T>} for_={b.tape.for_} /></> : <Missing why={m.tape} />}</Tile>
+              <Explain {...three(b.tape)} /></> : <Missing why={m.tape} />}</Tile>
           <Tile span={5} title="Head to head">
             {!b.meetings ? <Missing why={m.meetings} /> : b.meetings.none ? <div className="plain"><T>{b.meetings.none}</T></div> : <>
               <div className="plain"><b><T>{b.meetings.line}</T></b></div>
@@ -102,14 +102,14 @@ export function TeamVsTeam() {
             <Tile key={x.team} span={6} title={`${x.team}: batting first or ${x.multi ? "batting second" : "chasing"}`} className={i === 0 ? "tvA" : "tvB"}>
               <BatFirstSides bf={x} who={x.team} />
               {i === 0 ? <div className="note">Games shortened by rain are left out of the totals.</div> : null}
-              <Explain shows={<T>{b.bat_first!.shows}</T>} for_={b.bat_first!.for_} /></Tile>))
+              <Explain {...three(b.bat_first!)} /></Tile>))
             : <Tile span={12} title="Batting first or chasing"><Missing why={m.bat_first} /></Tile>}
           <div className="part"><span className="tl2">Player by player</span></div>
           {([["bat_dots", "Batters: runs v balls faced"], ["bowl_dots", "Bowlers: wickets v balls bowled"]] as const).map(([k, title]) => {
             const s = b[k];
             return <Tile key={k} span={6} title={title}>
               {s ? <><TwoScatter points={s.points} a={p.a} slope={s.slope} x={s.x} y={s.y} />
-                <Explain shows={<T>{s.shows}</T>} for_={s.for_} />
+                <Explain {...three(s)} />
                 <ul className="dots">{k === "bat_dots" && <li><b>Gold</b>: {p.a}. <b>Blue</b>: {p.b}.</li>}
                   {s.keys.map((x, i) => <li key={x}>{i === 0 ? `${x.replace(/\.$/, "")} (${s.line}).` : x}</li>)}</ul></>
                 : <Missing why={m[k]} />}</Tile>;
@@ -117,7 +117,7 @@ export function TeamVsTeam() {
           {([["above", "Every batter: runs above average"], ["saved", "Every bowler: runs saved"]] as const).map(([k, title]) => {
             const s = b[k];
             return <Tile key={k} span={6} title={title}>
-              {s ? <><TeamBars rows={s.rows} a={p.a} /><Explain shows={<T>{s.shows}</T>} for_={s.for_} /></> : <Missing why={m[k]} />}</Tile>;
+              {s ? <><TeamBars rows={s.rows} a={p.a} /><Explain {...three(s)} /></> : <Missing why={m[k]} />}</Tile>;
           })}
           <Tile span={12} title="Top performers side by side">{b.top ? <Grid t={b.top} keep={keep} /> : <Missing why={m.top} />}</Tile>
         </>}

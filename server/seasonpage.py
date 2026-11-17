@@ -160,12 +160,20 @@ def _calendar(career, team, q, sched) -> dict:
         if best and out["view"] == "season":
             shows += f" The best month: {best['name']} {best['year']}, {best['won']} won and {best['lost']} lost."
         out["shows"] = shows
+        out.update(is_=f"Every {team} match in {when} on its day" + (", month by month." if out["view"] == "season" else "."),
+                   best_label="Best month" if out["view"] == "season" else "Record",
+                   best=(f"{best['name']} {best['year']}, {best['won']} won and {best['lost']} lost" if best else "No results yet.")
+                   if out["view"] == "season" else f"played {len(span)}, won {w}, lost {lost}")
         out["for_"] = "When the season's cricket falls: the busy months and the quiet ones, and which went well."
     else:
         out["caption"] = "Hover a day for its games; pick a team to see its results and fixtures to come."
         busiest = max(out.get("grid", []), key=lambda mo: mo["played"], default=None) if out["view"] == "season" else None
         out["shows"] = f"{len(span)} matches in {when}." + (
             f" The busiest month: {busiest['name']} {busiest['year']}, {busiest['played']} matches." if busiest and busiest["played"] else "")
+        out.update(is_=f"Every match in {when} on its day" + (", month by month." if out["view"] == "season" else "."),
+                   best_label="Busiest month" if out["view"] == "season" else "Matches",
+                   best=(f"{busiest['name']} {busiest['year']}, {busiest['played']} matches" if busiest and busiest["played"]
+                         else "No matches yet.") if out["view"] == "season" else f"{len(span)} matches")
         out["for_"] = "When the season's cricket falls: the busy months and the quiet ones."
     return out
 

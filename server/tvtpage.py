@@ -182,7 +182,11 @@ def _body(career, here, base_scope, scope_for, a, b, ids_a, ids_b, venue_a, venu
                             b_better=b_better))
         verdict = (f"Level: {a_wins} measures each." if a_wins == b_wins else
                    f"{a if a_wins > b_wins else b} come out ahead on {max(a_wins, b_wins)} of {a_wins + b_wins} measures.")
-        return dict(rows=got, verdict=verdict, shows=f"{a} are better on {a_wins} of {a_wins + b_wins} measures, {b} on {b_wins}.",
+        return dict(rows=got, verdict=verdict,
+                    is_=f"{a} and {b} side by side on each measure; the tick marks the better side.", best_label="Ahead",
+                    best=(f"level, {a_wins} measures each" if a_wins == b_wins else
+                          f"{a if a_wins > b_wins else b}, better on {max(a_wins, b_wins)} of {a_wins + b_wins} measures"),
+                    shows=f"{a} are better on {a_wins} of {a_wins + b_wins} measures, {b} on {b_wins}.",
                     for_="A quick verdict on which side is stronger, measure by measure. The longer bar is the bigger number; "
                          "the tick marks the better team (for runs conceded and economy, lower is better).")
     part("tape", tape)
@@ -211,7 +215,18 @@ def _body(career, here, base_scope, scope_for, a, b, ids_a, ids_b, venue_a, venu
         sides = [dict(team=t, **SG.bat_first(career, t, ids_)) for t, ids_ in ((a, ids_a), (b, ids_b))]
         second = "batting second" if sides[0]["multi"] else "chasing"
         what = f"their meetings in {where_scope}" if h2h else f"each side's own games against anyone in {where_scope}"
-        return dict(sides=sides, shows=f"Each side's record batting first and {second}, in {what}, with the totals defended, "
+        def better(x):
+            sh = [(w, r["won"] / (r["won"] + r["lost"]) * 100) for w, r in (("batting first", x["first"]), (second, x["chase"]))
+                  if r["won"] + r["lost"]]
+            if not sh:
+                return f"{x['team']}: no wins or defeats yet"
+            top = max(sh, key=lambda t: t[1])
+            if len(sh) == 2 and sh[0][1] == sh[1][1]:
+                return f"{x['team']}: level, {top[1]:.0f}% won each way"
+            return f"{x['team']}: {top[0]}, {top[1]:.0f}% won"
+        return dict(sides=sides, is_=f"Each side's wins and defeats batting first and {second}, in {what}, with the totals that "
+                                     "decided them.", best_label="Better at", best="; ".join(better(x) for x in sides),
+                    shows=f"Each side's record batting first and {second}, in {what}, with the totals defended, "
                                        f"lost with, chased down and failed to chase.",
                     for_="Which side is happier setting a total and which chasing one: think about it at the toss.")
     part("bat_first", bat_first)
@@ -236,6 +251,10 @@ def _body(career, here, base_scope, scope_for, a, b, ids_a, ids_b, venue_a, venu
         fast = lambda d: (d[d.balls > 0].runs / d[d.balls > 0].balls * 100 > base.strike_rate).mean() * 100  # noqa: E731
         return dict(points=dots(bat_a[bat_a.balls > 0], bat_b[bat_b.balls > 0], "balls", "runs"), slope=base.strike_rate / 100,
                     line=f"section strike rate {fmt(base.strike_rate, 1)}", x="Balls faced", y="Runs",
+                    is_=f"Every batter of both sides: runs (up) against balls faced (across), {a} gold and {b} blue.",
+                    best_label="Most runs",
+                    best=SG.best_line(zip(pd.concat([bat_a.player, bat_b.player]), pd.concat([bat_a.runs, bat_b.runs])),
+                                      fmt=lambda v: f"{v:,.0f} runs"),
                     shows=f"{fast(bat_a):.0f}% of {poss(a)} batters and {fast(bat_b):.0f}% of {poss(b)} score faster than the "
                           f"section's {fmt(base.strike_rate, 1)} per 100 balls.",
                     for_="Compares the two batting line-ups player by player: who scores quickly and who has faced the most.",
@@ -248,6 +267,10 @@ def _body(career, here, base_scope, scope_for, a, b, ids_a, ids_b, venue_a, venu
         often = lambda d: (d[d.balls > 0].wickets / d[d.balls > 0].balls * base.bowl_strike_rate > 1).mean() * 100  # noqa: E731
         return dict(points=dots(bowl_a, bowl_b, "balls", "wickets"), slope=1 / base.bowl_strike_rate,
                     line=f"a wicket every {fmt(base.bowl_strike_rate, 1)} balls", x="Balls bowled", y="Wickets",
+                    is_=f"Every bowler of both sides: wickets (up) against balls bowled (across), {a} gold and {b} blue.",
+                    best_label="Most wickets",
+                    best=SG.best_line(zip(pd.concat([bowl_a.player, bowl_b.player]), pd.concat([bowl_a.wickets, bowl_b.wickets])),
+                                      fmt=lambda v: f"{v:,.0f} wicket{'s' if v != 1 else ''}", minimum=lambda _, v: v > 0),
                     shows=f"{often(bowl_a):.0f}% of {poss(a)} bowlers and {often(bowl_b):.0f}% of {poss(b)} take wickets more "
                           f"often than one every {fmt(base.bowl_strike_rate, 1)} balls.",
                     for_="Compares the two attacks bowler by bowler: who takes wickets and who has done the most bowling.",
@@ -264,6 +287,10 @@ def _body(career, here, base_scope, scope_for, a, b, ids_a, ids_b, venue_a, venu
         ba, bb = bat_a[bat_a.innings > 0], bat_b[bat_b.innings > 0]
         pa, pb = (bat_a.runs_above_average > 0).mean() * 100, (bat_b.runs_above_average > 0).mean() * 100
         return dict(rows=bars(ba, bb, "runs_above_average"),
+                    is_="Every batter of both sides: runs made above (right) or below (left) what an average batter here would "
+                        "have made.",
+                    best=SG.best_line(zip(pd.concat([ba.player, bb.player]), pd.concat([ba.runs_above_average, bb.runs_above_average])),
+                                      fmt=lambda v: f"{v:+,.0f} runs"),
                     shows=f"{pa:.0f}% of {poss(a)} batters and {pb:.0f}% of {poss(b)} beat the average batter. Team totals: "
                           f"{a} {bat_a.runs_above_average.sum():+.0f}, {b} {bat_b.runs_above_average.sum():+.0f} runs.",
                     for_="Runs scored minus what an average batter in this section would have made: who is pulling their "
@@ -273,6 +300,9 @@ def _body(career, here, base_scope, scope_for, a, b, ids_a, ids_b, venue_a, venu
     def saved():
         pa, pb = (bowl_a.runs_saved > 0).mean() * 100, (bowl_b.runs_saved > 0).mean() * 100
         return dict(rows=bars(bowl_a, bowl_b, "runs_saved"),
+                    is_="Every bowler of both sides: runs saved against an average bowler here (right), or given away (left).",
+                    best=SG.best_line(zip(pd.concat([bowl_a.player, bowl_b.player]), pd.concat([bowl_a.runs_saved, bowl_b.runs_saved])),
+                                      fmt=lambda v: f"{v:+,.0f} runs"),
                     shows=f"{pa:.0f}% of {poss(a)} bowlers and {pb:.0f}% of {poss(b)} beat the average bowler. Team totals: "
                           f"{a} {bowl_a.runs_saved.sum():+.0f}, {b} {bowl_b.runs_saved.sum():+.0f} runs saved.",
                     for_="Runs kept below the section average, with extra wickets turned into runs: which bowlers really "

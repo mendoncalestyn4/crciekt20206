@@ -119,6 +119,11 @@ def _win_chance(career, row, line, kind: str) -> dict | None:
                 points=[SG.clean(dict(label=p.label, W=p.W, D=(p.D + (p.T if pd.notna(p.T) else 0)) if multi else p.D,
                                       L=p.L, note=p.note)) for p in pts.itertuples()],
                 shows=shows or "Not enough similar games yet.",
+                is_=(f"{poss(t1)} chance of winning" + (", drawing and losing" if multi else "") + " at the start of each "
+                     "innings and after every wicket, from how similar games ended."),
+                best_label="Biggest swing",
+                best=(f"at {sw['at']}, {poss(t1)} chance from {sw['before']:.0f}% to {sw['after']:.0f}%" if sw else
+                      "Not enough similar games yet."),
                 for_=(f"Shows how the game swung. Each point is how often {row.section} games in the same spot (same "
                       "innings, same wickets down, a similar lead) ended in a win" + (", draw or defeat" if multi else "")
                       + ". The scorecards have no overs, so it uses runs and wickets only; hover a point for how many "
@@ -145,7 +150,7 @@ def _wickets(career, mid: str, row, inns: pd.DataFrame) -> dict:
         n_inns = int(career.innings.match_id.isin(sec_ids).sum())
         p = p[p.innings >= 0.3 * n_inns]   # later wickets fall in too few innings for a fair par
         par = [dict(wicket=int(w), par=float(v), innings=int(n)) for w, v, n in zip(p.wicket, p.par, p.innings)]
-    big = ""
+    big = best = ""
     if len(st):
         b = st.sort_values("runs", ascending=False).iloc[0]
         n = int(b.wicket)
@@ -153,7 +158,10 @@ def _wickets(career, mid: str, row, inns: pd.DataFrame) -> dict:
         tot = career.innings[(career.innings.match_id == mid) & (career.innings.team == b.team)].runs.sum()
         big = (f"The biggest stand was {b.runs}{'*' if b.unbroken else ''} for the {n}{PT.suffix(n)} wicket{who} for "
                f"{b.team}, {b.runs / max(tot, 1) * 100:.0f}% of their runs in the match.")
+        best = f"{b.runs}{'*' if b.unbroken else ''} for the {n}{PT.suffix(n)} wicket{who} ({b.team})"
     return dict(innings=out, par=par, section=row.section, shows=big,
+                is_="Each wicket as a bar climbing from the score when that stand began to the score when it fell, innings by "
+                    "innings.", best_label="Biggest stand", best=best,
                 for_="Shows how each innings was built and where it fell apart, wicket by wicket.")
 
 
@@ -194,6 +202,13 @@ def page(career, match_id: str, mine: list[str], notes: dict) -> dict:
         x = rt.loc[match_id]
         ex = SG.clean(dict(rating=x.rating, rank=x["rank"], of=x["of"], why=x.why, finish=x.finish,
                            comeback=x.comeback, stakes=x.stakes, show=x.show))
+        # the part that added the most to the rating (its own points, as the rating adds them up)
+        parts = [("The finish", x.finish), ("A comeback", x.comeback), ("The stakes", x.stakes), ("Big moments", x.show)]
+        ex["lines"] = SG.lines(f"How exciting the match was, out of 10, against every other in {row.section}, and its four "
+                               "parts each out of 10.",
+                               SG.best_line([(k, v) for k, v in parts], fmt=lambda v: f"{v:.1f} of the {x.rating:.1f}",
+                                            minimum=lambda _, v: v > 0) or "nothing stood out",
+                               "Finds the games worth reliving, and says what made them.", "Counted most")
     bat = career.batting[(career.batting.match_id == match_id) & career.batting.did_bat]
     bowl = career.bowling[career.bowling.match_id == match_id]
     top_bat = bat.sort_values(["runs", "balls"], ascending=[False, True]).head(3)

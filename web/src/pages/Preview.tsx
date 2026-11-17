@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { type Explained, get, type GridT, type HowTheyPlay as HowTheyPlayT, type NGrid, type Outcome, type PreviewPage, remember } from "../api";
-import { Explain, Lamps, Logo, Missing, Num, Tile } from "../kit/base";
+import { Explain, Lamps, Logo, Missing, Num, three, Tile } from "../kit/base";
 import { LeaderBars, ShareRing } from "../kit/charts";
 import { BatFirstSides, VenueRecord } from "../kit/season";
 import { Grid, Md, SignedBars } from "../kit/teams";
@@ -172,12 +172,12 @@ export function Preview() {
                 return <Tile key={k} span={6} title={k === "batters" ? "Batters in form" : "Bowlers in form"} right={k === "batters" ? "runs, last 10 matches" : "wickets, last 10 matches"}>
                   {s === null && m[k] ? <Missing why={m[k]} /> : s ? <><LeaderBars rows={s.rows} value={k === "batters" ? "runs" : "wickets"} mine={d.opp} height={44 * s.rows.length + 16}
                     noTeam label={k === "batters" ? "Batters in form" : "Bowlers in form"} />
-                    <Explain shows={<T>{s.shows}</T>} for_={s.for_} /></> : <div className="plain">{k === "batters" ? "No innings yet." : "No bowling yet."}</div>}</Tile>;
+                    <Explain {...three(s)} /></> : <div className="plain">{k === "batters" ? "No innings yet." : "No bowling yet."}</div>}</Tile>;
               })}
               <Tile span={6} title="🔑 Key wicket"><div className="how" style={{ marginTop: -4, marginBottom: 6 }}>The batter whose score decides their results</div>
                 {b.key_wicket ? <Grid t={b.key_wicket} /> : m.key_wicket ? <Missing why={m.key_wicket} /> : <div className="plain">Not enough games yet.</div>}</Tile>
               <Tile span={6} title="🩹 Weak spot"><div className="how" style={{ marginTop: -4, marginBottom: 6 }}>Their average stand for each wicket v every team here</div>
-                {b.weak_spot ? <><SignedBars rows={b.weak_spot.rows} /><Explain shows={<T>{b.weak_spot.shows}</T>} for_={b.weak_spot.for_} /></>
+                {b.weak_spot ? <><SignedBars rows={b.weak_spot.rows} /><Explain {...three(b.weak_spot)} /></>
                   : m.weak_spot ? <Missing why={m.weak_spot} /> : <div className="plain">Not enough innings yet.</div>}</Tile>
               <Tile span={6} title="🎯 Attack to target"><div className="how" style={{ marginTop: -4, marginBottom: 6 }}>Their regular bowlers, most expensive first</div>
                 {b.attack ? <><Grid t={b.attack} /><div className="note">{b.attack.note}</div></> : m.attack ? <Missing why={m.attack} /> : <div className="plain">No regular bowlers yet.</div>}</Tile>
@@ -205,10 +205,10 @@ export function Preview() {
               <Tile span={6} title="📈 Trend">{b.trend ? <><div className="field" style={{ marginTop: 0 }}><span className="k3" style={{ margin: 0 }}>Last 5</span>
                 <Lamps seq={b.trend.last as Outcome[]} /></div><div className="plain">{b.trend.line}</div></> : <Missing why={m.trend} />}</Tile>
               <Tile span={6} title="How their batters get out" right="share of dismissals">
-                {b.how_out ? <><ShareRing rows={b.how_out.rows} count={(r) => r.n ?? 0} centre={String(b.how_out.outs ?? "")} sub="dismissals" /><Explain shows={b.how_out.shows} for_={b.how_out.for_} /></>
+                {b.how_out ? <><ShareRing rows={b.how_out.rows} count={(r) => r.n ?? 0} centre={String(b.how_out.outs ?? "")} sub="dismissals" /><Explain {...three(b.how_out)} /></>
                   : m.how_out ? <Missing why={m.how_out} /> : <div className="plain">Not dismissed yet.</div>}</Tile>
               <Tile span={6} title="Where their runs come from">
-                {b.depth ? <><ShareRing rows={b.depth.rows} count={(r) => r.runs ?? 0} centre={String(b.depth.rows.reduce((a, r) => a + (r.runs ?? 0), 0))} sub="runs" />{b.depth.shows && <Explain shows={b.depth.shows} for_={b.depth.for_} />}</> : m.depth ? <Missing why={m.depth} /> : <div className="plain">No runs yet.</div>}</Tile>
+                {b.depth ? <><ShareRing rows={b.depth.rows} count={(r) => r.runs ?? 0} centre={String(b.depth.rows.reduce((a, r) => a + (r.runs ?? 0), 0))} sub="runs" />{b.depth.best && <Explain {...three(b.depth)} />}</> : m.depth ? <Missing why={m.depth} /> : <div className="plain">No runs yet.</div>}</Tile>
             </>}
             {d.tab === "Side by side" && <Tile span={12} title={b.sbs?.title ?? "Side by side"}>
               {b.sbs ? <><div className="how" style={{ marginTop: -4, marginBottom: 6 }}>{b.sbs.right}</div><Grid t={b.sbs} /><div className="note">{b.sbs.note}</div></> : <Missing why={m.sbs} />}</Tile>}
@@ -241,12 +241,12 @@ function TheirRecord({ b, opp }: { b: NonNullable<PreviewPage["body"]>; opp: str
   return <>
     <Tile span={6} title={<Titled team={opp} text={`${opp}: batting first or chasing`} />}>
       {bf ? (bf.none !== undefined ? <div className="plain">{bf.none}</div> : <><BatFirstSides bf={bf} who={opp} />
-        <div className="note">Games shortened by rain are left out of the totals.</div><Explain shows={<T>{bf.shows}</T>} for_={bf.for_} /></>)
+        <div className="note">Games shortened by rain are left out of the totals.</div><Explain {...three(bf)} /></>)
         : <Missing why={m.bat_first} />}</Tile>
     <Tile span={6} title={<Titled team={opp} text={`${opp}: home, away and neutral`} />}>
       {wh ? (wh.none !== undefined ? <div className="plain">{wh.none}</div> : <><VenueRecord v={wh} team={opp} who />
         <div className="note">The scorecards don't name the ground, so it goes by the home side{wh.nation ? "'s country" : ""}.</div>
-        <Explain shows={<T>{wh.shows}</T>} for_={wh.for_} /></>) : <Missing why={m.where} />}</Tile>
+        <Explain {...three(wh)} /></>) : <Missing why={m.where} />}</Tile>
   </>;
 }
 
