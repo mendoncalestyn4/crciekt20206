@@ -293,6 +293,19 @@ Pages and looks:
       fairly. Where it can: the Player page and its tiles, Leaders, Stat by stat, records, team records, Team vs team,
       Rivalries, the match finder, Compare players, Player stories, Hall of fame. One at a time where combining has no
       meaning: points tables, title race, brackets, WTC, team ratings (Elo), score to aim for, season calendar views
+      Your answers (17 November), for stages 1-2:
+      - Player page: everything combined for the ticked formats; "v the average" (where they rank among everyone,
+        runs above average) uses each format's own average, weighted by their innings in each. Pieces that only mean
+        one format (rank over time, rating, marks, attributes and scout report) show each ticked format on its own.
+      - Parts that only make sense in one length of game (innings by innings, the 50+/30+ bar, came in under
+        pressure, and the like), when formats of different lengths are ticked: one block per ticked format.
+      - Tick boxes on Teams, Team v team, Rivalries and the match finder too; parts where combining means nothing
+        (league race, team ratings, points tables) show one competition at a time, with a short note.
+      - Every competition can be ticked (Tests, ODIs, T20Is, every league and domestic competition), in the agreed
+        order.
+      - Seasons with several formats ticked: April-to-March years, as on My team (a league or tournament counts whole in
+        the season most of it is played in).
+      - The ticks carry over: open another player or team and your ticks follow (where they played those formats).
 - [x] Both team logos on every match summary (found by you: Pakistan v South Africa, 11 Jun 2031, showed empty gaps
       where they go); checked on every summary — ✓ the gap was a team the game has no picture for: the summary
       now shows a round badge with its short name there
