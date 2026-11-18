@@ -523,8 +523,9 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         name = q.get("name", "")
 
         def picks(c):
+            # tidied first (a junk name in the address is the normal page straight away, kept once)
             qq = _with_memory(c, q, ("section", "season"))
-            return qq.get("section", ""), qq.get("season", "")
+            return playerpage.picks(c, name, qq.get("section", ""), qq.get("season", ""))
         try:
             data = await _with_career(lambda c: kept(c, ("player", name) + picks(c),
                                                      lambda: playerpage.page(c, name, *picks(c))))()

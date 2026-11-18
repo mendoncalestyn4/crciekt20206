@@ -212,3 +212,16 @@ def test_rivalries_and_the_match_finder_counted_together(career):
     bg = MP.best_games(career, "|".join(two), top=50)
     own = {r["id"]: r["rank"] for s in two for r in MP.best_games(career, s, top=500)["rows"]}
     assert bg["rows"] and all(r["rank"] == own[r["id"]] for r in bg["rows"])
+
+
+def test_a_junk_name_in_the_address_is_the_normal_player_page(career):
+    """A junk or unknown competition or season in the address is tidied before the page is looked up, so it's the
+    normal page straight away (kept once, never worked out again for each new junk name)."""
+    p = _players(career)[0]
+    normal = PP.picks(career, p)
+    assert PP.picks(career, p, "zzz") == normal == PP.picks(career, p, "", "1066")
+    secs = PP.page(career, p)["sections"]
+    assert PP.picks(career, p, f"{secs[0]}|zzz") == (secs[0], "")
+    assert PP.picks(career, p, f"{secs[1]}|{secs[0]}") == (f"{secs[0]}|{secs[1]}", "")   # the agreed order
+    with pytest.raises(KeyError):
+        PP.picks(career, "Nobody At All")

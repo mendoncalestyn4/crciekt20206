@@ -9,12 +9,14 @@ from __future__ import annotations
 import contextvars
 import json
 import os
+import sys
 import threading
 import time
 import traceback
 from pathlib import Path
 
 LIMIT = 300          # the most kept; the oldest go first
+LOG_MAX = 1_000_000  # the server log's size before it's moved to server.log.1 (so it never fills the disk)
 TEXT = 2000          # the longest any one piece of text is kept
 FAILED = "Couldn't be worked out"
 
@@ -30,6 +32,7 @@ def clip(v, n: int = TEXT) -> str:
 class Problems:
     def __init__(self, path: Path):
         self.path = Path(path)
+        self.log_path = self.path.with_name("server.log")   # the server's error log, beside the careers
         self._lock = threading.Lock()
         self._items = self._read()
 
@@ -66,7 +69,25 @@ class Problems:
                 self._items.insert(0, x)
                 del self._items[LIMIT:]
             self._write()
+            self._log(now, kind, where, what, detail, career)
             return dict(x)
+
+    def _log(self, now: str, kind: str, where: str, what: str, detail: str, career: str) -> None:
+        """Every problem also goes to the server's log as it happens (the console and server.log beside the careers),
+        so a check after a run can read it (the fix round: "the server writes its errors to its log")."""
+        line = f"{now} ERROR {kind} | {where} | {what}" + (f" | career: {career}" if career else "")
+        text = line + ("\n    " + detail.replace("\n", "\n    ") if detail else "") + "\n"
+        try:
+            print(line, file=sys.stderr, flush=True)
+        except (OSError, ValueError):
+            pass
+        try:
+            if self.log_path.exists() and self.log_path.stat().st_size > LOG_MAX:
+                os.replace(self.log_path, self.log_path.with_name("server.log.1"))
+            with self.log_path.open("a", encoding="utf-8") as fh:
+                fh.write(text)
+        except OSError:
+            pass   # the problems list still has it
 
     def items(self) -> list[dict]:
         with self._lock:

@@ -193,6 +193,28 @@ def _form(values, outs=None, labels=(), ids=()) -> dict:
 
 
 # ------------------------------------------------------------------ the page
+def picks(career, player: str, section: str = "", season: str = "") -> tuple[str, str]:
+    """The formats and season the page will show for what was asked: the formats ticked that the player played (else
+    the one played most), "|"-joined in the agreed order, and the season if it's one of theirs (else ""). The page is
+    kept under these, so a junk or unknown name in the address is the normal page straight away. KeyError for a player
+    who hasn't played."""
+    m = career.matches
+    mine = set(career.batting[career.batting.player == player].match_id) | set(
+        career.bowling[career.bowling.player == player].match_id)
+    if not mine:
+        raise KeyError(player)
+    my_matches = m[m.match_id.isin(mine)]
+    order = in_order(m, my_matches.section.unique())
+    asked = set(section.split("|")) if section else set()
+    secs = [s for s in order if s in asked] or [my_matches.section.value_counts().index[0]]
+    if len(secs) > 1:
+        season_of = SN.april_seasons(m[m.section.isin(secs)]).map(year_label)
+        seasons = {season_of[i] for i in my_matches[my_matches.section.isin(secs)].match_id}
+    else:
+        seasons = set(my_matches[my_matches.section == secs[0]].season.unique())
+    return "|".join(secs), season if season in seasons else ""
+
+
 def page(career, player: str, section: str = "", season: str = "") -> dict:
     """Everything on one player's page; KeyError when they haven't batted or bowled."""
     bat_all = career.batting[career.batting.player == player]

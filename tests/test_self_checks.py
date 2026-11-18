@@ -166,3 +166,18 @@ def test_the_checked_mark_on_each_match():
     assert d["checked"]["ok"] is False and "do not add up" in d["checked"]["problems"][0]
     marks = {x["id"]: x["checked"] for x in MP.finder(c, "All sections")["matches"]}
     assert marks[mid] is False and sum(not v for v in marks.values()) == 1
+
+
+def test_the_server_writes_its_problems_to_its_log(tmp_path, capsys):
+    """Every problem the site notices also goes to the server's log (server.log beside the careers, and the console),
+    so a check after a run can read it; the log is moved aside past its size limit, never growing for ever."""
+    from server import problems as PR
+    p = PR.Problems(tmp_path / "problems.json")
+    p.add("part", "/api/team?team=X", "Couldn't be worked out (KeyError: 'X')", "Traceback...\nline 2", "My career")
+    log = (tmp_path / "server.log").read_text(encoding="utf-8")
+    assert "ERROR part | /api/team?team=X | Couldn't be worked out (KeyError: 'X') | career: My career" in log
+    assert "    Traceback..." in log and "    line 2" in log
+    assert "ERROR part | /api/team?team=X" in capsys.readouterr().err
+    (tmp_path / "server.log").write_text("x" * (PR.LOG_MAX + 1), encoding="utf-8")
+    p.add("request", "/api/x", "boom")
+    assert (tmp_path / "server.log.1").exists() and "boom" in (tmp_path / "server.log").read_text(encoding="utf-8")
