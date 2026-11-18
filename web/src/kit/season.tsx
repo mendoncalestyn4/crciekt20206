@@ -97,7 +97,7 @@ const marginText = (r: Result) => {
   if (r.outcome === "D") return "drawn";
   if (r.outcome === "T") return "tied";
   if (r.outcome === "NR") return "no result";
-  const by = r.innings_win ? `an innings and ${r.margin_runs} runs` : r.margin_runs != null ? plural(r.margin_runs, "run")
+  const by = r.innings_win ? (r.margin_runs != null ? `an innings and ${plural(r.margin_runs, "run")}` : "an innings") : r.margin_runs != null ? plural(r.margin_runs, "run")
     : r.margin_wickets != null ? plural(r.margin_wickets, "wkt") : "";
   return `${r.outcome === "W" ? "won" : "lost"}${by ? ` by ${by}` : ""}`;
 };

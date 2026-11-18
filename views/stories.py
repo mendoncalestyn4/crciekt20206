@@ -207,7 +207,7 @@ with tabs[7], safe_section("pairs"):
     with left, st.container(border=True):
         bp = state.memo(PL.batting_pairs, career, ids)
         st.markdown("**Batting partners** · stands together (2+)")
-        rows = [[r.pair, r.team, r.stands, r.runs, f"{r.average:.1f}", r.best, r.big_stands] for r in bp.head(20).itertuples()]
+        rows = [[r.pair, r.team, r.stands, r.runs, (f"{r.average:.1f}" if r.average == r.average else "–"), r.best, r.big_stands] for r in bp.head(20).itertuples()]
         if rows:
             html_table(rows, ["Pair", "Team", "Stands", "Runs", "Avg", "Best", f"{bp.attrs.get('stand', 50)}+"],
                        numeric={2, 3, 4, 5, 6},

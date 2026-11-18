@@ -284,7 +284,7 @@ def section_block(career, team: str, section: str, notes: dict, sched: list) -> 
     piece("so_far", so_far)
     sq = MT.squad(career, team, section, season)
     piece("squad", lambda: SG.rows(sq, ["player", "games", "runs", "average", "strike_rate", "wickets", "economy",
-                                        "last5", "form", "recent"]))
+                                        "last5", "form", "recent", "bowled", "parts"]))
     piece("stars", lambda: dict(
         bat=SG.rows(sq.sort_values("runs", ascending=False).head(3), ["player", "runs", "average", "form"]),
         bowl=SG.rows(sq[sq.wickets > 0].sort_values("wickets", ascending=False).head(3), ["player", "wickets", "economy"])))

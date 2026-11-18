@@ -92,3 +92,20 @@ export const fmtOf = (section: string): string => {
 
 /** What every page says on a career with no matches yet (the same words the server uses, server/styleguide.py). */
 export const NO_MATCHES = "No matches in this career yet. Play a match in Cricket Captain (with Autosave scorecards on in Options) and this page fills in within about 20 seconds.";
+
+/** One name per stat (your pick of 14 November): every table heading uses the short name here, and the big number
+ *  tiles and charts the full words; hovering a short heading anywhere on the site shows what it means. Where batting
+ *  and bowling use the same short name for two figures, both meanings are given. tests/test_web.py checks every page's
+ *  headings against this list. */
+export const STAT_WORDS: Record<string, string> = {
+  Mat: "Matches played", Inns: "Innings", NO: "Not outs", Runs: "Runs", HS: "Highest score (* = not out)",
+  Avg: "Average: batting, runs per time out; bowling, runs per wicket", BF: "Balls faced",
+  SR: "Strike rate: batting, runs per 100 balls; bowling, balls per wicket", "100": "Hundreds", "50": "Fifties (50-99)",
+  "4s": "Fours", "6s": "Sixes", Overs: "Overs (six balls; The Hundred's balls are turned into overs)",
+  Mdns: "Maidens (printed on longer-format cards)", Dots: "Dot balls (printed on T20 and Hundred cards)",
+  Wkts: "Wickets", BBI: "Best bowling in an innings", BBM: "Best bowling in a match", Econ: "Economy: runs per over",
+  "4w": "Four wickets in an innings", "4w+": "Four or more wickets in an innings", "5w": "Five or more wickets in an innings",
+  "10m": "Ten or more wickets in a match", P: "Played", W: "Won", L: "Lost", D: "Drawn", T: "Tied", NRR: "Net run rate",
+  Pts: "Points", "Win %": "Wins out of games played", "Avg score": "Runs per innings (a team's total)", "Runs/wkt": "Runs scored per wicket lost",
+  "Conceded/wkt": "Runs conceded per wicket taken", "Run rate": "Runs scored per over",
+};

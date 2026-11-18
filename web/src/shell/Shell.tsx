@@ -4,8 +4,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useSearchParams } from "react-router";
 import { ApiError, get, type CareerInfo, type InboxPage, type Live, type ProblemsPage, type Theme } from "../api";
-import { ab, dayY } from "../format";
+import { ab, dayY, STAT_WORDS } from "../format";
 import { refit } from "../fit";
+import { explainTables } from "../howto";
 import { ThemeProvider } from "../theme";
 import { Broken } from "./Broken";
 import { Finder } from "./Finder";
@@ -67,6 +68,23 @@ export function Shell({ children }: { children: ReactNode }) {
   const [finder, setFinder] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [watch, setWatch] = useState<{ at: number; folders: number } | null>(null);
+
+  // on every page: every table heading that's a short stat name shows its meaning on hover (one list: STAT_WORDS),
+  // and every average, strike rate and economy in a table the sum behind it (howto.ts); done again after each change
+  useEffect(() => {
+    const name = () => {
+      document.querySelectorAll<HTMLTableCellElement>("th:not([title])").forEach((th) => {
+        const w = STAT_WORDS[(th.textContent ?? "").replace(/[▾▴]/g, "").trim()];
+        if (w) th.title = w;
+      });
+      explainTables();
+    };
+    name();
+    let queued = 0;
+    const watch = new MutationObserver(() => { if (!queued) queued = requestAnimationFrame(() => { queued = 0; name(); }); });
+    watch.observe(document.body, { childList: true, subtree: true, characterData: true });
+    return () => { watch.disconnect(); cancelAnimationFrame(queued); };
+  }, []);
 
   // Ctrl K (or /) opens the search box from anywhere
   useEffect(() => {

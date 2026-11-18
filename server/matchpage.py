@@ -45,7 +45,15 @@ def checked(career, match_id: str) -> dict:
     was read; `problems` lists any that didn't add up (shown on the match, and in Settings, Problems)."""
     p = career.problems
     mine = list(p[p.match_id == match_id].problem) if len(p) else []
-    return dict(ok=not mine, problems=mine, checks=list(CHECKS))
+    return dict(ok=not mine, problems=mine, checks=list(CHECKS), unclear=bowler_unclear(career, match_id))
+
+
+def bowler_unclear(career, match_id: str) -> list[str]:
+    """Wickets the card can't credit to one bowler (your pick of 14 November: a shortened name must match exactly one
+    player or be flagged): 'b Jansen' with D Jansen and M Jansen both bowling and both taking wickets."""
+    b = career.batting[(career.batting.match_id == match_id) & career.batting.bowler.str.contains(" or ", na=False)]
+    return [f"{r.player}, {r.dismissal}: the card doesn't say whether {r.bowler} took it (each one's own figures are "
+            "right; who got whom leaves it out)" for r in b.itertuples()]
 
 
 def ticked_of(career, section: str) -> list[str]:

@@ -94,3 +94,59 @@ def test_every_rare_dismissal_reaches_the_numbers():
     assert bat.loc["K Yadav"].how_out == "hit wicket" and bool(bat.loc["K Yadav"].out)
     assert bat.loc["T Head"].how_out == "obstructing" and bool(bat.loc["T Head"].out)
     assert c.problems.empty
+
+
+# ------------------------------------------------------------------ shortened names (your pick of 14 November)
+from ccstats.parser import BattingEntry, BowlingEntry, Innings, _assign_bowlers, resolve_candidates  # noqa: E402
+
+
+def test_the_games_short_forms_match_one_player():
+    assert resolve_candidates("L'-Cachet", ["K Klein", "Z Lion-Cachet", "S Snater"]) == ["Z Lion-Cachet"]
+    assert resolve_candidates("K'r Reddy", ["N Kumar Reddy", "K Reddy Singh"]) == ["N Kumar Reddy"]
+    assert resolve_candidates("G'sworthy", ["L Goldsworthy", "G Worthy"]) == ["L Goldsworthy"]
+    assert resolve_candidates("Khan", ["S Khan", "M Abbas"]) == ["S Khan"]
+
+
+def _inn(bowlers, dismissals):
+    inn = Innings("Railways", 1, 1)
+    inn.bowling = [BowlingEntry(p, 60, 30, w) for p, w in bowlers]
+    inn.batting = [BattingEntry(f"Batter {k}", k + 1, dismissal=f"b {d}", how_out="bowled", bowler=d, did_bat=True)
+                   for k, d in enumerate(dismissals)]
+    return inn
+
+
+def test_two_bowlers_with_the_same_printed_name_share_their_wickets():
+    """Two "A Singh" in one attack (and an S Singh): "b Singh" goes to the A Singh with wickets, never left as a
+    "Singh" who doesn't exist."""
+    inn = _inn([("A Singh", 2), ("A Singh", 0), ("S Singh", 0)], ["Singh", "Singh"])
+    _assign_bowlers(inn)
+    assert [b.bowler for b in inn.batting] == ["A Singh", "A Singh"]
+
+
+def test_bowlers_the_card_cant_tell_apart_are_both_named():
+    """'b Jansen' with D Jansen and M Jansen both taking wickets: the card doesn't say which, so both are named (each
+    one's own figures stay right); with only one of them taking wickets, it's him."""
+    inn = _inn([("D Jansen", 1), ("M Jansen", 1)], ["Jansen", "Jansen"])
+    _assign_bowlers(inn)
+    assert [b.bowler for b in inn.batting] == ["D Jansen or M Jansen"] * 2
+    inn = _inn([("D Jansen", 2), ("M Jansen", 0)], ["Jansen", "Jansen"])
+    _assign_bowlers(inn)
+    assert [b.bowler for b in inn.batting] == ["D Jansen", "D Jansen"]
+
+
+def test_a_bowler_who_matches_nobody_is_flagged():
+    m = parse_scorecard(TEXT, CARD.name)
+    b = next(b for i in m.innings for b in i.batting if b.how_out == "bowled")
+    b.bowler = "Nobody"
+    assert any("matches no bowler on the card" in p for p in validate_match(m))
+
+
+def test_the_match_page_names_the_wickets_it_cant_credit():
+    from server import matchpage as MP
+    t = TEXT
+    c = Career.build("Unclear", [(CARD.name, t.encode())])
+    mid = c.matches.match_id.iloc[0]
+    row = c.batting[(c.batting.match_id == mid) & c.batting.how_out.eq("bowled")].index[0]
+    c.batting.loc[row, "bowler"] = "D Jansen or M Jansen"
+    un = MP.checked(c, mid)["unclear"]
+    assert len(un) == 1 and "the card doesn't say whether D Jansen or M Jansen took it" in un[0]

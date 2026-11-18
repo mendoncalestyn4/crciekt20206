@@ -104,7 +104,7 @@ export type Star = {
   percentiles: Record<string, number>; pool: number; among: string; runs: number; fours: number; sixes: number; from4: number;
   from6: number; running: number; outs: number; how_out: Record<string, number>;
   formats: { section: string; innings: number; runs: number; average: number | null; strike_rate: number | null;
-    high_score_text: string; fours: number; sixes: number; hundreds: number; fifties: number }[];
+    high_score_text: string; fours: number; sixes: number; hundreds: number; fifties: number; parts?: Parts }[];
   rating: { value: number; rank: number } | null;
 };
 export type Banner = { section: string; season: string; elo: number | null; moved: number | null; rank: number | null;
@@ -120,7 +120,7 @@ export type Series = {
 export type Elo = { table: { rank: number; team: string; elo: number; played: number; peak: number }[]; teams: string[];
   snaps: { date: string; elo: Record<string, number>; rank: Record<string, number> }[] };
 export type SquadRow = { player: string; games: number; runs: number; average: number | null; strike_rate: number | null;
-  wickets: number; economy: number | null; last5: string; form: string };
+  wickets: number; economy: number | null; last5: string; form: string; bowled?: boolean; parts?: Parts };
 export type StyleGuide = {
   career: string; matches: number; team: string | null; mine: boolean; section?: string; season?: string; format?: string;
   missing: Record<string, string>;
@@ -157,7 +157,7 @@ export type MatchPage = {
   id: string; kicker: string; name: string; series: string; date: string; section: string; event: string; stage: string;
   home: string; away: string; home_score: string; away_score: string; result: string; player_of_match: string; rain: string; corrected?: string[];
   /** the "checked ✓" mark: every sum on the scorecard checked against the others when it was read */
-  checked?: { ok: boolean; problems: string[]; checks: string[] };
+  checked?: { ok: boolean; problems: string[]; checks: string[]; unclear?: string[] };
   source: string; note: string; match: Match; report: string; excitement: Excitement | null; win: WinChance | null; wickets: Wickets;
   sides: { team: string; best: { player: string; figures: string }[]; worst: { player: string; figures: string }[] }[];
   top_scores: { player: string; team: string; score: string; balls: number }[];
@@ -220,7 +220,7 @@ export type RecordTableT = { cols: string[]; first: string; help: Record<string,
 export type PlayersLanding = {
   players: { player: string; team: string; teams: string[]; matches: number; sections: string[] }[];
   squads: { team: string; section: string; season: string;
-    players: { player: string; games: number; runs: number; average: number | null; wickets: number; economy: number | null }[] }[];
+    players: { player: string; games: number; runs: number; average: number | null; wickets: number; economy: number | null; bowled?: boolean; parts?: Parts }[] }[];
 };
 export type Batting = {
   kpis: { innings: number; runs: number; average: number | null; strike_rate: number | null; high_score: string; hundreds: number; fifties: number;
@@ -234,7 +234,7 @@ export type Batting = {
   splits: { overall: number | null; stronger: string; rows: Split[] };
   positions: { rows: Pair[]; best_position: number | null; is_?: string; best?: string; best_label?: string; shows: string; for_: string;
     table: { position: number; innings: number; runs: number; not_outs: number; average: number | null; strike_rate: number | null;
-      fifties: number; hundreds: number; high: string; all_average: number | null; edge: number | null; best: boolean; small: boolean }[] } | null;
+      fifties: number; hundreds: number; high: string; all_average: number | null; edge: number | null; best: boolean; small: boolean; parts?: Parts }[] } | null;
   came_in: Split & { press: number; overall?: number | null; rescue: { at: string; score: string; balls: number; against: string; date: string }[] };
   consistency: { bar: number; past_bar_pct: number | null; single_figures_pct: number | null; golden_ducks: number; conversion_pct: number | null };
   nemesis: Split | null; streaks: { streak: string; longest: number; current: number }[];
@@ -250,7 +250,7 @@ export type Bowling = {
     runs: number; balls: number; innings: number };
   form: FormT; seasons: Split; how_wickets: Split | null;
   match_pattern: { none?: string; first: string; second: string; both: string; best: string; shows?: string; for_?: string } | null;
-  with_without: { rows: { label: string; spells: number; wickets: number; economy: string; maidens: string }[]; shows?: string; for_?: string };
+  with_without: { rows: { label: string; spells: number; wickets: number; economy: string; maidens: string; parts?: Parts }[]; shows?: string; for_?: string };
   season_table: RecordTableT; quality: Split | null; bunnies: Split | null; streaks: { streak: string; longest: number; current: number }[];
   splits: { overall: number | null; rows: Split[] };
   each?: Partial<{ [K in "match_pattern" | "with_without" | "streaks"]: Each<NonNullable<Bowling[K]>>[] }>;
@@ -274,7 +274,7 @@ export type PlayerPage = {
     last10: number[]; last10_is?: string; last10_best?: string; last10_for?: string; badge_list: { badge: string; detail: string; times: number }[] } | null;
   bat_table: RecordTableT | null; bowl_table: RecordTableT | null;
   formats: { rows: { section: string; matches: number; runs: number; average: number | null; bat_vs: number | null; strike_rate: number | null;
-    sr_vs: number | null; wickets: number; bowl_average: number | null; bowl_vs: number | null; best: boolean }[]; shows: string; for_: string } | null;
+    sr_vs: number | null; wickets: number; bowl_average: number | null; bowl_vs: number | null; best: boolean; parts?: Parts }[]; shows: string; for_: string } | null;
   share: { section: string; season: string; team: string; matches: number; team_matches: number; runs: number; team_runs: number;
     run_share: number | null; wickets: number; team_wickets: number; wicket_share: number | null }[] | null;
   won: { id: string; section: string; opp: string; date: string; headline: string }[] | null;
@@ -302,7 +302,7 @@ export type InningsMarks = { slot: string; label: string; innings: number; small
 export type InningsCol = { k: string; label: string; t: "n" | "m" | "d" | "x"; dec: number; help: string; unit: string };
 export type InningsRow = InningsMarks & Record<string, string | number | boolean | null>;
 export type InningsView = { key: string; label: string; cols: InningsCol[]; rows: InningsRow[]; total?: Record<string, string | number | null>;
-  shows: string; for_: string };
+  shows: string; for_: string; parts?: Parts[]; total_parts?: Parts };
 export type ByInnings = { kind: string; title: string; right: string; views: InningsView[]; rule: string; note: string };
 
 // ------------------------------------------------------------------ Attributes, scout report, squad depth, inbox (ccstats/attributes.py, ccstats/depth.py)
@@ -320,7 +320,11 @@ export type InboxPage = { teams: string[]; messages: InboxItem[]; unread: number
 
 // ------------------------------------------------------------------ Teams (stage 2)
 export type GridT = { cols: string[]; rows: (string | number | null)[][]; num: number[]; hi: boolean[]; links: (string | null)[]; dim?: boolean[];
-  badges?: number[] };   // badges: the columns that name teams ("India", or "India v Australia"), each shown with its badge
+  badges?: number[]; parts?: (Parts | null)[] };   // badges: the columns that name teams ("India", or "India v Australia"), each shown with its badge
+/** The numbers a row's average, strike rate or economy is made from, when the row doesn't show them (web/src/howto.ts):
+ *  batting runs, times out, balls faced and innings; bowling runs, balls, wickets and innings; `what` names what the average is
+ *  over when it isn't times out ("stands"). */
+export type Parts = { runs?: number; outs?: number; bf?: number; inns?: number; what?: string; bruns?: number; bballs?: number; wkts?: number; binns?: number };
 export type Noted = { title?: string; right?: string; note?: string; none?: string };
 export type NGrid = GridT & Noted;
 export type SignedBar = { label: string; value: number; text: string; note?: string };

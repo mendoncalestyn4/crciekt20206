@@ -37,13 +37,13 @@ def big_match_ids(career, ids) -> set:
 
 def _bat(b: pd.DataFrame) -> dict:
     inns, runs, outs, balls = len(b), int(b.runs.sum()), int(b.out.sum()), int(b.balls.sum())
-    return dict(innings=inns, runs=runs, outs=outs, average=runs / outs if outs else None,
+    return dict(innings=inns, runs=runs, outs=outs, balls=balls, average=runs / outs if outs else None,
                 strike_rate=runs / balls * 100 if balls else None)
 
 
 def _bowl(w: pd.DataFrame) -> dict:
     wk, runs, balls = int(w.wickets.sum()), int(w.runs.sum()), int(w.balls.sum())
-    return dict(spells=len(w), wickets=wk, runs=runs, average=runs / wk if wk else None,
+    return dict(spells=len(w), wickets=wk, runs=runs, balls=balls, average=runs / wk if wk else None,
                 economy=runs / balls * 6 if balls else None)
 
 

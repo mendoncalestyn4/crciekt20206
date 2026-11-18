@@ -367,7 +367,7 @@ def match_rating(career, match_id: str, line: pd.DataFrame | None = None) -> tup
     if r.result_type == "tie" or r.super_over:
         pts += 3.5
         why.append("tied" + (" and a super over" if r.super_over else ""))
-    elif pd.notna(r.margin_runs) and r.winner:
+    elif pd.notna(r.margin_runs) and r.winner and not r.innings_win:
         close = bar["close_runs"]
         if r.margin_runs < close:
             pts += 3 * (1 - r.margin_runs / close) + 1

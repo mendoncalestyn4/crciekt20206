@@ -269,7 +269,7 @@ def parse_dismissal(text: str) -> dict:
 
 
 def _surname_matches(short: str, full: str) -> bool:
-    """'Khan' ~ 'S Khan';  "K'r Reddy" ~ 'N Kumar Reddy';  "G'sworthy" ~ 'L Goldsworthy'."""
+    """'Khan' ~ 'S Khan';  "K'r Reddy" ~ 'N Kumar Reddy';  "G'sworthy" ~ 'L Goldsworthy';  "L'-Cachet" ~ 'Z Lion-Cachet'."""
     s = short.lower().strip()
     parts = full.lower().split()
     surname = " ".join(parts[1:]) if len(parts) > 1 else parts[0]
@@ -278,7 +278,8 @@ def _surname_matches(short: str, full: str) -> bool:
     if "'" in s:
         head, tail = s.split("'", 1)
         target = surname.replace(" ", "").replace("-", "")
-        return target.startswith(head.replace(" ", "")) and target.endswith(tail.replace(" ", ""))
+        tail = tail.replace(" ", "").replace("-", "")   # "L'-Cachet": the hyphen of "Lion-Cachet" kept in the short form
+        return bool(tail) and target.startswith(head.replace(" ", "")) and target.endswith(tail)
     return False
 
 
@@ -303,7 +304,11 @@ def _assign_bowlers(inn: "Innings") -> None:
     """Credit each dismissal to a bowler on the card.  Where a surname is
     shared ('b Joseph' with S Joseph and A Joseph bowling) use the bowlers'
     wicket counts to work out who must have taken it."""
-    remaining = {b.player: b.wickets for b in inn.bowling}
+    # wickets left to credit, name by name; two bowlers with the very same printed name (two "A Singh" in one attack)
+    # share theirs (the loader tells them apart afterwards)
+    remaining: dict[str, int] = {}
+    for b in inn.bowling:
+        remaining[b.player] = remaining.get(b.player, 0) + b.wickets
     pending = []
     for e in inn.batting:
         if not e.bowler:
@@ -319,6 +324,10 @@ def _assign_bowlers(inn: "Innings") -> None:
         if len(able) == 1:
             e.bowler = able[0]
             remaining[able[0]] -= 1
+        elif len(able) > 1:
+            # the card doesn't say which of them ('b Jansen' with D Jansen and M Jansen both taking wickets): both named,
+            # never a made-up 'Jansen'; each bowler's own figures are right either way (they're on his own line)
+            e.bowler = " or ".join(able)
 
 
 def _assign_fielders(match: "Match") -> None:
@@ -404,6 +413,15 @@ def validate_match(match: "Match", quota: int | None = None) -> list[str]:
         if inn.fow and inn.fow[-1][1] > inn.total:
             problems.append(f"{where}: a wicket fell at a score above the innings total")
     problems += _result_problems(match)
+    # shortened names (your pick of 14 November): the bowler a dismissal names ("b Khan") must be a bowler on that
+    # innings' card. Two bowlers who share the name ("b Jansen", both Jansens taking wickets) can't be told apart from
+    # the card: that's named on the match (see bowler_unclear), not a problem with its numbers
+    for inn in match.innings:
+        names = {w.player for w in inn.bowling}
+        for b in inn.batting:
+            if b.how_out in CREDITED and b.bowler and inn.bowling and b.bowler not in names and " or " not in b.bowler:
+                problems.append(f"{inn.team} innings {inn.team_innings}: the bowler in \"{b.dismissal}\" matches no "
+                                "bowler on the card")
     # every card read back (your pick of 14 November): any line that doesn't read back as printed
     problems += [f"read back: {d}" for d in match.read_back]
     # an alarm for anything unfamiliar (your pick of 14 November): a line not understood, a dismissal not known
@@ -504,7 +522,8 @@ def parse_result(result: str, teams: list[str]) -> dict:
         return out
     out["winner"] = winner
     out["result_type"] = "win" if winner else ""
-    if m := re.search(r"by\s+(\d+)\s+runs?", low):
+    # "won by 102 runs", or "won by an innings and 102 runs"
+    if m := re.search(r"(?:by|innings and)\s+(\d+)\s+runs?", low):
         out["margin_runs"] = int(m.group(1))
     if m := re.search(r"by\s+(\d+)\s+wick", low):
         out["margin_wickets"] = int(m.group(1))

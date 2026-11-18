@@ -29,12 +29,13 @@ def test_every_innings_reconciles(path):
         assert sum(b.wickets for b in inn.bowling) + run_outs == inn.wickets
         assert sum(b.balls for b in inn.bowling) == inn.balls
         assert len(inn.fow) == inn.wickets
-        # every dismissal is credited to a bowler on the card, unless the
-        # surname is genuinely ambiguous (T Curran and S Curran both bowling)
+        # every dismissal is credited to a bowler on the card; one the card can't tell apart (T Curran and S Curran
+        # both bowling and both taking wickets) names them both, "S Curran or T Curran", each a bowler on the card
         bowlers = [b.player for b in inn.bowling]
         for b in inn.batting:
             if b.bowler and b.bowler not in bowlers:
-                assert len(resolve_candidates(b.bowler, bowlers)) > 1, b.bowler
+                parts = b.bowler.split(" or ")
+                assert len(parts) > 1 and all(p in bowlers for p in parts), b.bowler
 
 
 def test_odi_header_and_result():

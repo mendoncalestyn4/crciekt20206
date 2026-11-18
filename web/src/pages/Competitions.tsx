@@ -113,7 +113,7 @@ export function Competitions() {
             {d.series_one?.ladder && (() => { const one = d.series_one!, l = one.ladder!;
               return <>
                 <Tile span={6} title="Most runs in the series">
-                  <TvTable rows={l.most_runs} mine={one.team} cols={[["Runs", (x) => x.runs], ["Inns", (x) => x.inns], ["HS", (x) => x.hs], ["SR", (x) => (x.balls ? f1((x.runs / x.balls) * 100) : "–")]]} /></Tile>
+                  <TvTable rows={l.most_runs} mine={one.team} cols={[["Runs", (x) => x.runs], ["Inns", (x) => x.inns], ["HS", (x) => x.hs], ["SR", (x) => (x.balls ? f1((x.runs / x.balls) * 100) : "–")]]} parts={(x) => ({ runs: x.runs, bf: x.balls, inns: x.inns })} /></Tile>
                 <Tile span={6} title="Most wickets in the series">
                   <TvTable rows={l.most_wickets} mine={one.team} cols={[["Wkts", (x) => x.wickets], ["Runs", (x) => x.runs], ["Overs", (x) => overs(x.balls)], ["Econ", (x) => f2(x.economy)]]} /></Tile>
               </>; })()}

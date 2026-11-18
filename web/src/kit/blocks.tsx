@@ -1,7 +1,7 @@
 // The pieces that aren't charts: percentile bars, the last five innings, Broadcast's TV table, the latest-results
 // strip, top-player lists, the player of the match's card and story, the TV-style match summary, the scorecard.
 import { Fragment, useState, type ReactNode } from "react";
-import type { Card, Match, Pom, Result, SquadRow } from "../api";
+import type { Card, Match, Parts, Pom, Result, SquadRow } from "../api";
 import { ab, cap, day, dayY, f0, f1, f2, fmtOf, initials, ord, overs, score } from "../format";
 import { useTheme } from "../theme";
 import { Lamp, Logo, MatchLink, Missing, Name, Num, PName, Tile } from "./base";
@@ -31,13 +31,15 @@ export function LastFive({ s }: { s: string }) {
 }
 
 /** Broadcast's TV table: a player with their team's badge, then numbers (the first one gold). */
-export function TvTable<R extends { player: string; team: string }>({ rows, cols, mine }: {
+export function TvTable<R extends { player: string; team: string }>({ rows, cols, mine, parts }: {
   rows: R[]; cols: [string, (r: R) => ReactNode][]; mine: string | null;
+  /** what a row's average, strike rate or economy is made from, when its columns don't show it (howto.ts) */
+  parts?: (r: R) => Parts;
 }) {
   return (
     <table className="tv"><thead><tr><th>Player</th>{cols.map(([h]) => <th key={h} className="r">{h}</th>)}</tr></thead>
       <tbody>{rows.map((x) => (
-        <tr key={x.player + x.team} className={x.team === mine ? "me" : ""}>
+        <tr key={x.player + x.team} className={x.team === mine ? "me" : ""} data-parts={parts ? JSON.stringify(parts(x)) : undefined}>
           <td><span className="cell"><Logo team={x.team} size={40} /><PName p={x.player} px={23} /></span></td>
           {cols.map(([h, f], i) => <td key={h} className="r"><span className={`tn ${i ? "dimn" : ""}`}>{f(x)}</span></td>)}
         </tr>))}</tbody>
@@ -244,13 +246,13 @@ export function Scorecard({ m }: { m: Match }) {
 export function SquadTable({ rows, mark, dim }: { rows: SquadRow[]; mark?: string; dim?: Set<string> }) {
   const t = useTheme();
   return (
-    <table className="tv"><thead><tr><th>Player</th><th className="r">Games</th><th className="r">Runs</th><th className="r">Avg</th><th className="r">SR</th>
+    <table className="tv"><thead><tr><th>Player</th><th className="r">Mat</th><th className="r">Runs</th><th className="r">Avg</th><th className="r">SR</th>
       <th className="r">Wkts</th><th className="r">Econ</th><th>Last 5 innings · runs, oldest first</th><th className="r">Form</th></tr></thead>
       <tbody>{rows.map((x) => (
-        <tr key={x.player} className={x.player === mark ? "me" : dim?.has(x.player) ? "dim" : ""}><td><PName p={x.player} px={23} /></td>
+        <tr key={x.player} className={x.player === mark ? "me" : dim?.has(x.player) ? "dim" : ""} data-parts={x.parts ? JSON.stringify(x.parts) : undefined}><td><PName p={x.player} px={23} /></td>
           <td className="r"><span className="tn dimn">{x.games}</span></td><td className="r"><span className="tn">{x.runs}</span></td>
           <td className="r"><span className="tn dimn">{f1(x.average)}</span></td><td className="r"><span className="tn dimn">{f0(x.strike_rate)}</span></td>
-          <td className="r"><span className="tn">{x.wickets || "–"}</span></td><td className="r"><span className="tn dimn">{f2(x.economy)}</span></td>
+          <td className="r"><span className="tn">{x.wickets || (x.bowled ? 0 : "–")}</span></td><td className="r"><span className="tn dimn">{f2(x.economy)}</span></td>
           <td><LastFive s={x.last5} /></td>
           <td className="r" style={{ fontSize: 18, color: x.form === "▲" ? t.win : x.form === "▼" ? t.loss : t.dim }}>{x.form}</td></tr>))}</tbody></table>
   );

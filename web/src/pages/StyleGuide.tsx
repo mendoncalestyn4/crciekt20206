@@ -135,7 +135,7 @@ export function StyleGuide() {
           <Tile span={4} title="Every format">
             <table className="tv"><thead><tr><th>Format</th><th className="r">Inns</th><th className="r">Runs</th><th className="r">Avg</th><th className="r">SR</th><th className="r">HS</th></tr></thead>
               <tbody>{st.formats.map((v) => (
-                <tr key={v.section} className={v.section === st.section ? "me" : ""}><td><Name p={fmtOf(v.section)} px={22} /></td>
+                <tr key={v.section} className={v.section === st.section ? "me" : ""} data-parts={v.parts ? JSON.stringify(v.parts) : undefined}><td><Name p={fmtOf(v.section)} px={22} /></td>
                   <td className="r"><span className="tn dimn">{v.innings}</span></td><td className="r"><span className="tn">{v.runs}</span></td>
                   <td className="r"><span className="tn dimn">{f1(v.average)}</span></td><td className="r"><span className="tn dimn">{f0(v.strike_rate)}</span></td>
                   <td className="r"><span className="tn dimn">{v.high_score_text || "–"}</span></td></tr>))}</tbody></table>
@@ -184,7 +184,7 @@ export function StyleGuide() {
           <Tile span={12} title="Series score · the ladder" right={s.decider ? "the decider marked" : undefined}><Ladder s={s} team={team} />
             <Used on="Seasons · the series analysis" /></Tile>
           <Tile span={6} title="Most runs in the series">
-            <TvTable rows={s.most_runs} mine={team} cols={[["Runs", (x) => x.runs], ["Inns", (x) => x.inns], ["HS", (x) => x.hs], ["SR", (x) => f0((x.runs / Math.max(x.balls, 1)) * 100)]]} />
+            <TvTable rows={s.most_runs} mine={team} cols={[["Runs", (x) => x.runs], ["Inns", (x) => x.inns], ["HS", (x) => x.hs], ["SR", (x) => (x.balls ? f0((x.runs / x.balls) * 100) : "–")]]} parts={(x) => ({ runs: x.runs, bf: x.balls, inns: x.inns })} />
           </Tile>
           <Tile span={6} title="Most wickets in the series">
             <TvTable rows={s.most_wickets} mine={team} cols={[["Wkts", (x) => x.wickets], ["Runs", (x) => x.runs], ["Overs", (x) => overs(x.balls)], ["Econ", (x) => f2(x.economy)]]} />

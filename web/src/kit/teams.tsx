@@ -29,7 +29,7 @@ export function Grid({ t, keep = "" }: { t: GridT; keep?: string }) {
   return (
     <div className="scrollx"><table className="c"><thead><tr>{t.cols.map((c, i) => <th key={i} className={num.has(i) ? "r" : ""}>{c}</th>)}</tr></thead>
       <tbody>{t.rows.map((r, i) => (
-        <tr key={i} className={t.hi[i] ? "me" : t.dim?.[i] ? "dimrow" : ""}>{r.map((v, j) => {
+        <tr key={i} className={t.hi[i] ? "me" : t.dim?.[i] ? "dimrow" : ""} data-parts={t.parts?.[i] ? JSON.stringify(t.parts[i]) : undefined}>{r.map((v, j) => {
           const text = v == null ? "–" : String(v);
           const link = j === 0 ? t.links[i] : null;
           if (badge.has(j) && v != null) return <td key={j}>{link ? <Link className="lk" to={`/matches/${link}${keep}`}><Badged text={text} slot={slot} /></Link>

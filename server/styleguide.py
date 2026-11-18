@@ -219,8 +219,10 @@ def star(career, team: str, section: str, season: str) -> dict:
         t, _, _, _ = player_tables(career, Scope(sections=[sec]))
         r = t[t.player == p]
         if len(r):
+            x = r.iloc[0]
             formats.append(dict(section=sec, **rows(r, ["innings", "runs", "average", "strike_rate", "high_score_text",
-                                                        "fours", "sixes", "hundreds", "fifties"])[0]))
+                                                        "fours", "sixes", "hundreds", "fifties"])[0],
+                                parts=dict(runs=int(x.runs), outs=int(x.outs), bf=int(x.balls), inns=int(x.innings))))
     rating = None
     rt = player_ratings(career, section)
     rt = rt[rt.team == team].dropna(subset=["batting"]).sort_values("batting", ascending=False).reset_index(drop=True)
@@ -685,5 +687,5 @@ def build(career, mine: list[str]) -> dict:
     piece("ratings", lambda: ratings(career, section))
     piece("squad", lambda: rows(MT.squad(career, team, section, season).head(14),
                                 ["player", "games", "runs", "average", "strike_rate", "wickets", "economy", "last5",
-                                 "form"]))
+                                 "form", "bowled", "parts"]))
     return out

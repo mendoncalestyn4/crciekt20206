@@ -102,7 +102,7 @@ def story(career, r) -> str:
     elif pd.notna(r.margin_runs):
         how = f"defended it by {int(r.margin_runs)} run{'s' if r.margin_runs != 1 else ''}"
         if r.innings_win:
-            how = f"won by an innings and {int(r.margin_runs)} runs"
+            how = f"won by an innings and {int(r.margin_runs)} run{'s' if r.margin_runs != 1 else ''}"
     else:
         how = "won"
     if bowl_pts > bat_pts and len(w):

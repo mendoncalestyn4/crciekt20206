@@ -42,7 +42,9 @@ def records(career, ids, top: int = 10) -> dict[str, pd.DataFrame]:
     finish("Highest team totals", tot, tot.team, tot.txt, tot.runs, tot.team, tot.opposition)
     lo = tot[tot.all_out]
     finish("Lowest completed totals", lo, lo.team, lo.txt, lo.runs, lo.team, lo.opposition, ascending=True)
-    w = m[(m.result_type == "win") & m.margin_runs.notna()].merge(lab[["match_id"]], on="match_id")
+    # innings wins have their own list below (an innings and 102 runs isn't a 102-run win)
+    w = m[(m.result_type == "win") & m.margin_runs.notna() & ~m.innings_win.fillna(False).astype(bool)].merge(
+        lab[["match_id"]], on="match_id")
     w = w.assign(loser_=w.loser)
     finish("Biggest wins by runs", w, w.winner, [f"{int(r)} runs" for r in w.margin_runs], w.margin_runs, w.winner, w.loser_)
     inns_w = m[(m.result_type == "win") & m.innings_win.fillna(False).astype(bool)]

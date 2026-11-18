@@ -735,11 +735,14 @@ def batting_order(career, ids, team: str, min_innings: int = 2) -> pd.DataFrame:
     mine = inn[inn.team == team]
     rows = []
     for (p, grp), g in mine.groupby(["player", "group"]):
-        rows.append(dict(player=p, group=grp, innings=len(g), runs=int(g.runs.sum()),
-                         per_innings=g.runs.mean(), strike_rate=g.runs.sum() / max(g.balls.sum(), 1) * 100,
-                         average=g.runs.sum() / max(g.out.sum(), 1),
+        balls, outs = int(g.balls.sum()), int(g.out.sum())
+        # no balls faced: no strike rate; never out: no average (not runs × 100, or the runs themselves)
+        rows.append(dict(player=p, group=grp, innings=len(g), runs=int(g.runs.sum()), balls=balls,
+                         per_innings=g.runs.mean(), strike_rate=g.runs.sum() / balls * 100 if balls else np.nan,
+                         average=g.runs.sum() / outs if outs else np.nan,
                          vs_avg=g.runs.mean() - base_rpi.get(grp, np.nan)))
-    d = pd.DataFrame(rows, columns=["player", "group", "innings", "runs", "per_innings", "strike_rate", "average", "vs_avg"])
+    d = pd.DataFrame(rows, columns=["player", "group", "innings", "runs", "balls", "per_innings", "strike_rate", "average",
+                                    "vs_avg"])
     if d.empty:
         return d.assign(best=[])
     q = d[d.innings >= min_innings]
@@ -805,9 +808,9 @@ def bowling_plan(career, ids, team: str, min_balls: int = 30) -> pd.DataFrame:
             tags.append("Cheap" if econ <= econ0 * 0.95 else "Costly" if econ >= econ0 * 1.05 else "Around average cost")
         if np.isfinite(sr) and sr <= sr0 * 0.9:
             tags.append("Strikes often")
-        rows.append(dict(player=p, innings=len(g), balls=int(g.balls.sum()), wickets=wk, top=int(top), middle=int(mid),
-                         tail=int(tail), economy=econ, strike_rate=sr, tags=" · ".join(tags)))
-    d = pd.DataFrame(rows, columns=["player", "innings", "balls", "wickets", "top", "middle", "tail", "economy",
+        rows.append(dict(player=p, innings=len(g), balls=int(g.balls.sum()), runs=int(g.runs.sum()), wickets=wk, top=int(top),
+                         middle=int(mid), tail=int(tail), economy=econ, strike_rate=sr, tags=" · ".join(tags)))
+    d = pd.DataFrame(rows, columns=["player", "innings", "balls", "runs", "wickets", "top", "middle", "tail", "economy",
                                     "strike_rate", "tags"])
     d = d.sort_values("wickets", ascending=False).reset_index(drop=True)
     d.attrs.update(economy=econ0, strike_rate=sr0, average=avg0, by_average=by_average)
@@ -856,9 +859,12 @@ def batting_pairs(career, ids, team: str = "", min_stands: int = 2) -> pd.DataFr
         s = s[s.team == team]
     s = s.assign(pair=[" & ".join(sorted([a, b])) for a, b in zip(s.batter1, s.batter2)])
     stand = bars_for(kind_of_ids(career, ids))["stand"]
+    s = s.assign(broken=~s.unbroken.astype(bool))
     g = s.groupby(["pair", "team"]).agg(stands=("runs", "size"), runs=("runs", "sum"), best=("runs", "max"),
+                                        broken=("broken", "sum"),
                                         big_stands=("runs", lambda x: int((x >= stand).sum()))).reset_index()
-    g["average"] = g.runs / g.stands
+    # the average is over the stands that were broken, as a batting average is over the times out (one meaning)
+    g["average"] = g.runs / g.broken.replace(0, np.nan)
     g = g[g.stands >= min_stands].sort_values("runs", ascending=False).reset_index(drop=True)
     g.attrs["stand"] = stand
     return g

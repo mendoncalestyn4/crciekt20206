@@ -58,12 +58,14 @@ def say(word: str) -> str:
 TEAM_COLUMNS = {"Team", "Against", "Opponent", "Champions", "Runners-up", "Rivalry"}   # columns that name teams
 
 
-def table(cols, rows, num=(), hi=None, links=None) -> dict:
+def table(cols, rows, num=(), hi=None, links=None, parts=None) -> dict:
     """A plain table: column names, rows of text, which columns are numbers, the rows to light up, and a match to open
-    from each row (the first column links to it). Columns that name teams (by their heading) show each team's badge."""
+    from each row (the first column links to it). Columns that name teams (by their heading) show each team's badge.
+    `parts`, one per row: the numbers its average, strike rate or economy is made from when the row doesn't show them
+    (web/src/howto.ts turns them into the sum shown on hover)."""
     cols = list(cols)
     return SG.clean(dict(cols=cols, rows=[list(r) for r in rows], num=sorted(num), hi=list(hi) if hi else [],
-                         links=list(links) if links else [],
+                         links=list(links) if links else [], parts=list(parts) if parts else [],
                          badges=[i for i, c in enumerate(cols) if c in TEAM_COLUMNS and i not in set(num)]))
 
 
@@ -393,11 +395,16 @@ def overview(career, section, season, team, venue) -> dict:
         op = A.opening_partnerships(career, tm.match_id, team)
         if op.empty:
             return None
-        g = op.groupby("pair").agg(stands=("runs", "size"), runs=("runs", "sum"), average=("runs", "mean"),
-                                   best=("runs", "max")).sort_values("runs", ascending=False).reset_index()
-        return table(["Openers", "Innings", "Runs", "Average", "Best"],
-                     [[r.pair, int(r.stands), int(r.runs), f"{r.average:.1f}", int(r.best)] for r in g.itertuples()],
-                     num={1, 2, 3, 4})
+        # the average is over the stands that were broken, as in the partnerships table and a batting average (one
+        # meaning per stat); an unbroken best carries a *
+        op = op.assign(broken=~op.unbroken.astype(bool))
+        g = op.groupby("pair").agg(stands=("runs", "size"), runs=("runs", "sum"), broken=("broken", "sum")
+                                   ).sort_values("runs", ascending=False)
+        best = op.sort_values(["runs", "unbroken"], ascending=False).drop_duplicates("pair").set_index("pair")
+        rows = [[p, int(r.stands), int(r.runs), f"{r.runs / r.broken:.1f}" if r.broken else None,
+                 f"{int(best.runs[p])}{'*' if best.unbroken[p] else ''}"] for p, r in g.iterrows()]
+        return table(["Openers", "Inns", "Runs", "Avg", "Best"], rows, num={1, 2, 3, 4},
+                     parts=[dict(runs=int(r.runs), outs=int(r.broken), inns=int(r.stands), what="stands") for _, r in g.iterrows()])
     P("openers", openers)
 
     def collapses():
@@ -488,7 +495,7 @@ def overview(career, section, season, team, venue) -> dict:
         top = sh[(sh.run_share >= 5) | (sh.wicket_share >= 5)].sort_values(["load", "player"], ascending=[False, True]).head(12)
         if top.empty:
             top = sh.sort_values(["load", "player"], ascending=[False, True]).head(5)
-        g = table(["Player", "Matches", "Runs", "Share of the runs", "Wickets", "Share of the wickets"],
+        g = table(["Player", "Mat", "Runs", "Share of the runs", "Wkts", "Share of the wickets"],
                   [[p, int(n), int(r), pct(rs, 1), int(w), pct(ws, 1)]
                    for p, n, r, rs, w, ws in zip(top.player, top.matches, top.runs, top.run_share, top.wickets, top.wicket_share)],
                   num={1, 2, 3, 4, 5})
@@ -542,7 +549,7 @@ def overview(career, section, season, team, venue) -> dict:
             gaps.append(gap)
             rows.append([f"{ordinal(int(r.wicket))} wicket", int(r.usual), int(r.opp_usual) if pd.notna(r.opp_usual) else "–", signed(gap, 0),
                          int(r.best), int(r.worst), int(r.innings)])
-        g = table(["Wicket", f"{team} usually", "Their opponents", "Difference", "Highest", "Lowest", "Innings"], rows,
+        g = table(["Wicket", f"{team} usually", "Their opponents", "Difference", "Highest", "Lowest", "Inns"], rows,
                   num={1, 2, 3, 4, 5, 6})
         known = [(i, x) for i, x in enumerate(gaps) if np.isfinite(x)]
         bits = [f"{poss(team)} {ordinal(int(u.wicket.iloc[0]))} wicket usually falls at {int(u.usual.iloc[0])}"
@@ -624,13 +631,15 @@ def overview(career, section, season, team, venue) -> dict:
     def every_team():
         show = tbl.sort_values(["win_pct", "nrr" if limited else "rpw_for"], ascending=False)
         cols = {"team": "Team", "played": "P", "won": "W", "lost": "L", "drawn": "D", "tied": "T", "win_pct": "Win %",
-                "rpw_for": "Runs/wkt", "rpw_against": "Conceded/wkt", "rr_for": "Run rate", "rr_against": "Economy"}
+                "rpw_for": "Runs/wkt", "rpw_against": "Conceded/wkt", "rr_for": "Run rate", "rr_against": "Econ"}
         if limited:
             cols["nrr"] = "NRR"
         two = {"rpw_for", "rpw_against", "rr_for", "rr_against", "nrr"}
         rows = [[r[c] if c == "team" else fmt(r[c], 2) if c in two else fmt(r[c], 0) for c in cols]
                 for _, r in show.iterrows()]
-        out = table(list(cols.values()), rows, num=set(range(1, len(cols))), hi=[t == team for t in show.team])
+        out = table(list(cols.values()), rows, num=set(range(1, len(cols))), hi=[t == team for t in show.team],
+                    parts=[dict(bruns=int(r.conceded), bballs=int(r.bowled), wkts=int(r.taken), binns=int(r.fielded))
+                           for r in show.itertuples()])
         out["title"] = f"Every team in {section}" + ("" if venue == "all" else f" · {venue.replace('all', 'overall')} "
                                                                                   "games only")
         return out
@@ -771,7 +780,7 @@ def opponents(career, section, season, team, venue) -> dict:
     def bounce():
         ar = kept(career, ("after_result", tuple(ids), team, venue), lambda: TP.after_result(career, ids, team, venue=venue))
         rows = [[r.after, int(r.played), TP.wdl(r._asdict()), pct(r.win_pct)] for r in ar.itertuples()]
-        return table(["", "Games", "Record", "Win %"], rows, num={1, 3}) if rows else None
+        return table(["", "Played", "Record", "Win %"], rows, num={1, 3}) if rows else None
     P("bounce", bounce)
 
     def every_opponent():
@@ -875,12 +884,12 @@ def series_tab(career, section, season, team, venue) -> dict:
         def deciders():
             si = kept(career, ("situations", tuple(tids), team), lambda: TP.situations(career, tids, team))
             rows = [[r.situation, int(r.played), TP.wdl(r._asdict()), pct(r.win_pct)] for r in si.itertuples() if r.played]
-            return table(["", "Games", "Record", "Win %"], rows, num={1, 3}) if rows else None
+            return table(["", "Played", "Record", "Win %"], rows, num={1, 3}) if rows else None
         P("deciders", deciders)
     if multi:
         def second_innings():
             si2 = kept(career, ("second_innings", tuple(ids)), lambda: TD.second_innings(career, ids))
-            return table(["Team", "2nd innings", "Average", "Bowled out under 200", "4th-innings chases", "Won–drawn–lost"],
+            return table(["Team", "2nd innings", "Avg score", "Bowled out under 200", "4th-innings chases", "Won–drawn–lost"],
                          [[r.team, int(r.second_innings), fmt(r.second_avg, 0), int(r.cheap), int(r.chases),
                            f"{r.chase_won}–{r.chase_drawn}–{r.chase_lost}"] for r in si2.itertuples()],
                          num={1, 2, 3, 4}, hi=[r.team == team for r in si2.itertuples()])
@@ -937,8 +946,8 @@ def squad_tab(career, section, season, team, venue) -> dict:
                 return [[r.player, int(r.games), int(r.runs), int(r.wickets)] for r in g.itertuples()]
             ins, outs = g_[g_.change == "in"], g_[g_.change == "out"]
             out["steps"].append(dict(title=f"{a_} → {b_}",
-                                     ins=table(["Player", "Games", "Runs", "Wkts"], rows(ins), num={1, 2, 3}),
-                                     outs=table(["Player", "Games", "Runs", "Wkts"], rows(outs), num={1, 2, 3})))
+                                     ins=table(["Player", "Mat", "Runs", "Wkts"], rows(ins), num={1, 2, 3}),
+                                     outs=table(["Player", "Mat", "Runs", "Wkts"], rows(outs), num={1, 2, 3})))
         return out
     P("changes", changes)
     return P.out

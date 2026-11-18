@@ -89,14 +89,21 @@ def landing(career, mine: list[str]) -> dict:
         ids = m[(m.section == last.section) & (m.season == last.season)].match_id
         b = career.batting[career.batting.match_id.isin(ids) & (career.batting.team == team)]
         w = career.bowling[career.bowling.match_id.isin(ids) & (career.bowling.team == team) & (career.bowling.balls > 0)]
-        bt = b.groupby("player").agg(games=("match_id", "nunique"), runs=("runs", "sum"), outs=("out", "sum"))
-        wt = w.groupby("player").agg(wickets=("wickets", "sum"), conceded=("runs", "sum"), balls=("balls", "sum"))
+        bt = b.groupby("player").agg(games=("match_id", "nunique"), runs=("runs", "sum"), outs=("out", "sum"),
+                                     inns=("did_bat", "sum"))
+        wt = w.groupby("player").agg(wickets=("wickets", "sum"), conceded=("runs", "sum"), balls=("balls", "sum"),
+                                     binns=("wickets", "size"))
         d = bt.join(wt, how="outer").fillna(0)
         d["average"] = d.runs / d.outs.replace(0, np.nan)
         d["economy"] = d.conceded / d.balls.replace(0, np.nan) * 6
+        d["bowled"] = d.balls > 0          # no wickets is 0 for a bowler, "–" for someone who never bowled
+        # what the average and economy are made from, for "how it's worked out" (web/src/howto.ts)
+        d["parts"] = [dict(runs=int(r.runs), outs=int(r.outs), inns=int(r.inns), bruns=int(r.conceded),
+                           bballs=int(r.balls), wkts=int(r.wickets), binns=int(r.binns)) for r in d.itertuples()]
         d = d.sort_values(["games", "runs", "wickets"], ascending=False).reset_index()
         squads.append(dict(team=team, section=last.section, season=last.season,
-                           players=SG.rows(d, ["player", "games", "runs", "average", "wickets", "economy"])))
+                           players=SG.rows(d, ["player", "games", "runs", "average", "wickets", "economy", "bowled",
+                                               "parts"])))
     return SG.clean(dict(players=everyone(career), squads=squads))
 
 
@@ -585,8 +592,11 @@ def _countries(career, player, section, ids) -> dict | None:
         home = bool(r.host) and r.host == r.team
         rows.append([place + (" (home)" if home else ""), int(r.matches), r.bat["runs"], fmt(r.bat["average"]),
                      fmt(r.bat["strike_rate"]), r.bowl["wickets"], fmt(r.bowl["average"]), fmt(r.bowl["economy"], 2)])
-    return dict(cols=["Where", "Matches", "Runs", "Average", "Strike rate", "Wickets", "Average", "Economy"], rows=rows,
-                num=[1, 2, 3, 4, 5, 6, 7], hi=[], links=[], nation=nation)
+    order = bh.sort_values(["matches", "host"], ascending=[False, True])
+    parts = [dict(runs=r.bat["runs"], outs=r.bat["outs"], bf=r.bat["balls"], inns=r.bat["innings"], bruns=r.bowl["runs"],
+                  bballs=r.bowl["balls"], wkts=r.bowl["wickets"], binns=r.bowl["spells"]) for r in order.itertuples()]
+    return dict(cols=["Where", "Mat", "Runs", "Avg", "SR", "Wkts", "Avg", "Econ"], rows=rows,
+                num=[1, 2, 3, 4, 5, 6, 7], hi=[], links=[], nation=nation, parts=parts)
 
 
 def _bounce(career, player, section, ids) -> dict:
@@ -641,7 +651,7 @@ def _formats(career, player) -> dict | None:
         return None
     best = af[af.best]
     return dict(rows=SG.rows(af, ["section", "matches", "runs", "average", "bat_vs", "strike_rate", "sr_vs", "wickets",
-                                  "bowl_average", "bowl_vs", "best"]),
+                                  "bowl_average", "bowl_vs", "best", "parts"]),
                 shows=_best_format_line(best.iloc[0]) if len(best) else "Not enough games in any format yet to compare.",
                 for_="Compares formats fairly: a 35 average is great in T20 but ordinary in Tests, so each format is measured "
                      "against its own average (bowling: lower average is better, so + means better). The best format "
@@ -671,6 +681,10 @@ def all_formats(career, player) -> pd.DataFrame:
                  average=b.average.iloc[0] if len(b) else np.nan, strike_rate=b.strike_rate.iloc[0] if len(b) else np.nan,
                  hundreds=int(b.hundreds.iloc[0]) if len(b) else 0, wickets=int(w.wickets.iloc[0]) if len(w) else 0,
                  bowl_average=w.average.iloc[0] if len(w) else np.nan, economy=w.economy.iloc[0] if len(w) else np.nan)
+        # what the averages and strike rate are made from, for "how it's worked out" (web/src/howto.ts)
+        one = lambda t, c: int(t[c].iloc[0]) if len(t) else 0   # noqa: E731
+        r["parts"] = dict(runs=one(b, "runs"), outs=one(b, "outs"), bf=one(b, "balls"), inns=one(b, "innings"),
+                          bruns=one(w, "runs"), bballs=one(w, "balls"), wkts=one(w, "wickets"), binns=one(w, "innings"))
         r["bat_vs"] = (r["average"] / base.average - 1) * 100 if np.isfinite(r["average"]) and base.average else np.nan
         r["sr_vs"] = (r["strike_rate"] / base.strike_rate - 1) * 100 if np.isfinite(r["strike_rate"]) and base.strike_rate else np.nan
         r["bowl_vs"] = ((base.bowl_average / r["bowl_average"] - 1) * 100
@@ -842,7 +856,8 @@ def _positions(career, ids, inns) -> dict | None:
                          fifties=int(((g.runs >= 50) & (g.runs < 100)).sum()), hundreds=int((g.runs >= 100).sum()),
                          high=f"{int(g.runs.max())}{'' if g.loc[g.runs.idxmax(), 'out'] else '*'}",
                          all_average=SG.clean(r.all_average), edge=SG.clean(r.edge),
-                         small=bool(len(g) < AT.SMALL), best=best is not None and best["position"] == int(pos)))
+                         small=bool(len(g) < AT.SMALL), best=best is not None and best["position"] == int(pos),
+                         parts=dict(runs=int(g.runs.sum()), outs=int(g.out.sum()), bf=int(g.balls.sum()), inns=len(g))))
     if best:
         others = [x for x in rows if x["position"] != best["position"] and x["innings"] >= AT.BEST_FROM and x["edge"] is not None]
         shows = (f"Best at no. {best['position']}: {best['runs']} runs in {best['innings']} innings"
@@ -1004,9 +1019,11 @@ def _bowling(career, player, section, season, ids, spells, bowl_t, kind, season_
         for_ = ("Tells a strike bowler from a containing one, so you know who to bowl when you must stop the runs."
                 + (" In Tests, maidens show the control too." if test else ""))
     out["with_without"] = dict(rows=[dict(label="Took a wicket", spells=a["spells"], wickets=a["wickets"], economy=fmt(a["economy"], 2),
-                                          maidens=fmt(a["maidens_per_10"], 1) if test else "–"),
+                                          maidens=fmt(a["maidens_per_10"], 1) if test else "–",
+                                          parts=dict(bruns=a["runs"], bballs=a["balls"], wkts=a["wickets"], binns=a["spells"])),
                                      dict(label="Wicketless", spells=b["spells"], wickets=0, economy=fmt(b["economy"], 2),
-                                          maidens=fmt(b["maidens_per_10"], 1) if test else "–")],
+                                          maidens=fmt(b["maidens_per_10"], 1) if test else "–",
+                                          parts=dict(bruns=b["runs"], bballs=b["balls"], wkts=0, binns=b["spells"]))],
                                shows=shows, for_=for_)
     out["season_table"] = table(A.bowling_record(career, ids, player, by="season", season_of=season_of)
                                 .sort_values("season", ascending=False), "season", True)
@@ -1140,7 +1157,7 @@ def _by_innings(career, player, section, season, ids, kind, bowling: bool) -> di
             tail = against(r, r["other_average"], r["usual_average"], 1)
             return f"{named(r, lead)}: {head}" + ("," if tail and not head.endswith(")") else "") + tail + "."
         normal_cols = [_col("innings", "Inns"), _col("overs", "Overs", "x"), _col("runs", "Runs"), _col("wickets", "Wkts", "n"),
-                       _col("bbi", "Best", "x", help="Best bowling in an innings"), _col("average", "Avg", "n", 1),
+                       _col("bbi", "BBI", "x", help="Best bowling in an innings"), _col("average", "Avg", "n", 1),
                        _col("economy", "Econ", "n", 2), _col("strike_rate", "SR", "m", 1, "Balls a wicket"),
                        _col("hauls", "5w" if multi else "4w+", help=f"{'Five' if multi else 'Four'} or more wickets in an innings")]
         judged = "economy (runs saved matter most in T20 cricket)" if t20 else "bowling average"
@@ -1281,8 +1298,8 @@ def _by_innings(career, player, section, season, ids, kind, bowling: bool) -> di
                    ([f"the usual {fmt(r['usual_average'])} for their batting positions"] if pd.notna(r["usual_average"]) else [])
             return f"{named(r, lead)}: {head}" + ((" against " + " and ".join(bits)) if bits else "") + "."
         normal_cols = [_col("innings", "Inns"), _col("not_outs", "NO"), _col("runs", "Runs", "n"), _col("high", "HS", "x"),
-                       _col("average", "Avg", "n", 1), _col("strike_rate", "SR", "m", 1), _col("fifties", "50s"),
-                       _col("hundreds", "100s")]
+                       _col("average", "Avg", "n", 1), _col("strike_rate", "SR", "m", 1), _col("fifties", "50"),
+                       _col("hundreds", "100")]
         normal_for = (("Shows in which innings of the match they make their runs. " if multi else
                        "Shows whether they're better setting a total or chasing one. ")
                       + f"{'The best and weakest are' if multi else 'The better side is'} judged against the usual for their "
@@ -1318,12 +1335,23 @@ def _by_innings(career, player, section, season, ids, kind, bowling: bool) -> di
     else:
         shows = (f"Not enough innings yet to name a best or a weakest: that needs {BI.SMALL} or more in at least two of them."
                  if multi else f"Not enough innings yet to say which is better: that needs {BI.SMALL} or more on both sides.")
+    # what each row's average, strike rate and economy are made from, for "how it's worked out" on every view
+    if "wickets" in cols:
+        t["parts"] = [dict(bruns=int(r.runs), bballs=int(r.balls), wkts=int(r.wickets), binns=int(r.innings)) for r in t.itertuples()]
+        total["parts"] = dict(bruns=runs, bballs=balls, wkts=wkts, binns=total["innings"])
+    else:
+        t["parts"] = [dict(runs=int(r.runs), outs=int(r.innings - r.not_outs), bf=int(r.balls), inns=int(r.innings))
+                      for r in t.itertuples()]
+        total["parts"] = dict(runs=runs, outs=outs, bf=balls, inns=total["innings"])
     rows = SG.rows(t, cols)
+    parts, total_parts = SG.clean(list(t["parts"])), SG.clean(total.pop("parts"))
     views.insert(0, dict(key="normal", label="Normal", cols=normal_cols, rows=rows, total=SG.clean(total), shows=shows,
                          for_=normal_for))
     for v in views:
         if v["rows"] is None:   # other innings and the usual: the same rows as Normal
             v["rows"] = rows
+        if v["rows"] is rows:   # the parts of each row (and of the total), in the same order
+            v.update(parts=parts, total_parts=total_parts)
     right = ("1st, 2nd, 3rd and 4th innings of the match" if multi else "bowling first or second" if bowling
              else "batting first or chasing")
     return dict(kind=kind, title="Innings by innings", right=right, views=views, rule=rule,

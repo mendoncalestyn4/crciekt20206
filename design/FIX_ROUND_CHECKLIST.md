@@ -350,21 +350,47 @@ Pages and looks:
       record, the biggest stand from the fall of wickets)
 
 Accuracy and keeping it right:
-- [ ] The same number on every page; totals built from their parts
-- [ ] Every scorecard checks itself (totals, overs, fall of wickets, result and margin), new matches too
-- [ ] About ten hand-worked matches and an odd-cases library locked into tests
-- [ ] Impossible-value guard; a match saved twice counted once; a "checked ✓" mark on each match
-- [ ] Every change tested automatically on Windows with Python 3.14.7 and pandas 3.1
-- [ ] Reliability (your picks, 14 November): a second, separate counter for every main figure (runs, wickets,
+- [x] The same number on every page; totals built from their parts: tests/test_same_number.py takes one figure from
+      every page that shows it (a player's runs and wickets on the top numbers, the every-competition table and the
+      season-by-season table; a team's top run-scorers and every player's contribution, which add up to the team's
+      runs; a team's games and wins on its record, its results, Rivalries and the points table; a match's top scores
+      and its scorecard)
+- [x] Every scorecard checks itself (totals, overs, fall of wickets, result and margin), new matches too: every card is
+      checked as it's read (ccstats/parser.py validate_match), so a new match is too; 0 problems on the 71 test cards
+      and your 2,720 new ones. On the way, a real bug: an innings win ("won by an innings and 102 runs") lost its margin
+      when read, so the innings-win check never ran and the Competitions page said "an innings and null runs"; fixed,
+      the 37 innings wins in your set now read and check out, and innings wins are never listed as wins by runs
+- [x] About ten hand-worked matches and an odd-cases library locked into tests: tests/test_hand_worked.py (11 cards,
+      every number added up by hand) and tests/test_odd_cases.py
+- [x] Impossible-value guard; a match saved twice counted once; a "checked ✓" mark on each match: below 0, more than 6
+      a ball, more than 10 wickets, maidens or dots past the balls, a bowler past his overs (tests/test_self_checks.py);
+      the same card twice counted once (tests/test_loader.py); ✓ or ⚠ on every match in Find a match and on its page
+- [ ] Every change tested automatically on Windows with Python 3.14.7 and pandas 3.1: set up (GitHub Actions); ticked
+      when its first run passes
+- [x] Reliability (your picks, 14 November): a second, separate counter for every main figure (runs, wickets,
       averages, strike rates, economy, records), compared after every change; "how it's worked out" on every number
       (point at it: "845 runs ÷ 21 dismissals in 23 innings = 40.2"); the same "few games: treat with care" note on
-      every figure resting on very few games
-- [ ] Reading and showing (your picks, 14 November): every scorecard read back (written out again from what the site
+      every figure resting on very few games. Second counter: tests/test_second_counter.py (0 differences on the test
+      cards and on your 2,720). How it's worked out: the Player page's top numbers and tables, Teams' win %, and every
+      average, strike rate and economy in every table on every page (made from the numbers in its own row, so it always
+      matches the screen), each with the few-games note under 5 innings
+- [x] Reading and showing (your picks, 14 November): every scorecard read back (written out again from what the site
       understood and compared line by line with the original; any difference flagged), with an alarm for any
       unfamiliar line or rare dismissal (hit wicket, obstructing, timed out, retired out, absent hurt, handled the
       ball, each tested); shortened names ("c K'r Singh") must match exactly one player in the match or are flagged;
       a browser test reads every number off every page and checks it against the site's own figures; one name and
-      unit per stat everywhere, "–" for doesn't apply and 0 for zero, checked on every page
+      unit per stat everywhere, "–" for doesn't apply and 0 for zero, checked on every page.
+      Read back: tests/test_read_back.py, 0 differences on your 2,720. Shortened names: "L'-Cachet" now matches
+      Z Lion-Cachet; two bowlers printed with the same name share their wickets; when the card can't say which of two
+      bowlers took a wicket (1,255 wickets in 253 of your matches, e.g. "b Jansen" with D and M Jansen both bowling),
+      both are named and the match page says so, and a name matching no one is flagged. Screen = numbers:
+      tests/test_web.py reads the Player page's top numbers and table, a team's record and a scorecard off the screen.
+      One name per stat: every table heading uses one short name (Mat, Inns, NO, Runs, HS, Avg, BF, SR, 100, 50, Wkts,
+      Econ...; a dozen headings that said Games, Matches, Average, Economy, Wickets, Innings, 100s, Bowl avg or Balls
+      changed), the full words in the big tiles and charts, and hovering any short heading says what it means; a
+      browser test opens every page and tab and fails on another name, a "NaN", "null" or "undefined", an average shown
+      with no one out or a bowling average with no wickets (those are "–"), or a count that isn't a number where they
+      batted
 
 Zero errors (your approval, 14 November):
 - [ ] Working faster never means checking less (your words, 14 November: "ensure this still does the work well and

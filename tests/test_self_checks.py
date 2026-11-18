@@ -8,7 +8,7 @@ import pytest
 
 from pathlib import Path
 
-from ccstats.parser import Innings, Match, parse_scorecard, validate_match
+from ccstats.parser import Innings, Match, parse_result, parse_scorecard, validate_match
 
 # every test scorecard (the odd ones too: declarations, rain, super overs, odd names), not the two junk files
 HERE = Path(__file__).parent
@@ -81,10 +81,24 @@ def test_innings_win_margin_is_checked():
     def card(margin):
         m = Match("hand-made", "hand-made", team1="Kent", team2="Essex", result=f"Kent won by an innings and {margin} runs")
         m.innings = [Innings("Kent", 1, 1, total=300), Innings("Essex", 2, 1, total=100), Innings("Essex", 3, 2, total=120)]
-        m.result_type, m.winner, m.margin_runs, m.innings_win = "win", "Kent", margin, True
+        # the result line read the way the site reads every card (setting the margin by hand once hid that innings
+        # wins lost their margin when read)
+        r = parse_result(m.result, ["Kent", "Essex"])
+        m.result_type, m.winner, m.margin_runs, m.innings_win = r["result_type"], r["winner"], r["margin_runs"], r["innings_win"]
+        assert (m.margin_runs, m.innings_win) == (margin, True)
         return [p for p in validate_match(m) if "won by an innings" in p]
     assert card(80) == []
     assert card(87) == ["Kent won by an innings and 87 runs but the totals differ by 80"]
+
+
+def test_an_innings_win_keeps_its_margin_when_read():
+    """A real card with its result line made an innings win: the margin is read, and shown in words."""
+    src = Path(__file__).parent / "fixtures" / "19_aug_2026-eng_v_pak_1st_tst.txt"
+    text = src.read_text(errors="replace")
+    m0 = parse_scorecard(text, src.name)
+    m = parse_scorecard(text.replace(m0.result, "England won by an innings and 1 run"), src.name)
+    assert (m.winner, m.margin_runs, m.innings_win) == ("England", 1, True)
+    assert parse_result("India won by an innings and 102 runs", ["India", "Kent"])["margin_runs"] == 102
 
 
 def test_a_tie_with_different_scores_is_caught(cards):
@@ -181,3 +195,19 @@ def test_the_server_writes_its_problems_to_its_log(tmp_path, capsys):
     (tmp_path / "server.log").write_text("x" * (PR.LOG_MAX + 1), encoding="utf-8")
     p.add("request", "/api/x", "boom")
     assert (tmp_path / "server.log.1").exists() and "boom" in (tmp_path / "server.log").read_text(encoding="utf-8")
+
+
+def test_an_innings_win_is_listed_as_one_never_as_a_win_by_runs():
+    """With its margin now read, an innings win goes in the records' "Innings wins" and never in "Biggest wins by
+    runs" (an innings and 102 runs isn't a 102-run win)."""
+    from ccstats.loader import Career
+    from ccstats.records import records
+    from serverkit import FIXTURES
+    c = Career.build("Innings win", [(f.name, f.read_bytes()) for f in FIXTURES])
+    m = c.matches
+    k = m[(m.result_type == "win") & m.margin_runs.notna()].index[0]
+    m.loc[k, ["innings_win", "margin_runs"]] = [True, 999]
+    rec = records(c, m.match_id)
+    biggest = rec["Biggest wins by runs"]
+    assert not biggest.astype(str).apply(lambda col: col.str.contains("999")).any().any()
+    assert rec["Innings wins"].astype(str).apply(lambda col: col.str.contains("999")).any().any()

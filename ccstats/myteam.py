@@ -115,6 +115,9 @@ def squad(career, team: str, section: str, season: str) -> pd.DataFrame:
         ww = w[w.player == p]
         outs = int(bb.out.sum())
         avg = bb.runs.sum() / outs if outs else np.nan
+        # what the average, strike rate and economy are made from, for "how it's worked out" on the site
+        parts = dict(runs=int(bb.runs.sum()), outs=outs, bf=int(bb.balls.sum()), inns=len(bb), bruns=int(ww.runs.sum()),
+                     bballs=int(ww.balls.sum()), wkts=int(ww.wickets.sum()), binns=len(ww))
         rows.append(dict(player=p, games=g.match_id.nunique(), runs=int(bb.runs.sum()), average=avg,
                          strike_rate=bb.runs.sum() / bb.balls.sum() * 100 if bb.balls.sum() else np.nan,
                          wickets=int(ww.wickets.sum()),
@@ -123,9 +126,10 @@ def squad(career, team: str, section: str, season: str) -> pd.DataFrame:
                          form=form_arrow(list(bb.runs), bb.runs.mean() if len(bb) else np.nan),
                          recent=bool(set(g.match_id) & last3),
                          low_run=_low_run(list(bb.runs), list(bb.out)),
-                         usual_position=float(bb.position.median()) if len(bb) else np.nan))
+                         usual_position=float(bb.position.median()) if len(bb) else np.nan,
+                         bowled=bool(len(ww)), parts=parts))
     d = pd.DataFrame(rows, columns=["player", "games", "runs", "average", "strike_rate", "wickets", "economy", "last5",
-                                    "form", "recent", "low_run", "usual_position"])
+                                    "form", "recent", "low_run", "usual_position", "bowled", "parts"])
     return d.sort_values(["games", "runs"], ascending=False).reset_index(drop=True)
 
 
@@ -185,9 +189,13 @@ def report_card(career, team: str, section: str, season: str) -> list[tuple[str,
     g = "A" if wp >= 70 else "B" if wp >= 55 else "C" if wp >= 45 else "D" if wp >= 30 else "E"
     out.append(("Results", g, f"{TP.wdl(rec)} ({wp:.0f}% of games with a result)"))
     d = (me.rpw_for - avg.rpw_for) / avg.rpw_for * 100 if avg.rpw_for else np.nan
-    out.append(("Batting", _grade(d), f"{me.rpw_for:.1f} runs per wicket, average team {avg.rpw_for:.1f}"))
+    one = lambda v: f"{v:.1f}" if np.isfinite(v) else "–"   # noqa: E731  (no wickets yet: nothing to divide by)
+    out.append(("Batting", _grade(d), f"{one(me.rpw_for)} runs per wicket, average team {one(avg.rpw_for)}"
+                if np.isfinite(me.rpw_for) else f"no wickets lost yet, average team {one(avg.rpw_for)} runs per wicket"))
     d = (avg.rpw_against - me.rpw_against) / avg.rpw_against * 100 if avg.rpw_against else np.nan
-    out.append(("Bowling", _grade(d), f"{me.rpw_against:.1f} runs per wicket conceded, average team {avg.rpw_against:.1f}"))
+    out.append(("Bowling", _grade(d), f"{one(me.rpw_against)} runs per wicket conceded, average team {one(avg.rpw_against)}"
+                if np.isfinite(me.rpw_against) else
+                f"no wickets taken yet, average team {one(avg.rpw_against)} runs per wicket conceded"))
     # every catch the side took, also those the scorecard can't give to one player (they count for the team)
     sids = Scope(sections=[section], seasons=[season]).match_ids(career.matches)
     fc = career.fielding[career.fielding.match_id.isin(sids) & (career.fielding.kind == "caught")]

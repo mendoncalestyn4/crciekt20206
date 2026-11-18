@@ -5,6 +5,7 @@ the search box finds things, and new matches show up on an open page by themselv
 
 Needs Playwright and its Chromium (a developer's machine); they aren't part of the Stats Pack itself."""
 
+import json
 import os
 import re
 import shutil
@@ -483,6 +484,67 @@ def test_ticking_a_second_format_counts_both_on_the_player_page(browser, site):
     assert nxt["ticked"] == want
 
 
+def test_the_numbers_on_screen_are_the_sites_own(browser, site):
+    """Screen = numbers (your pick of 14 November): every number read off the page, as it shows, equals the site's own
+    figure: a player's top numbers and every cell of the every-competition table, a team's record, and every batting
+    line of a scorecard."""
+    live, _ = site
+    many = next(p for p in live.json("/api/players")["players"] if len(p["sections"]) >= 2)
+    d = live.json(f"/api/player?name={many['player']}")
+    pg, said = open_page(browser, site, f"/players/{many['player']}?view=batting")
+    try:
+        shown = pg.evaluate("Object.fromEntries([...document.querySelectorAll('.sub .t')].map(t => "
+                            "[t.querySelector('.tl')?.textContent.trim().toLowerCase(), t.querySelector('.nm')?.textContent.trim()]))")
+        k = d["batting"]["kpis"]
+        want = {"innings": str(k["innings"]), "runs": f"{k['runs']:,}", "high score": k["high_score"],
+                "100s / 50s": f"{k['hundreds']} / {k['fifties']}",
+                "average": "–" if k["average"] is None else f"{k['average']:.2f}",
+                "strike rate": "–" if k["strike_rate"] is None else f"{k['strike_rate']:.1f}"}
+        for key, v in want.items():
+            assert shown.get(key) == v, (key, shown.get(key), v)
+        # the every-competition table: every cell as the site wrote it
+        cells = pg.evaluate("[...document.querySelectorAll('table.rec')][0] ? [...[...document.querySelectorAll('table.rec')][0]"
+                            ".querySelectorAll('tbody tr')].map(r => [...r.querySelectorAll('td')].map(td => td.textContent.trim())) : []")
+        t = d["bat_table"]
+        for row, tr in zip(t["rows"], cells):
+            for c, td in zip(t["cols"], tr):
+                if c != t["first"]:
+                    assert td == ("–" if row[c] is None else str(row[c])), (c, td, row[c])
+        assert said == [], said
+    finally:
+        pg.close()
+    # a team's record
+    tm = live.json("/api/team")["page"]
+    pg, said = open_page(browser, site, f"/teams?team={tm['team']}&section={tm['section']}")
+    try:
+        shown = pg.evaluate("[...document.querySelectorAll('.kpis > div')].map(x => [x.querySelector('span')?.textContent.trim(), "
+                            "x.querySelector('.nm')?.textContent.trim()])")
+        for (k_, v), want_ in zip(shown, tm["head"]["kpis"]):
+            assert (k_, v) == (want_["k"], want_["v"]), (k_, v, want_)
+        assert said == [], said
+    finally:
+        pg.close()
+    # every batting line of a scorecard
+    mid = live.json("/api/matches")["matches"][0]["id"]
+    m = live.json(f"/api/match/{mid}")["match"]
+    pg, said = open_page(browser, site, f"/matches/{mid}?view=scorecard")
+    try:
+        rows = pg.evaluate("[...document.querySelectorAll('.t')].find(t => t.querySelector('.tl')?.textContent.startsWith('Batting'))"
+                           ".querySelectorAll('tbody tr').length")
+        first = m["cards"][0]
+        batted = [b for b in first["bat"] if b["did_bat"]]
+        assert rows == len(batted) + 1          # and the total
+        runs = pg.evaluate("[...[...document.querySelectorAll('.t')].find(t => t.querySelector('.tl')?.textContent.startsWith('Batting'))"
+                           ".querySelectorAll('tbody tr')].slice(0, -1).map(r => r.querySelectorAll('td')[1].querySelector('.tn').textContent.trim())")
+        assert runs == [f"{b['runs']}{'' if b['out'] else '*'}" for b in batted]
+        total = pg.evaluate("[...[...document.querySelectorAll('.t')].find(t => t.querySelector('.tl')?.textContent.startsWith('Batting'))"
+                            ".querySelectorAll('tbody tr')].at(-1).querySelector('.nm').textContent.trim()")
+        assert total.startswith(str(first["runs"])), (total, first["runs"])
+        assert said == [], said
+    finally:
+        pg.close()
+
+
 def test_find_a_player_keeps_each_name_in_its_own_column(browser, site):
     """Found by you (14 November): searching "smith" squeezed the names into a column a letter or two wide (a team
     with no logo let the name slide into the logo's place). Every name keeps its column and never breaks inside a
@@ -498,3 +560,75 @@ def test_find_a_player_keeps_each_name_in_its_own_column(browser, site):
             assert said == [], said
         finally:
             pg.close()
+
+
+# one name per stat (your pick of 14 November): a table heading never uses another name for a stat that has a short
+# name (web/src/format.ts STAT_WORDS); "Matches" stays only on the list of competitions, where it counts their games
+OTHER_NAMES = {"Games": "Mat", "Matches": "Mat", "Average": "Avg", "Strike rate": "SR", "Economy": "Econ",
+               "Wickets": "Wkts", "Innings": "Inns", "100s": "100", "50s": "50", "Bowl avg": "Avg", "Balls faced": "BF",
+               "Maidens": "Mdns", "Highest score": "HS", "Not outs": "NO"}
+SAME_NAMES = """() => {
+  const out = [], other = %s, num = (s) => /^-?[\\d,]+(\\.\\d+)?\\*?$/.test(s);
+  const text = document.querySelector('main')?.innerText ?? '';
+  // "None" only as a stray value, never the word starting a sentence ("None of their players...", "None finished yet")
+  for (const m of text.matchAll(/\\b(NaN|undefined|null|Infinity)\\b|\\bNone\\b(?! [a-z])/g)) out.push(`the word ${m[0]} on the page: "${text.slice(Math.max(0, m.index - 50), m.index + 30).replace(/\\s+/g, ' ')}"`);
+  for (const t of document.querySelectorAll('main table')) {
+    const head = [...t.querySelectorAll('thead th')].map((h) => h.textContent.replace(/[▾▴]/g, '').trim());
+    t.querySelectorAll('thead th').forEach((th) => { const h = th.textContent.replace(/[▾▴]/g, '').trim();
+      if (['Mat', 'Inns', 'Avg', 'SR', 'Econ', 'Wkts', 'BF', 'HS', 'NO'].includes(h) && !th.title) out.push(`heading "${h}" with no meaning on hover`); });
+    head.forEach((h) => { if (other[h] && !(h === 'Matches' && head[0] === 'Section')) out.push(`heading "${h}" (one name: "${other[h]}") in [${head.join(', ')}]`); });
+    const at = (n) => head.indexOf(n);
+    for (const r of t.querySelectorAll('tbody tr')) {
+      const c = [...r.querySelectorAll('td')].map((d) => d.textContent.trim());
+      if (c.length !== head.length) continue;
+      const v = (n) => (at(n) >= 0 ? c[at(n)] : undefined);
+      // "–" for what doesn't apply: no average with no one out, no bowling average or strike rate with no wickets
+      if (at('Inns') >= 0 && at('NO') >= 0 && at('Avg') >= 0 && num(v('Inns')) && v('Inns') === v('NO') && v('Avg') !== '–')
+        out.push(`an average of ${v('Avg')} with no one out in [${head.join(', ')}]`);
+      if (at('Wkts') >= 0 && v('Wkts') === '0') for (const k of ['Avg', 'SR'].filter((k) => at(k) >= 0 && head.includes('Overs')))
+        if (v(k) !== '–') out.push(`${k} ${v(k)} with no wickets in [${head.join(', ')}]`);
+      // 0 for zero: where they batted, every count is a number
+      if (num(v('Inns') ?? '') && Number(v('Inns')) > 0 && !head.includes('Overs'))
+        for (const k of ['NO', 'Runs', '100', '50', '4s', '6s'].filter((k) => at(k) >= 0))
+          if (!num(v(k))) out.push(`${k} shown as "${v(k)}" in a row with innings, in [${head.join(', ')}]`);
+      for (const x of c) if (/^(nan|inf|-inf)$/i.test(x)) out.push(`a cell "${x}" in [${head.join(', ')}]`);
+      // how it's worked out: every average, strike rate and economy shown says its sum on hover
+      const tds = [...r.querySelectorAll(':scope > td')];
+      head.forEach((h, i) => { if (['Avg', 'SR', 'Econ'].includes(h) && num(c[i])) {
+        const el = tds[i].querySelector('.tn, .nm') ?? tds[i];
+        if (!el.title) { out.push(`${h} ${c[i]} with no sum on hover in [${head.join(', ')}]`); return; }
+        // and the sum adds up: the figure is its parts worked out, to its last shown digit
+        const n = (x) => Number(x.replace(/,/g, ''));
+        const m = /([\d,]+) (?:runs|balls) ÷ ([\d,]+) (?:times out|broken stands|wickets|balls)( × (?:100|6))? = ([\d.]+)/.exec(el.title);
+        if (!m) { if (!/ = /.test(el.title)) out.push(`${h} ${c[i]}: hover "${el.title}" isn't a sum`); return; }
+        const got = n(m[1]) / n(m[2]) * (m[3] ? Number(m[3].replace(/\D/g, '')) : 1), shown = m[4];
+        const dec = (shown.split('.')[1] || '').length;
+        if (shown !== c[i].replace(/\*$/, '') || Math.abs(got - Number(shown)) > 0.5 * 10 ** -dec + 1e-9)
+          out.push(`${h} ${c[i]}: "${el.title}" doesn't add up (${got})`); } });
+    }
+  }
+  return out;
+}""" % json.dumps(OTHER_NAMES)
+
+
+@pytest.mark.parametrize("path", [p for p in PAGES if p != "/no-such-page"] + ["/players/K Rabada?view=bowling", "match"])
+def test_every_stat_has_one_name_and_dash_for_what_doesnt_apply(browser, site, path):
+    """On every page and tab: each stat's heading is its one short name, "–" stands for what can't be worked out (an
+    average with no one out, a bowling average or strike rate with no wickets; best figures of 0/7 are a real figure), a
+    count that is zero shows 0, no "NaN", "null", "undefined" or "Infinity" ever shows, and every average, strike rate
+    and economy says how it's worked out on hover."""
+    live, _ = site
+    if path == "match":
+        path = "/matches/" + live.json("/api/matches")["matches"][0]["id"]
+    pg, said = open_page(browser, site, path)
+    try:
+        problems = pg.evaluate(SAME_NAMES)
+        tabs = pg.eval_on_selector_all(".part > .itabs button", "bs => bs.map(b => b.textContent.trim())")
+        for t in tabs[1:]:
+            pg.locator(".part > .itabs button", has_text=t).first.click()
+            pg.wait_for_selector("body[data-ready='1']", timeout=30000)
+            pg.wait_for_timeout(300)
+            problems += [f"{t}: {p}" for p in pg.evaluate(SAME_NAMES)]
+        assert problems == [], problems
+    finally:
+        pg.close()

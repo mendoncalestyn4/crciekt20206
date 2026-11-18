@@ -602,7 +602,8 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
                 FOW.append(dict(match_id=m.match_id, innings_no=inn.number, team=inn.team, wicket=w, score=score))
             for b, raw in zip(inn.batting, _batting_raw(inn)):
                 player = fixes.rename(raw, inn.team)
-                bowler = fixes.rename(b.bowler, inn.bowling_team) if b.bowler else ""
+                # "D Jansen or M Jansen" (the card can't tell them apart) is renamed name by name
+                bowler = " or ".join(fixes.rename(x, inn.bowling_team) for x in b.bowler.split(" or ")) if b.bowler else ""
                 key = f"{m.match_id}|{inn.number}|{b.position}"
                 fielder, resolved = b.fielder, b.fielder_resolved
                 if key in fixes.credits:

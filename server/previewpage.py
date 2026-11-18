@@ -256,7 +256,7 @@ def _aim(career, ids, me, opp) -> dict:
         meet = v["meetings"]
         out["venues"][where.capitalize()] = dict(
             line=line, warn=("Careful: " + "; ".join(warn) + ".") if warn else "", they=they,
-            meetings=table(["Date", "Innings", "Result"], [[x["date"], x["first"], x["result"]] for x in meet],
+            meetings=table(["Date", "First innings", "Result"], [[x["date"], x["first"], x["result"]] for x in meet],
                            links=[x["id"] for x in meet]) if meet else None)
     home = a["home"]
     v = next(iter(a["venues"].values()))      # their batting and your bowling are the same wherever it is
@@ -466,7 +466,7 @@ def _how_they_play(career, ids, opp, where_note, last: bool) -> dict:
                 "even": f" The stands are much the same: the first three wickets usually put on {first}, the next three "
                         f"{next_}."}.get(bt["pace"], "")
         bat.append("Their usual score at each wicket: " + ", ".join(f"{v}/{w}" for w, v in bt["usual"].items()) + "." + pace)
-    parts = table(["Part of the order", "Runs", "Balls", "Strike rate", "In fours and sixes", "4s", "6s"],
+    parts = table(["Part of the order", "Runs", "BF", "SR", "In fours and sixes", "4s", "6s"],
                   [[p["part"], p["runs"], p["balls"], fmt(p["strike_rate"], 1), pct(p["boundary_share"], 0), p["fours"], p["sixes"]]
                    for p in bt["parts"] if p["balls"]], num={1, 2, 3, 4, 5, 6})
     lead = []
@@ -571,10 +571,13 @@ def _by_country(career, ids, me, opp, where_note) -> dict:
             continue
         x = x.assign(order=x.player.map({p: i for i, p in enumerate(now)})).sort_values(["matches", "order"],
                                                                                          ascending=[False, True])
-        t = table(["Player", "Matches", "Runs", "Average", "Strike rate", "Wickets", "Average", "Economy"],
+        t = table(["Player", "Mat", "Runs", "Avg", "SR", "Wkts", "Avg", "Econ"],
                   [[r.player, int(r.matches), r.bat["runs"], fmt(r.bat["average"], 1), fmt(r.bat["strike_rate"], 1),
                     r.bowl["wickets"], fmt(r.bowl["average"], 1), fmt(r.bowl["economy"], 2)] for r in x.itertuples()],
-                  num={1, 2, 3, 4, 5, 6, 7})
+                  num={1, 2, 3, 4, 5, 6, 7},
+                  parts=[dict(runs=r.bat["runs"], outs=r.bat["outs"], bf=r.bat["balls"], inns=r.bat["innings"],
+                              bruns=r.bowl["runs"], bballs=r.bowl["balls"], wkts=r.bowl["wickets"], binns=r.bowl["spells"])
+                         for r in x.itertuples()])
         t.update(none="", place=place)
         out["venues"][where] = t
     out.update(shows=f"{poss(opp)} current players (those in their last 10 games here) {'in each country' if nation else 'at each ground'} "
@@ -658,7 +661,9 @@ def about_them(career, ids, me, opp, where_note, mu, cur, last=False) -> dict:
         h = at.head(6)
         t = table(["Bowler", "Inns", "Wkts", "Econ", "Avg"],
                   [[x.player, int(x.innings), int(x.wickets), fmt(x.economy, 2), fmt(x.average, 1)] for x in h.itertuples()],
-                  num={1, 2, 3, 4}, hi=[(getattr(x, key) or 0) > base for x in h.itertuples()])
+                  num={1, 2, 3, 4}, hi=[(getattr(x, key) or 0) > base for x in h.itertuples()],
+                  parts=[dict(bruns=int(x.runs), bballs=int(x.balls), wkts=int(x.wickets), binns=int(x.innings))
+                         for x in h.itertuples()])
         t["note"] = (f"Highlighted: worse than the average bowler here ({'economy' if key == 'economy' else 'average'} "
                      f"{fmt(base, 2 if key == 'economy' else 1)}).")
         return t
@@ -670,7 +675,8 @@ def about_them(career, ids, me, opp, where_note, mu, cur, last=False) -> dict:
             return None
         return table(["Batter", "Runs", "Avg", "SR", "Style"],
                      [[x.player, int(x.runs), fmt(x.average, 1), fmt(x.strike_rate, 1), x.style] for x in bs.itertuples()],
-                     num={1, 2, 3})
+                     num={1, 2, 3}, parts=[dict(runs=int(x.runs), outs=int(x.outs), bf=int(x.balls), inns=int(x.innings))
+                                           for x in bs.itertuples()])
     part("styles", styles)
 
     def chase():

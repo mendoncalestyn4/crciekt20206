@@ -547,11 +547,19 @@ def team_table(career, ids, venue: str = "all") -> pd.DataFrame:
             lost=int(((mine.winner != team) & (mine.winner != "")).sum()),
             drawn=int((mine.result_type == "draw").sum()), tied=int((mine.result_type == "tie").sum()),
             win_pct=float((mine.winner == team).mean() * 100),
-            rpw_for=bat.runs.sum() / max(bat.wickets.sum(), 1), rpw_against=bowl.runs.sum() / max(bowl.wickets.sum(), 1),
-            rr_for=bat.runs.sum() / max(bat.balls.sum(), 1) * 6, rr_against=bowl.runs.sum() / max(bowl.balls.sum(), 1) * 6,
+            # no wickets or no balls: nothing to divide by, so no figure ("–"), never the runs themselves
+            rpw_for=_per(bat.runs.sum(), bat.wickets.sum()), rpw_against=_per(bowl.runs.sum(), bowl.wickets.sum()),
+            rr_for=_per(bat.runs.sum(), bat.balls.sum(), 6), rr_against=_per(bowl.runs.sum(), bowl.balls.sum(), 6),
             nrr=(nrr_for.runs.sum() / max(nrr_for.balls.sum(), 1) - nrr_against.runs.sum() / max(nrr_against.balls.sum(), 1)) * 6
             if limited else np.nan,
             first_innings_avg=first.runs.mean() if len(first) else np.nan,
-            wkts_per_match=bowl.wickets.sum() / n))
+            wkts_per_match=bowl.wickets.sum() / n,
+            # what the bowling figures are made from (for "how it's worked out")
+            conceded=int(bowl.runs.sum()), bowled=int(bowl.balls.sum()), taken=int(bowl.wickets.sum()), fielded=len(bowl)))
     return pd.DataFrame(rows, columns=["team", "played", "won", "lost", "drawn", "tied", "win_pct", "rpw_for", "rpw_against",
-                                       "rr_for", "rr_against", "nrr", "first_innings_avg", "wkts_per_match"])
+                                       "rr_for", "rr_against", "nrr", "first_innings_avg", "wkts_per_match", "conceded",
+                                       "bowled", "taken", "fielded"])
+
+
+def _per(top, bottom, times: float = 1) -> float:
+    return top / bottom * times if bottom else np.nan

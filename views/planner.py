@@ -165,7 +165,7 @@ with tabs[4], safe_section("partnerships"):
         if bpairs.empty:
             st.caption("No pairs with 2+ stands yet.")
         else:
-            html_table([[r.pair, r.stands, r.runs, f"{r.average:.1f}", r.best, r.big_stands] for r in bpairs.head(15).itertuples()],
+            html_table([[r.pair, r.stands, r.runs, (f"{r.average:.1f}" if r.average == r.average else "–"), r.best, r.big_stands] for r in bpairs.head(15).itertuples()],
                        ["Pair", "Stands", "Runs", "Avg", "Best", f"{bpairs.attrs.get('stand', 50)}+"], numeric={1, 2, 3, 4, 5})
     with right, st.container(border=True):
         wpairs = state.memo(PL.bowling_pairs, career, ids, team)

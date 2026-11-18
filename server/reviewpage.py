@@ -130,7 +130,7 @@ def _year(career, season) -> dict:
         res = dict(title=f"International cricket {season}", counts=[dict(label=f"{f}s", value=d["matches"]) for f, d in yr["formats"].items()],
                    cricketer=None, formats=[], note=IMPACT_NOTE)
         if len(yr["cricketer"]):
-            res["cricketer"] = table(["", "Player", "Team", "Impact", "Runs", "Wkts", "Matches", "Formats"],
+            res["cricketer"] = table(["", "Player", "Team", "Impact", "Runs", "Wkts", "Mat", "Formats"],
                                      [[i + 1, r.player, r.team, f"{r.impact:.0f}", int(r.runs), int(r.wickets), int(r.matches), r.formats]
                                       for i, r in enumerate(yr["cricketer"].itertuples())], num={0, 3, 4, 5, 6})
         for f, d in yr["formats"].items():
@@ -217,7 +217,7 @@ def _mvp(career, section, season, how) -> dict:
             res["none"] = "No players yet."
             return res
         top = mvp.head(15)
-        res["table"] = table(["#", "Player", "Team", "Matches", "Batting", "Bowling", "Points", "Per match"],
+        res["table"] = table(["#", "Player", "Team", "Mat", "Batting", "Bowling", "Points", "Per match"],
                              [[i, r.player, r.team, int(r.matches), fmt(r.batting, 0), fmt(r.bowling, 0),
                                fmt(r.points, 0), fmt(r.per_match, 1)] for i, r in enumerate(top.itertuples(), start=1)],
                              num={0, 3, 4, 5, 6, 7})

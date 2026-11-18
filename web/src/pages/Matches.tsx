@@ -117,7 +117,8 @@ export function MatchView() {
               ? <div className="note" title={`Checked: ${d.checked.checks.join("; ")}.`}><span className="chk">✓</span> Checked: every sum on this scorecard adds up
                 (the totals, extras, overs, wickets, fall of wickets and the result).</div>
               : <div className="plain"><span className="chk bad">⚠</span> {d.checked.problems.length === 1 ? "One sum" : `${d.checked.problems.length} sums`} on
-                this scorecard didn't add up, so treat its numbers with care: {d.checked.problems.join("; ")}.</div>)}</Tile>
+                this scorecard didn't add up, so treat its numbers with care: {d.checked.problems.join("; ")}.</div>)}
+            {d.checked?.unclear?.length ? <div className="note">Bowlers who share a name: {d.checked.unclear.join("; ")}.</div> : null}</Tile>
           {d.rain && <Tile span={12} title="🌧️ Rain"><div className="plain">{d.rain}</div></Tile>}
           {d.corrected?.length ? <Tile span={12} title="✎ Scorecard put right">
             <div className="plain">The game's scorecard didn't add up; the card itself shows what happened, so it's counted this way:</div>
@@ -135,7 +136,7 @@ export function MatchView() {
               <Explain is_={d.win.is_} best={d.win.best} best_label={d.win.best_label} for_={d.win.for_} /></>}
           </Tile>}
           <Tile span={6} title="Top scores">
-            <table className="c"><thead><tr><th>Batter</th><th className="r">Score</th><th className="r">Balls</th></tr></thead>
+            <table className="c"><thead><tr><th>Batter</th><th className="r">Score</th><th className="r">BF</th></tr></thead>
               <tbody>{d.top_scores.map((r) => (
                 <tr key={r.player + r.team}><td><span className="cell"><Logo team={r.team} size={40} /><PName p={r.player} px={21} /></span></td>
                   <td className="r"><span className="tn">{r.score}</span></td><td className="r"><span className="tn dimn">{r.balls}</span></td></tr>))}</tbody></table>

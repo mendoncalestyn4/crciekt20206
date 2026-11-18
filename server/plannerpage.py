@@ -136,7 +136,8 @@ def _batting(career, ids, team, only_recent) -> dict:
             show = show[show.player.isin(recent)]
         every = table(["Player", "Position", "Inns", "Runs per inns", "SR", "v average"],
                       [[r.player, r.group, int(r.innings), fmt(r.per_innings, 1), fmt(r.strike_rate, 1), f"{r.vs_avg:+.1f}"]
-                       for r in show.itertuples()], num={2, 3, 4, 5}, hi=[r.group == r.best for r in show.itertuples()])
+                       for r in show.itertuples()], num={2, 3, 4, 5}, hi=[r.group == r.best for r in show.itertuples()],
+                      parts=[dict(runs=int(r.runs), bf=int(r.balls), inns=int(r.innings)) for r in show.itertuples()])
         return dict(none="", top7=top7, every=every)
     part("order", order_)
     return out
@@ -153,7 +154,9 @@ def _bowling(career, ids, team) -> dict:
         t = table(["Bowler", "Inns", "Wkts", "Top 3", "4-7", "8-11", "Avg" if by_avg else "Econ", "SR", "Use as"],
                   [[r.player, int(r.innings), int(r.wickets), int(r.top), int(r.middle), int(r.tail),
                     fmt(r.economy, 2) if not by_avg else fmt(r.economy / 6 * r.strike_rate, 1) if r.wickets else "–",
-                    fmt(r.strike_rate, 1), r.tags] for r in bp.itertuples()], num={1, 2, 3, 4, 5, 6, 7})
+                    fmt(r.strike_rate, 1), r.tags] for r in bp.itertuples()], num={1, 2, 3, 4, 5, 6, 7},
+                  parts=[dict(bruns=int(r.runs), bballs=int(r.balls), wkts=int(r.wickets), binns=int(r.innings))
+                         for r in bp.itertuples()])
         t["note"] = (f"Section average: {bp.attrs['average']:.1f} runs per wicket, a wicket every {bp.attrs['strike_rate']:.0f} "
                      "balls. In multi-day cricket the cost of each wicket matters more than the run rate, so 'cheap' and "
                      "'costly' go by bowling average. Top-order hunters for the new ball; tail cleaners to finish an innings "
@@ -173,7 +176,7 @@ def _knocking(career, ids, team) -> dict:
         kn = PL.knocking(career, ids, team)
         if kn.empty:
             return dict(none="Nobody on the fringes is outscoring the regulars right now.")
-        t = table(["Player", "Games", "Why"], [[r.player, int(r.games), r.why] for r in kn.itertuples()], num={1})
+        t = table(["Player", "Mat", "Why"], [[r.player, int(r.games), r.why] for r in kn.itertuples()], num={1})
         t["note"] = "Small samples: a good game or two can put someone here, so treat it as a nudge."
         return t
     part("knocking", kn_)
@@ -188,8 +191,10 @@ def _pairs(career, ids, team) -> dict:
         if bp.empty:
             return dict(none="No pairs with 2+ stands yet.")
         return table(["Pair", "Stands", "Runs", "Avg", "Best", f"{bp.attrs.get('stand', 50)}+"],
-                     [[r.pair, int(r.stands), int(r.runs), f"{r.average:.1f}", int(r.best), int(r.big_stands)]
-                      for r in bp.head(15).itertuples()], num={1, 2, 3, 4, 5})
+                     [[r.pair, int(r.stands), int(r.runs), fmt(r.average, 1), int(r.best), int(r.big_stands)]
+                      for r in bp.head(15).itertuples()], num={1, 2, 3, 4, 5},
+                     parts=[dict(runs=int(r.runs), outs=int(r.broken), inns=int(r.stands), what="stands")
+                            for r in bp.head(15).itertuples()])
     part("batting", bat)
 
     def bowl():
@@ -198,6 +203,7 @@ def _pairs(career, ids, team) -> dict:
             return dict(none="No pairs yet.")
         return table(["Pair", "Inns", "Wkts", "Wkts/inns", "Econ"],
                      [[r.pair, int(r.innings), int(r.wickets), f"{r.per_innings:.1f}", fmt(r.economy, 2)] for r in wp.head(15).itertuples()],
-                     num={1, 2, 3, 4})
+                     num={1, 2, 3, 4}, parts=[dict(bruns=int(r.runs), bballs=int(r.balls), wkts=int(r.wickets), binns=int(r.innings))
+                                              for r in wp.head(15).itertuples()])
     part("bowling", bowl)
     return out

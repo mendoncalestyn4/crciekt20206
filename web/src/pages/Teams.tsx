@@ -134,7 +134,7 @@ function Contributions({ c }: { c: NonNullable<TeamBody["contribution"]> }) {
   return <>
     <div className="contrib" data-chart>
       <div><div className="k3" style={{ marginTop: 0 }}>The runs off the bat</div><RingList items={ring} centre={String(c.team_runs)} sub="runs" /></div>
-      <div><table className="c"><thead><tr>{th("player", "Player", false)}{th("matches", "Matches")}{th("runs", "Runs")}<th>Of the runs</th>{th("wickets", "Wickets")}<th>Of the wickets</th></tr></thead>
+      <div><table className="c"><thead><tr>{th("player", "Player", false)}{th("matches", "Mat")}{th("runs", "Runs")}<th>Of the runs</th>{th("wickets", "Wkts")}<th>Of the wickets</th></tr></thead>
         <tbody>{shown.map((r) => <tr key={r.player}><td><T>{r.player}</T></td><td className="r"><span className="tn dimn">{r.matches}</span></td>
           <td className="r"><span className="tn">{r.runs}</span></td><td>{bar(r.run_share, topR)}</td>
           <td className="r"><span className="tn">{r.wickets}</span></td><td>{bar(r.wicket_share, topW)}</td></tr>)}</tbody></table>
