@@ -459,6 +459,30 @@ def test_the_player_page_tabs_each_show_their_own_kind(browser, site):
     assert part["sections"] == secs and part["label"] == " + ".join(secs)
 
 
+def test_ticking_a_second_format_counts_both_on_the_player_page(browser, site):
+    """Your answers of 17 November: the page's formats are tick boxes; ticking a second one counts both together (the
+    address keeps them, the page says "A + B") and the ticks carry over to the next player's page."""
+    live, _ = site
+    many = next(p for p in live.json("/api/players")["players"] if len(p["sections"]) >= 2)
+    d = live.json(f"/api/player?name={many['player']}")
+    other = next(s for s in d["sections"] if s not in d["ticked"])
+    pg, said = open_page(browser, site, f"/players/{many['player']}")
+    try:
+        box = pg.locator(".part .ticks label.tick").nth(d["sections"].index(other))   # in the agreed order
+        box.click()
+        pg.wait_for_function("location.search.includes('section=')")
+        pg.wait_for_selector("body[data-ready='1']")
+        pg.wait_for_function("document.querySelector('.part .tl2') && document.querySelector('.part .tl2').textContent.includes(' + ')")
+        want = [s for s in d["sections"] if s in set(d["ticked"]) | {other}]
+        assert pg.inner_text(".part .tl2").startswith(" + ".join(want))
+        assert said == [], said
+    finally:
+        pg.close()
+    # carried over: another player's page opens on the ticks remembered, where they played those formats
+    nxt = live.json(f"/api/player?name={many['player']}")
+    assert nxt["ticked"] == want
+
+
 def test_find_a_player_keeps_each_name_in_its_own_column(browser, site):
     """Found by you (14 November): searching "smith" squeezed the names into a column a letter or two wide (a team
     with no logo let the name slide into the logo's place). Every name keeps its column and never breaks inside a

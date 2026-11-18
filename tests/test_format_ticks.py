@@ -4,6 +4,7 @@ that only mean one format show one block per format; seasons are April-to-March 
 never played are dropped (ticks carried over from another page)."""
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from ccstats import playerdeep as PD
@@ -141,3 +142,73 @@ def test_danger_bands_of_one_length_put_together_fairly(career):
             assert row["all"] == pytest.approx(sum(np.nan_to_num(f.all_pct.iloc[i]) * f.attrs["dismissals"] for f in frames) / n, abs=0.01)
         return
     pytest.skip("no player with two formats of one length")
+
+
+# ------------------------------------------------------------------ Teams, Team v team, Rivalries, the match finder
+from server import matchpage as MP           # noqa: E402
+from server import rivalriespage as RV       # noqa: E402
+from server import teampage as TPG           # noqa: E402
+from server import tvtpage as TV             # noqa: E402
+
+
+def _team_two(career):
+    """A team with games in two or more competitions, and its two most played."""
+    m = career.matches
+    for t in (set(m.home) | set(m.away)):
+        secs = m[(m.home == t) | (m.away == t)].section.value_counts()
+        if len(secs) >= 2:
+            return t, list(secs.index[:2])
+    pytest.skip("no team in two competitions")
+
+
+def test_team_record_counted_together(career):
+    team, two = _team_two(career)
+    both = TPG.page(career, "|".join(two), "", team, "all", "Overview")
+    one = [TPG.page(career, s, "", team, "all", "Overview") for s in two]
+    kp = lambda p, k: next(x["v"] for x in p["head"]["kpis"] if x["k"] == k)  # noqa: E731
+    assert int(kp(both, "Played")) == sum(int(kp(p, "Played")) for p in one)
+    assert both["ticked"] == [s for s in TPG.in_order(career.matches, two)] and " + " in both["name"]
+    assert not both["body"]["missing"]
+    # against the average team: each competition's own average team, weighted by the team's games in it
+    row = next(r for r in both["body"]["vs_average"]["rows"] if r["label"] == "Win %")
+    ids = {s: career.matches[career.matches.section == s].match_id for s in two}
+    tabs = {s: TPG.A.team_table(career, ids[s]) for s in two}
+    w = {s: int(tabs[s].set_index("team").loc[team].played) if team in set(tabs[s].team) else 0 for s in two}
+    ref = sum(tabs[s].win_pct.mean() * w[s] for s in two) / sum(w.values())
+    me = TPG.A.team_table(career, pd.Index(pd.concat(ids.values()))).set_index("team").loc[team].win_pct
+    assert row["value"] == pytest.approx((me - ref) / abs(ref) * 100, abs=0.01)
+    for tab in TPG.TABS[1:]:
+        assert not (TPG.page(career, "|".join(two), "", team, "all", tab)["body"] or {}).get("missing"), tab
+
+
+def test_team_v_team_runs_above_average_each_formats_own(career):
+    team, two = _team_two(career)
+    both = TV.page(career, "|".join(two), "", team, "", "any", "", [team])
+    if both["none"]:
+        pytest.skip(both["none"])
+    one = {s: TV.page(career, s, "", team, both["b"], "any", "", [team]) for s in two}
+    got = {r["player"]: r["value"] for r in both["body"]["above"]["rows"]}
+    each: dict = {}
+    for s, p in one.items():
+        if p.get("body") and p["body"].get("above"):
+            for r in p["body"]["above"]["rows"]:
+                each[r["player"]] = each.get(r["player"], 0) + r["value"]
+    shared = [k for k in got if k in each]
+    assert shared
+    for k in shared:
+        assert got[k] == pytest.approx(each[k], abs=0.05), k
+
+
+def test_rivalries_and_the_match_finder_counted_together(career):
+    secs = MP.ticked_of(career, "")
+    two = secs[:2]
+    both = RV.page(career, {"section": "|".join(two)}, [])
+    one = [RV.page(career, {"section": s}, []) for s in two]
+    assert both["ticked"] == two and len(both["pairs"]) >= max(len(p["pairs"]) for p in one)
+    f = MP.finder(career, "|".join(two), "", [])
+    assert f["ticked"] == two and len(f["matches"]) == sum(len(MP.finder(career, s, "", [])["matches"]) for s in two)
+    assert MP.finder(career, "All sections", "", [])["section"] == "All sections"
+    # the best games: each match keeps its rank within its own competition
+    bg = MP.best_games(career, "|".join(two), top=50)
+    own = {r["id"]: r["rank"] for s in two for r in MP.best_games(career, s, top=500)["rows"]}
+    assert bg["rows"] and all(r["rank"] == own[r["id"]] for r in bg["rows"])

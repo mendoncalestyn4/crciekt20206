@@ -237,8 +237,9 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         q = request.query_params
         def make(c):
             r, m = site.remembered(c), c.matches
-            section = q.get("section", "") or (r["section"] if r.get("section") in set(m.section) else "")
-            pool = m if section in ("", "All sections") else m[m.section == section]
+            remembered = "|".join(x for x in r.get("section", "").split("|") if x in set(m.section))
+            section = q.get("section", "") or remembered
+            pool = m if section in ("", "All sections") else m[m.section.isin(section.split("|"))]
             team = q.get("team", "") or (r["team"] if not q.get("section") and r.get("team") in set(pool.home) | set(pool.away) else "")
             return matchpage.finder(c, section, team, site.my_teams(c))
         data = await _with_career(make)()

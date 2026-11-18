@@ -34,24 +34,37 @@ def label(r) -> str:
     return f"{r.date:%d %b %Y} · {r.home} v {r.away} · {name_of(r)} · {r.result}"
 
 
+def ticked_of(career, section: str) -> list[str]:
+    """The competitions ticked ("Tests|ODIs", your answer of 17 November: tick any, counted together) in the agreed
+    order; "All sections" (or nothing that's here) is every one."""
+    m = career.matches
+    every = in_order(m, m.section.unique())
+    asked = set(section.split("|")) if section and section != "All sections" else set()
+    return [s for s in every if s in asked] or every
+
+
 def finder(career, section: str = "", team: str = "", mine: list[str] | None = None) -> dict:
-    """The choices (every section; the teams in the one picked) and the matches they leave, newest first. With no
+    """The choices (every section; the teams in those ticked) and the matches they leave, newest first. With no
     section asked for, the one your team played in last."""
     m = career.matches.sort_values(["date", "match_id"], ascending=False)
     sections = in_order(m, m.section.unique())   # the agreed order
     if not section:
         played = m[m.home.isin(mine or []) | m.away.isin(mine or [])]
         section = played.section.iloc[0] if len(played) else "All sections"
-    pool = m if section == "All sections" else m[m.section == section]
+    ticked = ticked_of(career, section)
+    section = "All sections" if len(ticked) == len(sections) and len(sections) > 1 else "|".join(ticked)
+    pool = m[m.section.isin(ticked)]
     teams = sorted(set(pool.home) | set(pool.away))
     if team and team != "All teams":
         pool = pool[(pool.home == team) | (pool.away == team)]
-    # our score v theirs: the team's latest matches in the competition picked (one competition: formats never mixed)
+    # our score v theirs: the team's latest matches in the competitions ticked; several are shown together, each
+    # competition's averages and highest total on their own (formats are never mixed in an average)
     scores = None
-    if team and team != "All teams" and section != "All sections" and len(pool):
+    if team and team != "All teams" and len(pool):
         rs = SG.in_played_order(career, SG.results(career, team, pool.match_id))[-14:]
         scores = dict(results=rs, summary=SG.scores(rs, team, rank=section_rank(career.matches)), team=team)
-    return dict(section=section, team=team or "All teams", sections=["All sections"] + sections,
+    return dict(section=section, ticked=ticked, name=" + ".join(ticked) if section != "All sections" else "every competition",
+                team=team or "All teams", sections=["All sections"] + sections,
                 teams=["All teams"] + teams, scores=scores,
                 matches=[dict(id=r.match_id, label=label(r), date=SG.clean(r.date), home=r.home, away=r.away,
                               section=r.section, event=r.event, name=name_of(r), result=r.result) for r in pool.itertuples()])
@@ -74,7 +87,8 @@ def all_ratings(career) -> pd.DataFrame:
 def best_games(career, section: str, team: str = "", top: int = BEST) -> dict:
     """The most exciting matches: in a section (ranked within it), or in every section; one team's if one is picked
     (its best `top`, not the section's best that it happened to play in)."""
-    d = all_ratings(career) if section == "All sections" else ratings(career, section)
+    ticked = ticked_of(career, section)   # each match ranked within its own competition
+    d = pd.concat([ratings(career, s) for s in ticked], ignore_index=True) if ticked else pd.DataFrame(columns=X.RATING_COLUMNS)
     if team and team != "All teams":
         d = d[(d.home == team) | (d.away == team)]
     d = d.sort_values(["rating", "date"], ascending=[False, False]).head(top)

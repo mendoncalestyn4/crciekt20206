@@ -287,7 +287,7 @@ Pages and looks:
       itself (Tests, ODIs, T20Is, then the franchise and domestic competitions he played, agreed order, only ones he
       played), opening on the page's competition; the same for Big-match player and Bounce-back; formats never mixed — ✓ tick boxes on each of the three tiles (your later decision: tick any formats, counted together), opening
       on the page's competition (`/api/player_part`); test
-- [ ] Combine formats with tick boxes (your decision, 14 November: "tick any formats", "in all buttons where these
+- [x] Combine formats with tick boxes (your decision, 14 November: "tick any formats", "in all buttons where these
       formats are mentioned"): every format choice becomes tick boxes (Tests, ODIs, T20Is, each league), opening on one
       format; ticking more combines them (e.g. Tests + ODIs); "v the average" uses each format's own average, combined
       fairly. Where it can: the Player page and its tiles, Leaders, Stat by stat, records, team records, Team vs team,
@@ -306,6 +306,32 @@ Pages and looks:
       - Seasons with several formats ticked: April-to-March years, as on My team (a league or tournament counts whole in
         the season most of it is played in).
       - The ticks carry over: open another player or team and your ticks follow (where they played those formats).
+      ✓ Built for stages 1-2 (18 November):
+      - Player page (`server/playerpage.py` `_several`): tick boxes at the top; the totals, form, seasons (April-to-March
+        years), how they get out, every split, nemesis, bunnies, quality of wickets, impact, badges, firsts and odd ones
+        counted together. Where they rank among everyone: each format's own rank, weighted by their innings in it;
+        runs above average: each format's against its own average, added. Danger zones and conversion: put together
+        fairly when the formats are one length (their share from all their innings; everyone's share each format's own,
+        weighted by their innings), one block per format when they differ. One block per format always: batting
+        positions, innings by innings, attributes and the scout report, rank over time, compare two seasons; and when
+        the lengths differ: came in under pressure, consistency, streaks, over a match, with and without wickets,
+        milestones, when they fire. Country by country, Big-match and Bounce-back open on the page's ticks.
+      - Teams (`server/teampage.py`): every tab counts the ticked competitions together; against the average team, how
+        they play and batting depth use each competition's own average team, weighted by the team's games in it; the
+        league race stays one competition at a time (its own picker).
+      - Team v team (`server/tvtpage.py`): counted together; runs above average and runs saved each against its own
+        competition's average, added; the dashed lines are each competition's own rate, weighted by the balls the two
+        sides faced (or bowled) in it.
+      - Rivalries and the match finder: counted together ("Tick every competition" on the finder); our score v theirs
+        keeps each competition's averages and highest total apart; the best games keep each match's rank within its own
+        competition.
+      - Ticks carry over (the site remembers them, keeping only the formats the next player or team played); a tick for
+        a format they never played is dropped.
+      - Checked: on your new set (T Farley: Tests + ODIs = 85 + 71 innings, 4,880 + 2,534 runs; Australia: 65 + 86 = 151
+        matches; every tab with no part failing, no page errors); tests/test_format_ticks.py (9 tests: totals add up,
+        April-to-March seasons, ticks dropped, one block per format, the weighted ranks and danger bands counted again,
+        Teams v the average counted again, Team v team runs above average added format by format, Rivalries, the finder
+        and best games) and the browser test test_ticking_a_second_format_counts_both_on_the_player_page.
 - [x] Both team logos on every match summary (found by you: Pakistan v South Africa, 11 Jun 2031, showed empty gaps
       where they go); checked on every summary — ✓ the gap was a team the game has no picture for: the summary
       now shows a round badge with its short name there

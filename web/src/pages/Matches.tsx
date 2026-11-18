@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { get, type BestGames, type Finder, type MatchPage, remember } from "../api";
-import { Explain, Logo, Missing, Name, PName, Tile } from "../kit/base";
+import { Explain, FormatTicks, Logo, Missing, Name, PName, Tile } from "../kit/base";
 import { MatchSummary, Scorecard } from "../kit/blocks";
 import { ScoreRows } from "../kit/season";
 import { BestTable, ExcitementPanel, NoteBox, WicketClimb, WinChanceChart } from "../kit/match";
@@ -42,7 +42,7 @@ export function MatchesHome() {
   if (f.error) return <><Head title="Matches" crumb="Find a match" /><div className="grid"><Tile span={12}><Missing why={String(f.error)} /></Tile></div></>;
   if (!f.data) return <><Head title="Matches" crumb="Find a match" /><div className="empty">Finding your matches…</div></>;
   if (career && career.matches === 0) return <><Head title="Matches" crumb="Find a match" /><div className="grid"><Tile span={12}><Missing why={NO_MATCHES} /></Tile></div></>;
-  const d = f.data, all = d.section === "All sections";
+  const d = f.data, all = d.section === "All sections", several = d.ticked.length > 1, every = d.sections.slice(1);
   return (
     <>
       <Head title="Matches" crumb="Find a match" />
@@ -51,10 +51,9 @@ export function MatchesHome() {
           <div className="plain">Narrow the list by competition or team, then type to search: a team, a date, a stage like "Final", or a result.</div>
           <div className="note">International matches are grouped by format (all Tests, all ODIs, all T20Is, World Cups included); everything else, like the
             IPL, the T20 Blast and each County Championship division, is its own competition.</div>
+          <FormatTicks all={every} on={d.ticked} set={(v) => set("section", v.length === every.length ? "All sections" : v.join("|"))} />
           <div className="field">
-            <label htmlFor="mt-sec">Competition</label>
-            <select id="mt-sec" className="pick" value={d.section} onChange={(e) => set("section", e.target.value)}>
-              {d.sections.map((s) => <option key={s}>{s}</option>)}</select>
+            {!all && every.length > 1 && <button className="btn quiet" onClick={() => set("section", "All sections")}>Tick every competition</button>}
             <label htmlFor="mt-team">Team</label>
             <select id="mt-team" className="pick" value={d.team} onChange={(e) => set("team", e.target.value === "All teams" ? "" : e.target.value)}>
               {d.teams.map((s) => <option key={s}>{s}</option>)}</select>
@@ -69,16 +68,15 @@ export function MatchesHome() {
           {hits.length > shown && <div className="field"><button className="btn quiet" onClick={() => setShown(shown + 30)}>Show 30 more</button>
             <span className="note" style={{ marginTop: 0 }}>Showing the newest {shown} of {hits.length.toLocaleString("en-GB")}; type to narrow the list.</span></div>}
         </Tile>
-        <Tile span={12} title={`Our score v theirs${d.scores ? ` · ${d.scores.team} · ${d.section}` : ""}`} right={d.scores ? `the latest ${d.scores.results.length}, newest at the bottom` : undefined}>
+        <Tile span={12} title={`Our score v theirs${d.scores ? ` · ${d.scores.team} · ${d.name}` : ""}`} right={d.scores ? `the latest ${d.scores.results.length}, newest at the bottom` : undefined}>
           {d.scores ? <><ScoreRows results={d.scores.results} scores={d.scores.summary} />
             <div className="note">Both totals on one line for each match: {d.scores.team}'s in gold, the other side's in blue, joined in green when they won and
               red when they lost; a Test's innings each on its own line. Games shortened by rain are left out of the averages.</div>
             {d.scores.summary.lines && <Explain {...d.scores.summary.lines} />}</>
-            : <div className="plain">{all ? "Pick one competition and a team to see their totals against the other side's, match by match (formats are never mixed)."
-              : "Pick a team to see its totals against the other side's, match by match."}</div>}
+            : <div className="plain">"Pick a team to see its totals against the other side's, match by match (each competition's averages kept apart)."</div>}
         </Tile>
-        <Tile span={12} title={`Best games · ${all ? "every competition" : d.section}${d.team !== "All teams" ? ` · ${d.team}` : ""}`} right="rated 0–10 for excitement">
-          {best.data ? (best.data.rows.length ? <BestTable rows={best.data.rows} showSection={all} keep={keep} /> : <Missing why="No matches here yet." />)
+        <Tile span={12} title={`Best games · ${d.name}${d.team !== "All teams" ? ` · ${d.team}` : ""}`} right="rated 0–10 for excitement">
+          {best.data ? (best.data.rows.length ? <BestTable rows={best.data.rows} showSection={all || several} keep={keep} /> : <Missing why="No matches here yet." />)
             : <div className="empty">Rating every match…</div>}
           <div className="note">Out of 10: the finish up to 7 (a tie, a 1-run, 1-wicket or last-ball win is 7, a super over 8, and a draw
             with the last pair holding on up to 7), a comeback up to 2 (read from the scorecard: the runs still needed against what the
