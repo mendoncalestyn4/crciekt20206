@@ -75,5 +75,5 @@ def test_a_read_back_difference_is_a_problem_on_the_match():
     c = Career.build("Read back", [(TEST.name, TEST.read_bytes())])
     assert c.problems.empty
     t, m = _card(TEST)
-    m.read_back = ["England innings 1: \\"B Duckett lbw b Khan 85 161 8 -\\" read back as \\"B Duckett lbw b Khan 85 161 9 0\\""]
+    m.read_back = ['England innings 1: "B Duckett lbw b Khan 85 161 8 -" read back as "B Duckett lbw b Khan 85 161 9 0"']
     assert any(p.startswith("read back: England innings 1") for p in validate_match(m))
