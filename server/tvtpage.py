@@ -4,6 +4,8 @@ tape, their meetings, and player by player. Every number comes from the same eng
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import numpy as np
 import pandas as pd
 
@@ -14,7 +16,7 @@ from ccstats.stats import WICKET_VALUE, Scope, player_tables, poss
 
 from . import styleguide as SG
 from .cache import kept
-from .teampage import _n, choices, fmt
+from .teampage import _n, _teams, choices, fmt, named, seasons_of, secs_of, where
 
 GROUNDS = ("all", "a_home", "b_home", "neutral")
 
@@ -42,15 +44,14 @@ def page(career, section: str, season: str, a: str, b: str, which: str, ground: 
     they have met, else against anyone), and everything below them, or a plain reason there's nothing."""
     m = career.matches
     ch = choices(career)
-    secs = {c["section"]: c for c in ch}
-    if section not in secs:
-        section = ch[0]["section"]
-    season = season if season in secs[section]["seasons"] else "All seasons"
-    base_scope = Scope(sections=[section], seasons=[] if season == "All seasons" else [season])
-    here = m[m.match_id.isin(base_scope.match_ids(m))]
-    teams, todo = CAT.section_teams(m[m.section == section], section, here)
-    out = dict(section=section, season=season, teams=list(teams), todo=sorted(todo), a=a, b=b, which=which, ground=ground,
-               grounds=[], info="", none="")
+    # the competitions ticked, in the agreed order (several are counted together: your answer of 17 November)
+    ticked = [c["section"] for c in ch if c["section"] in set(secs_of(section))] or [ch[0]["section"]]
+    section = "|".join(ticked)
+    season = season if season in seasons_of(career, section) else "All seasons"
+    _, here, _, base_scope, _ = where(career, section, season, "", "all")
+    teams, todo = _teams(career, section, here)
+    out = dict(section=section, ticked=ticked, name=named(section), seasons=seasons_of(career, section), season=season,
+               teams=list(teams), todo=sorted(todo), a=a, b=b, which=which, ground=ground, grounds=[], info="", none="")
     if len(teams) < 2:
         out["none"] = "This section needs at least two teams."
         return SG.clean(out)
@@ -83,14 +84,13 @@ def page(career, section: str, season: str, a: str, b: str, which: str, ground: 
                            f"anyone, as they would be for a game at {poss(a)} ground."))
     venue_a, venue_b = {"all": ("all", "all"), "a_home": ("home", "away"), "b_home": ("away", "home"),
                         "neutral": ("neutral", "neutral")}[ground]
-    where_scope = section + ("" if season == "All seasons" else f" in {season}")
+    where_scope = named(section) + ("" if season == "All seasons" else f" in {season}")
 
     def scope_for(team, other):
-        return Scope(sections=[section], seasons=base_scope.seasons, team=team, venue=venue_a if team == a else venue_b,
-                     opponent=other if h2h else "")
+        return replace(base_scope, team=team, venue=venue_a if team == a else venue_b, opponent=other if h2h else "")
     ids_a, ids_b = scope_for(a, b).match_ids(m), scope_for(b, a).match_ids(m)
     if ground != "all" and here.neutral.all():
-        out["none"] = f"{section} matches are played at neutral venues, so there are no home or away games. Choose All venues."
+        out["none"] = f"{named(section)} matches are played at neutral venues, so there are no home or away games. Choose All venues."
         return SG.clean(out)
     if len(ids_a) == 0 or len(ids_b) == 0:
         at_v = {"home": " at home", "away": " away", "neutral": " at a neutral ground", "all": ""}
@@ -236,27 +236,61 @@ def _body(career, here, base_scope, scope_for, a, b, ids_a, ids_b, venue_a, venu
     tb = kept(career, ("player_tables_by_team", repr(scope_for(b, a))), lambda: player_tables(career, scope_for(b, a), by_team=True))
     bat_a, bowl_a = ta[0][ta[0].team == a].copy(), ta[1][ta[1].team == a].copy()
     bat_b, bowl_b = tb[0][tb[0].team == b].copy(), tb[1][tb[1].team == b].copy()
-    kind = base.kind
-    for d in (bat_a, bat_b):
-        d["runs_above_average"] = (d.runs - d.outs * base.average) if kind == "multi" else (d.runs - d.balls * base.strike_rate / 100)
-    for d in (bowl_a, bowl_b):
-        d["runs_saved"] = (d.wickets * base.bowl_average - d.runs) if kind == "multi" else (
-            (d.balls * base.economy / 6 - d.runs) + (d.wickets - d.balls / base.bowl_strike_rate) * WICKET_VALUE[kind])
+    def against(d, bs, bowling: bool):
+        """Runs above (or saved against) the average player of `bs`, the baseline of the matches counted."""
+        if not bowling:
+            return (d.runs - d.outs * bs.average) if bs.kind == "multi" else (d.runs - d.balls * bs.strike_rate / 100)
+        return (d.wickets * bs.bowl_average - d.runs) if bs.kind == "multi" else (
+            (d.balls * bs.economy / 6 - d.runs) + (d.wickets - d.balls / bs.bowl_strike_rate) * WICKET_VALUE[bs.kind])
+
+    ref_sr, ref_bsr = base.strike_rate, base.bowl_strike_rate
+    secs_here = list(base_scope.sections)
+    if len(secs_here) == 1:
+        for d in (bat_a, bat_b):
+            d["runs_above_average"] = against(d, base, False)
+        for d in (bowl_a, bowl_b):
+            d["runs_saved"] = against(d, base, True)
+    else:   # several competitions ticked: each player's runs against each competition's own average, added up
+        add = {k: [] for k in ("bat_a", "bat_b", "bowl_a", "bowl_b")}
+        sr_w, bsr_w = [], []
+        for sec in secs_here:
+            bs = kept(career, ("player_tables", repr(replace(base_scope, sections=[sec]))),
+                      lambda: player_tables(career, replace(base_scope, sections=[sec])))[3]
+            if not bs.matches:
+                continue
+            for side, team, other in (("a", a, b), ("b", b, a)):
+                sc = replace(scope_for(team, other), sections=[sec])
+                t = kept(career, ("player_tables_by_team", repr(sc)), lambda: player_tables(career, sc, by_team=True))
+                bt, bw = t[0][t[0].team == team], t[1][t[1].team == team]
+                add[f"bat_{side}"].append(pd.Series(against(bt, bs, False).values, index=bt.player))
+                add[f"bowl_{side}"].append(pd.Series(against(bw, bs, True).values, index=bw.player))
+                sr_w.append((bs.strike_rate, bt.balls.sum()))
+                bsr_w.append((bs.bowl_strike_rate, bw.balls.sum()))
+        for name, d, col in (("bat_a", bat_a, "runs_above_average"), ("bat_b", bat_b, "runs_above_average"),
+                             ("bowl_a", bowl_a, "runs_saved"), ("bowl_b", bowl_b, "runs_saved")):
+            tot = pd.concat(add[name]).groupby(level=0).sum() if add[name] else pd.Series(dtype=float)
+            d[col] = d.player.map(tot).fillna(0.0).values
+        # the dashed lines: each competition's own rate, weighted by the balls these two sides faced (or bowled) in it
+        if sum(w for _, w in sr_w):
+            ref_sr = sum(v * w for v, w in sr_w if w) / sum(w for _, w in sr_w)
+        if sum(w for _, w in bsr_w):
+            ref_bsr = sum(v * w for v, w in bsr_w if w) / sum(w for _, w in bsr_w)
 
     def dots(da, db, x, y):
         return [dict(player=r.player, team=r.team, x=getattr(r, x), y=getattr(r, y), note=profile(r))
                 for d in (da, db) for r in d.itertuples()]
 
     def bat_dots():
-        fast = lambda d: (d[d.balls > 0].runs / d[d.balls > 0].balls * 100 > base.strike_rate).mean() * 100  # noqa: E731
-        return dict(points=dots(bat_a[bat_a.balls > 0], bat_b[bat_b.balls > 0], "balls", "runs"), slope=base.strike_rate / 100,
-                    line=f"section strike rate {fmt(base.strike_rate, 1)}", x="Balls faced", y="Runs",
+        fast = lambda d: (d[d.balls > 0].runs / d[d.balls > 0].balls * 100 > ref_sr).mean() * 100  # noqa: E731
+        return dict(points=dots(bat_a[bat_a.balls > 0], bat_b[bat_b.balls > 0], "balls", "runs"), slope=ref_sr / 100,
+                    line=f"average strike rate {fmt(ref_sr, 1)}", x="Balls faced", y="Runs",
                     is_=f"Every batter of both sides: runs (up) against balls faced (across), {a} gold and {b} blue.",
                     best_label="Most runs",
                     best=SG.best_line(zip(pd.concat([bat_a.player, bat_b.player]), pd.concat([bat_a.runs, bat_b.runs])),
                                       fmt=lambda v: f"{v:,.0f} runs"),
                     shows=f"{fast(bat_a):.0f}% of {poss(a)} batters and {fast(bat_b):.0f}% of {poss(b)} score faster than the "
-                          f"section's {fmt(base.strike_rate, 1)} per 100 balls.",
+                          f"average of {fmt(ref_sr, 1)} per 100 balls here" + (" (each competition's own, weighted by the balls they faced in it)."
+                          if len(secs_here) > 1 else "."),
                     for_="Compares the two batting line-ups player by player: who scores quickly and who has faced the most.",
                     keys=[f"Dashed line: the section's average scoring rate.",
                           "Shaded area (above the line): scores faster than the average batter in this section.",
@@ -264,15 +298,15 @@ def _body(career, here, base_scope, scope_for, a, b, ids_a, ids_b, venue_a, venu
     part("bat_dots", bat_dots)
 
     def bowl_dots():
-        often = lambda d: (d[d.balls > 0].wickets / d[d.balls > 0].balls * base.bowl_strike_rate > 1).mean() * 100  # noqa: E731
-        return dict(points=dots(bowl_a, bowl_b, "balls", "wickets"), slope=1 / base.bowl_strike_rate,
-                    line=f"a wicket every {fmt(base.bowl_strike_rate, 1)} balls", x="Balls bowled", y="Wickets",
+        often = lambda d: (d[d.balls > 0].wickets / d[d.balls > 0].balls * ref_bsr > 1).mean() * 100  # noqa: E731
+        return dict(points=dots(bowl_a, bowl_b, "balls", "wickets"), slope=1 / ref_bsr,
+                    line=f"a wicket every {fmt(ref_bsr, 1)} balls", x="Balls bowled", y="Wickets",
                     is_=f"Every bowler of both sides: wickets (up) against balls bowled (across), {a} gold and {b} blue.",
                     best_label="Most wickets",
                     best=SG.best_line(zip(pd.concat([bowl_a.player, bowl_b.player]), pd.concat([bowl_a.wickets, bowl_b.wickets])),
                                       fmt=lambda v: f"{v:,.0f} wicket{'s' if v != 1 else ''}", minimum=lambda _, v: v > 0),
                     shows=f"{often(bowl_a):.0f}% of {poss(a)} bowlers and {often(bowl_b):.0f}% of {poss(b)} take wickets more "
-                          f"often than one every {fmt(base.bowl_strike_rate, 1)} balls.",
+                          f"often than one every {fmt(ref_bsr, 1)} balls.",
                     for_="Compares the two attacks bowler by bowler: who takes wickets and who has done the most bowling.",
                     keys=["Dashed line: the section's average wicket rate.",
                           "Shaded area (above the line): takes wickets more often than the average bowler.",

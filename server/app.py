@@ -362,14 +362,23 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             raise KeyError(team)
         m = c.matches
         played = m[(m.home == team) | (m.away == team)].section.value_counts()
-        section = q.get("section", "") or (r["section"] if r.get("section") in played.index else "")
-        if section not in {s["section"] for s in ch}:
-            section = played.index[0] if len(played) else next(s["section"] for s in ch if team in s["teams"])
-        seasons = next(s["seasons"] for s in ch if s["section"] == section)
+        order = [s["section"] for s in ch]   # the agreed order
+        # the competitions ticked (several are counted together); ticks carried over from another page keep the ones
+        # this team played
+        remembered = [x for x in r.get("section", "").split("|") if x in played.index]
+        asked = set(teampage.secs_of(q.get("section", ""))) or set(remembered)
+        secs = [s for s in order if s in asked]
+        if len(secs) > 1:
+            secs = [s for s in secs if s in played.index]
+        if not secs:
+            secs = [played.index[0] if len(played) else next(s["section"] for s in ch if team in s["teams"])]
+        section = "|".join(secs)
+        seasons = teampage.seasons_of(c, section)
         season = q.get("season", "") or r.get("season", "")
         season = season if season in seasons else "All seasons"
         venue = {"home": "home", "away": "away"}.get(q.get("venue", "").lower(), "all")
-        return dict(choices=ch, page=teampage.page(c, section, season, team, venue, q.get("tab", ""), q.get("race", "")))
+        return dict(choices=ch, played=[s for s in order if s in played.index],
+                    page=teampage.page(c, section, season, team, venue, q.get("tab", ""), q.get("race", "")))
 
     async def team_(request: Request):
         q = request.query_params
@@ -391,7 +400,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             qq = _with_memory(c, q, ("section", "season"))
             a = q.get("a", "")
             section = qq.get("section", "")
-            if section not in {x["section"] for x in ch}:
+            if not set(teampage.secs_of(section)) & {x["section"] for x in ch}:   # none of the ticked ones is here
                 team = a or (mine[0] if mine else "")
                 played = c.matches[(c.matches.home == team) | (c.matches.away == team)].section.value_counts()
                 section = played.index[0] if len(played) else ch[0]["section"]

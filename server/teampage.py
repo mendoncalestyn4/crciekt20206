@@ -85,18 +85,58 @@ def choices(career) -> dict:
     return kept(career, ("team_choices",), make)
 
 
+def secs_of(section: str) -> list[str]:
+    """The competitions ticked: "Tests|ODIs" (your answer of 17 November: tick any, counted together)."""
+    return [x for x in str(section).split("|") if x]
+
+
+def named(section: str) -> str:
+    """The competitions ticked, as the page says them: "Tests + ODIs"."""
+    return " + ".join(secs_of(section))
+
+
+def year_labels(career, secs: list[str]) -> pd.Series:
+    """Match id -> its April-to-March year ("2026–27"): the seasons when several competitions are ticked, a league or
+    tournament whole in the year most of it is played in (as on My team)."""
+    def make():
+        m = career.matches
+        return SN.april_seasons(m[m.section.isin(secs)]).map(lambda y: f"{int(y)}–{str(int(y) + 1)[2:]}")
+    return kept(career, ("year_labels", tuple(secs)), make)
+
+
+def seasons_of(career, section: str, team: str = "") -> list[str]:
+    """The seasons to pick from, newest first: the competition's own, or April-to-March years when several are ticked
+    (those `team` played in, when given)."""
+    secs = secs_of(section)
+    m = career.matches
+    if len(secs) == 1:
+        return sorted(map(str, m[m.section == secs[0]].season.unique()), reverse=True)
+    yl = year_labels(career, secs)
+    mine = m[m.section.isin(secs) & ((m.home == team) | (m.away == team) if team else True)]
+    return sorted({yl[i] for i in mine.match_id if i in yl.index}, reverse=True)
+
+
 def where(career, section: str, season: str, team: str, venue: str):
     """The matches picked (ids), those of them on screen (here), this team's own (tids, home or away only when asked),
-    the scope for the player tables, the kind of cricket."""
+    the scope for the player tables, the kind of cricket. Several competitions ticked: all their matches (one
+    April-to-March year of them, when a season is picked)."""
     m = career.matches
-    scope = Scope(sections=[section], seasons=[] if season in ("", "All seasons") else [season])
+    secs = secs_of(section)
+    if len(secs) == 1:
+        scope = Scope(sections=secs, seasons=[] if season in ("", "All seasons") else [season])
+    else:
+        sel = m[m.section.isin(secs)]
+        if season not in ("", "All seasons"):
+            sel = sel[sel.match_id.map(year_labels(career, secs)) == season]
+        scope = Scope(sections=secs, only=tuple(sel.match_id) if season not in ("", "All seasons") else ())
     ids = scope.match_ids(m)
     here = m[m.match_id.isin(ids)]
     if venue == "all":
         tids = ids
     else:
         tids = pd.Index(here[((here.home == team) if venue == "home" else (here.away == team)) & ~here.neutral].match_id)
-    scope_t = scope if venue == "all" else Scope(sections=[section], seasons=scope.seasons, team=team, venue=venue)
+    scope_t = scope if venue == "all" else Scope(sections=scope.sections, seasons=scope.seasons, only=scope.only, team=team,
+                                                 venue=venue)
     return ids, here, tids, scope_t, kind_of(here)
 
 
@@ -107,8 +147,9 @@ def head(career, section: str, season: str, team: str, venue: str) -> dict:
     m = career.matches
     label = {"all": "Overall", "home": "Home", "away": "Away"}[venue]
     ids, here, tids, _, _ = where(career, section, season, team, venue)
-    every, todo = CAT.section_teams(m[m.section == section], section, here)
+    every, todo = _teams(career, section, here)
     when = "" if season in ("", "All seasons") else f" in {season}"
+    section = named(section)
     if team in todo or team not in every:
         played = m[(m.home == team) | (m.away == team)].section.value_counts()
         return dict(none=f"{team} haven't played in {section}{when} yet. Their record here fills in after their first game"
@@ -169,7 +210,44 @@ class _Parts:
             self.out["missing"][name] = f"Couldn't be worked out ({type(e).__name__}: {e})"
 
 
+def _teams(career, section: str, here) -> tuple[list[str], set[str]]:
+    """Every team in the competitions ticked (those that have played and those still to play), and those still to play
+    in what's on screen."""
+    m = career.matches
+    every, todo = set(), set()
+    for s in secs_of(section):
+        e, t = CAT.section_teams(m[m.section == s], s, here[here.section == s])
+        every |= set(e)
+        todo |= t
+    played = set(here.home) | set(here.away)
+    return sorted(every), todo - played
+
+
+def _each(career, section: str, ids) -> list[tuple[str, pd.Index]]:
+    """Several competitions ticked: each one with its matches among `ids`; one competition: none."""
+    secs = secs_of(section)
+    if len(secs) < 2:
+        return []
+    m = career.matches[career.matches.match_id.isin(set(ids))]
+    return [(s, pd.Index(m[m.section == s].match_id)) for s in secs if (m.section == s).any()]
+
+
+def _weighted(parts: list[tuple[pd.Series, float]]) -> pd.Series:
+    """Each competition's own average, weighted (by the team's games in it), measure by measure; a competition with no
+    figure for a measure leaves it out of that one."""
+    parts = [(v, w) for v, w in parts if w]
+    if not parts:
+        return pd.Series(dtype=float)
+    d = pd.DataFrame([v for v, _ in parts])
+    w = np.array([w for _, w in parts], dtype=float)[:, None]
+    have = d.notna().to_numpy()
+    num = np.nansum(d.to_numpy(dtype=float) * w, axis=0)
+    den = (w * have).sum(axis=0)
+    return pd.Series(np.where(den > 0, num / np.where(den > 0, den, 1), np.nan), index=d.columns)
+
+
 def overview(career, section, season, team, venue) -> dict:
+    sec_key = section
     ids, here, tids, scope_t, _ = where(career, section, season, team, venue)
     tbl = kept(career, ("team_table", tuple(ids), venue), lambda: A.team_table(career, ids, venue))
     me = tbl.set_index("team").loc[team]
@@ -177,12 +255,19 @@ def overview(career, section, season, team, venue) -> dict:
     tm = A.team_matches(career, ids, team)
     if venue != "all":
         tm = tm[tm.venue == venue]
-    teams, _ = CAT.section_teams(career.matches[career.matches.section == section], section, here)
+    teams, _ = _teams(career, section, here)
+    each_sec = _each(career, section, ids)
+    team_ids = set(tm.match_id)
+    weight = {s: len(team_ids & set(i)) for s, i in each_sec}   # the team's games in each competition
+    section = named(section)
     P = _Parts()
 
 
     def vs_average():
-        avg = tbl.mean(numeric_only=True)
+        # several competitions ticked: each one's own average team, weighted by the team's games in it
+        avg = (_weighted([(kept(career, ("team_table", tuple(i), venue), lambda: A.team_table(career, i, venue))
+                           .mean(numeric_only=True), weight[s_]) for s_, i in each_sec])
+               if each_sec else tbl.mean(numeric_only=True))
         measures = [("Win %", "win_pct", "high"), ("Runs per wicket (batting)", "rpw_for", "high"),
                     ("Run rate (batting)", "rr_for", "high"), ("Avg score batting first", "first_innings_avg", "high"),
                     ("Runs per wicket conceded", "rpw_against", "low"), ("Economy (bowling)", "rr_against", "low"),
@@ -262,6 +347,11 @@ def overview(career, section, season, team, venue) -> dict:
         all_dep = kept(career, ("all_depth", tuple(ids), tuple(teams)),
                        lambda: pd.concat([A.batting_depth(career, ids, t).assign(team=t) for t in teams]))
         ref = all_dep.groupby("group", sort=False).share.mean()
+        if each_sec:   # each competition's own average team, weighted by the team's games in it
+            ref = _weighted([(kept(career, ("all_depth", tuple(i), tuple(_teams(career, s_, career.matches[career.matches.match_id.isin(set(i))])[0])),
+                                   lambda: pd.concat([A.batting_depth(career, i, t).assign(team=t)
+                                                      for t in _teams(career, s_, career.matches[career.matches.match_id.isin(set(i))])[0]]))
+                              .groupby("group", sort=False).share.mean(), weight[s_]) for s_, i in each_sec]).reindex(ref.index)
         out = dict(rows=[dict(label=g, value=s, note=f"{r} runs · average team {ref.get(g, 0):.0f}%", runs=int(r),
                               ref=float(ref.get(g, 0))) for g, s, r in zip(dep.group, dep.share, dep.runs)], shows="", for_="")
         if len(dep) and dep.runs.sum():
@@ -346,7 +436,8 @@ def overview(career, section, season, team, venue) -> dict:
                     f"they haven't played a side rated {word} them")
         wins = [r for r in rows if r["outcome"] == "W"]
         top = max(wins, key=lambda r: (r["gap"], r["date"])) if wins else None
-        return dict(rows=rows, lanes=[section],
+        return dict(rows=rows, lanes=sorted({r["section"] for r in rows}, key=lambda x: secs_of(sec_key).index(x)
+                                                 if x in secs_of(sec_key) else 99),
                     is_=f"Every {team} match in {scope_words}, placed by how much stronger (right) or weaker (left) the other "
                         "side was rated just before it.", best_label="Best win",
                     best=(f"v {top['opp']}, rated {abs(top['gap'])} {'above' if top['gap'] >= 0 else 'below'} them, "
@@ -483,7 +574,8 @@ def overview(career, section, season, team, venue) -> dict:
         if team not in set(style.team):
             return None
         s_me = style.set_index("team").loc[team]
-        s_avg = style.mean(numeric_only=True)
+        s_avg = (_weighted([(kept(career, ("team_style", tuple(i)), lambda: E.team_style(career, i)).mean(numeric_only=True),
+                             weight[s_]) for s_, i in each_sec]) if each_sec else style.mean(numeric_only=True))
         rows = []
         for label, col, _ in E.STYLE:
             v, a = s_me[col], s_avg[col]
@@ -549,6 +641,7 @@ def _games(career, ids):
 
 def how_they_win(career, section, season, team, venue) -> dict:
     ids, here, tids, _, base_kind = where(career, section, season, team, venue)
+    section = named(section)
     games_all = _games(career, ids)
     multi = TP.is_multi(games_all)
     second = "Batting second" if multi else "Chasing"
@@ -811,6 +904,7 @@ XI_HOW = {"t20": "Batters on average × strike rate, a finisher (batting 5–7) 
 
 def squad_tab(career, section, season, team, venue) -> dict:
     ids, here, tids, _, _ = where(career, section, season, team, venue)
+    section = named(section)
     P = _Parts()
 
     def best_xi():
@@ -875,10 +969,12 @@ TAB_FN = {"Overview": overview, "How they win": how_they_win, "Opponents and sta
 def page(career, section: str, season: str, team: str, venue: str, tab: str, race: str = "") -> dict:
     """The pickers, the top of the page and one tab."""
     tab = tab if tab in TABS else "Overview"
+    section = "|".join(in_order(career.matches, secs_of(section)))   # the agreed order: Tests, ODIs, T20Is, leagues...
     venue = venue if venue in ("all", "home", "away") else "all"
     season = season or "All seasons"
     top = kept(career, ("team_head", section, season, team, venue), lambda: head(career, section, season, team, venue))
-    out = dict(section=section, season=season, team=team, venue=venue, tab=tab, tabs=TABS, head=top, body=None)
+    out = dict(section=section, ticked=secs_of(section), name=named(section), seasons=seasons_of(career, section),
+               season=season, team=team, venue=venue, tab=tab, tabs=TABS, head=top, body=None)
     if not top.get("none"):
         if tab == "Season":
             out["body"] = kept(career, ("team_tab", section, season, team, venue, tab, race),

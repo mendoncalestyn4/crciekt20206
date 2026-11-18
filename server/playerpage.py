@@ -20,6 +20,7 @@ from ccstats import marks as MK
 from ccstats import moments as MO
 from ccstats import players as PL
 from ccstats import playerdeep as PD
+from ccstats import seasonal as SN
 from ccstats import teamdeep as TD
 from ccstats.matchstory import pom_headline
 from ccstats.records import by_played
@@ -206,10 +207,20 @@ def page(career, player: str, section: str = "", season: str = "") -> dict:
     teams = list(dict.fromkeys(team_of.reindex(played.match_id)[::-1].dropna()))[::-1]
     # the competitions in the agreed order (Tests, ODIs, T20Is, franchise, domestic); the page opens on the one played most
     order = in_order(m, my_matches.section.unique())
-    section = section if section in order else my_matches.section.value_counts().index[0]
-    seasons = sorted(my_matches[my_matches.section == section].season.unique(), reverse=True)
+    # the formats ticked (your answer of 17 November: tick any, counted together), in the agreed order; the page opens
+    # on the one played most, and ticks carried over from another page keep only the formats this player played
+    asked = set(section.split("|")) if section else set()
+    secs = [s for s in order if s in asked] or [my_matches.section.value_counts().index[0]]
+    several = len(secs) > 1
+    if several:   # seasons are April-to-March years, a league or tournament whole in the year most of it is played in
+        season_of = SN.april_seasons(m[m.section.isin(secs)]).map(year_label)
+        seasons = sorted({season_of[i] for i in my_matches[my_matches.section.isin(secs)].match_id}, reverse=True)
+    else:
+        season_of = None
+        seasons = sorted(my_matches[my_matches.section == secs[0]].season.unique(), reverse=True)
     season = season if season in seasons else ""
-    out: dict = dict(player=player, teams=teams, matches=len(my_matches), missing={},
+    section = " + ".join(secs)
+    out: dict = dict(player=player, teams=teams, matches=len(my_matches), missing={}, ticked=secs,
                      section=section, season=season or "All seasons", sections=order, seasons=["All seasons"] + seasons)
 
     def piece(name, fn):
@@ -233,6 +244,9 @@ def page(career, player: str, section: str = "", season: str = "") -> dict:
     piece("winners", lambda: _winners(career, player, my_matches, team_of))
     piece("marks", lambda: _marks(career, player))
     piece("journey", lambda: SG.rows(E.journey(career, player), ["first", "last", "team", "section", "season", "matches", "runs", "wickets"]))
+    if several:
+        _several(career, player, out, piece, secs, season, season_of, bat_all, bowl_all, my_matches)
+        return out
 
     ids = m[(m.section == section) & ((m.season == season) if season else True)].match_id
     bat_t, bowl_t, _, base = tables(career, section, season)
@@ -244,15 +258,7 @@ def page(career, player: str, section: str = "", season: str = "") -> dict:
     # (who keeps wicket is worked out quietly and never shown: no "Wicketkeeper" tag)
     out["role"] = SG.clean(dict(role=role.role, tags=[t for t in role.tags if t != "Wicketkeeper"],
                                 usual_position=role.usual_position)) if role is not None else None
-    # the tabs (your answer of 14 November): an Overview, then each kind of stats on its own tab with everything of that
-    # kind, then the Story; the page opens on the player's main job (a batter on Batting, a bowler on Bowling, an
-    # all-rounder on the Overview)
-    batted = bool(bat_all.did_bat.any())
-    bowled = bool((bowl_all.balls > 0).any())
-    out["tabs"] = ["Overview"] + (["Batting"] if batted else []) + (["Bowling"] if bowled else []) + ["Story"]
-    job = role.role if role is not None else ("Bowler" if inns.empty or inns.position.median() >= 8 else "")
-    out["open"] = ("Bowling" if job == "Bowler" and bowled else "Overview" if job == "All-rounder" or not batted
-                   else "Batting")
+    _tabs(out, role, inns, bat_all, bowl_all)
     out["batting"] = out["bowling"] = out["bat_innings"] = out["bowl_innings"] = None
     if len(inns):
         piece("batting", lambda: _batting(career, player, section, season, ids, inns, bat_t, kind))
@@ -269,6 +275,242 @@ def page(career, player: str, section: str = "", season: str = "") -> dict:
     piece("countries", lambda: _countries(career, player, section, sec_ids))
     piece("bounce", lambda: _bounce(career, player, section, sec_ids))
     return out
+
+
+def year_label(y) -> str:
+    """The April-to-March year 2026 as "2026–27"."""
+    return f"{int(y)}–{str(int(y) + 1)[2:]}"
+
+
+def _tabs(out, role, inns, bat_all, bowl_all) -> None:
+    """The tabs (your answer of 14 November): an Overview, then each kind of stats on its own tab with everything of that
+    kind, then the Story; the page opens on the player's main job (a batter on Batting, a bowler on Bowling, an
+    all-rounder on the Overview)."""
+    batted = bool(bat_all.did_bat.any())
+    bowled = bool((bowl_all.balls > 0).any())
+    out["tabs"] = ["Overview"] + (["Batting"] if batted else []) + (["Bowling"] if bowled else []) + ["Story"]
+    job = role.role if role is not None else ("Bowler" if inns.empty or inns.position.median() >= 8 else "")
+    out["open"] = ("Bowling" if job == "Bowler" and bowled else "Overview" if job == "All-rounder" or not batted
+                   else "Batting")
+
+
+def _sum_bat(tabs: list[pd.DataFrame]) -> pd.DataFrame:
+    """Batting tables of several formats added up, player by player: the counts added, the rates worked out again from
+    them, runs above average added (each format's against its own average)."""
+    t = pd.concat([x for x in tabs if len(x)], ignore_index=True)
+    if t.empty:
+        return t
+    cnt = ["matches", "innings", "runs", "balls", "outs", "not_outs", "fours", "sixes", "fifties", "hundreds", "ducks",
+           "boundary_runs", "runs_above_average"]
+    b = t.groupby("player", sort=False)[cnt].sum()
+    hs = t.dropna(subset=["high_score"])
+    hs = hs.assign(_r=hs.high_score * 2 + ~hs.high_score_out.astype(bool)).sort_values("_r").groupby("player").tail(1)
+    b = b.join(hs.set_index("player")[["high_score", "high_score_out"]])
+    b["average"] = np.where(b.outs > 0, b.runs / b.outs.replace(0, np.nan), np.nan)
+    b["strike_rate"] = np.where(b.balls > 0, b.runs / b.balls.replace(0, np.nan) * 100, np.nan)
+    b["fifty_plus"] = b.fifties + b.hundreds
+    b["boundary_pct"] = np.where(b.runs > 0, b.boundary_runs / b.runs.replace(0, np.nan) * 100, np.nan)
+    b["high_score_text"] = ["" if pd.isna(h) else f"{int(h)}{'' if o else '*'}" for h, o in zip(b.high_score, b.high_score_out)]
+    return b.reset_index()
+
+
+def _sum_bowl(tabs: list[pd.DataFrame]) -> pd.DataFrame:
+    """Bowling tables of several formats added up, player by player (best figures: the best of each format's)."""
+    t = pd.concat([x for x in tabs if len(x)], ignore_index=True)
+    if t.empty:
+        return t
+    cnt = ["innings", "balls", "runs", "wickets", "hauls", "five_fors", "runs_saved"]
+    w = t.groupby("player", sort=False)[cnt].sum()
+    fig = t.best.str.split("/", expand=True).astype(int)
+    w["best"] = t.assign(_k=fig[0] * 1000 - fig[1]).sort_values("_k").groupby("player").tail(1).set_index("player").best
+    w["economy"] = w.runs / w.balls * 6
+    w["strike_rate"] = np.where(w.wickets > 0, w.balls / w.wickets.replace(0, np.nan), np.nan)
+    w["average"] = np.where(w.wickets > 0, w.runs / w.wickets.replace(0, np.nan), np.nan)
+    return w.reset_index()
+
+
+def _weighted_compare(parts: list[tuple[dict | None, float]]) -> dict | None:
+    """Where they rank among everyone, formats ticked together (your answer of 17 November): each format's own rank
+    (among its batters with 3 or more innings), weighted by their innings in it."""
+    parts = [(c, w) for c, w in parts if c and c.get("values") and w]
+    if not parts:
+        return None
+    keys = list(dict.fromkeys(k for c, _ in parts for k in c["values"]))
+    vals = {}
+    for k in keys:
+        got = [(c["values"][k], w) for c, w in parts if k in c["values"]]
+        vals[k] = round(sum(v * w for v, w in got) / sum(w for _, w in got))
+    top_k = max(vals, key=lambda k: vals[k])
+    return dict(pool=int(sum(c["pool"] for c, _ in parts)), values=vals,
+                is_="Where they rank among the batters with 3 or more innings, measure by measure (100 is the best): each "
+                    "format against its own batters, weighted by their innings in it.",
+                best_label="Their strongest", best=f"{top_k}: better than or level with {vals[top_k]}% of them",
+                for_="Shows what kind of batter they are against everyone else in these formats.")
+
+
+def _merge_danger(frames: list[pd.DataFrame]) -> pd.DataFrame | None:
+    """The danger bands of several formats of one length, put together: their own share from their dismissals in
+    every format; every batter's share is each format's own, weighted by their dismissals in it."""
+    frames = [d for d in frames if d.attrs.get("dismissals", 0)]
+    if not frames:
+        return None
+    n = sum(d.attrs["dismissals"] for d in frames)
+    out = frames[0][["zone"]].copy()
+    out["outs"] = sum(d.outs.values for d in frames)
+    out["pct"] = out.outs / n * 100
+    out["all_pct"] = sum(d.all_pct.fillna(0).values * d.attrs["dismissals"] for d in frames) / n
+    out.attrs.update(dismissals=n, kind=frames[0].attrs["kind"])
+    return out
+
+
+def _merge_funnel(frames: list[pd.DataFrame]) -> pd.DataFrame | None:
+    """The funnel of several formats of one length, put together: their own share from their innings in every format;
+    every batter's is each format's own, weighted by their innings in it."""
+    frames = [d for d in frames if d.attrs.get("innings", 0)]
+    if not frames:
+        return None
+    n = sum(d.attrs["innings"] for d in frames)
+    wt = [d.attrs["innings"] / n for d in frames]
+
+    def weigh(col):
+        num = sum(d[col].fillna(0).values * w * d[col].notna().values for d, w in zip(frames, wt))
+        den = sum(w * d[col].notna().values for d, w in zip(frames, wt))
+        return np.where(den > 0, num / np.where(den > 0, den, 1), np.nan)
+    f0 = frames[0]
+    out = f0[["mark", "highlight", "key_from"]].copy()
+    out["innings"] = sum(d.innings.values for d in frames)
+    out["pct"] = out.innings / n * 100
+    out["all_pct"] = weigh("all_pct")
+    out["all_from_prev"] = weigh("all_from_prev")
+    out["all_from_key"] = weigh("all_from_key")
+    reached = dict(zip(out.mark, out.innings))
+    prev = [None] + list(out.innings[:-1])
+    out["from_prev"] = [r / p * 100 if p else np.nan for r, p in zip(out.innings, prev)]
+    out["from_key"] = [reached[mk] / reached[int(k)] * 100 if k and reached.get(int(k)) else np.nan
+                       for mk, k in zip(out.mark, out.key_from)]
+    out.attrs.update(innings=n, kind=f0.attrs["kind"], keys=f0.attrs["keys"])
+    if f0.attrs["kind"] == "t20":
+        h, fi = sum(d.attrs["hundreds"] for d in frames), sum(d.attrs["fifties"] for d in frames)
+        a = [(d.attrs["all_fifty_to_100"], w) for d, w in zip(frames, wt) if np.isfinite(d.attrs["all_fifty_to_100"])]
+        out.attrs.update(hundreds=h, fifties=fi, fifty_to_100=h / fi * 100 if fi else np.nan,
+                         all_fifty_to_100=sum(v * w for v, w in a) / sum(w for _, w in a) if a else np.nan)
+    return out
+
+
+# the parts that follow one format's rules, or set them against everyone with that format's own measures: with several
+# formats ticked, one block per format (always for these; the rest only when the formats differ in length)
+EACH_ALWAYS_BAT = ("positions",)
+EACH_LENGTH_BAT = ("danger", "funnel", "came_in", "consistency", "streaks")
+EACH_LENGTH_BOWL = ("match_pattern", "with_without", "streaks")
+
+
+def _several(career, player, out, piece, secs, season, season_of, bat_all, bowl_all, my_matches) -> None:
+    """The page for several formats ticked together (your answers of 17 November): every number, chart and table counts
+    them together; where they rank among everyone and runs above average go by each format's own average, weighted by
+    their innings in it; the parts that only mean one format (rank over time, attributes and the scout report, innings
+    by innings, comparing seasons, batting positions, and the parts that follow one length of game when the formats
+    differ in length) show each ticked format on its own."""
+    m = career.matches
+    label = out["section"]
+    sel = m[m.section.isin(secs)]
+    if season:
+        sel = sel[sel.match_id.map(season_of) == season]
+    ids = sel.match_id
+    per: dict = {}
+    for s in secs:
+        ids_s = sel[sel.section == s].match_id
+        if not (bat_all.match_id.isin(set(ids_s)).any() or bowl_all.match_id.isin(set(ids_s)).any()):
+            continue   # not in this format in that year
+        only = tuple(sorted(ids_s)) if season else ()
+        bt, wt, _, base = kept(career, ("player_tables", s, season),
+                               lambda: player_tables(career, Scope(sections=[s], only=only)))
+        per[s] = dict(ids=ids_s, bat_t=bt, bowl_t=wt, kind=base.kind,
+                      inns=A.batting_innings(career, ids_s, player), spells=A.bowling_spells(career, ids_s, player))
+    out["batting"] = out["bowling"] = out["bat_innings"] = out["bowl_innings"] = out["profile"] = None
+    out["each"] = {}
+    inns = A.batting_innings(career, ids, player)
+    inns = inns.assign(season=inns.match_id.map(season_of))
+    spells = A.bowling_spells(career, ids, player)
+    spells = spells.assign(season=spells.match_id.map(season_of))
+    one_length = len({p["kind"] for p in per.values()}) == 1
+    out["one_length"] = one_length
+    main = max(per, key=lambda s: len(per[s]["inns"]) + len(per[s]["spells"])) if per else secs[0]
+    kind = per[main]["kind"] if per else "t20"
+    role = None
+    if per:
+        roles = kept(career, ("roles", main, season), lambda: A.role_labels(career, per[main]["ids"], kind).set_index("player"))
+        role = roles.loc[player] if player in roles.index else None
+    out["role"] = SG.clean(dict(role=role.role, tags=[t for t in role.tags if t != "Wicketkeeper"],
+                                usual_position=role.usual_position)) if role is not None else None
+    _tabs(out, role, inns, bat_all, bowl_all)
+
+    def each(fn, which: list[str]) -> list[dict]:
+        """One block per format; one that can't be worked out says so and never stops the others."""
+        got = []
+        for s in which:
+            try:
+                got.append(dict(section=s, data=SG.clean(fn(s, per[s]))))
+            except Exception as e:  # noqa: BLE001
+                got.append(dict(section=s, data=None, missing=f"Couldn't be worked out ({type(e).__name__}: {e})"))
+        return got
+
+    if len(inns):
+        bat_t = _sum_bat([p["bat_t"] for p in per.values()])
+
+        def batting():
+            b = _batting(career, player, label, season, ids, inns, bat_t, kind, season_of)
+            part = {s: kept(career, ("bat_part", player, s, season),
+                            lambda: _batting(career, player, s, season, p["ids"], p["inns"], p["bat_t"], p["kind"]))
+                    for s, p in per.items() if len(p["inns"])}
+            b["compare"] = _weighted_compare([(part[s].get("compare"), len(per[s]["inns"])) for s in part])
+            if one_length:
+                b["danger"] = _danger(career, ids, player, dz=_merge_danger([PD.danger_zones(career, per[s]["ids"], player) for s in part]))
+                b["funnel"] = _funnel(career, ids, player, fn=_merge_funnel([PD.funnel(career, per[s]["ids"], player) for s in part]))
+            b["each"] = {k: [dict(section=s, data=part[s][k]) for s in part if part[s][k] is not None]
+                         for k in EACH_ALWAYS_BAT + (() if one_length else EACH_LENGTH_BAT)}
+            for k in b["each"]:
+                b[k] = None
+            return b
+        piece("batting", batting)
+        out["each"]["bat_innings"] = each(lambda s, p: _by_innings(career, player, s, season, p["ids"], p["kind"], bowling=False),
+                                          [s for s, p in per.items() if len(p["inns"])])
+    if len(spells):
+        bowl_t = _sum_bowl([p["bowl_t"] for p in per.values()])
+
+        def bowling():
+            w = _bowling(career, player, label, season, ids, spells, bowl_t, kind, season_of)
+            w["each"] = {}
+            if not one_length:
+                part = {s: kept(career, ("bowl_part", player, s, season),
+                                lambda: _bowling(career, player, s, season, p["ids"], p["spells"], p["bowl_t"], p["kind"]))
+                        for s, p in per.items() if len(p["spells"])}
+                w["each"] = {k: [dict(section=s, data=part[s][k]) for s in part if part[s][k] is not None]
+                             for k in EACH_LENGTH_BOWL}
+                for k in EACH_LENGTH_BOWL:
+                    w[k] = None
+            return w
+        piece("bowling", bowling)
+        out["each"]["bowl_innings"] = each(lambda s, p: _by_innings(career, player, s, season, p["ids"], p["kind"], bowling=True),
+                                           [s for s, p in per.items() if len(p["spells"])])
+
+    def story():
+        mis = [kept(career, ("impact", s, season), lambda: PD.match_impact(career, p["ids"])) for s, p in per.items()]
+        mi = pd.concat(mis, ignore_index=True) if mis else None
+        st = _story(career, player, label, season, ids, kind, my_matches, mi=mi)
+        st["rank"] = st["compare"] = None
+        st["each"] = dict(rank=[dict(section=s, data=_rank(career, s, player)) for s in per],
+                          compare=[dict(section=s, data=_compare(career, player, s, my_matches)) for s in per])
+        if not one_length:   # the milestones and the big days follow each format's own marks
+            st["milestones"] = st["fires"] = None
+            st["each"].update(milestones=[dict(section=s, data=_milestones(career, s, season, p["ids"], player)) for s, p in per.items()],
+                              fires=[dict(section=s, data=_fires(career, s, season, p["ids"], player)) for s, p in per.items()])
+        return st
+    piece("story", story)
+    out["each"]["profile"] = each(lambda s, p: _profile(kept(career, ("profile", s, player), lambda: AT.profile(career, s, player))), list(per))
+    sec_ids = set(m[m.section.isin(secs)].match_id)
+    piece("big", lambda: _big(career, player, label, sec_ids))
+    piece("countries", lambda: _countries(career, player, label, sec_ids))
+    piece("bounce", lambda: _bounce(career, player, label, sec_ids))
 
 
 def _profile(p: dict) -> dict:
@@ -449,7 +691,7 @@ def _marks(career, player) -> list[dict]:
 
 
 # ------------------------------------------------------------------ batting
-def _batting(career, player, section, season, ids, inns, bat_t, kind) -> dict:
+def _batting(career, player, section, season, ids, inns, bat_t, kind, season_of=None) -> dict:
     b = bat_t[bat_t.player == player].iloc[0]
     avg = float(b.average) if pd.notna(b.average) else None
     labels = [f"{r.runs}{'' if r.out else '*'} off {r.balls} v {r.opposition} · {r.date:%d %b %Y}" for r in inns.itertuples()]
@@ -508,7 +750,7 @@ def _batting(career, player, section, season, ids, inns, bat_t, kind) -> dict:
         for_="How bowlers get them out: a weakness to work on with your own players, or to attack in an opponent.")
     out["danger"] = _danger(career, ids, player)
     out["funnel"] = _funnel(career, ids, player)
-    out["season_table"] = table(A.batting_record(career, ids, player, by="season").drop(columns=["Ct", "St"])   # no fielding
+    out["season_table"] = table(A.batting_record(career, ids, player, by="season", season_of=season_of).drop(columns=["Ct", "St"])   # no fielding
                                 .sort_values("season", ascending=False),
                                 "season", False, fifties_first=kind == "t20")
     strength = kept(career, ("strength", section, season), lambda: A.team_strength(career, ids))
@@ -606,8 +848,9 @@ def _positions(career, ids, inns) -> dict | None:
                      "★ is their best, from 2 innings there.")
 
 
-def _danger(career, ids, player) -> dict | None:
-    dz = PD.danger_zones(career, ids, player)
+def _danger(career, ids, player, dz: pd.DataFrame | None = None) -> dict | None:
+    """`dz`: the bands worked out already (several formats of one length: each format's own, put together)."""
+    dz = PD.danger_zones(career, ids, player) if dz is None else dz
     if dz.attrs.get("dismissals", 0) == 0:
         return None
     key_zone = PD.KEY_ZONE.get(dz.attrs.get("kind"))
@@ -631,8 +874,8 @@ def _danger(career, ids, player) -> dict | None:
                      "before they're set. The bands follow the format.")
 
 
-def _funnel(career, ids, player) -> dict | None:
-    fn = PD.funnel(career, ids, player)
+def _funnel(career, ids, player, fn: pd.DataFrame | None = None) -> dict | None:
+    fn = PD.funnel(career, ids, player) if fn is None else fn
     if not fn.attrs.get("innings"):
         return None
     keys = fn.attrs.get("keys", [])
@@ -675,12 +918,12 @@ def _came_in(inns, kind, avg) -> dict:
                 is_="Their batting average by the score when they walked in; the dashed line is their average overall.",
                 best_label="Best", best=split_best(t, "situation", "average"),
                 for_="Shows whether they handle pressure. The score comes from the fall of wickets: the number 5 walks in when the 3rd wicket falls.",
-                press=press, rescue=[dict(at=f"{int(x.came_in_score)}/{int(x.came_in_wickets)}", score=f"{x.runs}{'' if x.out else '*'}",
+                press=press, overall=avg, rescue=[dict(at=f"{int(x.came_in_score)}/{int(x.came_in_wickets)}", score=f"{x.runs}{'' if x.out else '*'}",
                                           balls=int(x.balls), against=x.opposition, date=SG.clean(x.date)) for x in r.itertuples()])
 
 
 # ------------------------------------------------------------------ bowling
-def _bowling(career, player, section, season, ids, spells, bowl_t, kind) -> dict:
+def _bowling(career, player, section, season, ids, spells, bowl_t, kind, season_of=None) -> dict:
     w = bowl_t[bowl_t.player == player].iloc[0]
     labels = [f"{r.wickets}/{r.runs} v {r.opposition} · {r.date:%d %b %Y}" for r in spells.itertuples()]
     form = _form(spells.wickets, None, labels, spells.match_id)
@@ -741,7 +984,8 @@ def _bowling(career, player, section, season, ids, spells, bowl_t, kind) -> dict
                                      dict(label="Wicketless", spells=b["spells"], wickets=0, economy=fmt(b["economy"], 2),
                                           maidens=fmt(b["maidens_per_10"], 1) if test else "–")],
                                shows=shows, for_=for_)
-    out["season_table"] = table(A.bowling_record(career, ids, player, by="season").sort_values("season", ascending=False), "season", True)
+    out["season_table"] = table(A.bowling_record(career, ids, player, by="season", season_of=season_of)
+                                .sort_values("season", ascending=False), "season", True)
     q = A.wicket_quality(career, ids, player)
     out["quality"] = None if not q else dict(
         rows=[dict(label="Top order (1-3)", value=q["top_order"]), dict(label="Middle order (4-7)", value=q["middle_order"]),
@@ -1064,59 +1308,61 @@ def _by_innings(career, player, section, season, ids, kind, bowling: bool) -> di
 
 
 # ------------------------------------------------------------------ story
-def _story(career, player, section, season, ids, kind, my_matches) -> dict:
-    out: dict = {}
-    mi = kept(career, ("impact", section, season), lambda: PD.match_impact(career, ids))
+def _impact(mi: pd.DataFrame, player: str, kind: str) -> dict | None:
+    """Match impact in every match (`mi`: every player's impact in these matches, each worked out in its own format)."""
     mine = mi[mi.player == player].sort_values("date")
     if mine.empty:
-        out["impact"] = None
-    else:
-        best = mine.sort_values("impact", ascending=False).iloc[0]
-        g = mi.groupby("player").impact
-        need = min(3, len(mine))   # rank among players with as many games (up to 3), so one-off games don't count
-        per = g.mean()[g.size() >= need]
-        rank = int((per > mine.impact.mean()).sum()) + 1
-        out["impact"] = dict(
-            rows=[dict(label=f"v {r.opponent} · {r.date:%d %b %Y}", value=round(float(r.impact)), won=bool(r.won), id=r.match_id,
-                       note=f"{int(r.runs)} runs, {count(r.wickets, 'wkt')}") for r in mine.itertuples()],
-            shows=f"Average {mine.impact.mean():.0f} a match, number {rank} of the {len(per)} players here with {need}+ matches. "
-                  f"Best: {best.impact:.0f} v {best.opponent} ({int(best.runs)} runs, {count(best.wickets, 'wkt')}). Green bars are wins.",
-            is_="Their match impact in every match here, oldest first (green: a win).", best_label="Best match",
-            best=f"{best.impact:.0f} v {best.opponent}, {best.date:%d %b %Y} ({int(best.runs)} runs, {count(best.wickets, 'wkt')})",
-            for_="Puts batting and bowling on one scale: runs, plus each wicket worth the competition's runs per wicket"
-                 + (", with scoring speed and economy counted in white-ball cricket." if mi.attrs["kind"] != "multi" else "."))
+        return None
+    best = mine.sort_values("impact", ascending=False).iloc[0]
+    g = mi.groupby("player").impact
+    need = min(3, len(mine))   # rank among players with as many games (up to 3), so one-off games don't count
+    per = g.mean()[g.size() >= need]
+    rank = int((per > mine.impact.mean()).sum()) + 1
+    return dict(
+        rows=[dict(label=f"v {r.opponent} · {r.date:%d %b %Y}", value=round(float(r.impact)), won=bool(r.won), id=r.match_id,
+                   note=f"{int(r.runs)} runs, {count(r.wickets, 'wkt')}") for r in mine.itertuples()],
+        shows=f"Average {mine.impact.mean():.0f} a match, number {rank} of the {len(per)} players here with {need}+ matches. "
+              f"Best: {best.impact:.0f} v {best.opponent} ({int(best.runs)} runs, {count(best.wickets, 'wkt')}). Green bars are wins.",
+        is_="Their match impact in every match here, oldest first (green: a win).", best_label="Best match",
+        best=f"{best.impact:.0f} v {best.opponent}, {best.date:%d %b %Y} ({int(best.runs)} runs, {count(best.wickets, 'wkt')})",
+        for_="Puts batting and bowling on one scale: runs, plus each wicket worth the competition's runs per wicket"
+             + (", with scoring speed and economy counted in white-ball cricket." if kind != "multi" else ".")
+             + (" Each format is counted with its own runs per wicket." if kind == "several" else ""))
+
+
+def _rank(career, section, player) -> dict | None:
     rk = kept(career, ("rank_by_season", section, player), lambda: PD.rank_by_season(career, section, player))
     if rk.empty:
-        out["rank"] = None
-    else:
-        # the latest season they played (not a later one they sat out), and their best rank for each job, best first:
-        # a bowler's peak is a wickets rank, not where their few runs put them
-        played = rk[rk.runs_rank.notna() | rk.wickets_rank.notna()]
-        r0 = played.iloc[-1] if len(played) else rk.iloc[-1]
-        bits = []
-        if np.isfinite(r0.runs_rank):
-            bits.append(f"{ordinal(r0.runs_rank)} of {r0.runs_of} for runs")
-        if np.isfinite(r0.wickets_rank):
-            bits.append(f"{ordinal(r0.wickets_rank)} of {r0.wickets_of} for wickets")
-        peaks = sorted((rk[col].min(), f"{ordinal(rk[col].min())} for {word} ({rk.season[rk[col].idxmin()]})")
-                       for col, word in (("runs_rank", "runs"), ("wickets_rank", "wickets")) if rk[col].notna().any())
-        out["rank"] = dict(rows=SG.rows(rk, ["season", "runs_rank", "runs_of", "wickets_rank", "wickets_of"]),
-                           is_="Where they finished each season here, for runs and for wickets (1 is the top).",
-                           best_label="Best finish", best="; ".join(t for _, t in peaks) if peaks else "", empty=not peaks,
-                           shows=(f"In {r0.season}: " + (", ".join(bits) or "no runs or wickets") + "."
-                                  + (f" Best: {'; '.join(t for _, t in peaks)}." if peaks else "")),
-                           for_="A career story at a glance: when they peaked and whether they're climbing or fading.")
+        return None
+    # the latest season they played (not a later one they sat out), and their best rank for each job, best first:
+    # a bowler's peak is a wickets rank, not where their few runs put them
+    played = rk[rk.runs_rank.notna() | rk.wickets_rank.notna()]
+    r0 = played.iloc[-1] if len(played) else rk.iloc[-1]
+    bits = []
+    if np.isfinite(r0.runs_rank):
+        bits.append(f"{ordinal(r0.runs_rank)} of {r0.runs_of} for runs")
+    if np.isfinite(r0.wickets_rank):
+        bits.append(f"{ordinal(r0.wickets_rank)} of {r0.wickets_of} for wickets")
+    peaks = sorted((rk[col].min(), f"{ordinal(rk[col].min())} for {word} ({rk.season[rk[col].idxmin()]})")
+                   for col, word in (("runs_rank", "runs"), ("wickets_rank", "wickets")) if rk[col].notna().any())
+    return dict(rows=SG.rows(rk, ["season", "runs_rank", "runs_of", "wickets_rank", "wickets_of"]),
+                is_="Where they finished each season here, for runs and for wickets (1 is the top).",
+                best_label="Best finish", best="; ".join(t for _, t in peaks) if peaks else "", empty=not peaks,
+                shows=(f"In {r0.season}: " + (", ".join(bits) or "no runs or wickets") + "."
+                       + (f" Best: {'; '.join(t for _, t in peaks)}." if peaks else "")),
+                for_="A career story at a glance: when they peaked and whether they're climbing or fading.")
+
+
+def _milestones(career, section, season, ids, player) -> dict:
     fa = kept(career, ("fastest", section, season), lambda: PD.fastest(career, ids))
     unit = fa.attrs.get("unit", "innings")
     mf = fa[fa.player == player]
-    out["milestones"] = dict(unit=unit, rows=[dict(milestone=f"{r.milestone:,} {r.what}", took=f"{r.taken} {unit}",
-                                                   fastest=f"{r.rank} of {int(((fa.what == r.what) & (fa.milestone == r.milestone)).sum())}",
-                                                   date=SG.clean(r.date)) for r in mf.itertuples()])
-    ach = kept(career, ("achievements",), lambda: PD.achievements(career))
-    ma = ach[(ach.player == player) & ach.match_id.isin(set(ids))]
-    out["badges"] = [dict(badge=r.badge, detail=r.detail, id=r.match_id, date=SG.clean(r.date)) for r in ma.itertuples()]
-    fi = kept(career, ("firsts", player), lambda: PL.firsts(career, player))
-    out["firsts"] = [dict(date=SG.clean(r.date), what=r.what, detail=r.detail, id=r.match_id, against=r.against) for r in fi.itertuples()]
+    return dict(unit=unit, rows=[dict(milestone=f"{r.milestone:,} {r.what}", took=f"{r.taken} {unit}",
+                                      fastest=f"{r.rank} of {int(((fa.what == r.what) & (fa.milestone == r.milestone)).sum())}",
+                                      date=SG.clean(r.date)) for r in mf.itertuples()])
+
+
+def _fires(career, section, season, ids, player) -> dict:
     wb, ww = kept(career, ("win_when", section, season), lambda: PL.win_when(career, ids, 1))
     rows = []
     for d, label in ((wb, f"{wb.attrs.get('big', 50)}+ with the bat"), (ww, f"{ww.attrs.get('haul', 3)}+ wickets")):
@@ -1124,7 +1370,25 @@ def _story(career, player, section, season, ids, kind, my_matches) -> dict:
         if len(r):
             r = r.iloc[0]
             rows.append(dict(label=label, times=int(r.times), when=fmt(r.pct_when, 0) + "%", other=fmt(r.pct_other, 0) + "%"))
-    out["fires"] = dict(rows=rows, none=f"No {wb.attrs.get('big', 50)}+ scores or {ww.attrs.get('haul', 3)}-wicket hauls here yet.")
+    return dict(rows=rows, none=f"No {wb.attrs.get('big', 50)}+ scores or {ww.attrs.get('haul', 3)}-wicket hauls here yet.")
+
+
+def _story(career, player, section, season, ids, kind, my_matches, mi: pd.DataFrame | None = None) -> dict:
+    """`mi`: every player's match impact here, given when several formats are counted together (each its own)."""
+    out: dict = {}
+    if mi is None:
+        mi = kept(career, ("impact", section, season), lambda: PD.match_impact(career, ids))
+        out["impact"] = _impact(mi, player, mi.attrs["kind"])
+    else:
+        out["impact"] = _impact(mi, player, "several")
+    out["rank"] = _rank(career, section, player)
+    out["milestones"] = _milestones(career, section, season, ids, player)
+    ach = kept(career, ("achievements",), lambda: PD.achievements(career))
+    ma = ach[(ach.player == player) & ach.match_id.isin(set(ids))]
+    out["badges"] = [dict(badge=r.badge, detail=r.detail, id=r.match_id, date=SG.clean(r.date)) for r in ma.itertuples()]
+    fi = kept(career, ("firsts", player), lambda: PL.firsts(career, player))
+    out["firsts"] = [dict(date=SG.clean(r.date), what=r.what, detail=r.detail, id=r.match_id, against=r.against) for r in fi.itertuples()]
+    out["fires"] = _fires(career, section, season, ids, player)
     q = kept(career, ("quirks", section, season), lambda: PL.quirks(career, ids))
     _, cp = kept(career, ("carried", section, season), lambda: PL.carried(career, ids, 1))
     ah = kept(career, ("after_hundred", section, season), lambda: PL.after_hundred(career, ids))

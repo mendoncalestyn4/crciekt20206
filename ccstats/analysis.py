@@ -100,13 +100,22 @@ def _overs(balls: int) -> str:
     return f"{balls // 6}" + (f".{balls % 6}" if balls % 6 else "")
 
 
-def batting_record(career, ids, player: str, by: str = "section") -> pd.DataFrame:
+def _seasons(career, season_of) -> pd.DataFrame:
+    """match_id, section and season; `season_of` (match id -> label) puts each match in another season, such as the
+    April-to-March year when formats are counted together."""
+    mat = career.matches[["match_id", "section", "season"]]
+    if season_of is not None:
+        mat = mat.assign(season=mat.match_id.map(season_of).fillna(mat.season))
+    return mat
+
+
+def batting_record(career, ids, player: str, by: str = "section", season_of=None) -> pd.DataFrame:
     """A player's standard batting figures, one row per section (or season).
     The columns are the same whatever the format, so every section reads alike."""
     b = career.batting[career.batting.match_id.isin(ids) & (career.batting.player == player)]
-    b = b.merge(career.matches[["match_id", "section", "season"]], on="match_id")
+    b = b.merge(_seasons(career, season_of), on="match_id")
     f = career.fielding[career.fielding.match_id.isin(ids) & career.fielding.resolved & (career.fielding.player == player)]
-    f = f.merge(career.matches[["match_id", "section", "season"]], on="match_id")
+    f = f.merge(_seasons(career, season_of), on="match_id")
     rows = []
     for key, g in b.groupby(by, sort=False):
         d = g[g.did_bat]
@@ -124,12 +133,12 @@ def batting_record(career, ids, player: str, by: str = "section") -> pd.DataFram
     return pd.DataFrame(rows, columns=cols)
 
 
-def bowling_record(career, ids, player: str, by: str = "section") -> pd.DataFrame:
+def bowling_record(career, ids, player: str, by: str = "section", season_of=None) -> pd.DataFrame:
     """A player's standard bowling figures, one row per section (or season),
     with the same columns in every format. Maidens are only printed on
     longer-format cards and dot balls only on T20 cards, so the other one
     shows as blank."""
-    mat = career.matches[["match_id", "section", "season"]]
+    mat = _seasons(career, season_of)
     appeared = career.batting[career.batting.match_id.isin(ids) & (career.batting.player == player)].merge(mat, on="match_id")
     w = career.bowling[career.bowling.match_id.isin(ids) & (career.bowling.player == player)].merge(mat, on="match_id")
     rows = []

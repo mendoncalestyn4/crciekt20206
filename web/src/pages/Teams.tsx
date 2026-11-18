@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { get, type GridT, type NGrid, type Outcome, type TeamBody, type TeamPage, remember } from "../api";
-import { Explain, Lamps, Logo, Missing, Num, three, Tile } from "../kit/base";
+import { Explain, FormatTicks, Lamps, Logo, Missing, Num, three, Tile } from "../kit/base";
 import { LeaderBars, RingList, ShareRing } from "../kit/charts";
 import { SplitBars } from "../kit/player";
 import { StrengthPanel, Streaks, VenueRecord } from "../kit/season";
@@ -48,8 +48,10 @@ export function Teams() {
   if (!q.data) return <><Head title="Teams" crumb="Team record" /><div className="empty">Working out the team's record…</div></>;
   const d = q.data, p = d.page;
   if (!p) return <><Head title="Teams" crumb="Team record" /><div className="grid"><Tile span={12}><Missing why={NO_MATCHES} /></Tile></div></>;
-  const ch = d.choices.find((c) => c.section === p.section)!;
-  const h = p.head, b = p.body, scope = `${p.section}${p.season === "All seasons" ? "" : ` · ${p.season}`}`;
+  // the competitions ticked: their teams together (those still to play marked)
+  const chs = d.choices.filter((c) => p.ticked.includes(c.section));
+  const teams = [...new Set(chs.flatMap((c) => c.teams))].sort(), todo = new Set(chs.flatMap((c) => c.todo));
+  const h = p.head, b = p.body, scope = `${p.name}${p.season === "All seasons" ? "" : ` · ${p.season}`}`;
   const vlabel = VENUES.find(([, v]) => v === p.venue)?.[0] ?? "Overall";
   return (
     <>
@@ -57,18 +59,17 @@ export function Teams() {
         onChip={(i) => go(`${TEAM_PAGES[i]!.to}${keep}`)} />
       <div className="grid">
         <Tile span={12} title="Pick a competition and a team">
-          <div className="plain">Every comparison is against the average of all the teams in that competition.</div>
+          <div className="plain">Every comparison is against the average of all the teams in that competition; with several ticked, they are
+            counted together and each competition's own average is used, weighted by the team's games in it.</div>
+          <FormatTicks all={d.played?.length ? d.played : d.choices.map((c) => c.section)} on={p.ticked} set={(v) => set({ section: v.join("|") })} />
           <div className="field">
-            <label htmlFor="tm-sec">Competition</label>
-            <select id="tm-sec" className="pick" value={p.section} onChange={(e) => set({ section: e.target.value })}>
-              {d.choices.map((c) => <option key={c.section} value={c.section}>{c.section} · {c.matches} matches</option>)}</select>
             <label htmlFor="tm-season">Season</label>
             <select id="tm-season" className="pick" value={p.season} onChange={(e) => set({ season: e.target.value === "All seasons" ? "" : e.target.value })}>
-              {["All seasons", ...ch.seasons].map((s) => <option key={s}>{s}</option>)}</select>
+              {["All seasons", ...p.seasons].map((s) => <option key={s}>{s}</option>)}</select>
             <label htmlFor="tm-team">Team</label>
             <select id="tm-team" className="pick" value={p.team} onChange={(e) => set({ team: e.target.value })}>
-              {(ch.teams.includes(p.team) ? ch.teams : [p.team, ...ch.teams]).map((t) => (
-                <option key={t} value={t}>{t}{ch.todo.includes(t) ? " (0 games)" : ""}</option>))}</select>
+              {(teams.includes(p.team) ? teams : [p.team, ...teams]).map((t) => (
+                <option key={t} value={t}>{t}{todo.has(t) ? " (0 games)" : ""}</option>))}</select>
             <div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>{VENUES.map(([l, v]) => (
               <button key={v} className={v === p.venue ? "on" : ""} onClick={() => set({ venue: v === "all" ? "" : v })}>{l}</button>))}</div>
           </div>

@@ -3,10 +3,10 @@
 // of the team, the matches they won, their marks out of 10, the career journey; then batting, bowling, fielding and
 // their story for one competition and season.
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState, type ReactNode } from "react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
-import { get, type ByInnings, type InningsCol, type InningsMarks, type Lines, type PlayerPage, type PlayersLanding, type Split, remember } from "../api";
-import { Explain, Hero, Logo, Missing, Name, Num, PName, Sub, Tile } from "../kit/base";
+import { get, type ByInnings, type Each, type InningsCol, type InningsMarks, type Lines, type PlayerPage, type PlayersLanding, type Split, remember } from "../api";
+import { Explain, FormatTicks, Hero, Logo, Missing, Name, Num, PName, Sub, Tile } from "../kit/base";
 import { PercentileBars } from "../kit/blocks";
 import { RingList } from "../kit/charts";
 import { MatchWinners } from "../kit/season";
@@ -72,6 +72,14 @@ export function PlayersHome() {
 const Box = ({ title, right, span = 6, children }: { title: string; right?: string; span?: number; children: ReactNode }) =>
   <Tile span={span} title={title} right={right}>{children}</Tile>;
 /** A chart's three lines (What it is, Who's best, What it's for: design/CHART_LINES.md), as the server wrote them. */
+/** A part as one block, or one block per format when several are ticked together (your answer of 17 November: the
+ *  parts that only mean one format), each block's title naming its format; `none`: what shows when there's nothing. */
+function per<X>(list: Each<X>[] | undefined, one: X | null | undefined, draw: (x: X, sfx: string) => ReactNode, none: ReactNode = null): ReactNode {
+  if (!list) return one != null ? draw(one, "") : none;
+  return list.map((e) => e.data != null ? <Fragment key={e.section}>{draw(e.data, ` · ${fmtOf(e.section)}`)}</Fragment>
+    : e.missing ? <Tile key={e.section} span={6} title={fmtOf(e.section)}><Missing why={e.missing} /></Tile> : null);
+}
+
 const lines = (x: Lines) => ({ is_: x.is_, best: x.best, best_label: x.best_label, shows: x.shows, for_: x.for_ ?? "" });
 const Sp = ({ s, overall, dec = 1, unit, low }: { s: Split; overall?: number | null; dec?: number; unit?: string; low?: boolean }) =>
   <><SplitBars rows={s.rows} reference={overall} dec={dec} unit={unit} lowBetter={low} /><Explain {...lines(s)} /></>;
@@ -110,11 +118,11 @@ export function PlayerView() {
             <button key={x} className={x === tab ? "on" : ""} onClick={() => toTab(x)}>{x}</button>))}</div>
           <span className="tl2">{scope}</span>
           <div className="field" style={{ marginTop: 0 }}>
-            <select className="pick" value={d.section} onChange={(e) => set("section", e.target.value)} aria-label="Competition">{d.sections.map((s) => <option key={s}>{s}</option>)}</select>
+            <FormatTicks all={d.sections} on={d.ticked} set={(v) => set("section", v.join("|"))} />
             <select className="pick" value={d.season} onChange={(e) => set("season", e.target.value === "All seasons" ? "" : e.target.value)} aria-label="Season">{d.seasons.map((s) => <option key={s}>{s}</option>)}</select></div>
           {d.role && <span className="row2" style={{ gap: 8 }}>{[d.role.role, ...d.role.tags].map((x) => <span className="tag" key={x}>{x}</span>)}
             <span className="note" style={{ margin: 0 }}>from where they bat (usually no. {f0(d.role.usual_position)}) and how much they bowl</span></span>}
-          <span className="note" style={{ margin: 0 }}>Tiles marked "every competition" cover the whole career; the rest are for {scope}: pick another competition or season above.</span>
+          <span className="note" style={{ margin: 0 }}>Tiles marked "every competition" cover the whole career; the rest are for {scope}: tick other formats (any ticked together are counted together) or pick a season above.</span>
         </div>
 
         {tab === "Overview" && <>
@@ -134,11 +142,12 @@ export function PlayerView() {
                   <td className="r"><span className="tn">{r.wickets}</span></td><td><ShareBar v={r.wicket_share} of={r.team_wickets} /></td></tr>))}</tbody></table>
             <div className="note">Their runs out of all the runs the team's batters made that season there (off the bat: extras are no one's), and their
               wickets out of all the wickets the team took; matches: theirs of the team's.</div></Tile>}
-          {d.profile && <Tile span={7} title={`Attributes in ${d.section}`} right="out of 20 · against everyone there">
-            <AttrGrid a={d.profile.attributes} show={d.profile.show} other={d.profile.other} section={d.section} />
-            {d.profile.best && <Explain {...lines(d.profile)} />}</Tile>}
-          {d.profile && <Tile span={5} title="Scout report" right={d.profile.report.role ?? ""}><ScoutText r={d.profile.report} />
-            {d.season !== "All seasons" && <div className="note">Over every season of {d.section}, not just {d.season}.</div>}</Tile>}
+          {per(d.each?.profile, d.profile, (pf, sfx) => <>
+            <Tile span={7} title={`Attributes in ${sfx ? sfx.slice(3) : d.section}`} right="out of 20 · against everyone there">
+            <AttrGrid a={pf.attributes} show={pf.show} other={pf.other} section={sfx ? sfx.slice(3) : d.section} />
+            {pf.best && <Explain {...lines(pf)} />}</Tile>
+            <Tile span={5} title={`Scout report${sfx}`} right={pf.report.role ?? ""}><ScoutText r={pf.report} />
+            {d.season !== "All seasons" && <div className="note">Over every season of {sfx ? sfx.slice(3) : d.section}, not just {d.season}.</div>}</Tile></>)}
           {d.marks && d.marks.length > 0 && <Tile span={12} title="Marks out of 10 · every series" right="newest first">
             <table className="c marks"><thead><tr><th>Series</th><th className="r">Mark</th><th className="r">Rank</th><th>In the series</th><th>Best match</th></tr></thead>
               <tbody>{d.marks.slice(0, 10).map((m) => (
@@ -158,7 +167,7 @@ export function PlayerView() {
         {tab === "Batting" && <>
           {b ? <KP items={[["Innings", b.kpis.innings], ["Runs", b.kpis.runs.toLocaleString("en-GB")], ["Average", f2(b.kpis.average)], ["Strike rate", f1(b.kpis.strike_rate)],
             ["High score", b.kpis.high_score], ["100s / 50s", `${b.kpis.hundreds} / ${b.kpis.fifties}`]]} />
-            : <Tile span={12}><div className="plain">No innings in {scope}: pick another competition above. Their batting everywhere is below.</div></Tile>}
+            : <Tile span={12}><div className="plain">No innings in {scope}: tick another format above. Their batting everywhere is below.</div></Tile>}
           {c && c.last10.length > 1 && <Tile span={12} title={`Last ${c.last10.length} innings`} right="every competition">
             <div className="row2" style={{ flexWrap: "wrap", gap: 10 }}><span className="l5" style={{ height: 40 }}>{c.last10.map((r, i) => (
               <i key={i} className={r >= 50 ? "g" : ""} style={{ height: Math.max(3, Math.min(40, (r / Math.max(...c.last10, 1)) * 40)) }} title={String(r)} />))}</span>
@@ -168,21 +177,21 @@ export function PlayerView() {
             {d.bat_table ? <RecordTable t={d.bat_table} /> : <Missing why={d.missing.bat_table} />}
             <div className="note">Same columns in every competition. Hover a column name for what it means.</div></Tile>
           {d.formats && <FormatsTile f={d.formats} kind="bat" />}
-          <CountriesTile d={d} kind="bat" />
-          <BigTile d={d} kind="bat" />
-          <BounceTile d={d} kind="bat" />
+          <CountriesTile key={d.ticked.join("|")} d={d} kind="bat" />
+          <BigTile key={d.ticked.join("|")} d={d} kind="bat" />
+          <BounceTile key={d.ticked.join("|")} d={d} kind="bat" />
         </>}
         {tab === "Bowling" && <>
           {w ? <KP items={[["Wickets", w.kpis.wickets], ["Average", f2(w.kpis.average)], ["Economy", f2(w.kpis.economy)], ["Strike rate", f1(w.kpis.strike_rate)], ["Best", w.kpis.best], ["4+ hauls", w.kpis.hauls]]} />
-            : <Tile span={12}><div className="plain">Hasn't bowled in {scope}: pick another competition above. Their bowling everywhere is below.</div></Tile>}
+            : <Tile span={12}><div className="plain">Hasn't bowled in {scope}: tick another format above. Their bowling everywhere is below.</div></Tile>}
           <Tile span={12} title="Bowling · every competition">
             {d.bowl_table ? <RecordTable t={d.bowl_table} /> : <Missing why={d.missing.bowl_table ?? "Hasn't bowled."} />}
             <div className="note">Same columns in every competition. Maidens are only printed on longer-format scorecards and dot balls only on T20 and
               Hundred scorecards, so one of them is blank.</div></Tile>
           {d.formats && <FormatsTile f={d.formats} kind="bowl" />}
-          <CountriesTile d={d} kind="bowl" />
-          <BigTile d={d} kind="bowl" />
-          <BounceTile d={d} kind="bowl" />
+          <CountriesTile key={d.ticked.join("|")} d={d} kind="bowl" />
+          <BigTile key={d.ticked.join("|")} d={d} kind="bowl" />
+          <BounceTile key={d.ticked.join("|")} d={d} kind="bowl" />
         </>}
 
         {tab === "Batting" && b && <>
@@ -200,22 +209,23 @@ export function PlayerView() {
           <Box title="Season by season · runs"><Sp s={b.seasons} dec={0} /></Box>
           <Box title="How they get out">{b.how_out ? <><RingList items={b.how_out.rows.map((r, i) => [r.label, r.value ?? 0, pal[i % pal.length]!])} centre={String(b.how_out.rows.reduce((a, r) => a + (r.value ?? 0), 0))} sub="dismissals" />
             <Explain {...lines(b.how_out)} /></> : <div className="note">Never dismissed.</div>}</Box>
-          <Box title="Danger zones" right="when they get out">{b.danger ? <>{b.danger.key && <div className="keyz">⭐ {b.danger.key}</div>}
-            <PairedBars rows={b.danger.rows} me={d.player} unit="%" dec={0} /><Explain {...lines(b.danger)} /></> : <div className="note">Never dismissed here.</div>}</Box>
-          <Box title="Conversion" right="% of innings reaching each score">{b.funnel ? <><Funnel rows={b.funnel.rows} />{b.funnel.extra && <div className="plain">{b.funnel.extra}</div>}
-            <Explain {...lines(b.funnel)} /></> : <div className="note">No innings yet.</div>}</Box>
+          {per(b.each?.danger, b.danger, (x, sfx) => <Box title={`Danger zones${sfx}`} right="when they get out">{x.key && <div className="keyz">⭐ {x.key}</div>}
+            <PairedBars rows={x.rows} me={d.player} unit="%" dec={0} /><Explain {...lines(x)} /></Box>,
+            <Box title="Danger zones" right="when they get out"><div className="note">Never dismissed here.</div></Box>)}
+          {per(b.each?.funnel, b.funnel, (x, sfx) => <Box title={`Conversion${sfx}`} right="% of innings reaching each score"><Funnel rows={x.rows} />{x.extra && <div className="plain">{x.extra}</div>}
+            <Explain {...lines(x)} /></Box>, <Box title="Conversion" right="% of innings reaching each score"><div className="note">No innings yet.</div></Box>)}
           <Box span={12} title={`Every season in ${d.section}`} right="the same columns as the table at the top"><RecordTable t={b.season_table} /></Box>
-          {d.bat_innings && <InningsTile x={d.bat_innings} />}
+          {per(d.each?.bat_innings, d.bat_innings, (x, sfx) => <InningsTile x={x} sfx={sfx} />)}
           <div className="part"><span className="tl2" style={{ fontSize: 32 }}>Average in different situations</span>
             <span className="note" style={{ margin: 0 }}>Each chart splits the same innings one way. The dashed line is their overall average ({f1(b.splits.overall)}).</span></div>
           {b.splits.rows.map((s) => <Box key={s.title} title={s.title!}><Sp s={s} overall={b.splits.overall} /></Box>)}
           <Tile span={12}><div className="plain">Stronger and weaker teams: teams ranked by their win % here (each counted as if it had already won 2 and lost 2,
             so one win in one game doesn't make a side strong); the top half are the stronger teams. Stronger half: <b>{b.splits.stronger}</b>.</div></Tile>
-          {b.positions && <Box span={12} title="At each batting position" right={b.positions.best_position ? `best at no. ${b.positions.best_position}` : "against the average batter there"}>
-            <PairedBars rows={b.positions.rows} me={d.player} others="Average batter there" />
+          {per(b.each?.positions, b.positions, (x, sfx) => <Box span={12} title={`At each batting position${sfx}`} right={x.best_position ? `best at no. ${x.best_position}` : "against the average batter there"}>
+            <PairedBars rows={x.rows} me={d.player} others="Average batter there" />
             <table className="c" style={{ marginTop: 10 }}><thead><tr><th>Position</th><th className="r">Inns</th><th className="r">Runs</th><th className="r">NO</th>
               <th className="r">HS</th><th className="r">Avg</th><th className="r">SR</th><th className="r">50s</th><th className="r">100s</th><th className="r">Average batter there</th><th className="r" title="Settled: a few innings at the usual level for that position added before comparing">They are (settled)</th></tr></thead>
-              <tbody>{b.positions.table.map((r) => (
+              <tbody>{x.table.map((r) => (
                 <tr key={r.position} className={r.best ? "me" : ""}><td><Name p={`${r.best ? "★ " : ""}No. ${r.position}`} px={19} />{r.small && <div className="how">only {r.innings} innings</div>}</td>
                   <td className="r"><span className="tn dimn">{r.innings}</span></td><td className="r"><span className="tn">{r.runs}</span></td>
                   <td className="r"><span className="tn dimn">{r.not_outs}</span></td><td className="r"><span className="tn dimn">{r.high}</span></td>
@@ -223,18 +233,19 @@ export function PlayerView() {
                   <td className="r"><span className="tn dimn">{r.fifties}</span></td><td className="r"><span className="tn dimn">{r.hundreds}</span></td>
                   <td className="r"><span className="tn dimn">{f1(r.all_average)}</span></td>
                   <td className="r"><span className="tn">{r.edge == null ? "–" : `${r.edge >= 0 ? "+" : ""}${rnd(r.edge)}%`}</span></td></tr>))}</tbody></table>
-            <Explain {...lines(b.positions)} /></Box>}
-          <Box title="Average by the situation they walked into"><Sp s={b.came_in} overall={b.splits.overall} /></Box>
-          <Box title="Best rescue innings" right={`came in 3+ down for ${b.came_in.press} or fewer`}>{b.came_in.rescue.length ? <table className="c"><thead><tr><th>Came in at</th><th className="r">Score</th><th className="r">Balls</th><th>Against</th><th>Date</th></tr></thead>
-            <tbody>{b.came_in.rescue.map((r, i) => <tr key={i}><td><span className="tn">{r.at}</span></td><td className="r"><span className="tn">{r.score}</span></td><td className="r"><span className="tn dimn">{r.balls}</span></td>
-              <td><Name p={r.against} px={19} /></td><td><span className="tn dimn">{dayY(r.date)}</span></td></tr>)}</tbody></table> : <div className="note">No innings started in that kind of trouble yet.</div>}</Box>
-          <Box title="Consistency"><Sub cols={2}>{([[`${b.consistency.bar}+ scores`, `${f0(b.consistency.past_bar_pct)}%`], ["Single figures", `${f0(b.consistency.single_figures_pct)}%`],
-            ["Golden ducks", b.consistency.golden_ducks], ["50s → 100s", b.consistency.conversion_pct == null ? "–" : `${f0(b.consistency.conversion_pct)}%`]] as [string, ReactNode][]).map(([k, v]) =>
+            <Explain {...lines(x)} /></Box>)}
+          {per(b.each?.came_in, b.came_in, (ci, sfx) => <>
+          <Box title={`Average by the situation they walked into${sfx}`}><Sp s={ci} overall={ci.overall ?? b.splits.overall} /></Box>
+          <Box title={`Best rescue innings${sfx}`} right={`came in 3+ down for ${ci.press} or fewer`}>{ci.rescue.length ? <table className="c"><thead><tr><th>Came in at</th><th className="r">Score</th><th className="r">Balls</th><th>Against</th><th>Date</th></tr></thead>
+            <tbody>{ci.rescue.map((r, i) => <tr key={i}><td><span className="tn">{r.at}</span></td><td className="r"><span className="tn">{r.score}</span></td><td className="r"><span className="tn dimn">{r.balls}</span></td>
+              <td><Name p={r.against} px={19} /></td><td><span className="tn dimn">{dayY(r.date)}</span></td></tr>)}</tbody></table> : <div className="note">No innings started in that kind of trouble yet.</div>}</Box></>)}
+          {per(b.each?.consistency, b.consistency, (cs, sfx) => <Box title={`Consistency${sfx}`}><Sub cols={2}>{([[`${cs.bar}+ scores`, `${f0(cs.past_bar_pct)}%`], ["Single figures", `${f0(cs.single_figures_pct)}%`],
+            ["Golden ducks", cs.golden_ducks], ["50s → 100s", cs.conversion_pct == null ? "–" : `${f0(cs.conversion_pct)}%`]] as [string, ReactNode][]).map(([k, v]) =>
               <div className="bf-side" key={k}><div className="k">{k}</div><Num v={v} px={40} /></div>)}</Sub>
-            <div className="note">'{b.consistency.bar}+ scores' is how often they pass {b.consistency.bar}, a decent score in this format. 'Single figures' is how often they're out for under 10.
-              A golden duck is out first ball. '50s → 100s' is how often a fifty is turned into a hundred.</div></Box>
+            <div className="note">'{cs.bar}+ scores' is how often they pass {cs.bar}, a decent score in this format. 'Single figures' is how often they're out for under 10.
+              A golden duck is out first ball. '50s → 100s' is how often a fifty is turned into a hundred.</div></Box>)}
           <Box title="Nemesis" right="bowlers who have got them out most">{b.nemesis ? <Sp s={b.nemesis} dec={0} /> : <div className="note">No bowler has dismissed them yet.</div>}</Box>
-          <Box title="Streaks" right="innings in a row"><StreakTable rows={b.streaks} /><div className="note">Current = the run they're on now, counting back from their latest innings here.</div></Box>
+          {per(b.each?.streaks, b.streaks, (x, sfx) => <Box title={`Streaks${sfx}`} right="innings in a row"><StreakTable rows={x} /><div className="note">Current = the run they're on now, counting back from their latest innings here.</div></Box>)}
           <Box title="When chasing" right="batting in the last innings">{b.chasing ? <><Sub cols={2}>{([["Chases won", b.chasing.won_innings], ["Average in wins", f1(b.chasing.won_average)],
             ["Chases lost", b.chasing.lost_innings], ["Average in defeats", f1(b.chasing.lost_average)]] as [string, ReactNode][]).map(([k, v]) =>
               <div className="bf-side" key={k}><div className="k">{k}</div><Num v={v} px={40} /></div>)}</Sub>
@@ -250,42 +261,43 @@ export function PlayerView() {
           <Box title="Season by season · wickets"><Sp s={w.seasons} dec={0} /></Box>
           <Box title="How they take wickets">{w.how_wickets ? <><RingList items={w.how_wickets.rows.map((r, i) => [r.label, r.value ?? 0, pal[i % pal.length]!])} centre={String(w.kpis.wickets)} sub="wickets" />
             <Explain {...lines(w.how_wickets)} /></> : <div className="note">No wickets yet.</div>}</Box>
-          {w.match_pattern && <Box title="Over a match" right="first bowling innings v the second">{w.match_pattern.none ? <div className="note">{w.match_pattern.none}</div> : <>
-            <table className="c"><tbody>{([["First innings", w.match_pattern.first], ["Second innings", w.match_pattern.second], ["Wickets in both innings", w.match_pattern.both], ["Best match figures", w.match_pattern.best]] as [string, string][]).map(([k, v]) =>
+          {per(w.each?.match_pattern, w.match_pattern, (mp, sfx) => <Box title={`Over a match${sfx}`} right="first bowling innings v the second">{mp.none ? <div className="note">{mp.none}</div> : <>
+            <table className="c"><tbody>{([["First innings", mp.first], ["Second innings", mp.second], ["Wickets in both innings", mp.both], ["Best match figures", mp.best]] as [string, string][]).map(([k, v]) =>
               <tr key={k}><td><span className="why">{k}</span></td><td className="r"><span className="tn">{v}</span></td></tr>)}</tbody></table>
-            {w.match_pattern.shows && <Explain shows={w.match_pattern.shows} for_={w.match_pattern.for_ ?? ""} />}</>}</Box>}
-          <Box title="With and without wickets" right="their spells split">
+            {mp.shows && <Explain shows={mp.shows} for_={mp.for_ ?? ""} />}</>}</Box>)}
+          {per(w.each?.with_without, w.with_without, (ww, sfx) => <Box title={`With and without wickets${sfx}`} right="their spells split">
             <table className="c"><thead><tr><th /><th className="r">Spells</th><th className="r">Wkts</th><th className="r">Econ</th><th className="r">Maidens per 10 overs</th></tr></thead>
-              <tbody>{w.with_without.rows.map((r) => <tr key={r.label}><td><Name p={r.label} px={19} /></td><td className="r"><span className="tn dimn">{r.spells}</span></td>
+              <tbody>{ww.rows.map((r) => <tr key={r.label}><td><Name p={r.label} px={19} /></td><td className="r"><span className="tn dimn">{r.spells}</span></td>
                 <td className="r"><span className="tn">{r.wickets}</span></td><td className="r"><span className="tn">{r.economy}</span></td><td className="r"><span className="tn dimn">{r.maidens}</span></td></tr>)}</tbody></table>
-            {w.with_without.shows && <Explain shows={w.with_without.shows} for_={w.with_without.for_ ?? ""} />}</Box>
+            {ww.shows && <Explain shows={ww.shows} for_={ww.for_ ?? ""} />}</Box>)}
           <Box span={12} title={`Every season in ${d.section}`} right="the same columns as the table at the top"><RecordTable t={w.season_table} /></Box>
-          {d.bowl_innings && <InningsTile x={d.bowl_innings} />}
+          {per(d.each?.bowl_innings, d.bowl_innings, (x, sfx) => <InningsTile x={x} sfx={sfx} />)}
           <Box title="Quality of wickets" right="where their victims bat">{w.quality ? <Sp s={w.quality} dec={0} /> : <div className="note">No wickets yet.</div>}</Box>
           <Box title="Bunnies" right="batters they have got out most">{w.bunnies ? <Sp s={w.bunnies} dec={0} /> : <div className="note">No wickets yet.</div>}</Box>
-          <Box span={12} title="Streaks" right="innings bowled in a row"><StreakTable rows={w.streaks} /></Box>
+          {per(w.each?.streaks, w.streaks, (x, sfx) => <Box span={12} title={`Streaks${sfx}`} right="innings bowled in a row"><StreakTable rows={x} /></Box>)}
           {w.splits.rows.map((s) => <Box key={s.title} title={`${s.title} · economy`}><Sp s={s} overall={w.splits.overall} dec={2} low /></Box>)}
         </>}
 
         {tab === "Story" && st && <>
           <Box title={`Match impact · ${d.section}`} right="one number a match">{st.impact ? <><ImpactBars rows={st.impact.rows} /><Explain {...lines(st.impact)} /></>
             : <div className="note">No matches yet.</div>}</Box>
-          <Box title="Rank over time" right={`where they finished in ${fmtOf(d.section)}`}>{st.rank && !st.rank.empty ? <><RankLines rows={st.rank.rows} /><Explain {...lines(st.rank)} /></>
-            : <div className="note">No seasons yet.</div>}</Box>
-          <Box title="Milestones" right={`how many ${st.milestones.unit} it took`}>{st.milestones.rows.length ? <table className="c"><thead><tr><th>Milestone</th><th className="r">Took</th><th className="r">Fastest</th><th>Reached</th></tr></thead>
-            <tbody>{st.milestones.rows.map((r) => <tr key={r.milestone}><td><Name p={r.milestone} px={19} /></td><td className="r"><span className="tn">{r.took}</span></td><td className="r"><span className="tn dimn">{r.fastest}</span></td><td><span className="tn dimn">{dayY(r.date)}</span></td></tr>)}</tbody></table>
-            : <div className="note">No milestone reached here yet.</div>}<div className="note">The rank is among everyone here who got there.</div></Box>
+          {per(st.each?.rank, st.rank, (rk, sfx) => <Box title={`Rank over time${sfx}`} right={`where they finished in ${sfx ? sfx.slice(3) : fmtOf(d.section)}`}>{!rk.empty ? <><RankLines rows={rk.rows} /><Explain {...lines(rk)} /></>
+            : <div className="note">No seasons yet.</div>}</Box>, <Box title="Rank over time" right={`where they finished in ${fmtOf(d.section)}`}><div className="note">No seasons yet.</div></Box>)}
+          {per(st.each?.milestones, st.milestones, (ms, sfx) => <Box title={`Milestones${sfx}`} right={`how many ${ms.unit} it took`}>{ms.rows.length ? <table className="c"><thead><tr><th>Milestone</th><th className="r">Took</th><th className="r">Fastest</th><th>Reached</th></tr></thead>
+            <tbody>{ms.rows.map((r) => <tr key={r.milestone}><td><Name p={r.milestone} px={19} /></td><td className="r"><span className="tn">{r.took}</span></td><td className="r"><span className="tn dimn">{r.fastest}</span></td><td><span className="tn dimn">{dayY(r.date)}</span></td></tr>)}</tbody></table>
+            : <div className="note">No milestone reached here yet.</div>}<div className="note">The rank is among everyone here who got there.</div></Box>)}
           <Box title="Badges" right="special feats">{st.badges.length ? <table className="c"><tbody>{st.badges.map((x, i) => (
             <tr key={i}><td><Name p={`🏅 ${x.badge}`} px={19} /></td><td><span className="why">{x.detail}</span></td><td><Link to={`/matches/${x.id}${keep}`} className="why lk">{dayY(x.date)}</Link></td></tr>))}</tbody></table>
             : <div className="note">No badges yet: a T20 hundred, a five-for, a Test double hundred or ten in a match earns one.</div>}</Box>
           <Box title="Career firsts" right="every competition">{st.firsts.length ? <table className="c"><tbody>{st.firsts.map((x, i) => (
             <tr key={i}><td><span className="tn dimn">{dayY(x.date)}</span></td><td><span className="why" style={{ color: "var(--ink)" }}>{x.what}</span><div className="how">{x.detail}</div></td>
               <td><Link to={`/matches/${x.id}${keep}`} className="why lk">v {x.against}</Link></td></tr>))}</tbody></table> : <div className="note">Nothing yet.</div>}</Box>
-          <Box title={`When ${d.player} fires`} right={`their team's win % in ${fmtOf(d.section)}${d.season === "All seasons" ? "" : ` ${d.season}`}`}>{st.fires.rows.length ? <table className="c"><thead><tr><th /><th className="r">Times</th><th className="r">Win % then</th><th className="r">Otherwise</th></tr></thead>
-            <tbody>{st.fires.rows.map((r) => <tr key={r.label}><td><span className="why">{r.label}</span></td><td className="r"><span className="tn dimn">{r.times}</span></td><td className="r"><span className="tn">{r.when}</span></td><td className="r"><span className="tn dimn">{r.other}</span></td></tr>)}</tbody></table>
-            : <div className="note">{st.fires.none}</div>}
-            <div className="k3" style={{ marginTop: 16 }}>Odd ones</div>{st.quirks.length ? st.quirks.map((x) => <div className="plain" key={x}><T>{x}</T></div>) : <div className="note">Nothing unusual yet.</div>}</Box>
-          <CompareSeasons c={st.compare} section={d.section} />
+          {per(st.each?.fires, st.fires, (fi, sfx) => <Box title={`When ${d.player} fires${sfx}`} right={`their team's win % in ${sfx ? sfx.slice(3) : fmtOf(d.section)}${d.season === "All seasons" ? "" : ` ${d.season}`}`}>{fi.rows.length ? <table className="c"><thead><tr><th /><th className="r">Times</th><th className="r">Win % then</th><th className="r">Otherwise</th></tr></thead>
+            <tbody>{fi.rows.map((r) => <tr key={r.label}><td><span className="why">{r.label}</span></td><td className="r"><span className="tn dimn">{r.times}</span></td><td className="r"><span className="tn">{r.when}</span></td><td className="r"><span className="tn dimn">{r.other}</span></td></tr>)}</tbody></table>
+            : <div className="note">{fi.none}</div>}
+            {!sfx || sfx === ` · ${fmtOf(st.each!.fires![0]!.section)}` ? <><div className="k3" style={{ marginTop: 16 }}>Odd ones</div>{st.quirks.length ? st.quirks.map((x) => <div className="plain" key={x}><T>{x}</T></div>) : <div className="note">Nothing unusual yet.</div>}</> : null}</Box>)}
+          {per(st.each?.compare, st.compare, (cm, sfx) => <CompareSeasons c={cm} section={sfx ? sfx.slice(3) : d.section} />,
+            <CompareSeasons c={null} section={d.section} />)}
         </>}
       </div>
     </>
@@ -322,11 +334,11 @@ function Cell({ c, v }: { c: InningsCol; v: unknown }) {
   return <td className="r"><span className={`tn${c.t === "n" ? "" : " dimn"}`}>{text}</span></td>;
 }
 
-function InningsTile({ x }: { x: ByInnings }) {
+function InningsTile({ x, sfx = "" }: { x: ByInnings; sfx?: string }) {
   const [key, setKey] = useState("normal");
   const v = x.views.find((y) => y.key === key) ?? x.views[0]!;
   return (
-    <Tile span={12} title={x.title} right={x.right}>
+    <Tile span={12} title={`${x.title}${sfx}`} right={x.right}>
       <div className="itabs" style={{ gridColumn: "auto", margin: "0 0 10px" }}>{x.views.map((y) => (
         <button key={y.key} className={y.key === v.key ? "on" : ""} onClick={() => setKey(y.key)}>{y.label}</button>))}</div>
       <table className="c bi"><thead><tr><th />{v.cols.map((c) => <th key={c.k} className="r" title={c.help || undefined}>{c.label}</th>)}</tr></thead>
@@ -372,30 +384,14 @@ function CompareSeasons({ c, section }: { c: NonNullable<PlayerPage["story"]>["c
 }
 
 
-/** Tick boxes for the formats a tile counts (your decision of 14 November: tick any formats; it opens on one, ticking
- *  more counts them together). The player's competitions in the agreed order; one always stays ticked. */
-export function FormatTicks({ all, on, set }: { all: string[]; on: string[]; set: (v: string[]) => void }) {
-  if (all.length < 2) return null;
-  return (
-    <div className="ticks" role="group" aria-label="Formats">{all.map((x) => {
-      const ticked = on.includes(x);
-      return (
-        <label key={x} className={`tick ${ticked ? "on" : ""}`} title={ticked && on.length === 1 ? "At least one stays ticked" : undefined}>
-          <input type="checkbox" checked={ticked} onChange={() => {
-            const next = ticked ? on.filter((y) => y !== x) : [...on, x];
-            if (next.length) set(all.filter((y) => next.includes(y)));
-          }} />{fmtOf(x)}</label>);
-    })}</div>
-  );
-}
-
 type PartOf<K extends "countries" | "big" | "bounce"> = NonNullable<PlayerPage[K]>;
 
 /** One tile's numbers for the formats ticked on it: the page's own when it's just the page's competition, otherwise
  *  asked of the server (kept, so ticking back is instant). */
 function usePart<K extends "countries" | "big" | "bounce">(d: PlayerPage, which: K) {
-  const [on, setOn] = useState<string[]>([d.section]);
-  const same = on.length === 1 && on[0] === d.section;
+  // opens on the formats ticked at the top of the page (its own numbers); ticking others here asks the server
+  const [on, setOn] = useState<string[]>(d.ticked);
+  const same = on.join("|") === d.ticked.join("|");
   const q = useQuery({ queryKey: ["player_part", d.player, which, on.join("|")], enabled: !same, retry: false,
     queryFn: () => get<{ data: PartOf<K> | null; label: string }>(`/api/player_part?name=${encodeURIComponent(d.player)}&part=${which}&sections=${encodeURIComponent(on.join("|"))}`) });
   const data = (same ? d[which] : q.data?.data) as PartOf<K> | null | undefined;

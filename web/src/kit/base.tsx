@@ -7,7 +7,7 @@ import { savePicture, slugOf } from "./savepic";
 import { useTheme } from "../theme";
 import { sc, ts } from "./look";
 import { T } from "../shell/names";
-import { ab } from "../format";
+import { ab, fmtOf } from "../format";
 
 /** A number in Space Grotesk, gold: px is the mock-up's size (the approved scale is applied). */
 export function Num({ v, px, style }: { v: ReactNode; px: number; style?: CSSProperties }) {
@@ -124,5 +124,22 @@ export function Explain({ is_, best, best_label, shows, for_ }: { is_?: ReactNod
       {is_ ? <div><b>What it is:</b> <T>{is_}</T></div> : null}
       {top ? <div><b>{best_label ?? (best != null ? "Who's best" : "What it shows")}:</b> <T>{top}</T></div> : null}
       <div><b>What it's for:</b> {for_}</div></div>
+  );
+}
+
+/** Tick boxes for the formats a tile counts (your decision of 14 November: tick any formats; it opens on one, ticking
+ *  more counts them together). The player's competitions in the agreed order; one always stays ticked. */
+export function FormatTicks({ all, on, set }: { all: string[]; on: string[]; set: (v: string[]) => void }) {
+  if (all.length < 2) return null;
+  return (
+    <div className="ticks" role="group" aria-label="Formats">{all.map((x) => {
+      const ticked = on.includes(x);
+      return (
+        <label key={x} className={`tick ${ticked ? "on" : ""}`} title={ticked && on.length === 1 ? "At least one stays ticked" : undefined}>
+          <input type="checkbox" checked={ticked} onChange={() => {
+            const next = ticked ? on.filter((y) => y !== x) : [...on, x];
+            if (next.length) set(all.filter((y) => next.includes(y)));
+          }} />{fmtOf(x)}</label>);
+    })}</div>
   );
 }

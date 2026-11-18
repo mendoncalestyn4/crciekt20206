@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { get, type TvtPage, remember } from "../api";
-import { Explain, Logo, Missing, Num, three, Tile } from "../kit/base";
+import { Explain, FormatTicks, Logo, Missing, Num, three, Tile } from "../kit/base";
 import { BatFirstSides } from "../kit/season";
 import { Grid, TapeBars, TeamBars, TwoScatter } from "../kit/teams";
 import { dayY, NO_MATCHES } from "../format";
@@ -41,7 +41,6 @@ export function TeamVsTeam() {
   if (!q.data) return <>{head}<div className="empty">Putting the two teams side by side…</div></>;
   const d = q.data, p = d.page;
   if (!p) return <>{head}<div className="grid"><Tile span={12}><Missing why={NO_MATCHES} /></Tile></div></>;
-  const ch = d.choices.find((c) => c.section === p.section)!;
   const b = p.body, m = b?.missing ?? {};
   const mark = (t: string) => `${t}${p.todo.includes(t) ? " (0 games)" : ""}`;
   return (
@@ -50,14 +49,13 @@ export function TeamVsTeam() {
       <div className="grid">
         <Tile span={12} title="Pick a competition and two teams">
           <div className="plain">Against each other: only their meetings, at any ground or one side's home. Against anyone: each team's own games, to
-            size up two sides that haven't met (home games next to away games, as for a game at one team's ground).</div>
+            size up two sides that haven't met (home games next to away games, as for a game at one team's ground). Several competitions ticked
+            are counted together, each compared with its own average.</div>
+          <FormatTicks all={d.choices.map((c) => c.section)} on={p.ticked} set={(v) => set({ section: v.join("|") })} />
           <div className="field">
-            <label htmlFor="tv-sec">Competition</label>
-            <select id="tv-sec" className="pick" value={p.section} onChange={(e) => set({ section: e.target.value })}>
-              {d.choices.map((c) => <option key={c.section} value={c.section}>{c.section} · {c.matches} matches</option>)}</select>
             <label htmlFor="tv-season">Season</label>
             <select id="tv-season" className="pick" value={p.season} onChange={(e) => set({ season: e.target.value === "All seasons" ? "" : e.target.value })}>
-              {["All seasons", ...ch.seasons].map((s) => <option key={s}>{s}</option>)}</select>
+              {["All seasons", ...p.seasons].map((s) => <option key={s}>{s}</option>)}</select>
           </div>
           {p.teams.length >= 2 && <div className="field">
             <label htmlFor="tv-a">Team A</label>
@@ -75,7 +73,7 @@ export function TeamVsTeam() {
               {p.grounds.map((g) => <button key={g.key} className={g.key === p.ground ? "on" : ""} onClick={() => set({ ground: g.key })}>{g.label}</button>)}</div></div>
             {p.where_help && <div className="note">{p.where_help}</div>}</>}
         </Tile>
-        {p.none ? <Tile span={12} title={p.teams.length >= 2 ? `${p.a} v ${p.b}` : p.section}><div className="plain"><T>{p.none}</T></div></Tile> : !b ? null : <>
+        {p.none ? <Tile span={12} title={p.teams.length >= 2 ? `${p.a} v ${p.b}` : p.name}><div className="plain"><T>{p.none}</T></div></Tile> : !b ? null : <>
           {p.info && <Tile span={12} title="Whose games these are"><div className="plain"><T>{p.info}</T></div></Tile>}
           {b.tiles ? b.tiles.map((tl, i) => (
             <Tile key={tl.team} span={6} title={tl.team} className={i === 0 ? "tvA" : "tvB"}>

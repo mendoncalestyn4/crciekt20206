@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router";
 import { get, type LeaderRow, type RivalriesPage, remember } from "../api";
-import { Explain, Missing, PName, Tile } from "../kit/base";
+import { Explain, FormatTicks, Missing, PName, Tile } from "../kit/base";
 import { Grid } from "../kit/teams";
 import { T } from "../shell/names";
 import { useReady } from "../ready";
@@ -48,12 +48,9 @@ export function Rivalries() {
       {head}
       <div className="grid">
         <Tile span={12} title="Pick a competition">
-          <div className="plain">Every pair of teams that have met, the record between them, and who has done best in those games.</div>
-          <div className="field">
-            <label htmlFor="rv-sec">Competition</label>
-            <select id="rv-sec" className="pick" value={d.section} onChange={(e) => set({ section: e.target.value })}>
-              {d.choices.map((x) => <option key={x.section} value={x.section}>{x.section} · {x.matches} matches</option>)}</select>
-          </div>
+          <div className="plain">Every pair of teams that have met, the record between them, and who has done best in those games. Several
+            competitions ticked are counted together.</div>
+          <FormatTicks all={d.choices.map((x) => x.section)} on={d.ticked} set={(v) => set({ section: v.join("|") })} />
         </Tile>
         {d.none ? <Tile span={12}><Missing why={d.none} /></Tile> : <>
           {d.table && <Tile span={12} title="The most played rivalries">

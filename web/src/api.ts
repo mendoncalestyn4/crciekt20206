@@ -231,12 +231,16 @@ export type Batting = {
   positions: { rows: Pair[]; best_position: number | null; is_?: string; best?: string; best_label?: string; shows: string; for_: string;
     table: { position: number; innings: number; runs: number; not_outs: number; average: number | null; strike_rate: number | null;
       fifties: number; hundreds: number; high: string; all_average: number | null; edge: number | null; best: boolean; small: boolean }[] } | null;
-  came_in: Split & { press: number; rescue: { at: string; score: string; balls: number; against: string; date: string }[] };
+  came_in: Split & { press: number; overall?: number | null; rescue: { at: string; score: string; balls: number; against: string; date: string }[] };
   consistency: { bar: number; past_bar_pct: number | null; single_figures_pct: number | null; golden_ducks: number; conversion_pct: number | null };
   nemesis: Split | null; streaks: { streak: string; longest: number; current: number }[];
   chasing: { won_innings: number; won_average: number | null; lost_innings: number; lost_average: number | null; not_out_in_wins: number } | null;
   against: Split;
+  /** formats ticked together: the parts shown one block per format (server/playerpage.py _several) */
+  each?: Partial<{ [K in "positions" | "danger" | "funnel" | "came_in" | "consistency" | "streaks"]: Each<NonNullable<Batting[K]>>[] }>;
 };
+/** One format's own block of a part, when several formats are ticked together. */
+export type Each<X> = { section: string; data: X | null; missing?: string };
 export type Bowling = {
   kpis: { wickets: number; average: number | null; economy: number | null; strike_rate: number | null; best: string; hauls: number };
   form: FormT; seasons: Split; how_wickets: Split | null;
@@ -244,6 +248,7 @@ export type Bowling = {
   with_without: { rows: { label: string; spells: number; wickets: number; economy: string; maidens: string }[]; shows?: string; for_?: string };
   season_table: RecordTableT; quality: Split | null; bunnies: Split | null; streaks: { streak: string; longest: number; current: number }[];
   splits: { overall: number | null; rows: Split[] };
+  each?: Partial<{ [K in "match_pattern" | "with_without" | "streaks"]: Each<NonNullable<Bowling[K]>>[] }>;
 };
 export type Story = {
   impact: { rows: { label: string; value: number; won: boolean; note: string; id?: string }[]; shows: string; for_: string } | null;
@@ -254,6 +259,7 @@ export type Story = {
   fires: { rows: { label: string; times: number; when: string; other: string }[]; none: string };
   quirks: string[];
   compare: { seasons: string[]; per: Record<string, Record<string, { v: number | null; text: string; better: "high" | "low" | null }>> } | null;
+  each?: Partial<{ [K in "rank" | "compare" | "milestones" | "fires"]: Each<NonNullable<Story[K]>>[] }>;
 };
 export type Bounce = { shown: boolean; poor: number; followed: number; after: string; usual: string; after_avg: number | null;
   usual_avg: number | null; line: string };
@@ -275,6 +281,9 @@ export type PlayerPage = {
   marks: { series: string; team: string; label: string; mark: number; rank: number; of: number; line: string; best: string; best_match: string }[] | null;
   journey: { first: string; last: string; team: string; section: string; season: string; matches: number; runs: number; wickets: number }[] | null;
   section: string; season: string; sections: string[]; seasons: string[];
+  /** the formats ticked (one, or several counted together); one_length: they are all the same length of game */
+  ticked: string[]; one_length?: boolean;
+  each?: { bat_innings?: Each<ByInnings>[]; bowl_innings?: Each<ByInnings>[]; profile?: Each<NonNullable<PlayerPage["profile"]>>[] };
   role: { role: string; tags: string[]; usual_position: number } | null;
   tabs: string[]; open: string; batting: Batting | null; bowling: Bowling | null;
   bat_innings?: ByInnings | null; bowl_innings?: ByInnings | null;
@@ -341,8 +350,10 @@ export type TeamBody = {
   changes?: { right: string; steps: { title: string; ins: GridT; outs: GridT }[]; none: string; note: string } | null;
   results?: GridT | null;
 };
-export type TeamPage = { choices: TeamChoice[]; page: { section: string; season: string; team: string; venue: string; tab: string;
-  tabs: string[]; head: TeamHead; body: TeamBody | null } | null };
+/** section: the competitions ticked ("Tests|ODIs", counted together); name: as the page says them ("Tests + ODIs");
+ *  seasons: the competition's own, or April-to-March years when several are ticked; played: the team's competitions. */
+export type TeamPage = { choices: TeamChoice[]; played?: string[]; page: { section: string; ticked: string[]; name: string; seasons: string[];
+  season: string; team: string; venue: string; tab: string; tabs: string[]; head: TeamHead; body: TeamBody | null } | null };
 export type TapeRow = { label: string; a: number; b: number; at: string; bt: string; a_better: boolean; b_better: boolean };
 export type Dot = { player: string; team: string; x: number; y: number; note: string[] };
 export type TeamBarRow = { player: string; team: string; value: number; note: string[] };
@@ -358,7 +369,7 @@ export type TvtBody = {
   saved?: ({ rows: TeamBarRow[] } & Explained) | null;
   top?: GridT | null;
 };
-export type TvtPage = { choices: TeamChoice[]; page: { section: string; season: string; teams: string[]; todo: string[]; a: string; b: string;
+export type TvtPage = { choices: TeamChoice[]; page: { section: string; ticked: string[]; name: string; seasons: string[]; season: string; teams: string[]; todo: string[]; a: string; b: string;
   others?: string[]; which: string; ground: string; grounds: { key: string; label: string }[]; where_help?: string; info: string; none: string;
   body?: TvtBody } | null };
 export type Fig = { k: string; v: string };
@@ -409,7 +420,7 @@ export type PlannerPage = { choices: TeamChoice[]; section: string; season: stri
     order?: { none: string; top7?: GridT | null; every?: GridT } | null;
     plan?: Noneable<NGrid> | null; knocking?: Noneable<NGrid> | null; batting?: Noneable<GridT> | null; bowling?: Noneable<GridT> | null } };
 export type LeaderRow = { player: string; team: string; note: string } & Record<string, string | number>;
-export type RivalriesPage = { choices: TeamChoice[]; section: string; none: string; table?: NGrid; pairs: { key: string; label: string }[]; pick: string;
+export type RivalriesPage = { choices: TeamChoice[]; section: string; ticked: string[]; name: string; none: string; table?: NGrid; pairs: { key: string; label: string }[]; pick: string;
   close?: { missing: Record<string, string>; a: string; b: string; runs?: ({ rows: LeaderRow[] } & Explained) | null;
     wickets?: ({ rows: LeaderRow[] } & Explained) | null; meetings?: GridT | null; streak?: { now: string; longest: string; note: string } } };
 

@@ -8,7 +8,7 @@ from ccstats.stats import Scope
 
 from . import styleguide as SG
 from .cache import kept
-from .teampage import choices, fmt, table
+from .teampage import choices, fmt, named, secs_of, table
 
 
 def page(career, q: dict, mine: list[str]) -> dict:
@@ -17,13 +17,12 @@ def page(career, q: dict, mine: list[str]) -> dict:
     if not ch:   # a career made before any game was played
         return SG.clean(dict(choices=[], section="", pairs=[], pick="",
                              none=SG.NO_MATCHES))
-    secs = [c["section"] for c in ch]
-    section = q.get("section", "")
-    if section not in secs:
-        section = secs[0]
-    ids = Scope(sections=[section]).match_ids(m)
+    # the competitions ticked, in the agreed order (several are counted together: your answer of 17 November)
+    ticked = [c["section"] for c in ch if c["section"] in set(secs_of(q.get("section", "")))] or [ch[0]["section"]]
+    section = "|".join(ticked)
+    ids = Scope(sections=ticked).match_ids(m)
     rv = kept(career, ("rivalries", section), lambda: E.rivalries(career, ids))
-    out = dict(choices=ch, section=section, none="", pairs=[], pick="")
+    out = dict(choices=ch, section=section, ticked=ticked, name=named(section), none="", pairs=[], pick="")
     if rv.empty:
         out["none"] = "No matches here yet."
         return SG.clean(out)

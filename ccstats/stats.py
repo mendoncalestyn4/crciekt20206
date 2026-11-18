@@ -41,9 +41,12 @@ class Scope:
     teams: list[str] = field(default_factory=list)  # only rows for these teams (empty = any)
     venues: list[str] = field(default_factory=list)  # home / away / neutral, from the player's own team (empty = any)
     how_out: list[str] = field(default_factory=list)  # batting only: innings ending this way ("not out" included)
+    only: tuple = ()  # only these matches (empty = any): an April-to-March year of one competition, when formats are ticked together
 
     def match_ids(self, matches: pd.DataFrame) -> pd.Index:
         m = matches
+        if self.only:
+            m = m[m.match_id.isin(set(self.only))]
         if self.sections:
             m = m[m.section.isin(self.sections)]
         if self.competitions:
