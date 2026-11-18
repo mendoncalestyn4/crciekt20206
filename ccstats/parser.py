@@ -126,6 +126,9 @@ class Match:
     # lines inside an innings or after it that weren't understood (your pick of 14 November: an alarm for any
     # unfamiliar line), each flagged by the self-check
     unread: list[str] = field(default_factory=list)
+    # differences between the card as printed and the card written out again from what was read (ccstats/readback.py),
+    # set when the file is read; each one is flagged by the self-check
+    read_back: list[str] = field(default_factory=list)
     # what was put right in a scorecard that didn't add up, each proven by the card itself (see _correct)
     corrections: list[str] = field(default_factory=list)
 
@@ -401,6 +404,8 @@ def validate_match(match: "Match", quota: int | None = None) -> list[str]:
         if inn.fow and inn.fow[-1][1] > inn.total:
             problems.append(f"{where}: a wicket fell at a score above the innings total")
     problems += _result_problems(match)
+    # every card read back (your pick of 14 November): any line that doesn't read back as printed
+    problems += [f"read back: {d}" for d in match.read_back]
     # an alarm for anything unfamiliar (your pick of 14 November): a line not understood, a dismissal not known
     for line in match.unread:
         problems.append(f"a line not understood: \"{line[:80]}\"")

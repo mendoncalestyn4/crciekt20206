@@ -23,6 +23,7 @@ import pandas as pd
 
 from .competitions import (EXHIBITION, FIRST_CLASS, INTERNATIONAL, INTERNATIONAL_SECTION, TEST, TOUR, assign_seasons,
                            assign_series, classify, event_of, fix_playoff_stages, section_of)
+from .readback import read_back
 from .parser import Innings, Match, ScorecardError, parse_scorecard, validate_match
 
 MULTI_DAY = {TEST, FIRST_CLASS}
@@ -204,6 +205,7 @@ class Career:
         def admit(source: str, text: str, is_new: bool, mtime: float | None = None) -> None:
             try:
                 m = parse_scorecard(text, source)
+                m.read_back = read_back(text, m)   # every card written out again and compared with the printed one
             except ScorecardError as e:
                 report.append(FileReport(source, "failed", str(e)))
                 return
