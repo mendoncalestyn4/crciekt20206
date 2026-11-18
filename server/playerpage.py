@@ -707,7 +707,8 @@ def _batting(career, player, section, season, ids, inns, bat_t, kind, season_of=
     form["best_label"] = "Best innings"
     form["best"] = f"{top_i.runs}{'' if top_i.out else '*'} off {top_i.balls} v {top_i.opposition}, {top_i.date:%d %b %Y}"
     out: dict = dict(kpis=dict(innings=int(b.innings), runs=int(b.runs), average=SG.clean(b.average), strike_rate=SG.clean(b.strike_rate),
-                               high_score=b.high_score_text, hundreds=int(b.hundreds), fifties=int(b.fifties)), form=form)
+                               high_score=b.high_score_text, hundreds=int(b.hundreds), fifties=int(b.fifties),
+                               outs=int(b.outs), balls=int(b.balls)), form=form)   # what the rates are worked out from
     pool = bat_t[bat_t.innings >= 3]
     me = pool[pool.player == player]
     stats = {"Runs": "runs", "Average": "average", "Strike rate": "strike_rate", "Boundary %": "boundary_pct",
@@ -938,7 +939,8 @@ def _bowling(career, player, section, season, ids, spells, bowl_t, kind, season_
     form["best"] = f"{int(top_s.wickets)}/{int(top_s.runs)} v {top_s.opposition}, {top_s.date:%d %b %Y}"
     econ = float(w.economy) if pd.notna(w.economy) else None
     out: dict = dict(kpis=dict(wickets=int(w.wickets), average=SG.clean(w.average), economy=SG.clean(w.economy),
-                               strike_rate=SG.clean(w.strike_rate), best=w.best, hauls=int(w.hauls)), form=form)
+                               strike_rate=SG.clean(w.strike_rate), best=w.best, hauls=int(w.hauls),
+                               runs=int(w.runs), balls=int(w.balls), innings=int(w.innings)), form=form)
     ss = A.split_bowling(spells, "season").sort_values("season", ascending=False)
     top = ss.sort_values("wickets", ascending=False).iloc[0]
     out["seasons"] = dict(rows=bars(ss, "season", "wickets", [f"average {fmt(a)} · economy {fmt(e, 2)}" for a, e in zip(ss.average, ss.economy)]),

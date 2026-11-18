@@ -34,6 +34,20 @@ def label(r) -> str:
     return f"{r.date:%d %b %Y} · {r.home} v {r.away} · {name_of(r)} · {r.result}"
 
 
+CHECKS = ("the batting runs and extras add up to the total", "the extras to their parts", "the bowlers' runs, overs and "
+          "wickets to the innings", "every dismissal to the wickets", "the fall of wickets (in order, never above the "
+          "total)", "the result and margin to the scores", "no impossible figure (more than 6 a ball, a bowler past "
+          "the limit, more than 10 wickets)")
+
+
+def checked(career, match_id: str) -> dict:
+    """The "checked ✓" mark (your pick of 14 November): every sum on the scorecard checked against the others when it
+    was read; `problems` lists any that didn't add up (shown on the match, and in Settings, Problems)."""
+    p = career.problems
+    mine = list(p[p.match_id == match_id].problem) if len(p) else []
+    return dict(ok=not mine, problems=mine, checks=list(CHECKS))
+
+
 def ticked_of(career, section: str) -> list[str]:
     """The competitions ticked ("Tests|ODIs", your answer of 17 November: tick any, counted together) in the agreed
     order; "All sections" (or nothing that's here) is every one."""
@@ -52,7 +66,8 @@ def finder(career, section: str = "", team: str = "", mine: list[str] | None = N
         played = m[m.home.isin(mine or []) | m.away.isin(mine or [])]
         section = played.section.iloc[0] if len(played) else "All sections"
     ticked = ticked_of(career, section)
-    section = "All sections" if len(ticked) == len(sections) and len(sections) > 1 else "|".join(ticked)
+    # every competition ticked (or none in the career yet) is "All sections"
+    section = "All sections" if not ticked or (len(ticked) == len(sections) and len(sections) > 1) else "|".join(ticked)
     pool = m[m.section.isin(ticked)]
     teams = sorted(set(pool.home) | set(pool.away))
     if team and team != "All teams":
@@ -63,11 +78,13 @@ def finder(career, section: str = "", team: str = "", mine: list[str] | None = N
     if team and team != "All teams" and len(pool):
         rs = SG.in_played_order(career, SG.results(career, team, pool.match_id))[-14:]
         scores = dict(results=rs, summary=SG.scores(rs, team, rank=section_rank(career.matches)), team=team)
+    bad = set(career.problems.match_id) if len(career.problems) else set()   # any sum that didn't add up
     return dict(section=section, ticked=ticked, name=" + ".join(ticked) if section != "All sections" else "every competition",
                 team=team or "All teams", sections=["All sections"] + sections,
                 teams=["All teams"] + teams, scores=scores,
                 matches=[dict(id=r.match_id, label=label(r), date=SG.clean(r.date), home=r.home, away=r.away,
-                              section=r.section, event=r.event, name=name_of(r), result=r.result) for r in pool.itertuples()])
+                              section=r.section, event=r.event, name=name_of(r), result=r.result,
+                              checked=r.match_id not in bad) for r in pool.itertuples()])
 
 
 def ratings(career, section: str) -> pd.DataFrame:
@@ -239,6 +256,7 @@ def page(career, match_id: str, mine: list[str], notes: dict) -> dict:
         home_score=SG.score_of(career, match_id, row.home), away_score=SG.score_of(career, match_id, row.away),
         result=row.result + (f" (super over: {row.super_over})" if row.super_over else ""),
         player_of_match=row.player_of_match or "", rain=_rain(row), source=row.source,
+        checked=checked(career, match_id),
         corrected=list(career.corrections[career.corrections.match_id == match_id].correction)
         if hasattr(career, "corrections") else [],
         note=notes.get(row.source, ""), match=card, report=W.match_report(career, match_id, line), excitement=ex,

@@ -1202,12 +1202,16 @@ def test_season_review_best_matches_on_the_new_rating_and_match_winners(every):
 
 
 def test_matches_front_page_our_score_v_theirs(every):
-    """Matches: our score v theirs for the competition and team picked, the team's latest 14 there in the order played;
-    nothing for all competitions (formats are never mixed) or all teams."""
+    """Matches: our score v theirs for the competitions ticked and the team picked, the team's latest 14 there in the
+    order played; nothing for all teams. Several competitions ticked (every one, here) are shown together, each one's
+    averages and highest total on their own (your answer of 17 November; formats are never mixed in an average)."""
     from server import styleguide as SG
     c = every.app.state.site.career()
     m = c.matches
-    assert every.json("/api/matches?section=All sections&team=India")["scores"] is None
+    every_sec = every.json("/api/matches?section=All sections&team=India")["scores"]
+    mine = m[(m.home == "India") | (m.away == "India")]
+    assert [r["id"] for r in every_sec["results"]] == [r["id"] for r in SG.in_played_order(c, SG.results(c, "India", mine.match_id))][-14:]
+    assert every_sec["summary"]["avg_made"] is None   # several competitions: no one average across them
     for sec in ("ODIs", "Tests", "Indian Premier League"):
         assert every.json(f"/api/matches?section={sec}")["scores"] is None or True
         here = m[m.section == sec]

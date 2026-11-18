@@ -63,7 +63,8 @@ export function MatchesHome() {
             <Link key={m.id} to={`/matches/${m.id}${keep}`} className="mli">
               <span className="when">{m.label.split(" · ")[0]}</span>
               <span className="cell"><Logo team={m.home} size={40} /><Name p={`${m.home} v ${m.away}`} px={21} /><Logo team={m.away} size={40} /></span>
-              <span className="how row2" style={{ gap: 8 }}><span className="cslot"><Logo comp={m.event} size={40} /></span>{m.name}</span><span className="res">{m.result}</span></Link>))}
+              <span className="how row2" style={{ gap: 8 }}><span className="cslot"><Logo comp={m.event} size={40} /></span>{m.name}</span><span className="res">{m.result}{m.checked === false ? <span className="chk bad" title="A sum on this scorecard didn't add up: open it to see which"> ⚠</span>
+                : <span className="chk" title="Every sum on this scorecard checked against the others"> ✓</span>}</span></Link>))}
             {!hits.length && <div className="empty">No match fits "{typed}".</div>}</div>
           {hits.length > shown && <div className="field"><button className="btn quiet" onClick={() => setShown(shown + 30)}>Show 30 more</button>
             <span className="note" style={{ marginTop: 0 }}>Showing the newest {shown} of {hits.length.toLocaleString("en-GB")}; type to narrow the list.</span></div>}
@@ -111,7 +112,12 @@ export function MatchView() {
       <div className="back"><Link to={`/matches?section=${encodeURIComponent(d.section)}${nation ? `&nation=${encodeURIComponent(nation)}` : ""}`}>← Every {d.section} match</Link></div>
       <div className="grid">
         {tab === 0 && <>
-          <Tile span={12}><MatchSummary m={m} /></Tile>
+          <Tile span={12}><MatchSummary m={m} />
+            {d.checked && (d.checked.ok
+              ? <div className="note" title={`Checked: ${d.checked.checks.join("; ")}.`}><span className="chk">✓</span> Checked: every sum on this scorecard adds up
+                (the totals, extras, overs, wickets, fall of wickets and the result).</div>
+              : <div className="plain"><span className="chk bad">⚠</span> {d.checked.problems.length === 1 ? "One sum" : `${d.checked.problems.length} sums`} on
+                this scorecard didn't add up, so treat its numbers with care: {d.checked.problems.join("; ")}.</div>)}</Tile>
           {d.rain && <Tile span={12} title="🌧️ Rain"><div className="plain">{d.rain}</div></Tile>}
           {d.corrected?.length ? <Tile span={12} title="✎ Scorecard put right">
             <div className="plain">The game's scorecard didn't add up; the card itself shows what happened, so it's counted this way:</div>

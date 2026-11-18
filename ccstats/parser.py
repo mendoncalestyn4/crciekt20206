@@ -123,6 +123,9 @@ class Match:
     # the real ones.  They decide the match but, as in real cricket, don't count in
     # anyone's figures, so they are kept apart from `innings`.
     super_overs: list[Innings] = field(default_factory=list)
+    # lines inside an innings or after it that weren't understood (your pick of 14 November: an alarm for any
+    # unfamiliar line), each flagged by the self-check
+    unread: list[str] = field(default_factory=list)
     # what was put right in a scorecard that didn't add up, each proven by the card itself (see _correct)
     corrections: list[str] = field(default_factory=list)
 
@@ -353,15 +356,21 @@ def _assign_fielders(match: "Match") -> None:
                 e.fielder, e.fielder_resolved = hits[0], True
 
 
-def validate_match(match: "Match") -> list[str]:
+def validate_match(match: "Match", quota: int | None = None) -> list[str]:
     """Self-check a parsed scorecard.  Every number on a Cricket Captain card
     is tied to others (runs to the total, 4s and 6s to runs, bowling figures
     to the total, wickets to the fall of wickets), so a column read wrongly
-    shows up as a broken sum.  Returns a list of problems; empty means clean."""
+    shows up as a broken sum.  Returns a list of problems; empty means clean.
+
+    Also the impossible values (your pick of 14 November): a figure below 0, more than 6 runs a ball off the bat,
+    more than 10 wickets in an innings, more maidens or dot balls than the balls bowled, and, given the format's balls
+    an innings (`quota`), a bowler past the limit of a fifth of them (4 overs in a T20, 10 in a one-day game, 20 balls in
+    The Hundred)."""
     problems = []
     for inn in match.innings:
         where = f"{inn.team} innings {inn.team_innings}"
         batted = [b for b in inn.batting if b.did_bat]
+        problems += _impossible(inn, where, quota)
         for b in batted:
             if 4 * b.fours + 6 * b.sixes > b.runs:
                 problems.append(f"{where}: {b.player} has more boundary runs than runs")
@@ -384,7 +393,87 @@ def validate_match(match: "Match") -> list[str]:
             problems.append(f"{where}: dismissals do not match the wickets in the total")
         if len(inn.fow) != inn.wickets:
             problems.append(f"{where}: fall of wickets does not match the wickets in the total")
+        # the fall of wickets itself: wickets 1, 2, 3... in order, each score at least the last one, none above the total
+        if [w for w, _ in inn.fow] != list(range(1, len(inn.fow) + 1)):
+            problems.append(f"{where}: fall of wickets is not numbered 1, 2, 3... in order")
+        if any(b < a for (_, a), (_, b) in zip(inn.fow, inn.fow[1:])):
+            problems.append(f"{where}: fall of wickets goes down (a later wicket at a lower score)")
+        if inn.fow and inn.fow[-1][1] > inn.total:
+            problems.append(f"{where}: a wicket fell at a score above the innings total")
+    problems += _result_problems(match)
+    # an alarm for anything unfamiliar (your pick of 14 November): a line not understood, a dismissal not known
+    for line in match.unread:
+        problems.append(f"a line not understood: \"{line[:80]}\"")
+    for inn in match.innings:
+        for b in inn.batting:
+            if b.how_out == "other":
+                problems.append(f"{inn.team} innings {inn.team_innings}: {b.player}'s dismissal "
+                                f"\"{b.dismissal}\" is not one the site knows")
     return problems
+
+
+def _impossible(inn: "Innings", where: str, quota: int | None) -> list[str]:
+    out = []
+    nums = [inn.total, inn.wickets, inn.balls, inn.extras, inn.byes, inn.leg_byes, inn.wides, inn.no_balls, inn.penalties]
+    nums += [x for b in inn.batting for x in (b.runs, b.balls, b.fours, b.sixes)]
+    nums += [x for w in inn.bowling for x in (w.balls, w.runs, w.wickets, w.maidens or 0, w.dots or 0)]
+    if any(x < 0 for x in nums):
+        out.append(f"{where}: a figure below 0")
+    if inn.wickets > 10:
+        out.append(f"{where}: {inn.wickets} wickets in one innings")
+    for b in inn.batting:
+        if b.did_bat and b.runs > 6 * b.balls:
+            out.append(f"{where}: {b.player} made {b.runs} off {b.balls} balls (more than 6 a ball)")
+    limit = quota // 5 if quota else None
+    for w in inn.bowling:
+        if w.wickets > 10:
+            out.append(f"{where}: {w.player} took {w.wickets} wickets in one innings")
+        if w.maidens is not None and w.maidens * 6 > w.balls:
+            out.append(f"{where}: {w.player} has more maidens than overs bowled")
+        if w.dots is not None and w.dots > w.balls:
+            out.append(f"{where}: {w.player} has more dot balls than balls bowled")
+        if limit and w.balls > limit:
+            out.append(f"{where}: {w.player} bowled {w.balls} balls, past the limit of {limit}")
+    return out
+
+
+def _result_problems(match: "Match") -> list[str]:
+    """The result against the scores: a win by wickets is the side batting last passing the other's runs with that
+    many wickets left; an innings win is the side that batted once ahead by the margin; a tie is level scores. A
+    result by the rain rule (said in the result, a runs margin the totals don't give, or a one-innings chase won below
+    the other side's total: a revised target, as the loader's rain flag reads it) can't be checked this way."""
+    if not match.innings or re.search(r"d/?l|dls|revised|target|super over|bowl[\s-]?out", match.result, re.I):
+        return []
+    agg: dict[str, int] = {}
+    times: dict[str, int] = {}
+    for inn in match.innings:
+        agg[inn.team] = agg.get(inn.team, 0) + inn.total
+        times[inn.team] = times.get(inn.team, 0) + 1
+    if len(agg) != 2:
+        return []
+    out = []
+    last = match.innings[-1]
+    if match.result_type == "tie":
+        if len(set(agg.values())) != 1:
+            out.append(f"the result is a tie but the scores are {' and '.join(f'{t} {r}' for t, r in agg.items())}")
+        return out
+    if match.result_type != "win" or match.winner not in agg:
+        return out
+    loser = next(t for t in agg if t != match.winner)
+    if match.margin_wickets is not None:
+        if last.team != match.winner:
+            out.append(f"{match.winner} won by wickets but {last.team} batted last")
+        elif agg[match.winner] <= agg[loser] and len(match.innings) > 2:   # one innings each: a target the rain revised
+            out.append(f"{match.winner} won by wickets but their {agg[match.winner]} runs don't pass the {agg[loser]} of {loser}")
+        elif match.margin_wickets != 10 - last.wickets:
+            out.append(f"{match.winner} won by {match.margin_wickets} wickets but lost {last.wickets} in the chase")
+    elif match.innings_win and match.margin_runs is not None and not match.margin_note:
+        if times[match.winner] != 1:
+            out.append(f"{match.winner} won by an innings but batted {times[match.winner]} times")
+        elif agg[match.winner] - agg[loser] != match.margin_runs:
+            out.append(f"{match.winner} won by an innings and {match.margin_runs} runs but the totals differ by "
+                       f"{agg[match.winner] - agg[loser]}")
+    return out
 
 
 def parse_result(result: str, teams: list[str]) -> dict:
@@ -430,8 +519,13 @@ def _batting_row(line: str, cols: list[str], position: int) -> BattingEntry | No
     dm = DISMISSAL_START_RE.search(body)
     name = (body[: dm.start()] if dm else body).strip()
     dismissal = body[dm.start():].strip() if dm else ""
-    if not re.search(r"[A-Za-z]", name):
-        return None
+    if not dm and (gap := re.search(r"\s{2,}", body.strip())):
+        # the card prints the name and the dismissal in columns with a wide gap between: no dismissal the site knows,
+        # but something in the dismissal column, is a dismissal it doesn't know (flagged by the self-check), never part
+        # of the name
+        name, dismissal = body.strip()[:gap.start()], body.strip()[gap.end():]
+    if not re.search(r"[A-Za-z]", name) or len(name.split()) > 5:
+        return None   # not a player (no player's name is more than five words): a line not understood
     info = parse_dismissal(dismissal)
     e = BattingEntry(player=re.sub(r"\s+", " ", name), position=position, dismissal=dismissal,
                      how_out=info["how_out"], bowler=info["bowler"], fielder=info["fielder"],
@@ -579,9 +673,12 @@ def parse_scorecard(text: str, source: str = "") -> Match:
                 cur.batting.append(e)
             else:
                 pos -= 1
+                match.unread.append(line)
         elif section == "bowling" and cur is not None:
             if (b := _bowling_row(line, bowl_cols)) is not None:
                 cur.bowling.append(b)
+            else:
+                match.unread.append(line)
         elif section == "fow" and cur is not None and FOW_PAIR_RE.match(line):
             cur.fow.extend((int(a), int(b)) for a, b in FOW_PAIR_RE.findall(line))
         elif section in ("footer", "after_total", "fow"):
@@ -589,6 +686,8 @@ def parse_scorecard(text: str, source: str = "") -> Match:
                 match.player_of_match = pm.group("name").strip()
             elif RESULT_RE.search(line) and not match.result:
                 match.result = line
+            else:
+                match.unread.append(line)
 
     if not match.innings:
         raise ScorecardError("no innings found - is this a Cricket Captain scorecard?")

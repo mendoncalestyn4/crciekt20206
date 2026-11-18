@@ -577,7 +577,7 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
             margin_note=m.margin_note, super_over=_super_over_text(m), rain=_rain(m, c.format, result_type),
             player_of_match=fixes.rename(m.player_of_match, _team_of(m, m.player_of_match)), batted_first=batted_first,
             source=m.source))
-        for p in validate_match(m):
+        for p in validate_match(m, QUOTA.get(c.format)):
             P.append(dict(match_id=m.match_id, source=m.source, problem=p))
         for x in m.corrections:
             C.append(dict(match_id=m.match_id, source=m.source, correction=x))

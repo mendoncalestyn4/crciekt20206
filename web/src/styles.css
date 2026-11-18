@@ -676,3 +676,9 @@ a.lkrow, a.mlk { color: inherit; text-decoration: none; cursor: pointer; }
 a.lkrow:hover, a.mlk:hover { background: var(--tile2); }
 .hls a.lkrow { display: block; border-radius: 6px; }
 .ticker a.tk { color: inherit; text-decoration: none; }
+/* the "checked ✓" mark on each match */
+.chk { color: var(--win); font-weight: 700; }
+.chk.bad { color: var(--loss); }
+/* how it's worked out: point at a number for its sum; dotted when it rests on few games */
+.how-tip { cursor: help; }
+.few { text-decoration: underline dotted; text-underline-offset: 3px; }

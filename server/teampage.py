@@ -174,7 +174,10 @@ def head(career, section: str, season: str, team: str, venue: str) -> dict:
     kpis = [("Played", f"{int(me.played)}"), ("Won–Lost", f"{int(me.won)}–{int(me.lost)}"), ("Win %", f"{me.win_pct:.0f}%")]
     kpis += [("Net run rate", f"{me.nrr:+.2f}")] if limited else [("Drawn", f"{int(me.drawn)}")]
     kpis += [("Current run", f"{cur[1]} {WORD.get(cur[0], '')}" if cur[0] else "–")]
-    out = dict(none="", kpis=[dict(k=k, v=v) for k, v in kpis], last5=list(sk["last5"]),
+    # how it's worked out (your pick of 14 November): point at the win % for its sum
+    how = {"Win %": f"{int(me.won)} won ÷ {int(me.played)} played × 100 = {me.win_pct:.0f}%"
+           + (" · only a few games: treat with care" if me.played < 5 else "")}
+    out = dict(none="", kpis=[dict(k=k, v=v, **({"how": how[k]} if k in how else {})) for k, v in kpis], last5=list(sk["last5"]),
                runs=f"Longest winning run: {sk['longest_win']} · longest losing run: {sk['longest_loss']}",
                venue_note="", ratings="", limited=limited)
     if venue != "all":

@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import type { Bar, FormT, Pair, RecordTableT } from "../api";
 import { f1, ord, rnd, fx } from "../format";
 import { useTheme } from "../theme";
-import { Name } from "./base";
+import { FEW, howOf, Name } from "./base";
 import { alpha } from "./charts";
 import { EChart, type Option } from "./EChart";
 import { look, ts } from "./look";
@@ -162,12 +162,38 @@ export function RankLines({ rows }: { rows: { season: string; runs_rank: number 
 
 /** The standard batting or bowling table: hover a column name for what it means. */
 export function RecordTable({ t }: { t: RecordTableT }) {
+  const bowling = t.cols.includes("Wkts");
   return (
     <div className="scrollx"><table className="c rec"><thead><tr>{t.cols.map((c) => (
       <th key={c} className={c === t.first ? "" : "r"} title={t.help[c] || undefined}>{c === t.first ? (c === "section" ? "Competition" : "Season") : c}</th>))}</tr></thead>
-      <tbody>{t.rows.map((r, i) => (
-        <tr key={i}>{t.cols.map((c) => (
-          <td key={c} className={c === t.first ? "" : "r"}>{c === t.first ? <Name p={String(r[c] ?? "")} px={19} />
-            : <span className={`tn ${["Runs", "Wkts"].includes(c) ? "" : "dimn"}`}>{r[c] ?? "–"}</span>}</td>))}</tr>))}</tbody></table></div>
+      <tbody>{t.rows.map((r, i) => {
+        const inns = Number(r.Inns ?? 0);
+        return (
+          <tr key={i}>{t.cols.map((c) => {
+            const how = c === t.first ? undefined : recordHow(r, c, bowling);
+            return (
+              <td key={c} className={c === t.first ? "" : "r"}>{c === t.first ? <Name p={String(r[c] ?? "")} px={19} />
+                : <span className={`tn ${["Runs", "Wkts"].includes(c) ? "" : "dimn"}${how ? " how-tip" : ""}${how && inns < FEW ? " few" : ""}`}
+                  title={how}>{r[c] ?? "–"}</span>}</td>);
+          })}</tr>);
+      })}</tbody></table>
+      {t.rows.some((r) => Number(r.Inns ?? 0) < FEW) && <div className="note">Point at an average, strike rate or economy for how
+        it's worked out; a dotted one rests on fewer than {FEW} innings: few games, treat with care.</div>}</div>
   );
+}
+
+/** The sum behind an average, strike rate or economy in the standard table, from the row's own columns. */
+function recordHow(r: Record<string, string | number | null>, c: string, bowling: boolean): string | undefined {
+  const v = r[c], n = (k: string) => Number(r[k] ?? 0), inns = n("Inns");
+  if (v == null || v === "–" || v === "") return undefined;
+  if (!bowling) {
+    const outs = inns - n("NO");
+    if (c === "Avg") return howOf(`${n("Runs")} runs ÷ ${outs} times out = ${v}`, inns);
+    if (c === "SR") return howOf(`${n("Runs")} runs ÷ ${n("BF")} balls × 100 = ${v}`, inns);
+    return undefined;
+  }
+  if (c === "Avg") return howOf(`${n("Runs")} runs ÷ ${n("Wkts")} wickets = ${v}`, inns);
+  if (c === "Econ") return howOf(`${n("Runs")} runs ÷ ${n("Balls")} balls × 6 = ${v} an over`, inns);
+  if (c === "SR") return howOf(`${n("Balls")} balls ÷ ${n("Wkts")} wickets = ${v} balls a wicket`, inns);
+  return undefined;
 }

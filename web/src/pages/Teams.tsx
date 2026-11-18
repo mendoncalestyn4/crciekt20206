@@ -85,7 +85,7 @@ export function Teams() {
             <div className="row2" style={{ gap: 26, alignItems: "center", flexWrap: "wrap" }}>
               <Logo team={p.team} size={96} />
               <div className="hl" style={{ fontSize: 44 }}>{p.team}</div>
-              <div className="kpis">{(h.kpis ?? []).map((k) => <div key={k.k}><span>{k.k}</span><Num v={k.v} px={34} /></div>)}
+              <div className="kpis">{(h.kpis ?? []).map((k) => <div key={k.k}><span>{k.k}</span><Num v={k.v} px={34} how={k.how} /></div>)}
                 <div><span>Last 5</span>{(h.last5 ?? []).length ? <Lamps seq={h.last5 as Outcome[]} /> : <Num v="–" px={34} />}</div></div>
             </div>
             <div className="note">{h.runs}</div>

@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { get, type ByInnings, type Each, type InningsCol, type InningsMarks, type Lines, type PlayerPage, type PlayersLanding, type Split, remember } from "../api";
-import { Explain, FormatTicks, Hero, Logo, Missing, Name, Num, PName, Sub, Tile } from "../kit/base";
+import { Explain, FormatTicks, Hero, howOf, Logo, Missing, Name, Num, PName, Sub, Tile } from "../kit/base";
 import { PercentileBars } from "../kit/blocks";
 import { RingList } from "../kit/charts";
 import { MatchWinners } from "../kit/season";
@@ -83,8 +83,8 @@ function per<X>(list: Each<X>[] | undefined, one: X | null | undefined, draw: (x
 const lines = (x: Lines) => ({ is_: x.is_, best: x.best, best_label: x.best_label, shows: x.shows, for_: x.for_ ?? "" });
 const Sp = ({ s, overall, dec = 1, unit, low }: { s: Split; overall?: number | null; dec?: number; unit?: string; low?: boolean }) =>
   <><SplitBars rows={s.rows} reference={overall} dec={dec} unit={unit} lowBetter={low} /><Explain {...lines(s)} /></>;
-const KP = ({ items }: { items: [string, ReactNode][] }) => (
-  <Sub cols={items.length}>{items.map(([k, v]) => <Tile span={1} key={k} title={k}><Num v={v} px={56} /></Tile>)}</Sub>);
+const KP = ({ items }: { items: ([string, ReactNode] | [string, ReactNode, string | undefined])[] }) => (
+  <Sub cols={items.length}>{items.map(([k, v, how]) => <Tile span={1} key={k} title={k}><Num v={v} px={56} how={how} /></Tile>)}</Sub>);
 
 export function PlayerView() {
   const { pick = "" } = useParams();
@@ -165,7 +165,9 @@ export function PlayerView() {
         </>}
 
         {tab === "Batting" && <>
-          {b ? <KP items={[["Innings", b.kpis.innings], ["Runs", b.kpis.runs.toLocaleString("en-GB")], ["Average", f2(b.kpis.average)], ["Strike rate", f1(b.kpis.strike_rate)],
+          {b ? <KP items={[["Innings", b.kpis.innings], ["Runs", b.kpis.runs.toLocaleString("en-GB")],
+            ["Average", f2(b.kpis.average), b.kpis.average == null ? undefined : howOf(`${b.kpis.runs} runs ÷ ${b.kpis.outs} times out = ${f2(b.kpis.average)}`, b.kpis.innings)],
+            ["Strike rate", f1(b.kpis.strike_rate), b.kpis.strike_rate == null ? undefined : howOf(`${b.kpis.runs} runs ÷ ${b.kpis.balls} balls × 100 = ${f1(b.kpis.strike_rate)}`, b.kpis.innings)],
             ["High score", b.kpis.high_score], ["100s / 50s", `${b.kpis.hundreds} / ${b.kpis.fifties}`]]} />
             : <Tile span={12}><div className="plain">No innings in {scope}: tick another format above. Their batting everywhere is below.</div></Tile>}
           {c && c.last10.length > 1 && <Tile span={12} title={`Last ${c.last10.length} innings`} right="every competition">
@@ -182,7 +184,11 @@ export function PlayerView() {
           <BounceTile key={d.ticked.join("|")} d={d} kind="bat" />
         </>}
         {tab === "Bowling" && <>
-          {w ? <KP items={[["Wickets", w.kpis.wickets], ["Average", f2(w.kpis.average)], ["Economy", f2(w.kpis.economy)], ["Strike rate", f1(w.kpis.strike_rate)], ["Best", w.kpis.best], ["4+ hauls", w.kpis.hauls]]} />
+          {w ? <KP items={[["Wickets", w.kpis.wickets],
+            ["Average", f2(w.kpis.average), w.kpis.average == null ? undefined : howOf(`${w.kpis.runs} runs ÷ ${w.kpis.wickets} wickets = ${f2(w.kpis.average)}`, w.kpis.innings)],
+            ["Economy", f2(w.kpis.economy), w.kpis.economy == null ? undefined : howOf(`${w.kpis.runs} runs ÷ ${w.kpis.balls} balls × 6 = ${f2(w.kpis.economy)} an over`, w.kpis.innings)],
+            ["Strike rate", f1(w.kpis.strike_rate), w.kpis.strike_rate == null ? undefined : howOf(`${w.kpis.balls} balls ÷ ${w.kpis.wickets} wickets = ${f1(w.kpis.strike_rate)}`, w.kpis.innings)],
+            ["Best", w.kpis.best], ["4+ hauls", w.kpis.hauls]]} />
             : <Tile span={12}><div className="plain">Hasn't bowled in {scope}: tick another format above. Their bowling everywhere is below.</div></Tile>}
           <Tile span={12} title="Bowling · every competition">
             {d.bowl_table ? <RecordTable t={d.bowl_table} /> : <Missing why={d.missing.bowl_table ?? "Hasn't bowled."} />}

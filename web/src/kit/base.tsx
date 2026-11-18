@@ -10,8 +10,18 @@ import { T } from "../shell/names";
 import { ab, fmtOf } from "../format";
 
 /** A number in Space Grotesk, gold: px is the mock-up's size (the approved scale is applied). */
-export function Num({ v, px, style }: { v: ReactNode; px: number; style?: CSSProperties }) {
-  return <span className="nm" style={{ fontSize: sc(px), ...style }}>{v}</span>;
+export function Num({ v, px, style, how }: { v: ReactNode; px: number; style?: CSSProperties; how?: string }) {
+  return <span className={`nm${how ? " how-tip" : ""}`} title={how} style={{ fontSize: sc(px), ...style }}>{v}</span>;
+}
+
+/** Fewer innings than this and a figure rests on very few games (your pick of 14 November: the same "few games: treat
+ *  with care" note on every one). */
+export const FEW = 5;
+
+/** "How it's worked out" (your pick of 14 November): point at a number for the sum behind it, "845 runs ÷ 21 times out
+ *  = 40.24", with the few-games note when it rests on fewer than FEW innings. */
+export function howOf(sum: string, innings?: number | null): string {
+  return sum + (innings != null && innings < FEW ? ` · only ${innings} innings: few games, treat with care` : "");
 }
 
 /** A player or team name in Bebas Neue. */

@@ -138,7 +138,8 @@ export type Live = { type: "matches"; career: string; added: number; records: st
   | { type: "checked"; at: number; folders: number };
 
 // ------------------------------------------------------------------ Matches (server/matchpage.py)
-export type FinderItem = { id: string; label: string; date: string; home: string; away: string; section: string; event: string; name: string; result: string };
+export type FinderItem = { id: string; label: string; date: string; home: string; away: string; section: string; event: string; name: string; result: string;
+  checked?: boolean };
 export type Finder = { section: string; ticked: string[]; name: string; team: string; sections: string[]; teams: string[]; matches: FinderItem[];
   scores?: { results: Result[]; summary: Scores; team: string } | null };
 export type BestGame = { id: string; rating: number; rank: number; of: number; home: string; away: string; date: string;
@@ -155,6 +156,8 @@ export type Wickets = { innings: { innings_no: number; team: string; total: stri
 export type MatchPage = {
   id: string; kicker: string; name: string; series: string; date: string; section: string; event: string; stage: string;
   home: string; away: string; home_score: string; away_score: string; result: string; player_of_match: string; rain: string; corrected?: string[];
+  /** the "checked ✓" mark: every sum on the scorecard checked against the others when it was read */
+  checked?: { ok: boolean; problems: string[]; checks: string[] };
   source: string; note: string; match: Match; report: string; excitement: Excitement | null; win: WinChance | null; wickets: Wickets;
   sides: { team: string; best: { player: string; figures: string }[]; worst: { player: string; figures: string }[] }[];
   top_scores: { player: string; team: string; score: string; balls: number }[];
@@ -220,7 +223,8 @@ export type PlayersLanding = {
     players: { player: string; games: number; runs: number; average: number | null; wickets: number; economy: number | null }[] }[];
 };
 export type Batting = {
-  kpis: { innings: number; runs: number; average: number | null; strike_rate: number | null; high_score: string; hundreds: number; fifties: number };
+  kpis: { innings: number; runs: number; average: number | null; strike_rate: number | null; high_score: string; hundreds: number; fifties: number;
+    outs: number; balls: number };
   form: FormT; compare: ({ pool: number; values: Record<string, number> } & Lines) | null;
   runs_from: { fours: number; sixes: number; running: number; n4: number; n6: number; shows?: string; for_?: string; empty?: boolean } & Lines;
   seasons: Split; how_out: Split | null;
@@ -242,7 +246,8 @@ export type Batting = {
 /** One format's own block of a part, when several formats are ticked together. */
 export type Each<X> = { section: string; data: X | null; missing?: string };
 export type Bowling = {
-  kpis: { wickets: number; average: number | null; economy: number | null; strike_rate: number | null; best: string; hauls: number };
+  kpis: { wickets: number; average: number | null; economy: number | null; strike_rate: number | null; best: string; hauls: number;
+    runs: number; balls: number; innings: number };
   form: FormT; seasons: Split; how_wickets: Split | null;
   match_pattern: { none?: string; first: string; second: string; both: string; best: string; shows?: string; for_?: string } | null;
   with_without: { rows: { label: string; spells: number; wickets: number; economy: string; maidens: string }[]; shows?: string; for_?: string };
@@ -322,7 +327,7 @@ export type SignedBar = { label: string; value: number; text: string; note?: str
 export type RaceLine = { team: string; points: { round: number; position: number; points: number | null; played: number }[] };
 export type Explained = { shows: string; for_: string; is_?: string; best?: string; best_label?: string };
 export type TeamChoice = { section: string; matches: number; seasons: string[]; teams: string[]; todo: string[]; neutral: boolean };
-export type TeamHead = { none: string; elsewhere?: string[]; kpis?: { k: string; v: string }[]; last5?: string[]; runs?: string;
+export type TeamHead = { none: string; elsewhere?: string[]; kpis?: { k: string; v: string; how?: string }[]; last5?: string[]; runs?: string;
   venue_note?: string; ratings?: string; limited?: boolean };
 export type Contribution = { player: string; matches: number; runs: number; run_share: number; wickets: number; wicket_share: number };
 export type TeamBody = {
