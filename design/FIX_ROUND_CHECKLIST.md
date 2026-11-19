@@ -365,8 +365,9 @@ Accuracy and keeping it right:
 - [x] Impossible-value guard; a match saved twice counted once; a "checked ✓" mark on each match: below 0, more than 6
       a ball, more than 10 wickets, maidens or dots past the balls, a bowler past his overs (tests/test_self_checks.py);
       the same card twice counted once (tests/test_loader.py); ✓ or ⚠ on every match in Find a match and on its page
-- [ ] Every change tested automatically on Windows with Python 3.14.7 and pandas 3.1: set up (GitHub Actions); ticked
-      when its first run passes
+- [x] Every change tested automatically on Windows with Python 3.14.7 and pandas 3.1 (GitHub Actions): passing since
+      19 November (four Windows-only problems found and fixed: a text file read in the wrong encoding, a test using a
+      Linux-only call, the menu too tall for a 900-pixel window with Windows fonts, and a test made outdated)
 - [x] Reliability (your picks, 14 November): a second, separate counter for every main figure (runs, wickets,
       averages, strike rates, economy, records), compared after every change; "how it's worked out" on every number
       (point at it: "845 runs ÷ 21 dismissals in 23 innings = 40.2"); the same "few games: treat with care" note on
@@ -437,6 +438,13 @@ fixes, after a restart, and on the final code):
       (4) not needed (no old view is shown); (5) the full test suite and the Windows run pass on the faster site.
       The self-checks still run on every new match; safety copies are the weekly backups as before
 - [x] The folder is checked every 2 seconds (was 20)
+
+**The sweep at the end (19 November, on the faster site, your 2,720 cards):** every page and option 20,928 requests,
+Teams and Seasons pages 11,946, junk and load 8,804: **0 problems**; the three servers' error logs: 0 errors; the
+browser at 1280 and 1920, dark and light, 34 pages: 0 problems; the full test suite 1,470 passed; Windows passing.
+Found and fixed: My team with a junk competition name in the address (24-58 s, now the normal page at once); the first
+player opened in a competition or season (23-35 s under load: every competition and season is now got ready in the
+background too); the warm-up now steps aside while new matches are taken in.
 
 Later stages: the program (.exe) that updates itself, with Streamlit and Plotly removed (stage 5); everything smaller
 so more fits (stage 6).
