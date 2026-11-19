@@ -410,19 +410,33 @@ At the end:
 - [ ] One clean package for your PC that opens on your new scorecards with one double-click, with what to try
 - [ ] One screenshot of each new or reworked thing
 
-Right after this round, the speed work (your words: "when I open it, all the site starts opening"):
-- [ ] The moment the site opens it starts getting every page ready in the background (every team, competition,
-      season and player), your team and players first, using the whole processor; usable meanwhile, a small progress
-      bar, a page not ready yet fills in by itself
-- [ ] Everything kept on disk, so it happens once; later starts instant; a new match redoes only what it changes
-- [ ] The slow sums fixed at the root; pages appear at once with the last numbers, tiles fill in on their own; pages
-      fetched before you click; only what's on screen worked out; logos made once; long lists row by row; pages sent
-      squeezed; the browser opens at once on a "starting..." screen; heavy work in its own lane
-- [ ] Every page under a second (a speed guard in the tests), every number exactly the same before and after
-      (the five accuracy promises), a self-check on new matches, smooth (no jumping, reopens where you left off),
-      safety copies before updates
-- [ ] Also (your picks, 14 November): the browser keeps the site's own files between starts; each page sent only
-      what it shows; your most-used pages refreshed first after each new match
+Right after this round, the speed work (your words: "when I open it, all the site starts opening"). Done 19 November;
+every number checked the same before and after (92 pages of your career, 0 differences, three times: after the root
+fixes, after a restart, and on the final code):
+- [x] The moment the site opens it starts getting every page ready in the background (every page as it first opens,
+      every player), your team and players first, then every page, then everyone else; helpers on the processor's
+      other cores (every core but one, at most three, at low priority); usable meanwhile (it waits whenever you open a
+      page); a small "Getting ready" bar in the menu. Your 2,720 cards: every page ready in about 10 minutes from a
+      cold start (server/app.py warm, server/warmers.py)
+- [x] Everything kept on disk, so it happens once; later starts instant: the server is up in about a second, the first
+      page about 1 s, then every page about 0.02 s (My team 18 s before). Each card's reading and each innings' stands
+      are kept under their own inputs, so a new match reads only its own card; the career has a ready-to-read copy
+      (start 8.2 s -> 0.08 s). Not built: finished seasons locked, so a new match still makes the pages' answers be
+      worked out again in the background (about 10 minutes for every page, your team's first; a page you open meanwhile
+      is worked out at once). A new match shows on the site in about 6 seconds (was 8.5-20)
+- [x] The slow sums fixed at the root (every innings and spell built once for the career, not looked up row by row;
+      role labels once for the same matches; scouting countries in one pass; the stands solver looking only at the
+      batters at the crease; shared-name splits looked up, not scanned); pages sent squeezed; logos kept by the browser
+      until they change. Not built: pages shown at once with the last numbers before the fresh answer, pages fetched
+      before you click, long lists drawn row by row, a "starting..." screen (each page now answers in about 0.02 s
+      once ready, so these would add little)
+- [x] Every page under a second once ready (a speed guard in tests/test_speed.py); every number exactly the same:
+      (1) before and after on your career, 0 differences; (2) everything kept is stamped with the exact scorecards,
+      Data check choices, the matches as the site sees them and the site's version, and a test shows a changed card or
+      choice is never given old answers; (3) matches added in batches give exactly what a full redo gives (a test);
+      (4) not needed (no old view is shown); (5) the full test suite and the Windows run pass on the faster site.
+      The self-checks still run on every new match; safety copies are the weekly backups as before
+- [x] The folder is checked every 2 seconds (was 20)
 
 Later stages: the program (.exe) that updates itself, with Streamlit and Plotly removed (stage 5); everything smaller
 so more fits (stage 6).

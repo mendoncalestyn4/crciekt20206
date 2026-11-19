@@ -73,10 +73,16 @@ class Fixes:
                    d.get("include", []), d.get("exclude", []), d.get("keep_together", []))
 
     def rename(self, name: str, team: str) -> str:
-        for s in self.splits:
-            if s["player"] == name and s["team"] == team:
-                name = s["new_name"]
-                break
+        # the splits looked up by (name, team), the first one for each as before (the list is only ever replaced,
+        # never changed in place, so a new list is a new index)
+        idx = self.__dict__.get("_split_index")
+        if idx is None or idx[0] is not self.splits or idx[1] != len(self.splits):
+            by: dict = {}
+            for s in self.splits:
+                by.setdefault((s["player"], s["team"]), s["new_name"])
+            idx = (self.splits, len(self.splits), by)
+            self.__dict__["_split_index"] = idx
+        name = idx[2].get((name, team), name)
         seen = set()
         while name in self.merges and name not in seen:  # follow chains, avoid loops
             seen.add(name)
