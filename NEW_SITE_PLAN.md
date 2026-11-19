@@ -938,6 +938,21 @@ what the scorecards record (no overs for wickets, no grounds, no toss).
     the innings they bowl (new ball or later, from the bowling order) (14 November).
 17. Player stories, Batter v bowler: the **"Every competition" switch goes**; a batter's meetings with a bowler are
     counted one competition at a time, like the rest of the site (14 November: "no, separate").
+**More answers (19 November):**
+18. Stat by stat and Records **get the format tick boxes** like every other page (combine any formats, e.g. Tests +
+    ODIs; each format against its own average); they open on one format. (This replaces "Combine sections goes" in 11
+    for combining formats; every competition is still its own choice.)
+19. Hall of fame: **real inductions** (a player inducted when he reaches a milestone in a competition, with the date,
+    the match it happened in and his best moments on a plaque), **best batting duos** (the pairs with the most runs
+    together, in place of Deadly duos) and **a firsts timeline** (your career's first hundred, first five-for, first
+    title...), with the Player of the Match and All-round matches tabs kept.
+20. Fielding pieces on these pages (Deadly duos, most catches, any fielding tab): **taken out**, nothing in their place.
+21. Rankings: **the same marks out of 10 as the Player page** (one meaning per rating, how it's worked out on hover);
+    **three lists** like the official world rankings (batters, bowlers, all-rounders); each player's **peak** (best
+    ever and when) and **time at No. 1**; **movement** since the last match; the rankings history chart kept; teams
+    ranked up to any date (1).
+22. Compare players: **the format tick boxes too** (up to 4 players; "plays like" stays inside one competition).
+
 Decided by me, told to you (14 November): the pages sit where section 4's site map puts them (Stat by stat, Records,
 Hall of fame and Rankings under Leaders and records; Insights and Analytics under Insights; Compare players and Player
 stories under Players; Team leaders under Teams); Compare players compares players inside one competition and season,
