@@ -84,7 +84,7 @@ def _json(data, status: int = 200) -> JSONResponse:
     return JSONResponse(data, status_code=status, headers={"Cache-Control": "no-store"})
 
 
-ASKING = [0]   # pages being answered for you right now (the warm-up waits while there are any)
+ASKING = [0]   # pages being answered for you, or new matches being taken in, right now (the warm-up waits meanwhile)
 QUIET = {"/api/events", "/api/warmup", "/api/health", "/api/problems"}   # asked all the time: never a reason to wait
 
 
@@ -677,6 +677,16 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                                        "/api/planner", "/api/competition", "/api/season", "/api/review", "/api/honours",
                                        "/api/rivalries", "/api/names")]
         steps += [("ratings", sec) for sec in sorted(c.matches.section.unique())]
+        # every competition, and each of its seasons: the parts every player's page there shares, worked out through
+        # its top run-scorer's page there, so the first player you open in any competition or season is quick too
+        m = c.matches
+        for sec in in_order(m, m.section.unique()):
+            here = m[m.section == sec]
+            for season in [""] + sorted(here.season.astype(str).unique(), reverse=True):
+                ids = here.match_id if not season else here[here.season.astype(str) == season].match_id
+                b = c.batting[c.batting.match_id.isin(ids)]
+                if not b.empty:
+                    steps.append(("player_in", (b.groupby("player").runs.sum().idxmax(), sec, season)))
         steps += [("scouting", t) for t in mine]
         everyone = c.batting.groupby("player").match_id.nunique().sort_values(ascending=False, kind="stable").index
         steps += [("player", p) for p in everyone if p not in set(squad)]
@@ -692,6 +702,10 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         elif kind == "player":
             picks = playerpage.picks(c, x, "", "")
             kept(c, ("player", x) + picks, lambda: playerpage.page(c, x, *picks))
+        elif kind == "player_in":
+            p, sec, season = x
+            picks = playerpage.picks(c, p, sec, season)
+            kept(c, ("player", p) + picks, lambda: playerpage.page(c, p, *picks))
         elif kind == "ratings":
             matchpage.ratings(c, x)
         elif kind == "scouting":
@@ -785,7 +799,11 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         first = True
         while True:
             try:
-                found = await anyio.to_thread.run_sync(site.sync)
+                ASKING[0] += 1          # the background preparation steps aside while new matches are taken in
+                try:
+                    found = await anyio.to_thread.run_sync(site.sync)
+                finally:
+                    ASKING[0] -= 1
                 for e in found:
                     hub.publish(e)
                     if e.get("type") == "failed":   # kept in Settings → Problems: a career keeps only what it could read
