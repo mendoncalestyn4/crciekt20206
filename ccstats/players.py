@@ -37,25 +37,60 @@ def _outcomes(career, ids) -> pd.Series:
     return pd.Series(rows, dtype=object)
 
 
-def innings(career, ids) -> pd.DataFrame:
-    """Every innings batted, with the match, the team's result and the team's total."""
-    b = career.batting[career.batting.match_id.isin(ids) & career.batting.did_bat]
+def _whole(career, key: str, make):
+    """Worked out once for the whole career (kept until its matches change); each page takes its own matches' rows."""
+    stamp = (id(career.matches), len(career.matches))
+    box = getattr(career, "_players_whole", None)
+    if box is None or box.get("_stamp") != stamp:
+        box = {"_stamp": stamp}
+        try:
+            object.__setattr__(career, "_players_whole", box)
+        except Exception:   # noqa: BLE001 - a career that can't hold it: worked out every time
+            return make()
+    if key not in box:
+        box[key] = make()
+    return box[key]
+
+
+def _result_of(career, frame: pd.DataFrame) -> pd.Series:
+    """Each row's team's result in its match (W / L / D / T / NR), for every row at once."""
     m = career.matches.set_index("match_id")
-    out = _outcomes(career, ids)
+    winner, opp_home, kind = (frame.match_id.map(m.winner), frame.match_id.map(m.home), frame.match_id.map(m.result_type))
+    opp = np.where(frame.team.to_numpy() == opp_home.to_numpy(), frame.match_id.map(m.away), opp_home)
+    w = winner.fillna("").to_numpy()
+    res = np.where(w == frame.team.to_numpy(), "W", np.where(w == opp, "L", np.where(kind == "draw", "D",
+                   np.where(kind == "tie", "T", "NR"))))
+    # a team that didn't play the match (never: every row's team is one of the two) would read NR, as before
+    known = (frame.team.to_numpy() == opp_home.to_numpy()) | (frame.team.to_numpy() == frame.match_id.map(m.away).to_numpy())
+    return pd.Series(np.where(known, res, "NR"), index=frame.index, dtype=object)
+
+
+def _all_innings(career) -> pd.DataFrame:
+    b = career.batting[career.batting.did_bat]
+    m = career.matches.set_index("match_id")
     tot = career.innings.set_index(["match_id", "innings_no"]).runs
     b = b.assign(date=b.match_id.map(m.date), season=b.match_id.map(m.season), section=b.match_id.map(m.section),
-                 result=[out.get((a, t), "NR") for a, t in zip(b.match_id, b.team)],
-                 team_total=[tot.get((a, i), np.nan) for a, i in zip(b.match_id, b.innings_no)])
-    return b.sort_values(["date", "match_id", "innings_no", "position"]).reset_index(drop=True)
+                 result=_result_of(career, b),
+                 team_total=tot.reindex(pd.MultiIndex.from_arrays([b.match_id, b.innings_no])).to_numpy())
+    return b.sort_values(["date", "match_id", "innings_no", "position"])
+
+
+def innings(career, ids) -> pd.DataFrame:
+    """Every innings batted, with the match, the team's result and the team's total."""
+    allb = _whole(career, "innings", lambda: _all_innings(career))
+    return allb[allb.match_id.isin(set(ids))].reset_index(drop=True)
+
+
+def _all_spells(career) -> pd.DataFrame:
+    w = career.bowling[career.bowling.balls > 0]
+    m = career.matches.set_index("match_id")
+    w = w.assign(date=w.match_id.map(m.date), season=w.match_id.map(m.season), result=_result_of(career, w))
+    return w.sort_values(["date", "match_id", "innings_no"])
 
 
 def spells(career, ids) -> pd.DataFrame:
-    w = career.bowling[career.bowling.match_id.isin(ids) & (career.bowling.balls > 0)]
-    m = career.matches.set_index("match_id")
-    out = _outcomes(career, ids)
-    w = w.assign(date=w.match_id.map(m.date), season=w.match_id.map(m.season),
-                 result=[out.get((a, t), "NR") for a, t in zip(w.match_id, w.team)])
-    return w.sort_values(["date", "match_id", "innings_no"]).reset_index(drop=True)
+    allw = _whole(career, "spells", lambda: _all_spells(career))
+    return allw[allw.match_id.isin(set(ids))].reset_index(drop=True)
 
 
 def _win_pct(results: pd.Series, multi: bool) -> float:

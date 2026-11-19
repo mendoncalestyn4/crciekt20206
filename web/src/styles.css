@@ -25,6 +25,17 @@ a { color: inherit; }
 .rail a.nav:not(.on):hover { background: color-mix(in srgb, var(--rail-ink) 10%, transparent); }
 .rail .watch { margin-top: auto; padding-top: 12px; width: 92px; text-align: center; color: var(--rail-ink);
   font: 600 12px/1.35 Inter; letter-spacing: .02em; flex: none; }
+.rail .ready { width: 92px; text-align: center; color: var(--rail-ink); font: 600 11px/1.35 Inter; flex: none; margin-top: auto; }
+.rail .ready .bar { display: block; height: 4px; border-radius: 2px; margin: 4px 6px 3px; background: color-mix(in srgb, var(--rail-ink) 18%, transparent); overflow: hidden; }
+.rail .ready .bar i { display: block; height: 100%; background: var(--gold); transition: width .6s; }
+.rail .ready + .watch { margin-top: 6px; }
+/* a shorter window (a 1080 screen with the browser's bars, Windows fonts): the menu tightens so "Watching" stays in view */
+@media (max-height: 980px) {
+  .rail-in { padding: 12px 0; gap: 4px; }
+  .rail .mark { margin-bottom: 8px; }
+  .rail a.nav { padding: 6px 0 5px; gap: 2px; }
+  .rail .watch { padding-top: 8px; }
+}
 .rail .watch i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--win); margin-right: 5px;
   vertical-align: 1px; }
 .main { flex: 1; min-width: 0; padding: 26px 30px 40px; }

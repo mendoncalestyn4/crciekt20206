@@ -9,8 +9,10 @@ automatically, and a career can be saved as one small "career pack" zip.
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import io
 import json
+import pickle
 import re
 import time
 import zipfile
@@ -23,6 +25,7 @@ import pandas as pd
 
 from .competitions import (EXHIBITION, FIRST_CLASS, INTERNATIONAL, INTERNATIONAL_SECTION, TEST, TOUR, assign_seasons,
                            assign_series, classify, event_of, fix_playoff_stages, section_of)
+from . import keep as KEEP
 from .readback import read_back
 from .parser import Innings, Match, ScorecardError, parse_scorecard, validate_match
 
@@ -202,10 +205,20 @@ class Career:
                 for k in [k for k, v in d.items() if v == source]:
                     del d[k]
 
+        read = KEEP.memo("parsed")
+        known = len(read)
+
         def admit(source: str, text: str, is_new: bool, mtime: float | None = None) -> None:
             try:
-                m = parse_scorecard(text, source)
-                m.read_back = read_back(text, m)   # every card written out again and compared with the printed one
+                # each card is read once, ever: what was read is kept under the card's own name and text (keep.py),
+                # so adding a match, or starting again, reads only the cards not read before; a fresh copy each time
+                key = hashlib.sha1(f"{source}\0{text}".encode("utf-8", "surrogatepass")).hexdigest()
+                if key in read:
+                    m = pickle.loads(read[key])
+                else:
+                    m = parse_scorecard(text, source)
+                    m.read_back = read_back(text, m)   # every card written out again and compared with the printed one
+                    read[key] = pickle.dumps(m, protocol=pickle.HIGHEST_PROTOCOL)
             except ScorecardError as e:
                 report.append(FileReport(source, "failed", str(e)))
                 return
@@ -253,6 +266,8 @@ class Career:
                 report.append(FileReport(source, "skipped", "not a .txt scorecard"))
                 continue
             admit(source, decode(data), is_new=True, mtime=mtime)
+        if len(read) != known:
+            KEEP.changed("parsed")
         texts = {s: t for s, t in texts.items() if s in parsed}
         by_leaf = {_leaf(s): t for s, t in saved.items()}
         saved = {s: saved.get(s, by_leaf.get(_leaf(s))) for s in parsed}

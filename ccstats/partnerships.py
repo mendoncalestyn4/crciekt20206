@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import pandas as pd
 
+from . import keep as KEEP
+
 STAND_COLUMNS = ["match_id", "innings_no", "team", "opposition", "wicket", "runs", "start", "end", "unbroken",
                  "batter1", "batter2", "known"]
 MAX_SOLUTIONS = 400  # stop looking after this many orders that fit (the stand then stays unnamed if they disagree)
@@ -22,17 +24,23 @@ def _fits(runs: list[int], spans: list[tuple[int, int]], stand_runs: list[int]) 
     """Can every batter's runs be shared out over the stands they batted in?
     Each stand holds at most its own runs.  Batters are at the crease for a run of
     consecutive stands, so filling each stand from the batter who leaves soonest is
-    enough to decide it."""
+    enough to decide it.  (Only the batters at the crease for a stand are looked at: those whose span has begun and
+    not yet ended, kept as the stands go by.)"""
     left = list(runs)
+    starts: dict = {}
+    for i, (a, _) in enumerate(spans):
+        starts.setdefault(a, []).append(i)
+    active: list = []
     for k, cap in enumerate(stand_runs):
-        here = sorted((spans[i][1], i) for i in range(len(runs)) if spans[i][0] <= k <= spans[i][1] and left[i] > 0)
+        active = [i for i in active if spans[i][1] >= k] + [i for i in starts.get(k, ()) if spans[i][1] >= k]
+        here = sorted((spans[i][1], i) for i in active if left[i] > 0)
         for _, i in here:
             take = min(cap, left[i])
             left[i] -= take
             cap -= take
             if cap == 0:
                 break
-        for i in range(len(runs)):
+        for i in active:
             if spans[i][1] == k and left[i] > 0:
                 return False
     return all(v == 0 for v in left)
@@ -124,7 +132,9 @@ def _all_stands(career) -> pd.DataFrame:
     for mid, no, p, x, o in zip(did.match_id, did.innings_no, did.player, did.runs, did.out):
         orders.setdefault((mid, no), []).append((p, int(x), bool(o)))
     batted = set(zip(bat.match_id, bat.innings_no))
-    solved: dict = {}  # the same innings shape is only solved once
+    # the same innings shape is only solved once, ever: answers are kept on disk under their own inputs (keep.py)
+    solved = KEEP.memo("stands")
+    known = len(solved)
     rows = []
     for mid, no, team, opp, runs_, all_out in zip(inn.match_id, inn.innings_no, inn.team, inn.opposition, inn.runs,
                                                    inn.all_out):
@@ -152,6 +162,8 @@ def _all_stands(career) -> pd.DataFrame:
             start = bounds[-1]
             rows.append((mid, no, team, opp, len(fall) + 1, total - start, start, total,
                          True, p[0] if p else "", p[1] if p else "", p is not None))
+    if len(solved) != known:
+        KEEP.changed("stands")
     return pd.DataFrame(rows, columns=STAND_COLUMNS)
 
 

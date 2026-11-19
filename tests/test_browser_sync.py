@@ -61,7 +61,10 @@ def site(tmp_path):
         except OSError:
             time.sleep(0.5)
     yield f"http://localhost:{port}", folder
-    os.killpg(srv.pid, signal.SIGTERM)
+    if hasattr(os, "killpg"):        # the server and anything it started (Windows has no process groups: stop it)
+        os.killpg(srv.pid, signal.SIGTERM)
+    else:
+        srv.terminate()
     srv.wait(timeout=30)
 
 

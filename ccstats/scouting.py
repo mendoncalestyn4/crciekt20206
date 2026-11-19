@@ -103,21 +103,25 @@ def _countries(career) -> pd.DataFrame:
     rows["country"] = np.where(rows.level == "International", rows.team, rows.country)
     n = rows.groupby(["player", "level", "country"]).match_id.nunique().rename("games").reset_index()
     two = _two_sides(career)
+    # one pass over every name (most games first in each level, ties by country A to Z, as a stable sort of the
+    # grouped rows gives), instead of sorting each name's few rows on their own
+    n = n.sort_values(["player", "level", "games", "country"], ascending=[True, True, False, True], kind="stable")
+    lists: dict = {}
+    for p, lv, ct in zip(n.player, n.level, n.country):
+        lists.setdefault(p, {"International": [], "Domestic": [], "Franchise": []}).setdefault(lv, []).append(ct)
     out = []
-    for p, g in n.groupby("player"):
-        nat = g[g.level == "International"].sort_values("games", ascending=False, kind="stable")
-        dom = g[g.level == "Domestic"].sort_values("games", ascending=False, kind="stable")
-        fr = g[g.level == "Franchise"].sort_values("games", ascending=False, kind="stable")
-        closed = dom[~dom.country.isin(NO_OVERSEAS_FIRST)]
-        nations, homes, shut = tuple(nat.country), tuple(dom.country), tuple(closed.country)
+    for p, by in lists.items():
+        nat, dom, fr = by["International"], by["Domestic"], by["Franchise"]
+        closed = [x for x in dom if x not in NO_OVERSEAS_FIRST]
+        nations, homes, shut = tuple(nat), tuple(dom), tuple(closed)
         shared = (len(nations) > 1 or len(homes) > 1 or bool(nations and set(shut) - set(nations)) or p in two)
-        if len(nat):
-            country, capped, how = nat.country.iloc[0], True, "played for " + " and ".join(nations)
-        elif len(dom):
-            pick = closed if len(closed) else dom
-            country, capped, how = pick.country.iloc[0], False, "domestic cricket in " + " and ".join(homes)
-        elif len(fr):
-            country, capped, how = fr.country.iloc[0], False, "only franchise cricket"
+        if nat:
+            country, capped, how = nat[0], True, "played for " + " and ".join(nations)
+        elif dom:
+            pick = closed or dom
+            country, capped, how = pick[0], False, "domestic cricket in " + " and ".join(homes)
+        elif fr:
+            country, capped, how = fr[0], False, "only franchise cricket"
         else:
             continue
         if shared:

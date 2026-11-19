@@ -64,6 +64,9 @@ export function Shell({ children }: { children: ReactNode }) {
   // the unread count on the Inbox in the rail (asked again when new matches arrive, like every page's numbers)
   const inbox = useQuery({ queryKey: ["inbox"], queryFn: () => get<InboxPage>("/api/inbox"), enabled: Boolean(career.data), retry: false });
   // the red count on Settings: problems the site noticed (asked again every half minute, and as soon as a page reports one)
+  // getting every page ready (the speed work): a small bar in the menu while it's going, checked every 2 seconds then
+  const ready = useQuery({ queryKey: ["warmup"], queryFn: () => get<{ done: number; total: number; busy: boolean }>("/api/warmup"),
+    retry: false, refetchInterval: (q) => (q.state.data?.busy === false ? 30_000 : 2_000) });
   const problems = useQuery({ queryKey: ["problems"], queryFn: () => get<ProblemsPage>("/api/problems"), retry: false, refetchInterval: 30_000 });
   const [finder, setFinder] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -143,6 +146,9 @@ export function Shell({ children }: { children: ReactNode }) {
               className={({ isActive }) => `nav ${isActive || (s.to === "/settings" && loc.pathname === "/style-guide") ? "on" : ""}`}>
               {s.icon}{s.label}{s.to === "/inbox" && (inbox.data?.unread ?? 0) > 0 && <b className="badge">{inbox.data!.unread > 99 ? "99+" : inbox.data!.unread}</b>}
               {s.to === "/settings" && (problems.data?.count ?? 0) > 0 && <b className="badge bad" title="Problems the site noticed: see Settings → Problems">{problems.data!.count > 99 ? "99+" : problems.data!.count}</b>}</NavLink>))}
+          {ready.data?.busy && ready.data.total > 0 && <div className="ready" title="Getting every page ready, your team and players first: the site can be used meanwhile, and a page not ready yet works itself out when you open it">
+            Getting ready<span className="bar"><i style={{ width: `${Math.round((ready.data.done / ready.data.total) * 100)}%` }} /></span>
+            {Math.round((ready.data.done / ready.data.total) * 100)}%</div>}
           {watch && watch.folders > 0 && <div className="watch" title={`Watching ${watch.folders} Scorecards folder${watch.folders > 1 ? "s" : ""}; new matches are added by themselves`}>
             <i />Watching<br />{new Date(watch.at * 1000).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</div>}
         </div></nav>

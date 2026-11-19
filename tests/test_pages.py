@@ -36,7 +36,8 @@ def players_by_matches(c, n):
 def test_every_format_side_by_side_agrees_with_the_engine(career):
     """The page's copy (on the tables kept with the career) gives what ccstats.playerdeep.all_formats gives."""
     for p in players_by_matches(career, 12):
-        mine, theirs = PP.all_formats(career, p), PD.all_formats(career, p)
+        # (the page's copy also carries the parts each figure is made from, for "how it's worked out")
+        mine, theirs = PP.all_formats(career, p).drop(columns="parts"), PD.all_formats(career, p)
         pd.testing.assert_frame_equal(mine.reset_index(drop=True), theirs.reset_index(drop=True), check_dtype=False)
 
 

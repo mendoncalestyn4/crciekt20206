@@ -201,7 +201,8 @@ class CareerStore:
     def load(self, name: str) -> tuple[Career, CareerSettings]:
         d, settings = self.load_settings(name)
         use_game_names(settings.folder)  # before the matches are read, so a renamed competition is understood
-        career = Career.from_pack((d / "career.stats-pack.zip").read_bytes())
+        raw = (d / "career.stats-pack.zip").read_bytes()
+        career = _ready_copy(d, raw)
         career.name = name
         return career, settings
 
@@ -308,6 +309,34 @@ def game_install_folders() -> list[Path]:
 
 
 _names_read: dict[str, int] = {}  # name file -> its modified time when it was read
+
+
+def _ready_copy(d: Path, raw: bytes) -> Career:
+    """The career read from its file, or (a near-instant start, your pick of 14 November) from the ready-to-read copy
+    kept beside it: Python's own copy of the career as last read, used only when it was made from exactly this career
+    file, the same game name files and the site's own version; otherwise the career is read afresh and the copy
+    remade. Nothing new to install."""
+    import hashlib
+    import pickle
+    from . import keep as KEEP
+    key = hashlib.sha1(KEEP.version().encode() + raw + repr(sorted(_names_read.items())).encode()).hexdigest()
+    f = d / "career.ready.pickle"
+    try:
+        with open(f, "rb") as fh:
+            got = pickle.load(fh)
+        if got.get("key") == key:
+            return got["career"]
+    except Exception:   # noqa: BLE001 - no copy yet, or one that can't be read: the career is read afresh
+        pass
+    career = Career.from_pack(raw)
+    try:
+        tmp = f.with_name(f.name + f".{os.getpid()}.tmp")
+        with open(tmp, "wb") as fh:
+            pickle.dump({"key": key, "career": career}, fh, protocol=pickle.HIGHEST_PROTOCOL)
+        os.replace(tmp, f)
+    except Exception:   # noqa: BLE001 - a full disk or a read-only folder: next start reads it afresh
+        pass
+    return career
 
 
 def use_game_names(scorecards: str | Path | None) -> bool:

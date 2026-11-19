@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hashlib
 import json
 import time
 from collections import deque
@@ -17,6 +18,7 @@ from pathlib import Path
 import anyio
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
+from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.requests import Request
 from starlette.responses import FileResponse, HTMLResponse, JSONResponse, Response, StreamingResponse
@@ -24,6 +26,7 @@ from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
 from ccstats import depth as DP
+from ccstats import keep as KEEP
 from ccstats import logos as LG
 from ccstats import search as SR
 from ccstats.colours import TEAM_COLOURS
@@ -31,7 +34,8 @@ from ccstats.local import CareerStore
 from ccstats.competitions import ordered as in_order
 
 from . import comppage, matchpage, myteam, plannerpage, playerpage, previewpage, reviewpage, rivalriespage, seasonpage, styleguide, teampage, tvtpage
-from .cache import kept
+from .cache import _stamp as cache_stamp, kept, put as cache_put, save as save_kept
+from . import warmers
 from .site import Site
 from .problems import REQUEST, Problems, report as problems_report
 
@@ -80,6 +84,10 @@ def _json(data, status: int = 200) -> JSONResponse:
     return JSONResponse(data, status_code=status, headers={"Cache-Control": "no-store"})
 
 
+ASKING = [0]   # pages being answered for you right now (the warm-up waits while there are any)
+QUIET = {"/api/events", "/api/warmup", "/api/health", "/api/problems"}   # asked all the time: never a reason to wait
+
+
 class Watch:
     """For each request: which page is being answered and where to note its problems (read by _json)."""
 
@@ -91,10 +99,27 @@ class Watch:
             return await self.app(scope, receive, send)
         qs = scope.get("query_string", b"").decode("latin-1")
         token = REQUEST.set((scope.get("path", "") + (f"?{qs}" if qs else ""), self.problems, self.site))
+        mine = scope.get("path", "").startswith("/api/") and not scope.get("warm") and scope["path"] not in QUIET
+        if mine:
+            ASKING[0] += 1
         try:
             await self.app(scope, receive, send)
         finally:
             REQUEST.reset(token)
+            if mine:
+                ASKING[0] -= 1
+
+
+class Squeeze:
+    """Answers sent squeezed (gzip), so big pages arrive sooner; never the live news stream, which must flow at once."""
+
+    def __init__(self, app):
+        self.app, self.gz = app, GZipMiddleware(app, minimum_size=1024)
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope.get("path") != "/api/events":
+            return await self.gz(scope, receive, send)
+        return await self.app(scope, receive, send)
 
 
 def _error(message: str, status: int) -> JSONResponse:
@@ -110,9 +135,11 @@ async def _body(request: Request) -> dict:
     return data
 
 
-def create_app(store: CareerStore | None = None, web: Path | None = None, watch_every: float = 20.0) -> Starlette:
-    """The server. `watch_every` seconds between checks of the watched folders (0: never, for tests)."""
+def create_app(store: CareerStore | None = None, web: Path | None = None, watch_every: float = 2.0) -> Starlette:
+    """The server. `watch_every` seconds between checks of the watched folders (0: never, for tests): every 2 seconds,
+    so a new scorecard is on the site within a second or two of the game saving it (your decision, 14 November)."""
     site = Site(store)
+    KEEP.DIR = site.store.root / "kept"     # sums and answers kept between starts (ccstats/keep.py, cache.py)
     hub = Hub()
     web = Path(web) if web else WEB
     problems = Problems(site.store.root / "problems.json")
@@ -188,8 +215,13 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         data = await anyio.to_thread.run_sync(_logo, kind, name, size, dark)
         if not data:
             return Response(status_code=404, headers={"Cache-Control": "no-store"})
-        # a picture changed in the game shows at once: the browser asks again each time (it's quick, from memory)
-        return Response(data, media_type="image/png", headers={"Cache-Control": "no-cache"})
+        # a picture changed in the game shows at once: the browser asks again each time, but keeps the picture and
+        # gets it again only when it changed (its fingerprint), so an unchanged logo costs a tiny answer, not a picture
+        tag = '"' + hashlib.sha1(data).hexdigest()[:20] + '"'
+        head = {"Cache-Control": "no-cache", "ETag": tag}
+        if tag in request.headers.get("if-none-match", ""):
+            return Response(status_code=304, headers=head)
+        return Response(data, media_type="image/png", headers=head)
 
     def _logo_names():
         """Which names have a picture: every team in the career and every team in the game (a side can be picked and
@@ -608,50 +640,146 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         return StreamingResponse(stream(), media_type="text/event-stream",
                                  headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
 
+    # ------------------------------------------------------------------ getting every page ready (the speed work)
+    WARM = {"done": 0, "total": 0, "busy": False, "gen": 0, "career": ""}
+
+    def _ask(path: str) -> None:
+        """A page answered here in the server, exactly as the browser asks for it (its answer is then kept)."""
+        p, _, qs = path.partition("?")
+        scope = {"type": "http", "method": "GET", "path": p, "raw_path": p.encode(), "query_string": qs.encode(),
+                 "headers": [(b"host", b"127.0.0.1")], "scheme": "http", "server": ("127.0.0.1", 80),
+                 "client": ("127.0.0.1", 0), "root_path": "", "http_version": "1.1", "warm": True}
+
+        async def receive():
+            return {"type": "http.request", "body": b"", "more_body": False}
+
+        async def send(message):
+            pass
+        asyncio.run(app(scope, receive, send))
+
+    def _plan(c) -> list:
+        """Every page to get ready, in order: your team's home and your players first (your pages before anyone
+        else's), then every page of the site as it first opens, then every other player's page, most matches first."""
+        mine = myteam.teams_by_latest(c, site.my_teams(c))
+        steps: list = [("myteam", t) for t in mine] + [("ask", "/api/players"), ("inbox", None)]
+        squad: list = []
+        for team in mine:
+            m = c.matches[(c.matches.home == team) | (c.matches.away == team)]
+            if m.empty:
+                continue
+            last = m.sort_values("date").iloc[-1]
+            ids = m[(m.section == last.section) & (m.season == last.season)].match_id
+            b = c.batting[c.batting.match_id.isin(ids) & (c.batting.team == team)]
+            squad += [p for p in b.groupby("player").match_id.nunique().sort_values(ascending=False).index if p not in squad]
+        steps += [("player", p) for p in squad]
+        steps += [("ask", u) for u in ("/api/matches", "/api/team", "/api/team?tab=How%20they%20win",
+                                       "/api/team?tab=Season", "/api/team?tab=Squad", "/api/teamvteam", "/api/preview",
+                                       "/api/planner", "/api/competition", "/api/season", "/api/review", "/api/honours",
+                                       "/api/rivalries", "/api/names")]
+        steps += [("ratings", sec) for sec in sorted(c.matches.section.unique())]
+        steps += [("scouting", t) for t in mine]
+        everyone = c.batting.groupby("player").match_id.nunique().sort_values(ascending=False, kind="stable").index
+        steps += [("player", p) for p in everyone if p not in set(squad)]
+        return steps
+
+    def _do(c, kind, x) -> None:
+        if kind == "myteam":
+            _myteam(c, x, "")
+        elif kind == "ask":
+            _ask(x)
+        elif kind == "inbox":
+            _inbox(c)
+        elif kind == "player":
+            picks = playerpage.picks(c, x, "", "")
+            kept(c, ("player", x) + picks, lambda: playerpage.page(c, x, *picks))
+        elif kind == "ratings":
+            matchpage.ratings(c, x)
+        elif kind == "scouting":
+            kept(c, ("scouting", x), lambda: myteam.scouting(c, x))
+
     def warm():
-        """Work out the slow sums before anyone asks (your teams' pages, every match's excitement rating), so a big
-        career's pages open at once. They're kept with the career until its matches change."""
+        """Get every page ready before anyone asks (your picks, 14 November): your team and players first, then every
+        page, then everyone else. The site is usable meanwhile: whenever you open a page, this waits until it's
+        answered. Everything worked out is kept on disk as it goes (cache.py), so it happens once; a new match starts
+        it again, and only what the new match changed is worked out (the rest is read back)."""
+        WARM["gen"] += 1
+        gen = WARM["gen"]
         c = site.career()
         if c is None:
+            WARM.update(done=0, total=0, busy=False, career="")
             return
-        for team in myteam.teams_by_latest(c, site.my_teams(c)):
+        steps = _plan(c)
+        WARM.update(done=0, total=len(steps), busy=True, career=c.name)
+        # everyone else's player pages (the long tail) go to helpers on the other cores, if there are any
+        n_help = warmers.helpers()
+        tail: list = []
+        if n_help:
+            last = max(i for i, (k, _) in enumerate(steps) if k != "player")   # everyone else comes after it
+            tail = [x for _, x in steps[last + 1:]]
+            steps = steps[:last + 1]
+        for i, (kind, x) in enumerate(steps):
+            while ASKING[0] > 0 and WARM["gen"] == gen:
+                time.sleep(0.05)
+            if WARM["gen"] != gen or site.career() is not c:   # new matches or another career: started again
+                return
             try:
-                _myteam(c, team, "")
-            except Exception:  # noqa: BLE001 - warming up is only a head start
+                _do(c, kind, x)
+            except Exception:  # noqa: BLE001 - getting ready is only a head start: the page works it out when asked
                 pass
-        for sec in sorted(c.matches.section.unique()):
-            try:
-                matchpage.ratings(c, sec)
-            except Exception:  # noqa: BLE001
-                pass
-        try:
-            _inbox(c)
-        except Exception:  # noqa: BLE001
-            pass
-        # the Players pages: the list of everyone, and each of your teams' competitions (their top run-scorer's page
-        # works out the pieces every page there shares)
-        try:
-            kept(c, ("players-landing", tuple(site.my_teams(c))), lambda: playerpage.landing(c, site.my_teams(c)))
-        except Exception:  # noqa: BLE001
-            pass
-        for team in myteam.teams_by_latest(c, site.my_teams(c)):
-            m = c.matches[(c.matches.home == team) | (c.matches.away == team)]
-            for sec in m.section.unique():
-                b = c.batting[c.batting.match_id.isin(m[m.section == sec].match_id) & (c.batting.team == team)]
-                if b.empty:
-                    continue
-                top = b.groupby("player").runs.sum().idxmax()
+            WARM["done"] = i + 1
+            if i % 25 == 24:
                 try:
-                    kept(c, ("player", top, sec, ""), lambda: playerpage.page(c, top, sec, ""))
+                    save_kept(c, every=60)
+                except Exception:  # noqa: BLE001 - a full disk: kept in memory, worked out again next start
+                    pass
+        if tail:
+            _helped(c, tail, n_help, gen)
+        try:
+            save_kept(c)
+        except Exception:  # noqa: BLE001
+            pass
+        if WARM["gen"] == gen:
+            WARM["busy"] = False
+
+    def _helped(c, names: list, n_help: int, gen: int) -> None:
+        """The long tail of player pages on the helpers (warmers.py), in small batches, each answer kept as it comes;
+        stopped at once if new matches arrive or the site closes."""
+        from concurrent.futures import ProcessPoolExecutor, as_completed
+        import multiprocessing as mp
+        stamp = cache_stamp(c)
+        batches = [names[i:i + 8] for i in range(0, len(names), 8)]
+        done0 = WARM["done"]
+        try:
+            with ProcessPoolExecutor(n_help, mp_context=mp.get_context("spawn"), initializer=warmers.start,
+                                     initargs=(str(site.store.root), c.name)) as pool:
+                futs = [pool.submit(warmers.players, b, stamp) for b in batches]
+                got = 0
+                for fu in as_completed(futs):
+                    if WARM["gen"] != gen or site.career() is not c:
+                        for x in futs:
+                            x.cancel()
+                        return
+                    for key, value in fu.result():
+                        cache_put(c, key, value)
+                    got += 1
+                    WARM["done"] = done0 + min(len(names), got * 8)
+                    if got % 10 == 0:
+                        save_kept(c, every=60)
+        except Exception:  # noqa: BLE001 - no helpers (a locked-down PC): the rest is done here, one at a time
+            for p in names:
+                if WARM["gen"] != gen or site.career() is not c:
+                    return
+                while ASKING[0] > 0 and WARM["gen"] == gen:
+                    time.sleep(0.05)
+                try:
+                    _do(c, "player", p)
                 except Exception:  # noqa: BLE001
                     pass
+                WARM["done"] += 1
 
-        # last, the Scouting tab of each of your teams (the replacements take a few seconds in a big career)
-        for team in myteam.teams_by_latest(c, site.my_teams(c)):
-            try:
-                kept(c, ("scouting", team), lambda: myteam.scouting(c, team))
-            except Exception:  # noqa: BLE001
-                pass
+    async def warmup_(request: Request):
+        """How far getting every page ready has got (the progress bar)."""
+        return _json(dict(done=WARM["done"], total=WARM["total"], busy=WARM["busy"]))
 
     async def watch_loop():
         first = True
@@ -665,9 +793,16 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                             # a match still being saved by the game is read again once it's finished: not a problem
                             if not f["reason"].startswith("incomplete scorecard"):
                                 problems.add("scorecard", f["file"], f["reason"], career=e["career"])
-                if first or any(e.get("type") == "matches" for e in found):
+                # a new start, new matches, or another career opened: get every page ready (again)
+                if first or any(e.get("type") == "matches" for e in found) or (site.current() or "") != WARM["career"]:
                     first = False
+                    WARM["career"] = site.current() or ""
                     asyncio.get_running_loop().run_in_executor(None, warm)
+                elif not WARM["busy"]:
+                    # pages worked out as you open them are kept on disk too (at most once a minute)
+                    c = site.career()
+                    if c is not None:
+                        await anyio.to_thread.run_sync(lambda: save_kept(c, every=60))
                 hub.publish({"type": "checked", "at": time.time(), "folders": len(site.folders())})
             except Exception:  # noqa: BLE001 - a check that fails is tried again next time
                 pass
@@ -683,6 +818,11 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                 task.cancel()
                 with contextlib.suppress(asyncio.CancelledError):
                     await task
+            WARM["gen"] += 1   # the warm-up stops
+            with contextlib.suppress(Exception):   # what's been worked out is kept for the next start
+                c = site.career()
+                if c is not None:
+                    await anyio.to_thread.run_sync(lambda: save_kept(c))
 
     # ------------------------------------------------------------------ the website
     def _page_missing() -> HTMLResponse:
@@ -739,12 +879,13 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/events", events),
         Route("/api/problems", problems_, methods=["GET", "POST"]),
         Route("/api/remember", remember_, methods=["POST"]),
+        Route("/api/warmup", warmup_),
     ]
     if (web / "assets").is_dir():   # the website's files, named after their contents: kept by the browser for good
         routes.append(Mount("/assets", app=StaticFiles(directory=web / "assets")))
     routes += [Route("/", page), Route("/{path:path}", page)]
     app = Starlette(routes=routes, lifespan=lifespan, exception_handlers={Exception: crashed},
-                    middleware=[Middleware(TrustedHostMiddleware, allowed_hosts=HOSTS),
+                    middleware=[Middleware(TrustedHostMiddleware, allowed_hosts=HOSTS), Middleware(Squeeze),
                                 Middleware(Watch, problems=problems, site=site)])
     app.state.site, app.state.hub = site, hub
     return app

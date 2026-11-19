@@ -456,7 +456,7 @@ def test_every_chart_is_explained():
     """Every chart on every page has a 'What it shows / What it's for' note right after it."""
     missing = []
     for f in sorted((ROOT / "views").glob("*.py")):
-        lines = f.read_text().split("\n")
+        lines = f.read_text(encoding="utf-8").split("\n")
         for i, ln in enumerate(lines):
             if "st.plotly_chart(" in ln and "chart_note(" not in "\n".join(lines[i:i + 30]):
                 missing.append(f"{f.name}:{i + 1}")

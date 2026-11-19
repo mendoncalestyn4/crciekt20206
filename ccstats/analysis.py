@@ -50,9 +50,10 @@ def _entry_scores(career) -> pd.DataFrame:
     fow = career.fow.drop_duplicates(["match_id", "innings_no", "wicket"]).set_index(["match_id", "innings_no", "wicket"]).score
     b = career.batting[["match_id", "innings_no", "position"]].copy()
     wk = (b.position - 2).clip(lower=0)
-    keys = list(zip(b.match_id, b.innings_no, wk))
     b["came_in_wickets"] = wk
-    b["came_in_score"] = [0 if w == 0 else fow.get(k, np.nan) for k, w in zip(keys, wk)]
+    # every row's score at that fall of wickets at once (openers came in at 0)
+    got = fow.reindex(pd.MultiIndex.from_arrays([b.match_id, b.innings_no, wk])).to_numpy(dtype=float)
+    b["came_in_score"] = np.where(wk.to_numpy() == 0, 0, got)
     return b
 
 
@@ -395,7 +396,14 @@ def role_labels(career, ids, kind: str, min_matches: int = 3) -> pd.DataFrame:
     did there, plus a few style tags measured against the other players.
 
     role: Opener / Top order / Middle order / Finisher (limited overs) or Lower order / Tail
-          for batters; Bowler; All-rounder; with Wicketkeeper for anyone who made a stumping."""
+          for batters; Bowler; All-rounder; with Wicketkeeper for anyone who made a stumping.
+    Worked out once for the same matches (kept with the career): every player's page asks for the same ones."""
+    from .keep import ids_key, on_career
+    return on_career(career, ("role_labels", ids_key(ids), kind, min_matches),
+                     lambda: _role_labels(career, ids, kind, min_matches)).copy()
+
+
+def _role_labels(career, ids, kind: str, min_matches: int = 3) -> pd.DataFrame:
     cols = ["player", "role", "tags", "usual_position", "matches"]
     bat = career.batting[career.batting.match_id.isin(ids)]
     if bat.empty:
