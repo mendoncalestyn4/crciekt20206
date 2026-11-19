@@ -101,7 +101,7 @@ export const STAT_WORDS: Record<string, string> = {
   Mat: "Matches played", Inns: "Innings", NO: "Not outs", Runs: "Runs", HS: "Highest score (* = not out)",
   Avg: "Average: batting, runs per time out; bowling, runs per wicket", BF: "Balls faced",
   SR: "Strike rate: batting, runs per 100 balls; bowling, balls per wicket", "100": "Hundreds", "50": "Fifties (50-99)",
-  "4s": "Fours", "6s": "Sixes", Overs: "Overs (six balls; The Hundred's balls are turned into overs)",
+  "0": "Ducks (out for nought)", "4s": "Fours", "6s": "Sixes", Overs: "Overs (six balls; The Hundred's balls are turned into overs)",
   Mdns: "Maidens (printed on longer-format cards)", Dots: "Dot balls (printed on T20 and Hundred cards)",
   Wkts: "Wickets", BBI: "Best bowling in an innings", BBM: "Best bowling in a match", Econ: "Economy: runs per over",
   "4w": "Four wickets in an innings", "4w+": "Four or more wickets in an innings", "5w": "Five or more wickets in an innings",
