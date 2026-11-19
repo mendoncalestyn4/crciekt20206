@@ -952,6 +952,18 @@ what the scorecards record (no overs for wickets, no grounds, no toss).
     ever and when) and **time at No. 1**; **movement** since the last match; the rankings history chart kept; teams
     ranked up to any date (1).
 22. Compare players: **the format tick boxes too** (up to 4 players; "plays like" stays inside one competition).
+23. Hall of fame inductions, per competition, growing with the length of game: T20 1,500 runs, 75 wickets or 10 Player
+    of the Match awards; one-day 2,500 runs or 100 wickets; Tests and first-class 4,000 runs or 150 wickets; and
+    all-rounders with 1,000 runs and 50 wickets in any format.
+24. Rankings, all-rounders: **batting mark × bowling mark** (as the official rankings), so only players good at both
+    rise.
+25. Rankings, who appears (all three, for a fair view, not one or two good series): at least 10 innings in the last two
+    seasons in T20, 8 in one-day and in Tests and first-class (bowlers: the same in bowling innings); **from at least 3
+    different series or tournaments** (in a domestic league, which is one long season, from both seasons); and a small
+    **"not ranked yet"** list under the table: players close to the minimum, with what they still need.
+26. Firsts timeline: **your team's and your players' firsts first**, with a switch for any team.
+27. Every list, dropdown and tick-box row with formats: **Tests, ODIs, T20Is first, then the rest** (the standing rule;
+    checked on every page 19 November: all 10 such lists in order).
 
 Decided by me, told to you (14 November): the pages sit where section 4's site map puts them (Stat by stat, Records,
 Hall of fame and Rankings under Leaders and records; Insights and Analytics under Insights; Compare players and Player
