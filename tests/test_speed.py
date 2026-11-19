@@ -156,3 +156,19 @@ def test_a_logo_is_kept_by_the_browser_until_it_changes(tmp_path):
         assert e.value.code == 304
     finally:
         live.stop()
+
+
+def test_a_junk_competition_name_on_my_team_is_the_normal_page_at_once(tmp_path):
+    """My team with a competition the team hasn't played in the address (a junk or old name) is the normal page, kept
+    as one page: a second, different junk name is answered at once, not worked out again."""
+    from server.app import create_app
+    store, folder, _ = make_pc(tmp_path, n=len(FIXTURES), team="India")
+    live = Live(create_app(store, watch_every=0))
+    try:
+        normal = live.json("/api/myteam")
+        assert live.json("/api/myteam?section=null") == normal
+        t = time.time()
+        assert live.json("/api/myteam?section=%3Cscript%3E") == normal
+        assert time.time() - t < 1.0
+    finally:
+        live.stop()

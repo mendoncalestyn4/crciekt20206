@@ -326,6 +326,10 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         team = team or (order[0] if order else styleguide.pick_team(c, []) or "")
         if not team:
             return dict(teams=[], team="", mine=False, asked=asked, missing={"everything": styleguide.NO_MATCHES})
+        # a competition the team hasn't played (a junk or old name in the address) is the normal page straight
+        # away, kept as one page, not worked out again for every new name (myteam.page opens on the latest then)
+        if section and section not in set(myteam.MT.sections_of(c, team)):
+            section = ""
         s = site.settings(c.name)
         notes, sched = site.notes(c), list(s.fixtures) if s else []
         # the whole page is kept with the career (and your notes and schedule as they are): a second look, or the
