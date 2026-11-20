@@ -50,10 +50,14 @@ def checked(career, match_id: str) -> dict:
 
 def bowler_unclear(career, match_id: str) -> list[str]:
     """Wickets the card can't credit to one bowler (your pick of 14 November: a shortened name must match exactly one
-    player or be flagged): 'b Jansen' with D Jansen and M Jansen both bowling and both taking wickets."""
+    player or be flagged): 'b Jansen' with D Jansen and M Jansen both bowling and both taking wickets.
+    One line for each pair of bowlers, naming every wicket it covers, in batting order."""
     b = career.batting[(career.batting.match_id == match_id) & career.batting.bowler.str.contains(" or ", na=False)]
-    return [f"{r.player}, {r.dismissal}: the card doesn't say whether {r.bowler} took it (each one's own figures are "
-            "right; who got whom leaves it out)" for r in b.itertuples()]
+    by: dict = {}
+    for r in b.itertuples():
+        by.setdefault(r.bowler, []).append(r.player)
+    return [f"the card doesn't say whether {who} took {'it' if len(p) == 1 else 'them'} ({', '.join(p)}): each one's "
+            "own figures are right; who got whom leaves it out" for who, p in by.items()]
 
 
 def ticked_of(career, section: str) -> list[str]:
