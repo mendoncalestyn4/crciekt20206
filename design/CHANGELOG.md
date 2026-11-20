@@ -24,6 +24,10 @@
   names never joined without you.
 - **Server log:** every problem the site notices is written to server.log beside your careers.
 
+## Changed
+- **Australia's look:** the page is the pale yellow the tiles had, everywhere (the boxes inside tiles too, the match
+  summary included); no bright yellow left.
+
 ## Fixed
 - An innings win lost its margin ("an innings and null runs" on Competitions); its self-check never ran. 37 in your set.
 - Innings wins were counted as wins by runs and as close wins in records.

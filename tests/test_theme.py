@@ -26,7 +26,7 @@ def test_every_word_reads_on_every_team_colour():
 
 def test_the_colours_are_the_ones_matched_to_the_shirts():
     sidebar, page, main, second = T.TEAM_COLOURS["Australia"]
-    assert (sidebar, page) == ("#0d3b1e", "#e7e245")  # dark green trim, a yellow page
+    assert (sidebar, page) == ("#0d3b1e", "#f5f3b5")  # dark green trim, a pale yellow page
     india = T.team_palette("India")
     assert india["sidebar"] == "#dab16f" and india["side_ink"] == "#15181f"  # a light sidebar has dark words
     assert india["page"] == "#0f2557" and india["ink"] == T.NIGHT["ink"] and not india["light"]  # light words

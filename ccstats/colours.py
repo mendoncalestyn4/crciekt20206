@@ -27,10 +27,11 @@ DARK, LIGHT = NIGHT, DAY
 
 # Each national side's colours, matched to its shirt (the 2023 World Cup kits, measured from their photos), its logo
 # and team colours as encycolorpedia.com lists them, or its flag: (the sidebar, the page, the main colour for buttons,
-# headings and links, the second colour for the marks by them)
+# headings and links, the second colour for the marks by them). Australia's page is the pale yellow its tiles had on
+# the bright shirt yellow (your choice of 20 November: the pale look everywhere, inside tiles too)
 TEAM_COLOURS = {
     "Afghanistan": ("#035d9a", "#ebf4f9", "#0472b4", "#d63d4d"),
-    "Australia": ("#0d3b1e", "#e7e245", "#0d3b1e", "#b8962e"),
+    "Australia": ("#0d3b1e", "#f5f3b5", "#0d3b1e", "#b8962e"),
     "Bangladesh": ("#1f5a41", "#eff4f2", "#2b644b", "#e65b56"),
     "Bermuda": ("#0b2a6b", "#eff3f8", "#1f4fa0", "#e0322a"),
     "Canada": ("#8f101c", "#fdf4f4", "#c8102e", "#5c6670"),
