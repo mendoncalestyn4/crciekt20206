@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import colorsys
 
-from ccstats.colours import NIGHT, TEAM_COLOURS, _hex, _mix, _readable, _rgb, contrast, nation_of, team_palette
+from ccstats.colours import DAY, NIGHT, TEAM_COLOURS, _hex, _mix, _readable, _rgb, contrast, nation_of, team_palette
 
 # the mock-up's colours (India's): every one is the page's blue at another lightness; another dark page gets each of
 # them moved by as much as its page differs from India's (hue and lightness shifted, saturation in proportion)
@@ -22,7 +22,7 @@ MOCK = {"tile": "#162f68", "tile2": "#1b3878", "edge": "#24427f", "deep": "#0a1b
 WORDS = ("ink", "dim", "soft", "blue")   # words keep their lightness (they must read), only their hue moves
 # the colours that mean something in charts (never team colours): won, lost, the gold numbers, the second colour
 FIXED = {"win": "#45c08a", "loss": "#ee6a6a", "orange": "#ee7660", "led": "#ffc65a", "led_ink": "#1b1300",
-         "warm": "#ff8a3d", "cream": "#f1efe6", "grey": "#8a97b5"}
+         "warm": "#ff8a3d", "cream": "#f1efe6", "grey": "#8a97b5", "violet": "#c58bff", "teal": "#5ee0d0"}
 
 
 def _hsl(h: str) -> tuple[float, float, float]:
@@ -90,13 +90,20 @@ def tokens(nation: str | None) -> dict:
         t.update(tile=tile, tile2=page, edge=pal["panel_edge"], deep=_mix(page, main, 0.16),
                  track=_mix(tile, main, 0.12), meter=_mix(tile, main, 0.16), ppl=_mix(page, main, 0.04),
                  ppl_edge=_mix(page, main, 0.30), split=pal["grid"], other=_mix(tile, main, 0.38),
-                 ink=pal["ink"], dim=pal["muted"], soft=pal["ink2"], blue=_readable(main, tile, 3.0),
+                 ink=pal["ink"], dim=pal["muted"], soft=pal["ink2"], blue=_readable(DAY["s1"], tile, 3.0),
                  gold=_readable(sidebar, tile, 3.0), glow=False, rail_on_ink=pal["ink"], dimn=pal["ink2"])
+        # (the charts' blue is a real blue for every side, never the team's own colour: "better" in blue and "worse" in
+        # red must never be the same colour, as they were for a side in red, nor called blue when drawn green)
         t["led"] = _readable(FIXED["led"], tile, 4.5)        # the gold numbers, deep enough to read on a light tile
         t["led_ink"] = "#ffffff" if contrast("#ffffff", t["led"]) >= 4.5 else "#1b1300"
         t["win"] = _readable(FIXED["win"], tile, 3.0)       # marks (lamps, bars) need 3:1 against the tile
         t["loss"] = _readable(FIXED["loss"], tile, 3.0)
         t["orange"] = _readable(FIXED["orange"], tile, 3.0)
+        # the other chart colours (pie slices, the season's extra lines, drawn games, everyone else): deep enough to
+        # see on a light tile; the pale cream of the dark look would vanish there, so its slice is violet instead
+        for k in ("warm", "grey", "violet", "teal"):
+            t[k] = _readable(FIXED[k], tile, 3.0)
+        t["cream"] = t["violet"]
     return t
 
 

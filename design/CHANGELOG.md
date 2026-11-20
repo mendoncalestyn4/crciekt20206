@@ -27,6 +27,9 @@
 ## Changed
 - **Australia's look:** the page is the pale yellow the tiles had, everywhere (the boxes inside tiles too, the match
   summary included); no bright yellow left.
+- **Chart colours on light looks:** the charts' blue is a real blue for every side (it was the team's own colour: green
+  for Australia while the words said blue, and red for sides in red, the same as "worse"); the pale cream slice, the
+  season's extra lines, drawn games and the orange slice are now deep enough to see on a light tile.
 
 ## Fixed
 - An innings win lost its margin ("an innings and null runs" on Competitions); its self-check never ran. 37 in your set.

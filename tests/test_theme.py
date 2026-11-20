@@ -62,3 +62,17 @@ def test_streamlit_takes_the_team_colours_and_gives_back_its_own(monkeypatch):
     finally:
         for k, v in start.items():
             config.set_option(k, v, "<test>")
+
+
+def test_every_chart_colour_shows_on_every_teams_tiles():
+    """Every colour a chart draws with (won, lost, drawn, the gold numbers, pie slices, the season's extra lines) can be
+    seen on the tile it sits on, for every national side and the night look; and the dark looks keep their colours."""
+    from server import theme as TH
+    for nation in list(T.TEAM_COLOURS) + [None]:
+        t = TH.tokens(nation)
+        for k in ("led", "win", "loss", "orange", "warm", "cream", "grey", "violet", "teal", "blue"):
+            assert T.contrast(t[k], t["tile"]) >= 3.0, (nation, k, t[k], t["tile"])
+        hue = TH._hsl(t["blue"])[0] * 360
+        assert 190 <= hue <= 250, (nation, t["blue"])      # the charts' "blue" is blue, never the team's own colour
+        if t["dark"]:
+            assert all(t[k] == TH.FIXED[k] for k in ("warm", "cream", "grey", "violet", "teal")), nation

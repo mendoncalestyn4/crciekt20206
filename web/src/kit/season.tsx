@@ -17,7 +17,7 @@ const colourOf = (t: ReturnType<typeof useTheme>, o: Outcome) => (o === "W" ? t.
  *  purple, orange, teal for a second competition of the same length). */
 function formatColours(t: ReturnType<typeof useTheme>, formats: Calendar["formats"]): Record<string, string> {
   // cream reads on a dark page; on a light one the longest game takes the page's ink instead
-  const first: Record<string, string> = { multi: t.dark ? "#f1efe6" : t.ink, one: t.blue, t20: t.led }, extra = ["#c58bff", t.warm, "#5ee0d0", t.grey];
+  const first: Record<string, string> = { multi: t.dark ? "#f1efe6" : t.ink, one: t.blue, t20: t.led }, extra = [t.violet, t.warm, t.teal, t.grey];
   const used = new Set<string>(), out: Record<string, string> = {};
   for (const f of formats) {
     if (!used.has(f.kind)) { out[f.section] = first[f.kind] ?? t.grey; used.add(f.kind); }

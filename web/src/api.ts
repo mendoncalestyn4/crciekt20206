@@ -42,7 +42,7 @@ export type Theme = {
   page: string; rail: string; rail_ink: string; rail_on: string; rail_on_ink: string; main: string; line: [string, string];
   tile: string; tile2: string; edge: string; deep: string; track: string; meter: string; ppl: string; ppl_edge: string;
   split: string; other: string; ink: string; dim: string; soft: string; blue: string; gold: string; dimn: string;
-  win: string; loss: string; orange: string; led: string; led_ink: string; warm: string; cream: string; grey: string;
+  win: string; loss: string; orange: string; led: string; led_ink: string; warm: string; cream: string; grey: string; violet: string; teal: string;
 };
 
 export type Careers = { careers: string[]; current: string | null; folders: string[] };
