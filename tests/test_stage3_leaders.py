@@ -147,3 +147,83 @@ def test_junk_in_the_address_gives_the_normal_page(career, q):
     assert d["ticked"] and d["disc"] in ("Batting", "Bowling") and d["view"] in ("Best", "Worst")
     assert d.get("bars") or d.get("none")
     assert d.get("find", "") in ("", *d.get("names", []))
+
+
+# --------------------------------------------------------------------------- Records
+from ccstats import leaders as L   # noqa: E402
+from ccstats import records as RC   # noqa: E402
+from ccstats import seasonal as SN   # noqa: E402
+
+
+def test_the_record_books_are_the_current_sites(career):
+    """Every record list, for every competition and season, is the current site's (views/records.py), Top 5/10/20."""
+    m = career.matches
+    for sec in _sections(career):
+        for season in ["", *sorted(m[m.section == sec].season.unique())]:
+            for top in (5, 10, 20):
+                d = LP.records_page(career, dict(section=sec, season=season, top=str(top)), [])
+                ids = Scope(sections=[sec], seasons=[season] if season else []).match_ids(m)
+                old = RC.records(career, ids, top=top)
+                got = {t["title"]: t for g in d["groups"] for t in g["tables"]}
+                assert set(got) == set(old), (sec, season)
+                for name, t in old.items():
+                    rows = got[name]["rows"]
+                    assert [r[0] for r in rows] == [str(x) for x in t["rank"]]
+                    assert [r[1].replace(" 🆕", "") for r in rows] == [str(x) for x in t.holder]
+                    assert [r[2] for r in rows] == [str(x) for x in t.value]
+                    near = SN.near_miss(name, t)
+                    assert got[name]["near"].endswith(near) if near else got[name]["near"] == ""
+
+
+def test_the_best_stand_for_each_wicket_counted_again(career):
+    """Each wicket's best stand, found again straight from the fall of wickets and the totals of every innings."""
+    m = career.matches
+    for sec in _sections(career):
+        ids = set(m[m.section == sec].match_id)
+        d = LP.records_page(career, dict(section=sec), [])
+        best: dict[int, int] = {}
+        for (mid, inn), f in career.fow[career.fow.match_id.isin(ids)].groupby(["match_id", "innings_no"]):
+            f = f.sort_values("wicket")
+            prev = 0
+            for w, s in zip(f.wicket, f.score):
+                best[int(w)] = max(best.get(int(w), 0), int(s) - prev)
+                prev = int(s)
+            tot = career.innings[(career.innings.match_id == mid) & (career.innings.innings_no == inn)]
+            if len(tot) and len(f) < 10:   # the stand still going at the end of the innings
+                w = len(f) + 1
+                best[w] = max(best.get(w, 0), int(tot.runs.iloc[0]) - prev)
+        for x in d["stands"]:
+            assert int(x["rows"][0]["runs"].rstrip("*")) == best[x["wicket"]], (sec, x["wicket"])
+            assert [r["place"] for r in x["rows"]] == sorted(r["place"] for r in x["rows"]) and len(x["rows"]) <= 5
+
+
+def test_every_teams_longest_runs_match_the_teams_page(career):
+    """The longest winning and losing runs in the every-team table equal each team's own streaks chart (Teams)."""
+    m = career.matches
+    sec = _sections(career)[0]
+    d = LP.records_page(career, dict(section=sec), [])
+    cols = d["runs"]["cols"]
+    for row in d["runs"]["rows"]:
+        x = dict(zip(cols, row))
+        one = LP.records_page(career, dict(section=sec, team=x["Team"]), [])["streaks"]
+        runs = one["streaks"]
+        longest = lambda o: max((r["end"] - r["start"] + 1 for r in runs if r["o"] == o), default=0)  # noqa: E731
+        assert (x["Longest winning run"], x["Longest losing run"]) == (longest("W"), longest("L")), x["Team"]
+        assert x["Played"] == len(one["results"]) == x["Won"] + x["Lost"] + sum(r["outcome"] not in "WL" for r in one["results"])
+
+
+def test_records_timeline_best_games_and_junk(career):
+    d = LP.records_page(career, {}, ["England"])
+    tl = d["timeline"]
+    steps = SN.record_timeline(career, Scope(sections=d["ticked"]).match_ids(career.matches))
+    steps = steps[steps.record == tl["pick"]]
+    assert [p["label"] for p in tl["points"]] == list(steps.value)
+    assert all(a["y"] < b["y"] for a, b in zip(tl["points"], tl["points"][1:])) or tl["pick"].startswith("Lowest")
+    for k in ("is_", "best", "for_"):
+        assert tl[k] and d["streaks"][k]
+    assert [g["rating"] for g in d["games"]] == sorted((g["rating"] for g in d["games"]), reverse=True)
+    for q in (dict(section="junk", season="1066", top="7", team="Nobody", record="Most catches"),):
+        x = LP.records_page(career, q, [])
+        assert x["ticked"] and x["season"] == "" and x["top"] == "10" and x["team"] in x["teams"]
+        assert x["timeline"]["pick"] in x["timeline"]["names"]
+    assert not any("catch" in t["title"].lower() for g in d["groups"] for t in g["tables"])   # no fielding records
