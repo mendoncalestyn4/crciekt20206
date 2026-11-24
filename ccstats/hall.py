@@ -159,3 +159,181 @@ def duos(career, ids, n: int = 15) -> pd.DataFrame:
     out["average"] = np.where(out.broken > 0, out.runs / out.broken.replace(0, np.nan), np.nan)
     out = out.reset_index().sort_values(["runs", "stands", "pair"], ascending=[False, True, True]).head(n)
     return out[cols].reset_index(drop=True)
+
+
+# --------------------------------------------------------------------------- the firsts timeline (answers 19, 26, 30)
+def firsts(career, team: str) -> pd.DataFrame:
+    """A team's firsts and its players' firsts, oldest first: date, kind (team / player), what, who, match_id, section.
+    Kept with the career."""
+    from .keep import on_career
+    return on_career(career, ("hall_firsts", team), lambda: _firsts(career, team))
+
+
+def _firsts(career, team: str) -> pd.DataFrame:
+    from . import partnerships as P
+    from .extras import honours
+    from .players import player_of_series
+    from .rankings import team_elo
+    cols = ["date", "kind", "what", "who", "match_id", "section"]
+    m = by_played(career, career.matches[(career.matches.home == team) | (career.matches.away == team)])
+    if m.empty:
+        return pd.DataFrame(columns=cols)
+    ev: list[dict] = []
+    seen: set = set()
+
+    def add(key, date, kind, what, who="", mid="", section=""):
+        if key in seen:
+            return
+        seen.add(key)
+        ev.append(dict(date=date, kind=kind, what=what, who=who, match_id=mid, section=section))
+
+    opp = m.away.where(m.home == team, m.home)
+    m = m.assign(opp=opp, won=m.winner == team)
+    inns = career.innings[career.innings.match_id.isin(m.match_id)]
+    by_id = m.set_index("match_id")
+    margin = lambda r: (f"by {int(r.margin_runs)} runs" if r.margin_runs == r.margin_runs and r.margin_runs and not r.innings_win   # noqa: E731
+                        else f"by an innings and {int(r.margin_runs)} runs" if r.innings_win and r.margin_runs == r.margin_runs
+                        else f"by {int(r.margin_wickets)} wickets" if r.margin_wickets == r.margin_wickets and r.margin_wickets else "")
+    for r in m.itertuples():
+        add(("match", r.section), r.date, "team", f"First match in {r.section}", f"v {r.opp}", r.match_id, r.section)
+        if r.won:
+            add(("win", r.section), r.date, "team", f"First win in {r.section}", f"v {r.opp} {margin(r)}".strip(), r.match_id, r.section)
+            add(("beat", r.opp), r.date, "team", f"First win against {r.opp}", f"{r.section}, {margin(r)}".strip(", "), r.match_id, r.section)
+            if r.margin_runs == r.margin_runs and r.margin_runs >= 100 and not r.innings_win:
+                add(("big_runs",), r.date, "team", "First win by 100 runs or more", f"by {int(r.margin_runs)} runs v {r.opp}", r.match_id, r.section)
+            if r.margin_wickets == r.margin_wickets and r.margin_wickets >= 10:
+                add(("big_wkts",), r.date, "team", "First win by 10 wickets", f"v {r.opp}", r.match_id, r.section)
+        if r.result_type == "tie":
+            add(("tie",), r.date, "team", "First tie" + (" and super-over win" if r.tiebreak_winner == team else ""), f"v {r.opp}", r.match_id, r.section)
+        elif r.tiebreak_winner == team:
+            add(("super",), r.date, "team", "First super-over win", f"v {r.opp}", r.match_id, r.section)
+        if r.stage == "Final":
+            add(("final", r.event), r.date, "team", f"First final reached: {r.event}", f"v {r.opp}", r.match_id, r.section)
+    # totals, chases and bowling a side out
+    big = {"one": 300, "t20": 200, "multi": 500}
+    fmt_kind = by_id.format.map(KIND)
+    for r in inns.sort_values(["match_id", "innings_no"]).itertuples():
+        x = by_id.loc[r.match_id]
+        k = fmt_kind[r.match_id]
+        if r.team == team and r.runs >= big.get(k, 999):
+            add(("total", k), x.date, "team", f"First total of {big[k]} or more ({ {'one': 'one-day', 't20': 'T20', 'multi': 'Tests and first-class'}[k] })",
+                f"{r.runs}{'' if r.all_out else '/' + str(r.wickets)} v {x.opp}", r.match_id, x.section)
+        if r.team != team and r.all_out and r.runs < 100:
+            add(("under100",), x.date, "team", "First time bowling a side out for under 100", f"{x.opp} {r.runs}", r.match_id, x.section)
+        last = inns[inns.match_id == r.match_id].innings_no.max()
+        if r.team == team and x.won and r.innings_no == last and r.runs >= 300:
+            if k == "one" and r.innings_no == 2:
+                add(("chase300",), x.date, "team", "First chase of 300 or more in a one-day game", f"{r.runs}/{r.wickets} v {x.opp}", r.match_id, x.section)
+            if k == "multi" and r.innings_no == 4:
+                add(("chase300t",), x.date, "team", "First fourth-innings chase of 300 or more", f"{r.runs}/{r.wickets} v {x.opp}", r.match_id, x.section)
+    # series: the first won, away, in each country, and the first clean sweep
+    for sid, g in m[m.series_id != ""].groupby("series_id", sort=False):
+        g = g.sort_values("date")
+        length = int(g.series_length.max()) if g.series_length.notna().any() else len(g)
+        won, lost = int(g.won.sum()), int((g.winner == g.opp).sum())
+        if len(g) < length or won <= lost:
+            continue
+        last = g.iloc[-1]
+        host = g.home.iloc[0]
+        what = f"v {last.opp}, {won}–{lost} ({last.section})"
+        add(("series",), last.date, "team", "First series win", what, last.match_id, last.section)
+        if host != team and not g.neutral.iloc[0]:
+            add(("series_away",), last.date, "team", "First series win away", what, last.match_id, last.section)
+            add(("series_in", host), last.date, "team", f"First series win in {host}", what, last.match_id, last.section)
+        if won == length and length >= 2:
+            add(("sweep",), last.date, "team", "First clean sweep", f"{won}–0 v {last.opp} ({last.section})", last.match_id, last.section)
+    # titles
+    h = honours(career)
+    h = h[h.champion_teams.map(lambda t: team in t) & ~h.how.str.contains("so far")].sort_values("date")
+    for r in h.itertuples():
+        add(("title",), r.date, "team", "First title", f"{r.section} {r.season} ({r.how})", "", "")
+    # top of the team ratings
+    for sec in m.section.unique():
+        _, hist = team_elo(career, sec)
+        if hist.empty:
+            continue
+        rating: dict[str, float] = {}
+        for (d, mid), g in hist.groupby(["date", "match_id"], sort=True):
+            for x in g.itertuples():
+                rating[x.team] = x.after
+            if team in rating and len(rating) > 1 and rating[team] > max(v for t_, v in rating.items() if t_ != team):
+                add(("elo", sec), d, "team", f"First time top of the team ratings in {sec}", f"{rating[team]:.0f}", mid, sec)
+                break
+    # the players
+    b = career.batting[career.batting.match_id.isin(m.match_id) & (career.batting.team == team) & career.batting.did_bat]
+    b = by_played(career, b).assign(date=lambda x: x.match_id.map(by_id.date), section=lambda x: x.match_id.map(by_id.section),
+                                    opp=lambda x: x.match_id.map(by_id.opp))
+    first_game = by_played(career, career.batting[career.batting.match_id.isin(m.match_id) & (career.batting.team == team)]) \
+        .assign(section=lambda x: x.match_id.map(by_id.section)).groupby(["player", "section"]).match_id.first()
+    for r in b.itertuples():
+        s = f"{r.runs}{'' if r.out else '*'} v {r.opp}"
+        if r.runs >= 50:
+            add(("fifty",), r.date, "player", "First fifty", f"{r.player} {s}", r.match_id, r.section)
+        if r.runs >= 100:
+            add(("hundred",), r.date, "player", "First hundred", f"{r.player} {s}", r.match_id, r.section)
+            add(("hundred", r.section), r.date, "player", f"First hundred in {r.section}", f"{r.player} {s}", r.match_id, r.section)
+            if first_game.get((r.player, r.section)) == r.match_id:
+                add(("debut100",), r.date, "player", "First hundred on debut", f"{r.player} {s} ({r.section})", r.match_id, r.section)
+        if r.runs >= 150:
+            add(("150",), r.date, "player", "First 150", f"{r.player} {s}", r.match_id, r.section)
+        if r.runs >= 200:
+            add(("200",), r.date, "player", "First double hundred", f"{r.player} {s}", r.match_id, r.section)
+    w = career.bowling[career.bowling.match_id.isin(m.match_id) & (career.bowling.team == team) & (career.bowling.balls > 0)]
+    w = by_played(career, w).assign(date=lambda x: x.match_id.map(by_id.date), section=lambda x: x.match_id.map(by_id.section),
+                                    opp=lambda x: x.match_id.map(by_id.opp))
+    for r in w.itertuples():
+        if r.wickets >= 5:
+            add(("fivefor",), r.date, "player", "First five-for", f"{r.player} {r.wickets}/{r.runs} v {r.opp}", r.match_id, r.section)
+    tenm = w.groupby(["match_id", "player"], sort=False).agg(wickets=("wickets", "sum"), runs=("runs", "sum"), date=("date", "first"),
+                                                             section=("section", "first"), opp=("opp", "first")).reset_index()
+    for r in tenm[tenm.wickets >= 10].itertuples():
+        add(("ten",), r.date, "player", "First 10 wickets in a match", f"{r.player} {r.wickets}/{r.runs} v {r.opp}", r.match_id, r.section)
+    for r in m[m.player_of_match != ""].itertuples():
+        if r.player_of_match in set(career.batting[(career.batting.match_id == r.match_id) & (career.batting.team == team)].player):
+            add(("pom",), r.date, "player", "First Player of the Match", f"{r.player_of_match} v {r.opp}", r.match_id, r.section)
+    st = P.stands(career, m.match_id)
+    if len(st):
+        st = by_played(career, st[st.team == team]).assign(date=lambda x: x.match_id.map(by_id.date), section=lambda x: x.match_id.map(by_id.section))
+        for r in st.itertuples():
+            who = f"{r.batter1} & {r.batter2}" if r.known else f"the {r.wicket}{P.suffix(r.wicket)} wicket"
+            for n in (100, 200):
+                if r.runs >= n:
+                    add(("stand", n), r.date, "player", f"First {n} partnership", f"{who}, {r.runs}{'*' if r.unbroken else ''} v {r.opposition}",
+                        r.match_id, r.section)
+    # 1,000 runs and 50 wickets in a format, the running totals in each competition
+    for sec, g in b.groupby("section", sort=False):
+        c = g.assign(total=g.groupby("player").runs.cumsum())
+        hit = c[c.total >= 1000]
+        if len(hit):
+            r = hit.iloc[0]
+            add(("1000", sec), r.date, "player", f"First to 1,000 runs in {sec}", r.player, r.match_id, sec)
+    for sec, g in w.groupby("section", sort=False):
+        c = g.assign(total=g.groupby("player").wickets.cumsum())
+        hit = c[c.total >= 50]
+        if len(hit):
+            r = hit.iloc[0]
+            add(("50w", sec), r.date, "player", f"First to 50 wickets in {sec}", r.player, r.match_id, sec)
+    # Player of the Series, No. 1 in the rankings, the Hall of fame
+    for sec in m.section.unique():
+        ps = player_of_series(career, career.matches[career.matches.section == sec].match_id)
+        ps = ps[ps.team == team]
+        if len(ps):
+            ends = career.matches[career.matches.series_id.isin(ps.series_id)].groupby("series_id").date.max()
+            ps = ps.assign(date=ps.series_id.map(ends)).sort_values("date")
+            r = ps.iloc[0]
+            add(("pos",), r.date, "player", "First Player of the Series", f"{r.player} ({sec})", "", sec)
+    from . import ranking as RK
+    for sec in m.section.unique():
+        for what in RK.KINDS:
+            h = RK.history(career, sec, what)
+            top = h[(h["rank"] == 1) & (h.team == team)].sort_values("date")
+            if len(top):
+                r = top.iloc[0]
+                add(("no1",), r.date, "player", "First player ranked No. 1", f"{r.player} ({sec}, {what})", "", sec)
+        ind = inductions(career, sec)
+        ind = ind[ind.team == team]
+        if len(ind):
+            r = ind.iloc[0]
+            add(("hall",), r.date, "player", "First Hall of fame entry", f"{r.player} ({sec}: {r.route})", r.match_id, sec)
+    out = pd.DataFrame(ev, columns=cols)
+    return out.sort_values(["date", "kind"], kind="stable").reset_index(drop=True)

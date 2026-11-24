@@ -130,19 +130,28 @@ def _last_two(seasons: pd.Series) -> list:
     return sorted(seasons.unique())[-2:]
 
 
+COLS = ["player", "team", "rating", "bat", "bowl", "inns", "series", "seasons", "qualified", "needs", "rank"]
+
+
 def table_at(st: pd.DataFrame, section: str, date, what: str) -> pd.DataFrame:
     """The rankings in one competition as they stood after the matches of `date`: player, team, rating, innings,
     series, seasons, qualified, needs (what a player not ranked yet still needs), rank (ranked players only)."""
-    cols = ["player", "team", "rating", "bat", "bowl", "inns", "series", "seasons", "qualified", "needs", "rank"]
-    here = st[(st.section == section) & (st.date <= date)]
+    return _tables(st[st.section == section], date, (what,))[what]
+
+
+def _tables(sec_states: pd.DataFrame, date, whats=KINDS) -> dict[str, pd.DataFrame]:
+    """table_at for one competition's states (already cut to it), each kind asked for, sharing the work."""
+    here = sec_states[sec_states.date <= date]
     if here.empty:
-        return pd.DataFrame(columns=cols)
+        return {w: pd.DataFrame(columns=COLS) for w in whats}
     window = _last_two(here.season)
     here = here[here.season.isin(window)]
-    last = here.groupby(["series", "team", "player"]).tail(1)
+    key = ["series", "team", "player"]
+    last = here.groupby(key).tail(1)
     kind = last.kind.iloc[0]
-    age = (pd.Timestamp(date) - here.groupby(["series", "team", "player"]).date.transform("max")).dt.days
-    last = last.assign(w=last.games * 0.5 ** (age.loc[last.index].clip(lower=0) / HALF_LIFE_DAYS))
+    end = here.groupby(key).date.transform("max")
+    age = (pd.Timestamp(date) - end.loc[last.index]).dt.days.clip(lower=0)
+    last = last.assign(w=last.games * 0.5 ** (age / HALF_LIFE_DAYS))
     per_season = here.groupby("season").series.nunique()
     one_a_season = bool((per_season <= 1).all())
     need_series = 2 if one_a_season else 3
@@ -157,62 +166,64 @@ def table_at(st: pd.DataFrame, section: str, date, what: str) -> pd.DataFrame:
     team = last.sort_values("date").groupby("player").team.last()
     agg = last.groupby("player").agg(bat_inns=("bat_inns", "sum"), bowl_inns=("bowl_inns", "sum"),
                                      series=("series", "nunique"), seasons=("season", "nunique"))
-    t = agg.join(bat.rename("bat")).join(bowl.rename("bowl")).join(team)
-    if what == "batting":
-        t = t.assign(rating=t.bat, inns=t.bat_inns)
-    elif what == "bowling":
-        t = t.assign(rating=t.bowl, inns=t.bowl_inns)
-    else:
-        # ranked on batting × bowling, as the official rankings (answer 24); shown on the same 1 to 10 scale as the
-        # marks (the square root of the product: the same order, a number that reads like the others)
-        t = t.assign(rating=np.sqrt(t.bat * t.bowl), inns=np.minimum(t.bat_inns, t.bowl_inns))
-    t = t[t.rating.notna()]
-    many = t.seasons >= 2 if one_a_season else t.series >= need_series
-    ok = (t.inns >= need_inns) & many
-    if what == "all-round":
-        ok &= (t.bat_inns >= need_inns) & (t.bowl_inns >= need_inns)
+    base = agg.join(bat.rename("bat")).join(bowl.rename("bowl")).join(team)
+    out = {}
+    for what in whats:
+        if what == "batting":
+            t = base.assign(rating=base.bat, inns=base.bat_inns)
+        elif what == "bowling":
+            t = base.assign(rating=base.bowl, inns=base.bowl_inns)
+        else:
+            # ranked on batting × bowling, as the official rankings (answer 24); shown on the same 1 to 10 scale as
+            # the marks (the square root of the product: the same order, a number that reads like the others)
+            t = base.assign(rating=np.sqrt(base.bat * base.bowl), inns=np.minimum(base.bat_inns, base.bowl_inns))
+        t = t[t.rating.notna()]
+        many = t.seasons >= 2 if one_a_season else t.series >= need_series
+        ok = (t.inns >= need_inns) & many
+        if what == "all-round":
+            ok &= (t.bat_inns >= need_inns) & (t.bowl_inns >= need_inns)
 
-    def needs(r) -> str:
-        bits = []
-        short = need_inns - int(r.inns)
-        if short > 0:
-            bits.append(f"{short} more innings" + (" bowled" if what == "bowling" else ""))
-        if one_a_season and r.seasons < 2:
-            bits.append("a game in a second season")
-        elif not one_a_season and r.series < need_series:
-            k = need_series - int(r.series)
-            bits.append(f"{k} more series or tournament{'s' if k > 1 else ''}")
-        return ", ".join(bits)
+        def needs(r) -> str:
+            bits = []
+            short = need_inns - int(r.inns)
+            if short > 0:
+                bits.append(f"{short} more innings" + (" bowled" if what == "bowling" else ""))
+            if one_a_season and r.seasons < 2:
+                bits.append("a game in a second season")
+            elif not one_a_season and r.series < need_series:
+                k = need_series - int(r.series)
+                bits.append(f"{k} more series or tournament{'s' if k > 1 else ''}")
+            return ", ".join(bits)
 
-    t = t.assign(qualified=ok, needs=[("" if q else needs(r)) for q, r in zip(ok, t.itertuples())]).reset_index()
-    t = t.sort_values(["qualified", "rating", "inns", "player"], ascending=[False, False, False, True])
-    ranked = t[t.qualified]
-    t["rank"] = np.nan
-    t.loc[ranked.index, "rank"] = ranked.rating.rank(method="min", ascending=False)
-    return t[cols].reset_index(drop=True)
+        t = t.assign(qualified=ok, needs=[("" if q else needs(r)) for q, r in zip(ok, t.itertuples())]).reset_index()
+        t = t.sort_values(["qualified", "rating", "inns", "player"], ascending=[False, False, False, True])
+        ranked = t[t.qualified]
+        t["rank"] = np.nan
+        t.loc[ranked.index, "rank"] = ranked.rating.rank(method="min", ascending=False)
+        out[what] = t[COLS].reset_index(drop=True)
+    return out
 
 
 def history(career, section: str, what: str) -> pd.DataFrame:
     """The rankings after every match day of a competition: date, matches (played that day), player, rating, rank
-    (ranked players only). Kept with the career."""
+    (ranked players only). Kept with the career; the three lists are worked out together."""
     from .keep import on_career
-    return on_career(career, ("ranking_history", section, what), lambda: _history(career, section, what))
+    return on_career(career, ("ranking_history", section), lambda: _history(career, section))[what]
 
 
-def _history(career, section: str, what: str) -> pd.DataFrame:
-    st = states(career)
-    here = st[st.section == section]
+def _history(career, section: str) -> dict[str, pd.DataFrame]:
+    hcols = ["date", "matches", "player", "team", "rating", "rank"]
+    here = states(career)
+    here = here[here.section == section]
     m = career.matches[career.matches.section == section]
-    rows = []
+    rows: dict[str, list] = {w: [] for w in KINDS}
     per_day = m.groupby("date").size()
     for d in sorted(here.date.unique()):
-        t = table_at(st, section, d, what)
-        t = t[t.qualified]
-        if len(t):
-            rows.append(t.assign(date=d, matches=int(per_day.get(d, 0)))[["date", "matches", "player", "team", "rating", "rank"]])
-    if not rows:
-        return pd.DataFrame(columns=["date", "matches", "player", "team", "rating", "rank"])
-    return pd.concat(rows, ignore_index=True)
+        for what, t in _tables(here, d).items():
+            t = t[t.qualified]
+            if len(t):
+                rows[what].append(t.assign(date=d, matches=int(per_day.get(d, 0)))[hcols])
+    return {w: pd.concat(r, ignore_index=True) if r else pd.DataFrame(columns=hcols) for w, r in rows.items()}
 
 
 def board(career, section: str, what: str) -> dict:
