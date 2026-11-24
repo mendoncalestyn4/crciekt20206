@@ -716,10 +716,10 @@ td.bold .tn, td.bold { font-weight: 800; }
 .keylist li.dot.neg::before { background: var(--loss); }
 
 /* dropdowns at the top of a page (24 November): a row of them, each a button that opens its list */
-.drops { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; }
-.drop { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.drops { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: 18px 28px; align-items: end; }
+.drop { position: relative; display: flex; flex-direction: column; gap: 7px; min-width: 0; }
 .droplab { font: 400 19px 'Bebas Neue'; letter-spacing: .1em; color: var(--dim); }
-.dropbtn { display: flex; align-items: center; gap: 10px; max-width: 340px; cursor: pointer; font: 500 16px Inter; background: var(--page);
+.dropbtn { display: flex; align-items: center; gap: 10px; width: 100%; cursor: pointer; font: 500 16px Inter; background: var(--page);
   color: var(--ink); border: 1px solid var(--edge); border-radius: 10px; padding: 8px 12px; text-align: left; }
 .dropbtn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dropbtn i { font-style: normal; color: var(--dim); margin-left: auto; }
@@ -739,4 +739,5 @@ td.bold .tn, td.bold { font-weight: 800; }
 /* the tile holding the dropdowns lets their lists hang over the tiles below */
 .t.pickbar { overflow: visible; z-index: 20; }
 .t.pickbar::before { border-radius: var(--r) var(--r) 0 0; }
-.t.pickbar .drops + .drops { margin-top: 14px; }
+.t.pickbar .drops + .drops { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--edge); }
+.t.pickbar .note { margin-top: 16px; }

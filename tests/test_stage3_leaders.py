@@ -134,13 +134,14 @@ def test_find_a_player_and_nobody_qualifying(career):
     assert any(r["hi"] for r in d["bars"]["rows"]) or "isn't on these charts" in d["found"]
     d = LP.stat_by_stat(career, dict(only="Nobody At All"), [])
     assert d["only"] == []
-    d = LP.stat_by_stat(career, dict(how="retired hurt", pos="8 to 11", min=str(MINS["Batting"]["multi"][-1])), [])
+    d = LP.stat_by_stat(career, dict(pos="8 to 11", min=str(MINS["Batting"]["multi"][-1])), [])
     assert d.get("none") or d["bars"]["rows"]
 
 
 @pytest.mark.parametrize("q", [dict(section="junk"), dict(disc="Fielding"), dict(min="abc", top="9"),
                                dict(stat="catches"), dict(measure="nonsense"), dict(seasons="1066|zz"),
-                               dict(single="1", posn="0|12|x"), dict(view="Middling", find="<script>")])
+                               dict(single="1", posn="0|12|x"), dict(view="Middling", find="<script>"),
+                               dict(how="bowled")])   # "How out" is gone (your choice of 24 November): ignored
 def test_junk_in_the_address_gives_the_normal_page(career, q):
     d = LP.stat_by_stat(career, q, [])
     assert d["ticked"] and d["disc"] in ("Batting", "Bowling") and d["view"] in ("Best", "Worst")

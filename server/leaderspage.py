@@ -48,7 +48,6 @@ def stat_by_stat(career, q: dict, mine: list[str]) -> dict:
     teams = sorted(set(in_events.home) | set(in_events.away))
     picked_teams = [t for t in teams if t in set(_list(q, "teams"))]
     picked_venues = [v for v in L.VENUES if v in set(_list(q, "venues"))]
-    picked_how = [h for h in L.HOW if h in set(_list(q, "how"))] if disc == "Batting" else []
     single = q.get("single") == "1" and disc == "Batting"
     picked_groups = [g for g in L.GROUPS if g in set(_list(q, "pos"))] if disc == "Batting" and not single else []
     picked_single = sorted({int(x) for x in _list(q, "posn") if x.isdigit() and 1 <= int(x) <= 11}) if single else []
@@ -61,36 +60,34 @@ def stat_by_stat(career, q: dict, mine: list[str]) -> dict:
     only = tuple(sorted(set(_list(q, "only"))))
     scope = Scope(sections=ticked, seasons=picked_seasons, events=picked_events,
                   positions=L.positions_of(picked_groups, picked_single),
-                  venues=[L.VENUES[v] for v in picked_venues], how_out=picked_how, teams=picked_teams)
+                  venues=[L.VENUES[v] for v in picked_venues], teams=picked_teams)
     key = ("statbystat", repr(scope), disc, q.get("stat", ""), view, top, minimum, only, q.get("measure", ""),
            q.get("find", ""), tuple(mine))
     picks = dict(choices=[dict(section=c["section"], matches=c["matches"]) for c in ch], ticked=ticked,
                  section="|".join(ticked), seasons=seasons, picked_seasons=picked_seasons, discs=list(L.DISCS), disc=disc,
                  events=events, picked_events=picked_events, teams=teams, picked_teams=picked_teams,
-                 venues=list(L.VENUES), picked_venues=picked_venues, hows=L.HOW if disc == "Batting" else [],
-                 picked_how=picked_how, groups=L.GROUPS if disc == "Batting" else [], picked_groups=picked_groups,
+                 venues=list(L.VENUES), picked_venues=picked_venues, groups=L.GROUPS if disc == "Batting" else [], picked_groups=picked_groups,
                  single=single, picked_single=picked_single, view=view, tops=list(TOPS), top=top)
     body = kept(career, key, lambda: _board(career, scope, disc, q, view, top, minimum, only, mine, ticked,
-                                            picked_events, picked_seasons, picked_teams, picked_venues, picked_how,
+                                            picked_events, picked_seasons, picked_teams, picked_venues,
                                             picked_groups, picked_single))
     return SG.clean({**picks, **body})
 
 
-def _where(groups, single, how, venues) -> str:
-    """", batting as openers, innings ending bowled, home games": what the filters picked, as the page says it."""
+def _where(groups, single, venues) -> str:
+    """", batting as openers, home games": what the filters picked, as the page says it ("How out" is gone: your
+    choice of 24 November)."""
     where = ""
     if single:
         where = ", batting at no. " + ", ".join(str(x) for x in single)
     elif groups:
         where = ", batting " + " + ".join(("as openers" if g == "Openers (1-2)" else f"at {g.lower()}") for g in groups)
-    if how:
-        where += ", innings ending " + " / ".join(how)
     if venues:
         where += ", " + " / ".join(v.lower() for v in venues) + " games"
     return where
 
 
-def _board(career, scope, disc, q, view, top, minimum, only, mine, ticked, events, seasons, teams, venues, how,
+def _board(career, scope, disc, q, view, top, minimum, only, mine, ticked, events, seasons, teams, venues,
            groups, single) -> dict:
     best = view == "Best"
     b = L.board(career, scope, disc, q.get("stat", ""), best=best, minimum=minimum, only=only,
@@ -104,7 +101,7 @@ def _board(career, scope, disc, q, view, top, minimum, only, mine, ticked, event
                      minimum=dict(options=[dict(v=v, label="Anyone" if v == 0 else f"{v}+ {unit}") for v in b.options],
                                   value=b.minimum),
                      names=names, find=find, only=[p for p in only if p in set(names)])
-    where = _where(groups, single, how, venues)
+    where = _where(groups, single, venues)
     title = " + ".join(ticked) + (" (each against its own average)" if len(ticked) > 1 else "")
     if events:
         title += " · " + ", ".join(events)

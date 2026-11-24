@@ -35,7 +35,7 @@ export function LeadersHead({ on, crumb }: { on: number; crumb: ReactNode }) {
   return <Head title="Leaders" crumb={crumb} chips={LEADER_PAGES.map((p) => p.label)} on={on} onChip={(i) => go(`${LEADER_PAGES[i]!.to}${keep}`)} />;
 }
 
-const KEYS = ["section", "seasons", "disc", "events", "teams", "venues", "how", "pos", "single", "posn", "view", "top", "min", "find", "only", "stat", "measure"];
+const KEYS = ["section", "seasons", "disc", "events", "teams", "venues", "pos", "single", "posn", "view", "top", "min", "find", "only", "stat", "measure"];
 
 export function StatByStat() {
   const { career, noCareer, nation } = useShell();
@@ -51,7 +51,7 @@ export function StatByStat() {
     if (changes.section) remember({ section: changes.section });
     const next: Record<string, string> = { ...want, ...changes };
     if ("section" in changes) Object.assign(next, { seasons: "", events: "", teams: "", min: "", find: "", only: "" });
-    if ("disc" in changes) Object.assign(next, { stat: "", min: "", how: "", pos: "", posn: "", single: "", measure: "" });
+    if ("disc" in changes) Object.assign(next, { stat: "", min: "", pos: "", posn: "", single: "", measure: "" });
     if (nation) next.nation = nation;
     go(`/leaders?${new URLSearchParams(Object.entries(next).filter(([, v]) => v)).toString()}`);
   };
@@ -77,7 +77,6 @@ export function StatByStat() {
             <Drop label="Teams" all={d.teams} on={d.picked_teams} set={(v) => set({ teams: join(v) })} none="All teams" />
             <Drop label="Venue" all={d.venues} on={d.picked_venues} set={(v) => set({ venues: join(v) })} none="Anywhere" />
             {d.disc === "Batting" && <>
-              <Drop label="How out" all={d.hows} on={d.picked_how} set={(v) => set({ how: join(v) })} none="Any innings" />
               <Drop label="Batting positions" all={[...d.groups, ...Array.from({ length: 11 }, (_, i) => `No. ${i + 1}`)]}
                 on={d.single ? d.picked_single.map((n) => `No. ${n}`) : d.picked_groups} none="Every position"
                 set={(v) => {
@@ -102,7 +101,7 @@ export function StatByStat() {
             {d.names && <Drop label="Only these players" all={d.names} on={d.only ?? []} none="Everyone" set={(v) => set({ only: join(v) })} />}
           </div>}
           <div className="note">Several competitions picked are counted together, each against its own average. Teams: only the players' games for these
-            teams count. Venue: from the player's own team. How out and batting positions: only those innings, against the average batter there.</div>
+            teams count. Venue: from the player's own team. Batting positions: only those innings, against the average batter there.</div>
         </Tile>
         {d.statdef && <Tile span={12}>
           <div className="plain"><b>{d.statdef.label}</b>: {d.statdef.definition}</div>
