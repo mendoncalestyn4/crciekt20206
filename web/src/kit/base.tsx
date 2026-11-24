@@ -137,21 +137,12 @@ export function Explain({ is_, best, best_label, shows, for_ }: { is_?: ReactNod
   );
 }
 
-/** Tick boxes for the formats a tile counts (your decision of 14 November: tick any formats; it opens on one, ticking
- *  more counts them together). The player's competitions in the agreed order; one always stays ticked. */
-export function FormatTicks({ all, on, set }: { all: string[]; on: string[]; set: (v: string[]) => void }) {
+/** The formats a page or tile counts (your decision of 14 November: any can be counted together; it opens on one),
+ *  as a dropdown (your choice of 24 November: no rows of tick boxes): click a name for just that one, or tick more to
+ *  count them together. The competitions in the agreed order; one always stays picked. */
+export function FormatTicks({ all, on, set, label = "Competition" }: { all: string[]; on: string[]; set: (v: string[]) => void; label?: string }) {
   if (all.length < 2) return null;
-  return (
-    <div className="ticks" role="group" aria-label="Formats">{all.map((x) => {
-      const ticked = on.includes(x);
-      return (
-        <label key={x} className={`tick ${ticked ? "on" : ""}`} title={ticked && on.length === 1 ? "At least one stays ticked" : undefined}>
-          <input type="checkbox" checked={ticked} onChange={() => {
-            const next = ticked ? on.filter((y) => y !== x) : [...on, x];
-            if (next.length) set(all.filter((y) => next.includes(y)));
-          }} />{fmtOf(x)}</label>);
-    })}</div>
-  );
+  return <div className="drops one"><Drop label={label} all={all} on={on} set={set} keepOne say={fmtOf} /></div>;
 }
 
 /** A dropdown at the top of a page (your choice of 24 November: no rows of tick boxes). Click a name for just that
@@ -195,4 +186,16 @@ export function Drop({ label, all, on, set, none, multi = true, keepOne = false,
       </div>}
     </div>
   );
+}
+
+export type PickOpt = string | { v: string; label: string; note?: string };
+
+/** One choice out of a list, as the same dropdown (your choice of 24 November: the new dropdown wherever there's a
+ *  selection). `options`: the values, or {v, label, note} where what's shown differs from the value. */
+export function Pick({ label, value, options, set }: { label: string; value: string; options: PickOpt[]; set: (v: string) => void }) {
+  const vs = options.map((o) => (typeof o === "string" ? o : o.v));
+  const lab = new Map(options.map((o) => (typeof o === "string" ? [o, o] : [o.v, o.label])));
+  const notes = new Map(options.flatMap((o) => (typeof o !== "string" && o.note ? [[o.v, o.note] as const] : [])));
+  return <Drop label={label} all={vs} on={vs.includes(value) ? [value] : []} multi={false} keepOne none={lab.get(value) ?? value}
+    say={(x) => lab.get(x) ?? x} note={notes.size ? (x) => notes.get(x) ?? "" : undefined} set={(v) => { if (v[0] != null) set(v[0]); }} />;
 }

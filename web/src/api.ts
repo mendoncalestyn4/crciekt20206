@@ -501,3 +501,15 @@ export type StatByStat = {
   bars?: { title: string; rows: SbsBar[]; reference: number | null; decimals: number; lower: boolean } & Explained;
   dots?: SbsDot; table?: NGrid & { bold: number }; csv?: string;
 };
+export type RecTable = GridT & { title: string; near: string; short: boolean };
+export type PacePart = { what: string; none?: string; record?: number | null;
+  rows?: { player: string; team: string; value: number; now: number; matches: number; beats: boolean; note: string }[] } & Partial<Explained>;
+export type RecordsPage = {
+  choices: { section: string; matches: number }[]; ticked: string[]; section: string; seasons: string[]; season: string; tops: string[];
+  top: string; teams: string[]; team: string; none?: string; where?: string; groups?: { group: string; tables: RecTable[] }[]; caption?: string;
+  pace?: { title: string; parts: PacePart[]; note: string } | null;
+  stands?: { wicket: number; rows: { place: number; runs: string; who: string; team: string; against: string; date: string; id: string }[] }[];
+  games?: BestGame[]; runs?: NGrid; streaks?: ({ results: Result[]; streaks: Run[] } & Explained) | null;
+  timeline?: { names: string[]; none?: string; pick?: string; unit?: string; end?: string;
+    points?: { date: string; y: number; label: string; holder: string; id: string }[]; table?: GridT } & Partial<Explained>;
+};

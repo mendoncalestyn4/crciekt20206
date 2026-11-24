@@ -71,3 +71,46 @@ export function DotSpread({ d, best }: { d: SbsDot; best: boolean }) {
   if (!d.points.length) return <div className="empty">Nothing to show yet.</div>;
   return <EChart option={option} height={420} label={`${d.y_label} against ${d.x_label.toLowerCase()}`} />;
 }
+
+/** Projected season totals, the season record as a dashed line; a player on course to beat it lit (🔥). */
+export function PaceBars({ rows, record }: { rows: { player: string; team: string; value: number; now: number; matches: number; beats: boolean }[]; record: number | null }) {
+  const t = useTheme();
+  const option = useMemo<Option>(() => {
+    const L = look(t), max = Math.max(...rows.map((r) => r.value), record ?? 0) * 1.25;
+    return {
+      grid: { left: 6, right: 40, top: 6, bottom: 6, containLabel: true },
+      xAxis: { type: "value", show: false, max },
+      yAxis: { type: "category", inverse: true, data: rows.map((r) => r.player), triggerEvent: true, axisLine: { show: false }, axisTick: { show: false },
+        axisLabel: { color: t.ink, fontFamily: "Bebas Neue", fontSize: ts(17), margin: 10, formatter: (v: string) => `${v}${rows.find((r) => r.player === v)?.beats ? " 🔥" : ""}` } },
+      tooltip: { ...L.TT, formatter: (p: { dataIndex: number }) => { const r = rows[p.dataIndex]; return r ? `${r.player} (${r.team}): on course for ${r.value}, now ${r.now} in ${r.matches} matches` : ""; } },
+      series: [{ type: "bar", barWidth: "60%", data: rows.map((r) => ({ value: r.value, name: r.player, itemStyle: { color: r.beats ? t.led : t.blue, borderRadius: 0 } })),
+        label: { show: true, position: "right", formatter: (p: { dataIndex: number }) => `{v|${rows[p.dataIndex]?.value ?? ""}}{t|now ${rows[p.dataIndex]?.now ?? ""}}`,
+          rich: { v: { ...L.VAL(17) }, t: { fontFamily: "Inter", fontSize: ts(10), color: t.dim, padding: [0, 0, 0, 8] } } },
+        ...(record ? { markLine: { silent: true, symbol: "none", lineStyle: { color: t.dim, type: "dashed", width: 1.5 },
+          label: { formatter: `season record ${record}`, color: t.dim, fontFamily: "Inter", fontSize: ts(10), position: "end" }, data: [{ xAxis: record }] } } : {}) }],
+    };
+  }, [t, rows, record]);
+  return <EChart option={option} height={Math.max(160, rows.length * 34 + 30)} label="Projected season totals" />;
+}
+
+/** A record's history: each dot a new record (the match opens on a click), the line flat while it stood. */
+export function RecordSteps({ points, end, unit }: { points: { date: string; y: number; label: string; holder: string; id: string }[]; end: string; unit: string }) {
+  const t = useTheme();
+  const option = useMemo<Option>(() => {
+    const L = look(t), last = points[points.length - 1];
+    const line = [...points.map((p) => [p.date, p.y]), ...(last && end > last.date ? [[end, last.y]] : [])];
+    return {
+      grid: { left: 60, right: 30, top: 24, bottom: 36 },
+      xAxis: { type: "time", ...L.AX },
+      yAxis: { type: "value", name: unit, nameTextStyle: { color: t.dim, fontFamily: "Inter", fontSize: ts(11) }, ...L.AX, scale: true },
+      tooltip: { ...L.TT, trigger: "item", formatter: (p: { data: { d?: (typeof points)[number] } }) => { const d = p.data?.d; return d ? `<b>${d.label}</b> by ${d.holder}<br/>${d.date}` : ""; } },
+      series: [
+        { type: "line", step: "end", silent: true, symbol: "none", data: line, lineStyle: { color: t.blue, width: 3 } },
+        { type: "scatter", symbolSize: 14, z: 3, itemStyle: { color: t.led, borderColor: t.tile, borderWidth: 2 },
+          data: points.map((p) => ({ value: [p.date, p.y], d: p, match: p.id })),
+          label: { show: points.length <= 12, position: "top", formatter: (p: { data: { d: (typeof points)[number] } }) => p.data.d.label, color: t.ink, fontFamily: "Inter", fontSize: ts(10) } },
+      ],
+    };
+  }, [t, points, end, unit]);
+  return <EChart option={option} height={340} label="The record over time" />;
+}

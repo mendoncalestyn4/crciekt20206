@@ -118,3 +118,58 @@ def positions_of(groups: list[str], single: list[int]) -> list[int]:
     if single:
         return sorted({int(x) for x in single if 1 <= int(x) <= 11})
     return sorted({x for g in groups for x in POSITION_GROUPS.get(g, [])})
+
+
+# --------------------------------------------------------------------------- Records (your answers 8-10 of 13 November)
+def stands_by_wicket(career, ids, top: int = 5) -> pd.DataFrame:
+    """The best `top` stands for each wicket (1st to 10th) in these matches, from the fall of wickets as every
+    partnership on the site is (an unbroken stand counts its runs): wicket, place, runs, unbroken, the two batters
+    (where the card says who they were), team, against, date, match_id. Equal stands share a place; the earlier one is
+    listed first."""
+    from . import partnerships as P
+    cols = ["wicket", "place", "runs", "unbroken", "known", "batter1", "batter2", "team", "opposition", "date", "match_id"]
+    st = P.stands(career, ids)
+    if st.empty:
+        return pd.DataFrame(columns=cols)
+    dates = career.matches.set_index("match_id").date
+    st = st.assign(date=st.match_id.map(dates)).sort_values(["wicket", "runs", "date"], ascending=[True, False, True])
+    st["place"] = st.groupby("wicket").runs.rank(method="min", ascending=False).astype(int)
+    return st[st.groupby("wicket").cumcount() < top][cols].reset_index(drop=True)
+
+
+def outcome_of(m: pd.DataFrame, team: str) -> pd.Series:
+    """W, L, D, T or NR for each match row, from `team`'s side (as the Teams page's results)."""
+    opp = m.away.where(m.home == team, m.home)
+    return pd.Series(np.select([m.winner == team, m.winner == opp, m.result_type == "no result", m.result_type == "tie"],
+                               ["W", "L", "NR", "T"], "D"), index=m.index)
+
+
+def longest_runs(career, ids) -> pd.DataFrame:
+    """Every team's longest winning and losing runs in these matches, and the run it's on, counted as the Teams page
+    counts them: the matches in the order played, a run being the same result in a row (anything else ends it).
+    team, played, won, lost, win_run, win_from, win_to, lose_run, lose_from, lose_to, now_outcome, now_run."""
+    from .records import by_played
+    m = by_played(career, career.matches[career.matches.match_id.isin(set(ids))])
+    rows = []
+    for team in sorted(set(m.home) | set(m.away)):
+        g = m[(m.home == team) | (m.away == team)]
+        o = list(outcome_of(g, team))
+        d = list(g.date)
+        best = {"W": (0, None, None), "L": (0, None, None)}
+        i = 0
+        while i < len(o):
+            j = i
+            while j + 1 < len(o) and o[j + 1] == o[i]:
+                j += 1
+            n = j - i + 1
+            if o[i] in best and n > best[o[i]][0]:   # equal runs: the earlier one stays
+                best[o[i]] = (n, d[i], d[j])
+            last = (o[i], n)
+            i = j + 1
+        rows.append(dict(team=team, played=len(o), won=o.count("W"), lost=o.count("L"),
+                         win_run=best["W"][0], win_from=best["W"][1], win_to=best["W"][2],
+                         lose_run=best["L"][0], lose_from=best["L"][1], lose_to=best["L"][2],
+                         now_outcome=last[0] if o else "", now_run=last[1] if o else 0))
+    out = pd.DataFrame(rows, columns=["team", "played", "won", "lost", "win_run", "win_from", "win_to", "lose_run",
+                                      "lose_from", "lose_to", "now_outcome", "now_run"])
+    return out.sort_values(["win_run", "played", "team"], ascending=[False, False, True]).reset_index(drop=True)

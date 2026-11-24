@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { get, type TvtPage, remember } from "../api";
-import { Explain, FormatTicks, Logo, Missing, Num, three, Tile } from "../kit/base";
+import { Explain, FormatTicks, Logo, Missing, Num, Pick, three, Tile } from "../kit/base";
 import { BatFirstSides } from "../kit/season";
 import { Grid, TapeBars, TeamBars, TwoScatter } from "../kit/teams";
 import { dayY, NO_MATCHES } from "../format";
@@ -51,26 +51,20 @@ export function TeamVsTeam() {
           <div className="plain">Against each other: only their meetings, at any ground or one side's home. Against anyone: each team's own games, to
             size up two sides that haven't met (home games next to away games, as for a game at one team's ground). Several competitions ticked
             are counted together, each compared with its own average.</div>
-          <FormatTicks all={d.choices.map((c) => c.section)} on={p.ticked} set={(v) => set({ section: v.join("|") })} />
-          <div className="field">
-            <label htmlFor="tv-season">Season</label>
-            <select id="tv-season" className="pick" value={p.season} onChange={(e) => set({ season: e.target.value === "All seasons" ? "" : e.target.value })}>
-              {["All seasons", ...p.seasons].map((s) => <option key={s}>{s}</option>)}</select>
+          <div className="drops">
+            <FormatTicks all={d.choices.map((c) => c.section)} on={p.ticked} set={(v) => set({ section: v.join("|") })} />
+            <Pick label="Season" value={p.season || "All seasons"} options={["All seasons", ...p.seasons]}
+              set={(v) => set({ season: v === "All seasons" ? "" : v })} />
+            {p.teams.length >= 2 && <>
+              <Pick label="Team A" value={p.a} options={p.teams.map((t) => ({ v: t, label: mark(t) }))} set={(v) => set({ a: v, b: "" })} />
+              <Pick label="Team B" value={p.b} options={(p.others ?? []).map((t) => ({ v: t, label: mark(t) }))} set={(v) => set({ b: v })} />
+            </>}
           </div>
-          {p.teams.length >= 2 && <div className="field">
-            <label htmlFor="tv-a">Team A</label>
-            <select id="tv-a" className="pick" value={p.a} onChange={(e) => set({ a: e.target.value, b: "" })}>
-              {p.teams.map((t) => <option key={t} value={t}>{mark(t)}</option>)}</select>
-            <label htmlFor="tv-b">Team B</label>
-            <select id="tv-b" className="pick" value={p.b} onChange={(e) => set({ b: e.target.value })}>
-              {(p.others ?? []).map((t) => <option key={t} value={t}>{mark(t)}</option>)}</select>
-          </div>}
           {p.grounds.length > 0 && <>
-            <div className="field"><label>Matches</label><div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>
-              {[["each", "Against each other"], ["any", "Against anyone"]].map(([k, l]) => (
-                <button key={k} className={k === p.which ? "on" : ""} onClick={() => set({ which: k! })}>{l}</button>))}</div></div>
-            <div className="field"><label>Where</label><div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>
-              {p.grounds.map((g) => <button key={g.key} className={g.key === p.ground ? "on" : ""} onClick={() => set({ ground: g.key })}>{g.label}</button>)}</div></div>
+            <div className="drops">
+              <Pick label="Matches" value={p.which} options={[{ v: "each", label: "Against each other" }, { v: "any", label: "Against anyone" }]} set={(v) => set({ which: v })} />
+              <Pick label="Where" value={p.ground} options={p.grounds.map((g) => ({ v: g.key, label: g.label }))} set={(v) => set({ ground: v })} />
+            </div>
             {p.where_help && <div className="note">{p.where_help}</div>}</>}
         </Tile>
         {p.none ? <Tile span={12} title={p.teams.length >= 2 ? `${p.a} v ${p.b}` : p.name}><div className="plain"><T>{p.none}</T></div></Tile> : !b ? null : <>

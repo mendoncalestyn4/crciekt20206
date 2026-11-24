@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { get, type GridT, type NGrid, type Outcome, type TeamBody, type TeamPage, remember } from "../api";
-import { Explain, FormatTicks, Lamps, Logo, Missing, Num, three, Tile } from "../kit/base";
+import { Explain, FormatTicks, Lamps, Logo, Missing, Num, Pick, three, Tile } from "../kit/base";
 import { LeaderBars, RingList, ShareRing } from "../kit/charts";
 import { SplitBars } from "../kit/player";
 import { StrengthPanel, Streaks, VenueRecord } from "../kit/season";
@@ -61,17 +61,13 @@ export function Teams() {
         <Tile span={12} title="Pick a competition and a team">
           <div className="plain">Every comparison is against the average of all the teams in that competition; with several ticked, they are
             counted together and each competition's own average is used, weighted by the team's games in it.</div>
-          <FormatTicks all={d.played?.length ? d.played : d.choices.map((c) => c.section)} on={p.ticked} set={(v) => set({ section: v.join("|") })} />
-          <div className="field">
-            <label htmlFor="tm-season">Season</label>
-            <select id="tm-season" className="pick" value={p.season} onChange={(e) => set({ season: e.target.value === "All seasons" ? "" : e.target.value })}>
-              {["All seasons", ...p.seasons].map((s) => <option key={s}>{s}</option>)}</select>
-            <label htmlFor="tm-team">Team</label>
-            <select id="tm-team" className="pick" value={p.team} onChange={(e) => set({ team: e.target.value })}>
-              {(teams.includes(p.team) ? teams : [p.team, ...teams]).map((t) => (
-                <option key={t} value={t}>{t}{todo.has(t) ? " (0 games)" : ""}</option>))}</select>
-            <div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>{VENUES.map(([l, v]) => (
-              <button key={v} className={v === p.venue ? "on" : ""} onClick={() => set({ venue: v === "all" ? "" : v })}>{l}</button>))}</div>
+          <div className="drops">
+            <FormatTicks all={d.played?.length ? d.played : d.choices.map((c) => c.section)} on={p.ticked} set={(v) => set({ section: v.join("|") })} />
+            <Pick label="Season" value={p.season || "All seasons"} options={["All seasons", ...p.seasons]}
+              set={(v) => set({ season: v === "All seasons" ? "" : v })} />
+            <Pick label="Team" value={p.team} options={(teams.includes(p.team) ? teams : [p.team, ...teams]).map((t) => ({ v: t, label: t, note: todo.has(t) ? "0 games" : "" }))}
+              set={(v) => set({ team: v })} />
+            <Pick label="Venue" value={p.venue} options={VENUES.map(([l, v]) => ({ v, label: l }))} set={(v) => set({ venue: v === "all" ? "" : v })} />
           </div>
         </Tile>
         {!h.none && <div className="itabs">{p.tabs.map((x, i) => (
@@ -221,9 +217,7 @@ function Body({ tab, b, team, keep, race }: { tab: string; b: TeamBody; team: st
   if (tab === "Season") return <>
     <Tile span={12} title="The league race" right="position after each match day">
       {b.race ? (b.race.options.length ? <>
-        <div className="field" style={{ marginTop: 0 }}><label htmlFor="tm-race">Competition and season</label>
-          <select id="tm-race" className="pick" value={b.race.picked} onChange={(e) => race(e.target.value)}>
-            {b.race.options.map((o) => <option key={o}>{o}</option>)}</select></div>
+        <div className="drops"><Pick label="Competition and season" value={b.race.picked ?? ""} options={b.race.options} set={race} /></div>
         {b.race.none ? <div className="plain">{b.race.none}</div> : <><PositionRace lines={b.race.lines} team={team} />
           <Explain {...three(b.race)} /></>}</> : <div className="plain">{b.race.none}</div>) : <Missing why={m.race} />}
     </Tile>

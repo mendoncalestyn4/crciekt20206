@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { get, type CompPage, remember } from "../api";
-import { Explain, Logo, Missing, three, Tile } from "../kit/base";
+import { Explain, Logo, Missing, Pick, three, Tile } from "../kit/base";
 import { Bracket, OddsRace } from "../kit/comp";
 import { TvTable } from "../kit/blocks";
 import { Ladder } from "../kit/season";
@@ -54,14 +54,10 @@ export function Competitions() {
         <Tile span={12} title="Pick a competition and a season">
           <div className="plain">A competition as it's run: the ODI World Cup on its own, every bilateral ODI series together, each
             County Championship division apart.</div>
-          {d.choices.length > 0 && <div className="field">
-            <label htmlFor="cp-ev">Competition</label>
-            <select id="cp-ev" className="pick" value={d.event} onChange={(e) => set({ event: e.target.value })}>
-              {d.choices.map((c) => <option key={c.event} value={c.event}>{c.event} · {c.matches} matches</option>)}</select>
-            <label htmlFor="cp-season">Season</label>
-            <select id="cp-season" className="pick" value={d.season} onChange={(e) => set({ season: e.target.value })}>
-              {(ch?.seasons ?? []).map((s) => <option key={s}>{s}</option>)}</select>
-            {d.event && <Logo comp={d.event} size={44} />}
+          {d.choices.length > 0 && <div className="drops">
+            <Pick label="Competition" value={d.event} options={d.choices.map((c) => ({ v: c.event, label: c.event, note: `${c.matches} matches` }))} set={(v) => set({ event: v })} />
+            <Pick label="Season" value={d.season} options={ch?.seasons ?? []} set={(v) => set({ season: v })} />
+            {d.event && <div className="drop"><Logo comp={d.event} size={44} /></div>}
           </div>}
         </Tile>
         {d.none ? <Tile span={12}><Missing why={d.none} /></Tile> : <>
@@ -71,18 +67,16 @@ export function Competitions() {
             {d.league.note && <div className="note">{d.league.note}</div>}
           </Tile>}
           {d.race_on && (rm.race ? <Tile span={12} title="Title race"><Missing why={rm.race} /></Tile> : r && <Tile span={12} title="Title race">
-            <div className="field">
-              <label htmlFor="cp-games">League games per team</label>
-              <input id="cp-games" className="typed num" type="number" min={1} max={60} value={r.games} onChange={(e) => set({ games: e.target.value })} />
-              <label htmlFor="cp-places">Places that go through{r.many ? " (per group)" : ""}</label>
-              <input id="cp-places" className="typed num" type="number" min={1} max={16} value={r.places} disabled={!r.knockouts}
-                onChange={(e) => set({ places: e.target.value })} />
-              {r.many && <><label htmlFor="cp-extra" title="The Blast also takes the two best third-placed sides.">…and the best next-placed sides</label>
+            <div className="drops">
+              <div className="drop"><label className="droplab" htmlFor="cp-games">League games per team</label>
+                <input id="cp-games" className="typed num" type="number" min={1} max={60} value={r.games} onChange={(e) => set({ games: e.target.value })} /></div>
+              <div className="drop"><label className="droplab" htmlFor="cp-places">Places that go through{r.many ? " (per group)" : ""}</label>
+                <input id="cp-places" className="typed num" type="number" min={1} max={16} value={r.places} disabled={!r.knockouts}
+                  onChange={(e) => set({ places: e.target.value })} /></div>
+              {r.many && <div className="drop"><label className="droplab" htmlFor="cp-extra" title="The Blast also takes the two best third-placed sides.">…and the best next-placed sides</label>
                 <input id="cp-extra" className="typed num" type="number" min={0} max={8} value={r.extra} disabled={!r.knockouts}
-                  onChange={(e) => set({ extra: e.target.value })} /></>}
-              {r.teams.length > 0 && <><label htmlFor="cp-pick">Team in colour</label>
-                <select id="cp-pick" className="pick" value={r.pick} onChange={(e) => set({ pick: e.target.value })}>
-                  {r.teams.map((t) => <option key={t}>{t}</option>)}</select></>}
+                  onChange={(e) => set({ extra: e.target.value })} /></div>}
+              {r.teams.length > 0 && <Pick label="Team in colour" value={r.pick} options={r.teams} set={(v) => set({ pick: v })} />}
             </div>
             {r.groups.map((g, i) => <div key={i}>{g.label && <div className="glabel">{g.label}</div>}<Grid t={g} /></div>)}
             {r.caption && <div className="note">{r.caption}</div>}
@@ -98,9 +92,8 @@ export function Competitions() {
           {m.series ? <Tile span={12} title="Series"><Missing why={m.series} /></Tile> : d.series && <>
             <Tile span={12} title="Series"><Grid t={d.series.table} />{d.series.table.note && <div className="note">{d.series.table.note}</div>}</Tile>
             <Tile span={12} title="One series, match by match">
-              <div className="field"><label htmlFor="cp-series">Series</label>
-                <select id="cp-series" className="pick" value={d.series_pick ?? 0} onChange={(e) => set({ series: e.target.value })}>
-                  {d.series.each.map((s, i) => <option key={i} value={i}>{s.label}</option>)}</select></div>
+              <div className="drops"><Pick label="Series" value={String(d.series_pick ?? 0)} options={d.series.each.map((s, i) => ({ v: String(i), label: s.label }))}
+                set={(v) => set({ series: v })} /></div>
               {(() => { const e = d.series!.each[d.series_pick ?? 0], one = d.series_one, l = one?.ladder;
                 if (!e) return null;
                 return <>
@@ -122,9 +115,7 @@ export function Competitions() {
                 : <><Grid t={d.series_one.xi} keep={keep} />{d.series_one.xi.note && <div className="note">{d.series_one.xi.note}</div>}</>}</Tile>}
           </>}
           {m.wtc ? <Tile span={12} title="World Test Championship"><Missing why={m.wtc} /></Tile> : d.wtc && <Tile span={12} title="World Test Championship">
-            <div className="field"><label htmlFor="cp-cycle">Cycle</label>
-              <select id="cp-cycle" className="pick" value={cyc} onChange={(e) => setCycle(e.target.value)}>
-                {d.wtc.cycles.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}</select></div>
+            <div className="drops"><Pick label="Cycle" value={cyc} options={d.wtc.cycles.map((c) => ({ v: c.key, label: c.label }))} set={setCycle} /></div>
             {d.wtc.tables[cyc] && <><Grid t={d.wtc.tables[cyc]!} />
               {d.wtc.tables[cyc]!.heading && <div className="plain" style={{ marginTop: 12 }}><b>{d.wtc.tables[cyc]!.heading}</b></div>}</>}
             <div className="note">{d.wtc.note}</div>

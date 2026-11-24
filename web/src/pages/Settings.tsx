@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { get, post, type Careers, type Problem, type ProblemsPage } from "../api";
-import { Tile } from "../kit/base";
+import { Pick, Tile } from "../kit/base";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
 
@@ -36,10 +36,9 @@ export function Settings() {
         <Tile span={5} title="Colours">
           <div className="plain">The site wears your first national side's colours (the night look when you play as none). Preview another
             side's colours here: nothing is saved.</div>
-          <div className="field"><label htmlFor="nation">Preview</label>
-            <select id="nation" className="pick" value={nation} onChange={(e) => go(`/settings${e.target.value ? `?nation=${encodeURIComponent(e.target.value)}` : ""}`)}>
-              <option value="">Your colours</option><option value="none">No national side (night)</option>
-              {nations.data?.nations.map((n) => <option key={n} value={n}>{n}</option>)}</select></div>
+          <div className="drops"><Pick label="Preview" value={nation}
+            options={[{ v: "", label: "Your colours" }, { v: "none", label: "No national side (night)" }, ...(nations.data?.nations ?? [])]}
+            set={(v) => go(`/settings${v ? `?nation=${encodeURIComponent(v)}` : ""}`)} /></div>
           <div className="plain" style={{ marginTop: 14 }}><Link to={`/style-guide${nation ? `?nation=${encodeURIComponent(nation)}` : ""}`}>The style guide</Link> shows every piece in these colours.</div>
         </Tile>
         {!some && list}

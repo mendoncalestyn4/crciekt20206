@@ -3,9 +3,9 @@
 // of results, our score v theirs, home and away, match-winners, where you rank, then one competition in detail. With a
 // national side and a franchise, the chips at the top switch between them; it opens on whichever played last.
 import { useQuery } from "@tanstack/react-query";
-import { Link, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { get, type MyTeam as Data, type Result, type ScoutingPage } from "../api";
-import { Explain, Lamps, Logo, Missing, Name, Num, PName, Tile } from "../kit/base";
+import { Explain, Lamps, Logo, Missing, Name, Num, Pick, PName, Tile } from "../kit/base";
 import { SquadTable, Story, Ticker, TopList } from "../kit/blocks";
 import { RankTrack, Ring , TugOfWar } from "../kit/charts";
 import { DepthRow, Msg } from "../kit/fm";
@@ -22,6 +22,7 @@ const greeting = () => { const h = new Date().getHours(); return h < 12 ? "Good 
 export function MyTeam() {
   const { career, noCareer, nation } = useShell();
   const [params, setParams] = useSearchParams();
+  const go = useNavigate();
   const keep = nation ? `?nation=${encodeURIComponent(nation)}` : "";
   const team = params.get("team") ?? "", section = params.get("section") ?? "", scouting = params.get("view") === "scouting";
   const q = useQuery({ queryKey: ["myteam", team, section, career?.name], enabled: Boolean(career),
@@ -200,10 +201,10 @@ export function MyTeam() {
               <tbody>{b.rivals.rows.map((r) => <tr key={r.opponent}><td><span className="cell"><Logo team={r.opponent} size={40} /><Name p={`${r.favourite ? "⭐ " : r.bogey ? "👻 " : ""}${r.opponent}`} px={21} /></span></td>
                 <td className="r"><span className="tn dimn">{r.played}</span></td><td className="r"><span className="tn">{r.record}</span></td><td className="r"><span className="tn dimn">{r.win_pct}</span></td></tr>)}</tbody></table>
               : <Missing why="No opponents here yet." />}
-            {b.rivals && b.rivals.next.length > 0 && <div className="field"><label htmlFor="mt-next">Next opponent</label>
-              <select id="mt-next" className="pick" defaultValue={b.rivals.next[0]!.team}>{b.rivals.next.map((o) => (
-                <option key={o.team} value={o.team}>{o.team}{o.note ? `  ·  ${o.note}` : ""}</option>))}</select>
-              <span className="note" style={{ marginTop: 0 }}>Opponent preview: stage 2.</span></div>}
+            {b.rivals && b.rivals.next.length > 0 && <div className="drops" style={{ marginTop: 14 }}>
+              <Pick label="Next opponent: open their preview" value={b.rivals.next[0]!.team}
+                options={b.rivals.next.map((o) => ({ v: o.team, label: o.team, note: o.note ?? "" }))}
+                set={(v) => go(`/teams/preview?opp=${encodeURIComponent(v)}${nation ? `&nation=${encodeURIComponent(nation)}` : ""}`)} /></div>}
           </Tile>
           <Tile span={6} title="🏆 Trophy cabinet">
             {b.trophies?.length ? <table className="c"><thead><tr><th>Title</th><th>How</th><th>Runners-up</th></tr></thead><tbody>{b.trophies.map((r) => (

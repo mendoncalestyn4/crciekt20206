@@ -4,7 +4,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { get, type ReviewPage, type XiGrid } from "../api";
-import { Explain, Missing, Num, three, Tile } from "../kit/base";
+import { Explain, Missing, Num, Pick, three, Tile } from "../kit/base";
 import { LeaderBars } from "../kit/charts";
 import { Grades } from "../kit/myteam";
 import { MatchWinners } from "../kit/season";
@@ -51,22 +51,18 @@ export function Review() {
       <div className="grid">
         <Tile span={12} title="Pick a season">
           <div className="plain">Each competition's season in one place. International cricket gets a calendar-year review, awards style.</div>
-          {d.choices.length > 0 && <div className="field"><label htmlFor="rv-pick">Season</label>
-            <select id="rv-pick" className="pick" value={d.pick} onChange={(e) => set({ pick: e.target.value })}>
-              {d.choices.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}</select></div>}
+          {d.choices.length > 0 && <div className="drops"><Pick label="Season" value={d.pick} options={d.choices.map((c) => ({ v: c.key, label: c.label }))}
+            set={(v) => set({ pick: v })} /></div>}
         </Tile>
         {d.none ? <Tile span={12}><Missing why={d.none} /></Tile> : <>
           {Object.entries(miss).map(([k, v]) => <Tile key={k} span={12} title={k}><Missing why={v} /></Tile>)}
           {wr && <Tile span={12} title="🎁 Your season, wrapped">
-            <div className="field" style={{ marginTop: 0 }}>
-              <label htmlFor="rv-wteam">Team</label>
-              <select id="rv-wteam" className="pick" value={wr.team} onChange={(e) => set({ wteam: e.target.value })}>
-                {wr.teams.map((t) => <option key={t}>{t}</option>)}</select>
-              <div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>{([["", "This competition"], ["whole", "The whole season, every format"]] as const).map(([v, l]) => (
-                <button key={l} className={(wr.view ?? "") === v ? "on" : ""} onClick={() => set({ wview: v })}
-                  title={v ? "April to March, everything this team played, added up" : "This competition's season only"}>{l}</button>))}</div>
-              {wr.formats.length > 0 && !wr.view && <div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>{wr.formats.map((f) => (
-                <button key={f} className={f === wr.format ? "on" : ""} onClick={() => set({ wfmt: f })}>{f}s</button>))}</div>}
+            <div className="drops">
+              <Pick label="Team" value={wr.team} options={wr.teams} set={(v) => set({ wteam: v })} />
+              <Pick label="What it covers" value={wr.view ?? ""} options={[{ v: "", label: "This competition" }, { v: "whole", label: "The whole season, every format" }]}
+                set={(v) => set({ wview: v })} />
+              {wr.formats.length > 0 && !wr.view && <Pick label="Format" value={wr.format ?? ""} options={wr.formats.map((f) => ({ v: f, label: `${f}s` }))}
+                set={(v) => set({ wfmt: v })} />}
             </div>
             {wr.none ? <Missing why={wr.none} /> : <><Wrapped slides={wr.slides ?? []} team={wr.team} section={wr.section ?? ""} season={wr.season ?? ""} keep={keep} />
               {wr.note && <div className="note">{wr.note}</div>}</>}

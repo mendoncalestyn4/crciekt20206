@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { type Explained, get, type GridT, type HowTheyPlay as HowTheyPlayT, type NGrid, type Outcome, type PreviewPage, remember } from "../api";
-import { Explain, Lamps, Logo, Missing, Num, three, Tile } from "../kit/base";
+import { Explain, Lamps, Logo, Missing, Num, Pick, three, Tile } from "../kit/base";
 import { LeaderBars, ShareRing } from "../kit/charts";
 import { BatFirstSides, VenueRecord } from "../kit/season";
 import { Grid, Md, SignedBars } from "../kit/teams";
@@ -57,20 +57,12 @@ export function Preview() {
       <div className="grid">
         <Tile span={12} title="Pick your team and the team you're about to play">
           <div className="plain">Your history against them, who gets whom out, their form, their key players and weak spots, and a plan to beat them.</div>
-          <div className="field">
-            <label htmlFor="op-sec">Competition</label>
-            <select id="op-sec" className="pick" value={d.section} onChange={(e) => set({ section: e.target.value })}>
-              {d.choices.map((c) => <option key={c.section} value={c.section}>{c.section} · {c.matches} matches</option>)}</select>
-            {d.formats.length > 0 && <div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>{d.formats.map((f) => (
-              <button key={f} className={f === d.format ? "on" : ""} onClick={() => set({ format: f })}>{f}</button>))}</div>}
-          </div>
-          <div className="field">
-            <label htmlFor="op-mine">Your team</label>
-            <select id="op-mine" className="pick" value={d.mine} onChange={(e) => set({ mine: e.target.value })}>
-              {d.mine_opts.map((t) => <option key={t} value={t}>{t}</option>)}</select>
-            <label htmlFor="op-opp">Opponent</label>
-            <select id="op-opp" className="pick" value={d.opp} onChange={(e) => set({ opp: e.target.value })}>
-              {d.opp_opts.map((o) => <option key={o.team} value={o.team}>{o.label}</option>)}</select>
+          <div className="drops">
+            <Pick label="Competition" value={d.section} options={d.choices.map((c) => ({ v: c.section, label: c.section, note: `${c.matches} matches` }))}
+              set={(v) => set({ section: v })} />
+            {d.formats.length > 0 && <Pick label="Format" value={d.format} options={d.formats} set={(v) => set({ format: v })} />}
+            <Pick label="Your team" value={d.mine} options={d.mine_opts} set={(v) => set({ mine: v })} />
+            <Pick label="Opponent" value={d.opp} options={d.opp_opts.map((o) => ({ v: o.team, label: o.label }))} set={(v) => set({ opp: v })} />
           </div>
           <div className="note">Your team: any side here, yours first; your history against them, side by side and your best XI need your team.
             Opponent: every side here, and the teams still to come in your schedule.</div>

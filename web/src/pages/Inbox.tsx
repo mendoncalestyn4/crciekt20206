@@ -4,7 +4,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { get, post, type InboxPage } from "../api";
-import { Missing, Tile } from "../kit/base";
+import { Missing, Pick, Tile } from "../kit/base";
 import { Msg } from "../kit/fm";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
@@ -39,11 +39,11 @@ export function Inbox() {
       <Head title="Inbox" crumb={`${d.unread} new · your teams' latest news`} />
       <div className="grid">
         <Tile span={12} title={`${shown.length} message${shown.length === 1 ? "" : "s"}`} right={d.teams.length > 1 ? undefined : d.teams[0]}>
-          <div className="itabs" style={{ margin: "0 0 12px" }}>{KINDS.map(([k, l]) => (
-            <button key={k} className={k === kind ? "on" : ""} onClick={() => setKind(k)}>{l}</button>))}</div>
-          <div className="field" style={{ marginTop: 0 }}>
-            {d.teams.length > 1 && <select className="pick" value={team} onChange={(e) => setTeam(e.target.value)} aria-label="Team">
-              <option value="">All your teams</option>{d.teams.map((t) => <option key={t}>{t}</option>)}</select>}
+          <div className="drops">
+            <Pick label="Show" value={kind} options={KINDS.map(([k, l]) => ({ v: k!, label: l! }))} set={setKind} />
+            {d.teams.length > 1 && <Pick label="Team" value={team} options={[{ v: "", label: "All your teams" }, ...d.teams]} set={setTeam} />}
+          </div>
+          <div className="field">
             <button className="btn quiet" disabled={!unread.length} onClick={() => read(unread.map((m) => m.id))}>Mark all read</button>
             <span className="note" style={{ margin: 0 }}>Tap a message to mark it read; ✕ removes it. New ones have a gold dot; read ones are shaded.</span></div>
           {shown.length ? <div className="inbox" style={{ marginTop: 10 }}>{shown.map((m) => (

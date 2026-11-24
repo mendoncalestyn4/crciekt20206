@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { get, type SeasonPage } from "../api";
-import { Explain, Missing, Num, three, Tile } from "../kit/base";
+import { Explain, Missing, Num, Pick, three, Tile } from "../kit/base";
 import { f0, ord } from "../format";
 import { MonthGrid } from "../kit/calendar";
 import { TugOfWar } from "../kit/charts";
@@ -44,9 +44,7 @@ export function Season() {
         <Tile span={12} title="Pick a team">
           <div className="plain">A whole season (April to March) on one calendar: every result, and your fixtures still to come; every
             bilateral series and how it stands, and how far each competition has got this season.</div>
-          <div className="field"><label htmlFor="se-team">Team</label>
-            <select id="se-team" className="pick" value={d.team} onChange={(e) => set({ team: e.target.value })}>
-              {d.teams.map((t) => <option key={t}>{t}</option>)}</select></div>
+          <div className="drops"><Pick label="Team" value={d.team} options={d.teams} set={(v) => set({ team: v })} /></div>
         </Tile>
         {d.none ? <Tile span={12}><Missing why={d.none} /></Tile> : <>
           {d.ranks && d.ranks.rows.length > 0 && <Tile span={12} title={`Where ${d.team} rank`} right={`this season · ${d.ranks.season}`}>
@@ -60,16 +58,13 @@ export function Season() {
             {d.ranks.note && <div className="note">{d.ranks.note}</div>}</Tile>}
           <div className="itabs">{d.tabs.map((x, i) => (
             <button key={x} className={x === d.tab ? "on" : ""} onClick={() => set({ tab: i === 0 ? "" : x })}>{x}</button>))}</div>
-          {cal && (cal.none ? <Tile span={12}><Missing why={cal.none} /></Tile> : <Tile span={12} title={cal.view === "season" ? "The season" : "One month"}
-            right={<div className="itabs" style={{ margin: 0 }}>{([["season", "Whole season"], ["month", "One month"]] as const).map(([v, l]) => (
-              <button key={v} className={cal.view === v ? "on" : ""} onClick={() => set({ view: v === "season" ? "" : v })}>{l}</button>))}</div>}>
-            <div className="field">
-              {cal.view === "season" ? <><label htmlFor="se-season">Season</label>
-                <select id="se-season" className="pick" value={cal.season} onChange={(e) => set({ season: e.target.value })}>
-                  {cal.seasons.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}</select></>
-                : <><label htmlFor="se-month">Month</label>
-                  <select id="se-month" className="pick" value={cal.month} onChange={(e) => set({ month: e.target.value })}>
-                    {cal.months.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}</select></>}
+          {cal && (cal.none ? <Tile span={12}><Missing why={cal.none} /></Tile> : <Tile span={12} title={cal.view === "season" ? "The season" : "One month"}>
+            <div className="drops">
+              <Pick label="Show" value={cal.view} options={[{ v: "season", label: "Whole season" }, { v: "month", label: "One month" }]}
+                set={(v) => set({ view: v === "season" ? "" : v })} />
+              {cal.view === "season"
+                ? <Pick label="Season" value={cal.season} options={cal.seasons.map((s) => ({ v: s.key, label: s.label }))} set={(v) => set({ season: v })} />
+                : <Pick label="Month" value={cal.month} options={cal.months.map((s) => ({ v: s.key, label: s.label }))} set={(v) => set({ month: v })} />}
             </div>
             {cal.view === "season" ? <div className="cms" data-chart>{cal.grid.map((mo) => <MonthGrid key={mo.key} mo={mo} keep={keep} today={cal.today} />)}</div>
               : cal.grid[0] && <div data-chart><MonthGrid mo={cal.grid[0]} big keep={keep} today={cal.today} /></div>}

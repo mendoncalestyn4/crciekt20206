@@ -5,11 +5,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { get, type BestGames, type Finder, type MatchPage, remember } from "../api";
-import { Explain, FormatTicks, Logo, Missing, Name, PName, Tile } from "../kit/base";
+import { Drop, Explain, Logo, Missing, Name, Pick, PName, Tile } from "../kit/base";
 import { MatchSummary, Scorecard } from "../kit/blocks";
 import { ScoreRows } from "../kit/season";
 import { BestTable, ExcitementPanel, NoteBox, WicketClimb, WinChanceChart } from "../kit/match";
-import { NO_MATCHES } from "../format";
+import { fmtOf, NO_MATCHES } from "../format";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
 import { T } from "../shell/names";
@@ -51,13 +51,12 @@ export function MatchesHome() {
           <div className="plain">Narrow the list by competition or team, then type to search: a team, a date, a stage like "Final", or a result.</div>
           <div className="note">International matches are grouped by format (all Tests, all ODIs, all T20Is, World Cups included); everything else, like the
             IPL, the T20 Blast and each County Championship division, is its own competition.</div>
-          <FormatTicks all={every} on={d.ticked} set={(v) => set("section", v.length === every.length ? "All sections" : v.join("|"))} />
-          <div className="field">
-            {!all && every.length > 1 && <button className="btn quiet" onClick={() => set("section", "All sections")}>Tick every competition</button>}
-            <label htmlFor="mt-team">Team</label>
-            <select id="mt-team" className="pick" value={d.team} onChange={(e) => set("team", e.target.value === "All teams" ? "" : e.target.value)}>
-              {d.teams.map((s) => <option key={s}>{s}</option>)}</select>
-            <input className="typed" value={typed} onChange={(e) => { setTyped(e.target.value); setShown(PAGE); }} placeholder="Type to search, e.g. 'Final' or 'Kent'" aria-label="Search the matches" />
+          <div className="drops">
+            {every.length > 1 && <Drop label="Competition" all={every} on={all ? [] : d.ticked} none="Every competition" say={fmtOf}
+              set={(v) => set("section", !v.length || v.length === every.length ? "All sections" : v.join("|"))} />}
+            <Pick label="Team" value={d.team || "All teams"} options={d.teams} set={(v) => set("team", v === "All teams" ? "" : v)} />
+            <div className="drop wide"><span className="droplab">Search</span>
+              <input className="typed" value={typed} onChange={(e) => { setTyped(e.target.value); setShown(PAGE); }} placeholder="Type to search, e.g. 'Final' or 'Kent'" aria-label="Search the matches" /></div>
           </div>
           <div className="mlist">{hits.slice(0, shown).map((m) => (
             <Link key={m.id} to={`/matches/${m.id}${keep}`} className="mli">

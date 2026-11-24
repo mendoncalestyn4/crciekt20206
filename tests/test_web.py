@@ -24,7 +24,8 @@ CHROME = chrome()
 PAGES = ["/", "/inbox", "/style-guide", "/settings", "/players", "/players/J Bethell", "/players/J Bethell?view=overview",
          "/players/J Bethell?view=bowling", "/players/J Bethell?view=story", "/players/K Rabada", "/matches", "/teams", "/teams?tab=How they win", "/teams?tab=Season",
          "/teams?tab=Squad&venue=home", "/teams/England", "/teams/vs",
-         "/teams/vs?which=any", "/teams/preview", "/teams/preview?tab=About them", "/teams/preview?tab=Your best XI v them", "/teams/planner", "/teams/planner?tab=Batting order", "/teams/planner?tab=Partnerships", "/teams/rivalries", "/seasons", "/seasons?event=Indian Premier League&season=2026", "/seasons?event=T20 Blast&season=2026", "/seasons/season", "/seasons/season?view=month", "/seasons/season?team=All teams", "/seasons/season?tab=Series tracker", "/seasons/season?tab=Season progress", "/seasons/review", "/seasons/review?points=ipl", "/seasons/honours", "/seasons/honours?tab=Trophy cabinets", "/fixtures", "/leaders", "/insights", "/no-such-page"]
+         "/teams/vs?which=any", "/teams/preview", "/teams/preview?tab=About them", "/teams/preview?tab=Your best XI v them", "/teams/planner", "/teams/planner?tab=Batting order", "/teams/planner?tab=Partnerships", "/teams/rivalries", "/seasons", "/seasons?event=Indian Premier League&season=2026", "/seasons?event=T20 Blast&season=2026", "/seasons/season", "/seasons/season?view=month", "/seasons/season?team=All teams", "/seasons/season?tab=Series tracker", "/seasons/season?tab=Season progress", "/seasons/review", "/seasons/review?points=ipl", "/seasons/honours", "/seasons/honours?tab=Trophy cabinets", "/fixtures", "/leaders", "/leaders?disc=Bowling&section=ODIs|T20Is&stat=runs_saved",
+         "/leaders?pos=Openers (1-2)&view=Worst&measure=season", "/insights", "/no-such-page"]
 
 
 @pytest.fixture(scope="module")
@@ -334,7 +335,8 @@ def test_a_page_opened_by_its_address_and_the_colours_preview(browser, site):
     pg, said = open_page(browser, site, "/settings?nation=England")
     try:
         assert pg.evaluate("getComputedStyle(document.documentElement).getPropertyValue('--page').trim()") == "#eff3f9"
-        pg.select_option("#nation", "New Zealand")
+        pg.locator(".drop", has_text="Preview").locator(".dropbtn").click()   # the dropdown (your choice of 24 November)
+        pg.locator(".dropmenu .droprow button", has_text="New Zealand").click()
         pg.wait_for_url("**/settings?nation=New%20Zealand")
         pg.wait_for_function("getComputedStyle(document.documentElement).getPropertyValue('--page').trim() === '#f1f1f2'")
         pg.click("nav.rail a.nav >> text=Players")   # the preview follows you round the site
@@ -461,7 +463,8 @@ def test_the_player_page_tabs_each_show_their_own_kind(browser, site):
 
 
 def test_ticking_a_second_format_counts_both_on_the_player_page(browser, site):
-    """Your answers of 17 November: the page's formats are tick boxes; ticking a second one counts both together (the
+    """Your answers of 17 November: the page's formats can be ticked together (in a dropdown since 24 November);
+    ticking a second one counts both together (the
     address keeps them, the page says "A + B") and the ticks carry over to the next player's page."""
     live, _ = site
     many = next(p for p in live.json("/api/players")["players"] if len(p["sections"]) >= 2)
@@ -469,7 +472,8 @@ def test_ticking_a_second_format_counts_both_on_the_player_page(browser, site):
     other = next(s for s in d["sections"] if s not in d["ticked"])
     pg, said = open_page(browser, site, f"/players/{many['player']}")
     try:
-        box = pg.locator(".part .ticks label.tick").nth(d["sections"].index(other))   # in the agreed order
+        pg.locator(".part .drop .dropbtn").first.click()   # the competitions dropdown (your choice of 24 November)
+        box = pg.locator(".part .dropmenu .droprow input").nth(d["sections"].index(other))   # in the agreed order
         box.click()
         pg.wait_for_function("location.search.includes('section=')")
         pg.wait_for_selector("body[data-ready='1']")

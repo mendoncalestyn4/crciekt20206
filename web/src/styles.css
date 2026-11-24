@@ -741,3 +741,15 @@ td.bold .tn, td.bold { font-weight: 800; }
 .t.pickbar::before { border-radius: var(--r) var(--r) 0 0; }
 .t.pickbar .drops + .drops { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--edge); }
 .t.pickbar .note { margin-top: 16px; }
+/* a dropdown inside any tile: its list hangs over what's below */
+.t:has(.drop) { overflow: visible; }
+.t:has(.drop)::before { border-radius: var(--r) var(--r) 0 0; }
+.t:has(.dropmenu) { z-index: 20; }
+.drops.one { display: inline-grid; grid-template-columns: minmax(232px, 300px); margin: 2px 0 12px; }
+.field .drops.one { margin: 0; }
+.drops .drops.one { display: contents; }
+.drops + .field, .drops + .note { margin-top: 14px; }
+.drops .drop.wide { grid-column: span 2; }
+.drops.row { display: inline-grid; grid-auto-flow: column; grid-auto-columns: minmax(210px, 280px); grid-template-columns: none; }
+.drop input.typed { width: 100%; min-width: 0; flex: none; }
+.drop input.typed.num { width: 120px; }

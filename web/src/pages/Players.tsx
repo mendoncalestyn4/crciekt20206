@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { get, type ByInnings, type Each, type InningsCol, type InningsMarks, type Lines, type PlayerPage, type PlayersLanding, type Split, remember } from "../api";
-import { Explain, FormatTicks, Hero, howOf, Logo, Missing, Name, Num, PName, Sub, Tile } from "../kit/base";
+import { Explain, FormatTicks, Hero, howOf, Logo, Missing, Name, Num, Pick, PName, Sub, Tile } from "../kit/base";
 import { PercentileBars } from "../kit/blocks";
 import { RingList } from "../kit/charts";
 import { MatchWinners } from "../kit/season";
@@ -117,9 +117,9 @@ export function PlayerView() {
         <div className="part"><div className="itabs" style={{ gridColumn: "auto", margin: 0 }}>{d.tabs.map((x) => (
             <button key={x} className={x === tab ? "on" : ""} onClick={() => toTab(x)}>{x}</button>))}</div>
           <span className="tl2">{scope}</span>
-          <div className="field" style={{ marginTop: 0 }}>
+          <div className="drops row">
             <FormatTicks all={d.sections} on={d.ticked} set={(v) => set("section", v.join("|"))} />
-            <select className="pick" value={d.season} onChange={(e) => set("season", e.target.value === "All seasons" ? "" : e.target.value)} aria-label="Season">{d.seasons.map((s) => <option key={s}>{s}</option>)}</select></div>
+            <Pick label="Season" value={d.season || "All seasons"} options={d.seasons} set={(v) => set("season", v === "All seasons" ? "" : v)} /></div>
           {d.role && <span className="row2" style={{ gap: 8 }}>{[d.role.role, ...d.role.tags].map((x) => <span className="tag" key={x}>{x}</span>)}
             <span className="note" style={{ margin: 0 }}>from where they bat (usually no. {f0(d.role.usual_position)}) and how much they bowl</span></span>}
           <span className="note" style={{ margin: 0 }}>Tiles marked "every competition" cover the whole career; the rest are for {scope}: tick other formats (any ticked together are counted together) or pick a season above.</span>
@@ -377,9 +377,7 @@ function CompareSeasons({ c, section }: { c: NonNullable<PlayerPage["story"]>["c
   };
   return (
     <Tile span={12} title={`Compare two seasons · ${section}`}>
-      <div className="field"><select className="pick" value={a} onChange={(e) => setA(e.target.value)} aria-label="Season">{c.seasons.map((s) => <option key={s}>{s}</option>)}</select>
-        <span className="note" style={{ margin: 0 }}>against</span>
-        <select className="pick" value={b} onChange={(e) => setB(e.target.value)} aria-label="Against">{others.map((s) => <option key={s}>{s}</option>)}</select></div>
+      <div className="drops"><Pick label="Season" value={a} options={c.seasons} set={setA} /><Pick label="Against" value={b} options={others} set={setB} /></div>
       <table className="c" style={{ marginTop: 10 }}><thead><tr><th /><th className="r">{a}</th><th className="r">{b}</th></tr></thead>
         <tbody>{keys.map((k) => { const w = better(k, A[k]?.v ?? null, B[k]?.v ?? null); return (
           <tr key={k}><td><span className="why">{k}</span></td><td className="r"><span className="tn">{w === "a" ? "✓ " : ""}{A[k]?.text}</span></td>

@@ -1,11 +1,13 @@
 // Leaders and records (stage 3): Stat by stat, Records, Hall of fame and Rankings, one section of the menu with a chip
 // for each page (as Teams has). Every number comes from the server (server/leaderspage.py); the page only shows it.
 import { useQuery } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import { get, type StatByStat, remember } from "../api";
-import { Drop, Explain, Missing, Tile } from "../kit/base";
-import { DotSpread, RankBars } from "../kit/leaders";
+import { get, type RecordsPage, type StatByStat, remember } from "../api";
+import { Drop, Explain, MatchLink, Missing, Pick, Tile } from "../kit/base";
+import { DotSpread, PaceBars, RankBars, RecordSteps } from "../kit/leaders";
+import { BestTable } from "../kit/match";
+import { Streaks } from "../kit/season";
 import { Grid } from "../kit/teams";
 import { T } from "../shell/names";
 import { useReady } from "../ready";
@@ -137,6 +139,106 @@ export function LeadersToCome({ on, what }: { on: number; what: string }) {
       <LeadersHead on={on} crumb={LEADER_PAGES[on]!.label} />
       <div className="grid"><Tile span={12} title="Coming in stage 3"><div className="plain">{what}</div>
         <div className="plain">Until then the current site has it: start it with <b>Start Stats Pack.bat</b>.</div></Tile></div>
+    </>
+  );
+}
+
+const REC_KEYS = ["section", "season", "top", "team", "record"];
+
+/** Records (stage 3): the record books for the competitions picked, the best stand for each wicket, the best games
+ *  ever, one team's streaks and every team's longest runs, and the record timeline. */
+export function Records() {
+  const { career, noCareer, nation } = useShell();
+  const [params] = useSearchParams();
+  const go = useNavigate();
+  const keep = nation ? `?nation=${encodeURIComponent(nation)}` : "";
+  const want = Object.fromEntries(REC_KEYS.map((k) => [k, params.get(k) ?? ""]));
+  const qs = REC_KEYS.filter((k) => want[k]).map((k) => `${k}=${encodeURIComponent(want[k]!)}`).join("&");
+  const q = useQuery({ queryKey: ["records", qs, career?.name], enabled: Boolean(career), retry: false,
+    queryFn: () => get<RecordsPage>(`/api/records?${qs}`), placeholderData: (was) => was });
+  useReady(Boolean(q.data || q.error || noCareer), qs);
+  const [open, setOpen] = useState<Set<number>>(new Set());
+  const set = (changes: Record<string, string>) => {
+    if (changes.section) remember({ section: changes.section });
+    const next: Record<string, string> = { ...want, ...changes };
+    if ("section" in changes) Object.assign(next, { season: "", team: "", record: "" });
+    if (nation) next.nation = nation;
+    go(`/leaders/records?${new URLSearchParams(Object.entries(next).filter(([, v]) => v)).toString()}`);
+  };
+  const head = <LeadersHead on={1} crumb="Records · the record books" />;
+  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career on the current site for now.</div></Tile></div></>;
+  if (q.error) return <>{head}<div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
+  if (!q.data) return <>{head}<div className="empty">Opening the record books…</div></>;
+  const d = q.data;
+  if (!d.choices.length) return <>{head}<div className="grid"><Tile span={12}><Missing why={d.none} /></Tile></div></>;
+  const tl = d.timeline;
+  return (
+    <>
+      {head}
+      <div className="grid">
+        <Tile span={12} className="pickbar">
+          <div className="drops">
+            <Drop label="Competition" all={d.choices.map((c) => c.section)} on={d.ticked} set={(v) => set({ section: v.join("|") })} keepOne
+              note={(x) => `${d.choices.find((c) => c.section === x)?.matches ?? ""} matches`} />
+            <Pick label="Season" value={d.season || "All seasons"} options={["All seasons", ...d.seasons]} set={(v) => set({ season: v === "All seasons" ? "" : v })} />
+            <Pick label="Show" value={d.top} options={d.tops.map((x) => ({ v: x, label: `Top ${x}` }))} set={(v) => set({ top: v })} />
+          </div>
+          <div className="note">The best (and worst) ever in the competitions picked; several are counted together. Anything set in your 10 most recent
+            matches is marked 🆕.</div>
+        </Tile>
+        {d.pace && <Tile span={12} title={d.pace.title}>
+          <div className="sub" style={{ gridTemplateColumns: "1fr 1fr" }}>{d.pace.parts.map((p) => (
+            <div key={p.what}>{p.none ? <div className="plain">{p.none}</div> : <>
+              <div className="glabel">Projected season {p.what}</div>
+              <PaceBars rows={p.rows ?? []} record={p.record ?? null} />
+              <Explain is_={p.is_} best={p.best} best_label={p.best_label} for_={p.for_ ?? ""} /></>}</div>))}</div>
+          <div className="note">{d.pace.note}</div>
+        </Tile>}
+        {(d.groups ?? []).map((g) => <RecordGroup key={g.group} g={g} keep={keep} />)}
+        {d.stands && d.stands.length > 0 && <Tile span={12} title="The best stand for each wicket" right="click a wicket for its top 5">
+          <div className="scrollx"><table className="c"><thead><tr><th>Wicket</th><th className="r">Stand</th><th>Batters</th><th>Team</th><th>Against</th><th>Date</th><th /></tr></thead>
+            <tbody>{d.stands.flatMap((w) => w.rows.filter((_, i) => i === 0 || open.has(w.wicket)).map((r, i) => (
+              <tr key={`${w.wicket}-${i}`} className={i ? "dimrow" : ""}>
+                <td>{i === 0 ? <b>{w.wicket}{["st", "nd", "rd"][w.wicket - 1] ?? "th"}</b> : <span className="why">{r.place}.</span>}</td>
+                <td className="r"><span className="tn">{r.runs}</span></td><td><span className="why"><T>{r.who}</T></span></td>
+                <td><span className="why">{r.team}</span></td><td><span className="why">{r.against}</span></td>
+                <td><MatchLink id={r.id} className="lk">{r.date}</MatchLink></td>
+                <td>{i === 0 && w.rows.length > 1 && <button className="btn quiet sm" onClick={() => setOpen((o) => { const n = new Set(o); if (n.has(w.wicket)) n.delete(w.wicket); else n.add(w.wicket); return n; })}>
+                  {open.has(w.wicket) ? "Hide" : "Show top 5"}</button>}</td></tr>)))}</tbody></table></div>
+          <div className="note">From the fall of wickets; * means unbroken at the end of the innings. Equal stands share a place.</div>
+        </Tile>}
+        {d.games && <Tile span={12} title="The best games ever" right="by the excitement rating, out of 10">
+          {d.games.length ? <BestTable rows={d.games} showSection={d.ticked.length > 1} keep={keep} /> : <Missing why="No rated games here yet." />}
+          <div className="note">Each game is rated within its own competition: how close the finish was, any comeback, what was at stake and the big moments.</div>
+        </Tile>}
+        <Tile span={12} title={`Streaks · ${d.team}`}>
+          <div className="drops"><Pick label="Team" value={d.team} options={d.teams} set={(v) => set({ team: v })} /></div>
+          {d.streaks ? <><Streaks cal={d.streaks} /><Explain is_={d.streaks.is_} best={d.streaks.best} best_label={d.streaks.best_label} for_={d.streaks.for_} /></>
+            : <Missing why="No matches here yet." />}
+        </Tile>
+        {d.runs && <Tile span={12} title="Every team's longest runs"><Grid t={d.runs} />{d.runs.note && <div className="note">{d.runs.note}</div>}</Tile>}
+        {tl && <Tile span={12} title="Record timeline">
+          {tl.none ? <Missing why={tl.none} /> : <>
+            <div className="drops"><Pick label="Record" value={tl.pick ?? ""} options={tl.names} set={(v) => set({ record: v })} /></div>
+            <RecordSteps points={tl.points ?? []} end={tl.end ?? ""} unit={tl.unit ?? "runs"} />
+            <Explain is_={tl.is_} best={tl.best} best_label={tl.best_label} for_={tl.for_ ?? ""} />
+            {tl.table && <Grid t={tl.table} keep={keep} />}</>}
+        </Tile>}
+        {d.caption && <Tile span={12}><div className="note" style={{ marginTop: 0 }}>{d.caption}</div></Tile>}
+      </div>
+    </>
+  );
+}
+
+function RecordGroup({ g, keep }: { g: NonNullable<RecordsPage["groups"]>[number]; keep: string }) {
+  return (
+    <>
+      <div className="itabs" style={{ marginTop: 6 }}><span className="tl2">{g.group}</span></div>
+      {g.tables.map((t) => (
+        <Tile key={t.title} span={t.short ? 6 : 12} title={t.title}>
+          <Grid t={t} keep={keep} />
+          {t.near && <div className="note"><T>{t.near}</T></div>}
+        </Tile>))}
     </>
   );
 }

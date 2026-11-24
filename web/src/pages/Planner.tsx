@@ -4,7 +4,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router";
 import { get, type GridT, type PlannerPage, remember } from "../api";
-import { Missing, Tile } from "../kit/base";
+import { Missing, Pick, Tile } from "../kit/base";
 import { Grid } from "../kit/teams";
 import { useReady } from "../ready";
 import { Head, useShell } from "../shell/Shell";
@@ -56,16 +56,12 @@ export function Planner() {
       <div className="grid">
         <Tile span={12} title="Pick a competition and a team">
           <div className="plain">Everything here is for the next game: the numbers come from this competition only, and the season you pick.</div>
-          <div className="field">
-            <label htmlFor="pl-sec">Competition</label>
-            <select id="pl-sec" className="pick" value={d.section} onChange={(e) => set({ section: e.target.value })}>
-              {d.choices.map((c) => <option key={c.section} value={c.section}>{c.section} · {c.matches} matches</option>)}</select>
-            <label htmlFor="pl-season">Season</label>
-            <select id="pl-season" className="pick" value={d.season} onChange={(e) => set({ season: e.target.value === "All seasons" ? "" : e.target.value })}>
-              {["All seasons", ...(ch?.seasons ?? [])].map((s) => <option key={s}>{s}</option>)}</select>
-            {d.teams.length > 0 && <><label htmlFor="pl-team">Team</label>
-              <select id="pl-team" className="pick" value={d.team} onChange={(e) => set({ team: e.target.value })}>
-                {d.teams.map((t) => <option key={t} value={t}>{t}</option>)}</select></>}
+          <div className="drops">
+            <Pick label="Competition" value={d.section} options={d.choices.map((c) => ({ v: c.section, label: c.section, note: `${c.matches} matches` }))}
+              set={(v) => set({ section: v })} />
+            <Pick label="Season" value={d.season || "All seasons"} options={["All seasons", ...(ch?.seasons ?? [])]}
+              set={(v) => set({ season: v === "All seasons" ? "" : v })} />
+            {d.teams.length > 0 && <Pick label="Team" value={d.team} options={d.teams} set={(v) => set({ team: v })} />}
           </div>
           {d.tip && <div className="note">{d.tip}</div>}
         </Tile>
@@ -75,16 +71,15 @@ export function Planner() {
           {d.tab === "Qualification" && b && (b.none ? <Tile span={12} title="Qualification"><div className="plain"><T>{b.none}</T></div></Tile>
             : m.qualification ? <Tile span={12} title="Qualification"><Missing why={m.qualification} /></Tile>
             : b.qualification && <Tile span={12} title={`Qualification · ${b.qualification.event}`}>
-              <div className="field">
-                {b.qualification.events.length > 1 && <><label htmlFor="pl-ev">Competition</label>
-                  <select id="pl-ev" className="pick" value={b.qualification.event} onChange={(e) => set({ event: e.target.value })}>
-                    {b.qualification.events.map((e) => <option key={e}>{e}</option>)}</select></>}
-                <label htmlFor="pl-games">League games each</label>
-                <input id="pl-games" className="typed num" type="number" min={1} max={60} value={b.qualification.games}
-                  onChange={(e) => set({ games: e.target.value })} />
-                <label htmlFor="pl-places">Teams going through</label>
-                <input id="pl-places" className="typed num" type="number" min={1} max={16} value={b.qualification.places}
-                  onChange={(e) => set({ places: e.target.value })} />
+              <div className="drops">
+                {b.qualification.events.length > 1 && <Pick label="Competition" value={b.qualification.event} options={b.qualification.events}
+                  set={(v) => set({ event: v })} />}
+                <div className="drop"><label className="droplab" htmlFor="pl-games">League games each</label>
+                  <input id="pl-games" className="typed num" type="number" min={1} max={60} value={b.qualification.games}
+                    onChange={(e) => set({ games: e.target.value })} /></div>
+                <div className="drop"><label className="droplab" htmlFor="pl-places">Teams going through</label>
+                  <input id="pl-places" className="typed num" type="number" min={1} max={16} value={b.qualification.places}
+                    onChange={(e) => set({ places: e.target.value })} /></div>
               </div>
               {b.qualification.none ? <Missing why={b.qualification.none} /> : <>
                 {b.qualification.line && <div className="plain" style={{ marginTop: 12 }}><b><T>{b.qualification.line}</T></b></div>}

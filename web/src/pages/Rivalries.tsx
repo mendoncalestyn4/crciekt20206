@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router";
 import { get, type LeaderRow, type RivalriesPage, remember } from "../api";
-import { Explain, FormatTicks, Missing, PName, Tile } from "../kit/base";
+import { Explain, FormatTicks, Missing, Pick, PName, Tile } from "../kit/base";
 import { Grid } from "../kit/teams";
 import { T } from "../shell/names";
 import { useReady } from "../ready";
@@ -56,11 +56,7 @@ export function Rivalries() {
           {d.table && <Tile span={12} title="The most played rivalries">
             <Grid t={d.table} keep={keep} />{d.table.note && <div className="note">{d.table.note}</div>}</Tile>}
           <Tile span={12} title="One rivalry close up">
-            <div className="field">
-              <label htmlFor="rv-pick">Rivalry</label>
-              <select id="rv-pick" className="pick" value={d.pick} onChange={(e) => set({ pick: e.target.value })}>
-                {d.pairs.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}</select>
-            </div>
+            <div className="drops"><Pick label="Rivalry" value={d.pick} options={d.pairs.map((p) => ({ v: p.key, label: p.label }))} set={(v) => set({ pick: v })} /></div>
           </Tile>
           {c && <>
             {c.streak && <Tile span={12} title={`🔥 Streaks · ${c.a} v ${c.b}`}>

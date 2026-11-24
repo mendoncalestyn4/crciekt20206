@@ -9,6 +9,7 @@ answers of 13 and 19 November)."""
 from __future__ import annotations
 
 import numpy as np
+import pandas as pd
 
 from ccstats import analysis as A
 from ccstats import deep as D
@@ -273,3 +274,185 @@ def _figures(career, scope, b, shown, pool, disc, mine, seasons) -> dict:
                     "Pick one season to see each figure against the season before."))
     t["title"] = f"Full figures for the players ranked above · sorted by {stat.label.lower()}"
     return t
+
+
+# --------------------------------------------------------------------------- Records
+RECORD_GROUPS = [("Team", ["Highest team totals", "Lowest completed totals", "Biggest wins by runs", "Innings wins"]),
+                 ("Batting", ["Highest individual scores", "Most runs in a season", "Most sixes in an innings",
+                              "Highest partnerships"]),
+                 ("Bowling", ["Best bowling in an innings", "Best bowling in a match", "Most wickets in a season"])]
+RECORD_TOPS = ("5", "10", "20")
+
+
+def records_page(career, q: dict, mine: list[str]) -> dict:
+    """The record books for the competitions picked (the current site's Records page, views/records.py), with what
+    stage 3 adds (your answers of 13 November): the best stand for each wicket, the best games ever by the excitement
+    rating, one team's streaks and every team's longest runs."""
+    ch = choices(career)
+    if not ch:
+        return SG.clean(dict(choices=[], none=SG.NO_MATCHES))
+    every = [c["section"] for c in ch]
+    ticked = [s for s in every if s in set(secs_of(q.get("section", "")))] or [every[0]]
+    m = career.matches
+    here = m[m.section.isin(ticked)]
+    seasons = sorted(map(str, here.season.unique()), reverse=True)
+    season = q.get("season", "") if q.get("season", "") in set(seasons) else ""
+    top = q.get("top") if q.get("top") in RECORD_TOPS else "10"
+    ids = tuple(sorted(Scope(sections=ticked, seasons=[season] if season else []).match_ids(m)))
+    teams = sorted(set(here.home) | set(here.away))
+    team = q.get("team", "") if q.get("team", "") in set(teams) else next((t for t in mine if t in set(teams)), teams[0] if teams else "")
+    body = kept(career, ("records", ids, top), lambda: _records(career, ids, int(top), ticked, season))
+    extra = kept(career, ("records_team", ids, team), lambda: _streaks(career, ids, team, ticked, season))
+    timeline = kept(career, ("records_timeline", ids, q.get("record", "")),
+                    lambda: _timeline(career, ids, q.get("record", ""), ticked, season))
+    return SG.clean(dict(choices=[dict(section=c["section"], matches=c["matches"]) for c in ch], ticked=ticked,
+                         section="|".join(ticked), seasons=seasons, season=season, tops=list(RECORD_TOPS), top=top,
+                         teams=teams, team=team, **body, **extra, timeline=timeline))
+
+
+def _records(career, ids, top: int, ticked, season) -> dict:
+    from ccstats import extras as E
+    from ccstats import records as RC
+    from ccstats import seasonal as SN
+    m = career.matches
+    recs = RC.records(career, ids, top=top)
+    fresh = set(RC.recent_sources(career))
+    where = " + ".join(ticked) + (f" {season}" if season else "")
+    out: dict = dict(where=where)
+    groups = []
+    for group, names in RECORD_GROUPS:
+        tables = []
+        for name in names:
+            t = recs.get(name)
+            if t is None or t.empty:
+                continue
+            per_season = "season" in name
+            cols = ["#", "Who", "Record"] + ([] if per_season else ["Against", "Date"])
+            rows = [[str(r["rank"]), f"{r.holder} 🆕" if r.source in fresh else str(r.holder), str(r.value)]
+                    + ([] if per_season else [r.against or "", f"{r.date:%d %b %Y}"]) for _, r in t.iterrows()]
+            g = table(cols, rows, num=[0], links=None if per_season else list(t.match_id))
+            near = SN.near_miss(name, t)
+            g.update(title=name, near=(("🤝 " if near.startswith("shared") else "😬 Near miss · ") + near) if near else "",
+                     short=per_season)
+            g["links"] = [] if per_season else list(t.match_id)
+            tables.append(g)
+        if tables:
+            groups.append(dict(group=group, tables=tables))
+    out["groups"] = groups
+    out["caption"] = ("Equal records share a place. 🆕 set in your 10 most recent matches. 😬 Near miss: the closest "
+                      "anyone else has come (it can be the record holder's own next best). Partnerships come from the "
+                      "fall of wickets; * means unbroken at the end of the innings. The fastest fifties and hundreds "
+                      "can't be worked out because scorecards don't record when each run was scored.")
+    # on pace for: one competition, its season still going
+    out["pace"] = None
+    if len(ticked) == 1 and not season:
+        info = E.season_in_progress(career, ticked[0])
+        pace = E.on_pace(career, ticked[0])
+        if info is not None and len(pace):
+            cur, now, full = info
+            parts = []
+            for what in ("runs", "wickets"):
+                p = pace[pace.what == what].head(8)
+                if p.empty:
+                    parts.append(dict(what=what, none=f"Nobody has played enough yet to project {what}."))
+                    continue
+                p0, rec = p.iloc[0], p.iloc[0].record
+                parts.append(dict(
+                    what=what, record=float(rec) if rec == rec and rec else None,
+                    rows=[dict(player=r.player, team=r.team, value=int(r.projected), now=int(r.so_far), matches=int(r.matches),
+                               beats=bool(r.beats_record), note=f"now {int(r.so_far)} in {int(r.matches)} matches · "
+                               f"record: {r.record_holder or '–'}") for r in p.itertuples()],
+                    **SG.lines(f"Each player's projected {what} for {ticked[0]} {cur}, against the season record (the "
+                               "dashed line).",
+                               f"{p0.player}, on course for {int(p0.projected)} (now {int(p0.so_far)} in {int(p0.matches)} "
+                               "matches)" + (f", {(p0.projected - rec) / rec * 100:+.0f}% on the record of {int(rec)}"
+                                             if rec == rec and rec else ""),
+                               f"Who could break the season {what} record if they keep this up.", best_label="On course for most")))
+            out["pace"] = dict(title=f"On pace for · {ticked[0]} {cur} is under way ({now} of about {full} matches played)",
+                               parts=parts, note="Projected = what they have so far, per match, times the number of "
+                                                 "matches their team played last season. 🔥 = on course to break the "
+                                                 "season record (the dashed line).")
+    # the best stand for each wicket (answer 8)
+    st = L.stands_by_wicket(career, ids, top=5)
+    out["stands"] = [dict(wicket=int(w), rows=[dict(
+        place=int(r.place), runs=f"{int(r.runs)}{'*' if r.unbroken else ''}",
+        who=f"{r.batter1} & {r.batter2}" if r.known else "(the card doesn't say who)", team=r.team,
+        against=r.opposition, date=f"{r.date:%d %b %Y}", id=r.match_id) for r in g.itertuples()])
+        for w, g in st.groupby("wicket")]
+    # the best games ever, by the excitement rating (answer 9)
+    from . import matchpage as MP
+    rated = [MP.ratings(career, s) for s in ticked]
+    d = pd.concat(rated, ignore_index=True) if rated else pd.DataFrame()
+    if len(d):
+        d = d[d.match_id.isin(set(ids))].sort_values(["rating", "date"], ascending=[False, False]).head(top)
+        meta = m.set_index("match_id")
+        out["games"] = [SG.clean(dict(id=r.match_id, rating=r.rating, rank=r.rank, of=r.of, home=r.home, away=r.away,
+                                      date=r.date, section=r.section, event=meta.event[r.match_id],
+                                      name=MP.name_of(meta.loc[r.match_id]), result=r.result, why=r.why, finish=r.finish,
+                                      comeback=r.comeback, stakes=r.stakes, show=r.show)) for r in d.itertuples()]
+    else:
+        out["games"] = []
+    # every team's longest runs (answer 10)
+    lr = L.longest_runs(career, ids)
+    day = lambda x: f"{x:%d %b %Y}" if x is not None and x == x else ""   # noqa: E731
+    span = lambda a, b: day(a) if day(a) == day(b) else f"{day(a)} – {day(b)}"   # noqa: E731
+    word = dict(W="won", L="lost", D="drawn", T="tied", NR="no result")
+    out["runs"] = table(["Team", "Played", "Won", "Lost", "Longest winning run", "From – to", "Longest losing run",
+                         "From – to", "Run now"],
+                        [[r.team, int(r.played), int(r.won), int(r.lost), int(r.win_run),
+                          span(r.win_from, r.win_to) if r.win_run else "–", int(r.lose_run),
+                          span(r.lose_from, r.lose_to) if r.lose_run else "–",
+                          f"{int(r.now_run)} {word.get(r.now_outcome, '')}" if r.now_run else "–"]
+                         for r in lr.itertuples()], num=[1, 2, 3, 4, 6])
+    out["runs"]["note"] = ("Runs: the same result in a row, the matches in the order played; a draw, a tie or a no result "
+                           "ends a run. Equal runs: the earlier one is shown.")
+    return out
+
+
+def _streaks(career, ids, team, ticked, season) -> dict:
+    """One team's streaks chart (opening on yours): every match in order, the longest runs marked, the run it's on."""
+    if not team:
+        return dict(streaks=None)
+    rs = SG.in_played_order(career, SG.results(career, team, ids))
+    if not rs:
+        return dict(streaks=None)
+    runs = SG.runs_of([r["outcome"] for r in rs])
+    w = max((r for r in runs if r["o"] == "W"), key=lambda r: (r["end"] - r["start"], -r["start"]), default=None)
+    where = " + ".join(ticked) + (f" {season}" if season else "")
+    return dict(streaks=dict(results=rs, streaks=runs, **SG.lines(
+        f"Every {team} match in {where} in the order played, the longest winning and losing runs marked.",
+        (f"{w['end'] - w['start'] + 1} in a row, {SG._day(rs[w['start']]['date'])} to {SG._day(rs[w['end']]['date'])}"
+         if w else "No wins yet."),
+        "Form at a glance: whether they're on a run, and how long their best and worst runs lasted.",
+        best_label="Longest winning run")))
+
+
+def _timeline(career, ids, pick: str, ticked, season) -> dict:
+    """Record timeline: every time a record was set or beaten, the line flat for as long as it stood."""
+    from ccstats import seasonal as SN
+    tl = SN.record_timeline(career, ids)
+    names = [n for n in SN.TIMELINE if n in set(tl.record)]
+    if not names:
+        return dict(names=[], none="No records here yet.")
+    pick = pick if pick in names else names[0]
+    steps = tl[tl.record == pick].reset_index(drop=True)
+    unit = SN.RECORD_UNIT.get(pick, "runs")
+    first, now = steps.iloc[0], steps.iloc[-1]
+    beaten = len(steps) - 1
+    where = " + ".join(ticked) + (f" {season}" if season else "")
+    end = career.matches[career.matches.match_id.isin(set(ids))].date.max()
+    rows = [[int(r.step) + 1, r.holder, r.value, r.team if r.team != r.holder else "", r.against or "",
+             f"{r.date:%d %b %Y}", f"{r.until:%d %b %Y}" if pd.notna(r.until) else "still stands"]
+            for r in steps.itertuples()]
+    t = table(["#", "Holder", "Record", "Team", "Against", "Set on", "Beaten on"], rows, num=[0],
+              links=list(steps.match_id))
+    return dict(names=names, pick=pick, unit=unit, end=f"{end:%Y-%m-%d}",
+                points=[dict(date=f"{r.date:%Y-%m-%d}", y=SN.record_number(pick, r.sort), label=str(r.value),
+                             holder=str(r.holder), id=r.match_id) for r in steps.itertuples()],
+                table=t, **SG.lines(
+                    f"Every time the record for {pick.lower()} in {where} was set or beaten; the flat line is how long it "
+                    "stood.", f"{now.value} by {now.holder}, set on {now.date:%d %b %Y}",
+                    "The history of the record. Equalling a record doesn't count as beating it.", best_label="Stands at"),
+                shows=f"{pick} in {where}: first set at {first.value} by {first.holder} on {first.date:%d %b %Y}, beaten "
+                      f"{beaten} time{'' if beaten == 1 else 's'} since. It stands at {now.value} by {now.holder}, set on "
+                      f"{now.date:%d %b %Y}.")
