@@ -964,6 +964,31 @@ what the scorecards record (no overs for wickets, no grounds, no toss).
 26. Firsts timeline: **your team's and your players' firsts first**, with a switch for any team.
 27. Every list, dropdown and tick-box row with formats: **Tests, ODIs, T20Is first, then the rest** (the standing rule;
     checked on every page 19 November: all 10 such lists in order).
+**More answers (24 November, before building):**
+28. Rankings: a player's score is his marks out of 10 for each series in the last two seasons, **recent series
+    counting more and older ones fading** (a series a year old counts half), as the official rankings do.
+29. The old "International rating" tab is **replaced by the format tick boxes on Rankings**: tick Tests, ODIs and T20Is
+    for one combined list, the format a player plays most counting most.
+30. Firsts timeline, what counts. **Your team:** first match and first win in each format; first series win; first
+    title; first total over 300 (ODI), 200 (T20) or 500 (Test); first win by 100+ runs or 10 wickets; first tie or
+    super-over win; and (picked from my extra ideas) first win against each opponent; first series win away, and in
+    each country; first clean sweep; first 300+ chase in an ODI and first 300+ fourth-innings chase in a Test; first
+    time bowling a side out for under 100; first final reached; first time top of the team ratings. **Your players:**
+    first fifty, hundred and double hundred; first five-for; first 10 wickets in a match; first Player of the Match;
+    and (picked) first hundred in each format; first hundred on debut; first 150; first 100 and first 200
+    partnership; first 1,000 runs or 50 wickets in a format; first Player of the Series; first time No. 1 in the
+    rankings; first Hall of fame entry. Not picked: first innings win in a Test; a hundred and a five-for in the same
+    match.
+31. Hall of fame: **a "next in" list** under each list: the closest players and what each still needs.
+32. Batter v bowler **follows the format tick boxes** (ticking Tests and ODIs adds their meetings up); the IPL and the
+    other leagues stay on their own ("do what you prefer").
+33. Screenshots **once, when the whole stage is finished and fixed**.
+34. Building order: Leaders (Stat by stat, Records, Hall of fame, Rankings), then Insights and Analytics, then Player
+    stories and Compare players, then Team leaders.
+Decided by me, told to you: rankings movement is since before the competition's last match; The Hundred uses the T20
+thresholds; Hall of fame all-rounders (1,000 runs and 50 wickets) count inside one competition; Teams ranked by runs
+and wickets gets the tick boxes; Compare players with four picked says "remove one first" for "plays like"; every new
+page joins the search and the background preparation.
 
 Decided by me, told to you (14 November): the pages sit where section 4's site map puts them (Stat by stat, Records,
 Hall of fame and Rankings under Leaders and records; Insights and Analytics under Insights; Compare players and Player
