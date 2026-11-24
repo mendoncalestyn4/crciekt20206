@@ -49,6 +49,9 @@ export function DotSpread({ d, best }: { d: SbsDot; best: boolean }) {
     const ax = (name: string, extra: object) => ({ type: "value", name, nameLocation: "middle", ...L.AX,
       nameTextStyle: { color: t.dim, fontFamily: "Inter", fontSize: ts(11) }, ...extra });
     const dot = (p: SbsDot["points"][number]) => ({ value: [p.x, p.y], name: p.player, d: p });
+    const named = d.points.filter((p) => p.named || p.hi).sort((a, b) => b.y - a.y);
+    const yspan = Math.ceil(ymax) - Math.floor(ymin);
+    const slot = (k: number): [number, number] => [xmax * 0.02, Math.floor(ymin) + yspan * (0.95 - k * 0.075)];
     const tip = (p: { data: { d?: SbsDot["points"][number] } }) => { const x = p.data?.d;
       return x ? `<b>${x.player}</b> · ${x.team}<br/>${d.x_label}: ${show(x.x, 0)} · ${d.y_label}: ${show(x.y, d.y_label === "Runs above average" || d.y_label === "Runs saved" ? 1 : 0)}` : ""; };
     return {
@@ -60,11 +63,16 @@ export function DotSpread({ d, best }: { d: SbsDot; best: boolean }) {
         ...shade,
         ...(line.length ? [{ type: "line", silent: true, symbol: "none", data: line, lineStyle: { color: t.dim, type: "dashed", width: 1.5 }, z: 1 }] : []),
         { type: "scatter", symbolSize: 9, z: 2, itemStyle: { color: t.grey, opacity: 0.55 }, data: d.points.filter((p) => !p.ranked && !p.hi).map(dot) },
-        { type: "scatter", symbolSize: 13, z: 3, itemStyle: { color: col, borderColor: t.tile, borderWidth: 2 }, labelLayout: { moveOverlap: "shiftY" },
-          data: d.points.filter((p) => p.ranked && !p.hi).map((p) => ({ ...dot(p),
-            label: p.named ? { show: true, position: "top", formatter: p.player, color: t.ink, fontFamily: "Bebas Neue", fontSize: ts(13) } : undefined })) },
+        { type: "scatter", symbolSize: 13, z: 3, itemStyle: { color: col, borderColor: t.tile, borderWidth: 2 },
+          data: d.points.filter((p) => p.ranked && !p.hi).map(dot) },
         { type: "scatter", symbolSize: 17, z: 4, itemStyle: { color: t.led, borderColor: t.tile, borderWidth: 2, ...L.glow(alpha(t.led, 0.6)) },
-          data: d.points.filter((p) => p.hi).map((p) => ({ ...dot(p), label: { show: true, position: "top", formatter: p.player, color: t.led, fontFamily: "Bebas Neue", fontSize: ts(14) } })) },
+          data: d.points.filter((p) => p.hi).map(dot) },
+        // the names in a column at the top left, highest first, each with a thin line to its dot, so two dots close
+        // together never put their names on top of each other
+        ...named.map((p, k) => ({ type: "line", silent: true, symbol: "none", z: 1, data: [slot(k), [p.x, p.y]],
+          lineStyle: { color: p.hi ? t.led : col, width: 1, opacity: 0.6 } })),
+        { type: "scatter", silent: true, symbolSize: 0, z: 5, data: named.map((p, k) => ({ value: slot(k),
+          label: { show: true, position: "right", formatter: p.player, color: p.hi ? t.led : t.ink, fontFamily: "Bebas Neue", fontSize: ts(13) } })) },
       ],
     };
   }, [t, d, best]);
@@ -100,15 +108,17 @@ export function RecordSteps({ points, end, unit }: { points: { date: string; y: 
     const L = look(t), last = points[points.length - 1];
     const line = [...points.map((p) => [p.date, p.y]), ...(last && end > last.date ? [[end, last.y]] : [])];
     return {
-      grid: { left: 60, right: 30, top: 24, bottom: 36 },
+      grid: { left: 70, right: 40, top: 40, bottom: 36 },
       xAxis: { type: "time", ...L.AX },
-      yAxis: { type: "value", name: unit, nameTextStyle: { color: t.dim, fontFamily: "Inter", fontSize: ts(11) }, ...L.AX, scale: true },
+      yAxis: { type: "value", name: unit, nameLocation: "middle", nameRotate: 90, nameGap: 50, boundaryGap: ["8%", "18%"],
+        nameTextStyle: { color: t.dim, fontFamily: "Inter", fontSize: ts(11) }, ...L.AX, scale: true },
       tooltip: { ...L.TT, trigger: "item", formatter: (p: { data: { d?: (typeof points)[number] } }) => { const d = p.data?.d; return d ? `<b>${d.label}</b> by ${d.holder}<br/>${d.date}` : ""; } },
       series: [
         { type: "line", step: "end", silent: true, symbol: "none", data: line, lineStyle: { color: t.blue, width: 3 } },
         { type: "scatter", symbolSize: 14, z: 3, itemStyle: { color: t.led, borderColor: t.tile, borderWidth: 2 },
-          data: points.map((p) => ({ value: [p.date, p.y], d: p, match: p.id })),
-          label: { show: points.length <= 12, position: "top", formatter: (p: { data: { d: (typeof points)[number] } }) => p.data.d.label, color: t.ink, fontFamily: "Inter", fontSize: ts(10) } },
+          // the record as it stands is named; every earlier one says its figures when you point at it
+          data: points.map((p, i) => ({ value: [p.date, p.y], d: p, match: p.id,
+            label: { show: i === points.length - 1, position: "top", formatter: p.label, color: t.ink, fontFamily: "Inter", fontWeight: 700, fontSize: ts(11) } })) },
       ],
     };
   }, [t, points, end, unit]);

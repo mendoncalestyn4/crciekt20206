@@ -655,7 +655,7 @@ def _rank_teams(career, sec, teams, team, mine) -> dict:
                    "sides towards each other. Points are only swapped, so the average stays at 1500.")
     ids = career.matches[career.matches.section == sec].match_id
     ur = TD.unit_ratings(career, ids)
-    out["units"] = table(["Team", "Batting", "#", "Bowling", "#", "Matches"],
+    out["units"] = table(["Team", "Batting", "#", "Bowling", "#", "Mat"],
                          [[r.team, f"{r.batting:.0f}", int(r.batting_rank), f"{r.bowling:.0f}", int(r.bowling_rank), int(r.matches)]
                           for r in ur.itertuples()], num=[1, 2, 3, 4, 5], hi=[r.team in set(mine) for r in ur.itertuples()])
     out["units"]["note"] = ("Batting: runs per wicket against what each opponent's bowlers usually allow (and, in "

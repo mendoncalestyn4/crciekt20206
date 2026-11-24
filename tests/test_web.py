@@ -25,7 +25,10 @@ PAGES = ["/", "/inbox", "/style-guide", "/settings", "/players", "/players/J Bet
          "/players/J Bethell?view=bowling", "/players/J Bethell?view=story", "/players/K Rabada", "/matches", "/teams", "/teams?tab=How they win", "/teams?tab=Season",
          "/teams?tab=Squad&venue=home", "/teams/England", "/teams/vs",
          "/teams/vs?which=any", "/teams/preview", "/teams/preview?tab=About them", "/teams/preview?tab=Your best XI v them", "/teams/planner", "/teams/planner?tab=Batting order", "/teams/planner?tab=Partnerships", "/teams/rivalries", "/seasons", "/seasons?event=Indian Premier League&season=2026", "/seasons?event=T20 Blast&season=2026", "/seasons/season", "/seasons/season?view=month", "/seasons/season?team=All teams", "/seasons/season?tab=Series tracker", "/seasons/season?tab=Season progress", "/seasons/review", "/seasons/review?points=ipl", "/seasons/honours", "/seasons/honours?tab=Trophy cabinets", "/fixtures", "/leaders", "/leaders?disc=Bowling&section=ODIs|T20Is&stat=runs_saved",
-         "/leaders?pos=Openers (1-2)&view=Worst&measure=season", "/insights", "/no-such-page"]
+         "/leaders?pos=Openers (1-2)&view=Worst&measure=season", "/leaders/records",
+         "/leaders/records?section=ODIs|T20Is&season=2026&top=5", "/leaders/rankings", "/leaders/rankings?tab=Rankings history",
+         "/leaders/rankings?tab=Team ratings&section=ODIs", "/leaders/rankings?tab=Teams by runs and wickets&section=ODIs|T20Is",
+         "/leaders/rankings?section=Tests|ODIs|T20Is&what=all-round", "/insights", "/no-such-page"]
 
 
 @pytest.fixture(scope="module")
