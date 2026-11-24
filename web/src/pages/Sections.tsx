@@ -4,20 +4,20 @@ import { Tile } from "../kit/base";
 import { useReady } from "../ready";
 import { Head, SECTIONS } from "../shell/Shell";
 
-export const PLANS: Record<string, { stage: string; crumb: string; items: string[]; from: string }> = {
+export const PLANS: Record<string, { stage: string; crumb: string; items: string[]; from: string; title?: string }> = {
   "/fixtures": { stage: "Stage 4", crumb: "Your schedule",
     items: ["Schedule, add matches, change or delete (with undo), series, calendar", "WTC race, milestones, goals"], from: "Fixtures" },
-  "/insights": { stage: "Stage 3", crumb: "What wins games",
-    items: ["Score chances, par by opponent, chase calculator, runs above expected, fair averages",
-      "What wins games, expected wins, match-winners, style maps, boom or bust, form, bat or bowl first"],
-    from: "Insights, Analytics" },
+  "/insights/analytics": { stage: "Stage 3", crumb: "Under the bonnet", title: "Insights",
+    items: ["Runs above expected, fair averages, what wins games, expected wins, match-winners",
+      "Style maps, boom or bust, form, bat or bowl first"],
+    from: "Analytics" },
 };
 
 const PICKED: Record<string, string> = {};
 
 export function Section({ path }: { path: string }) {
   const plan = PLANS[path]!;
-  const label = SECTIONS.find((s) => s.to === path)?.label ?? "";
+  const label = plan.title ?? SECTIONS.find((s) => s.to === path)?.label ?? "";
   const { pick } = useParams();
   useReady(true, path + (pick ?? ""));
   return (

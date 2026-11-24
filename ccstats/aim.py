@@ -303,3 +303,68 @@ def _first(inn, mid) -> str:
     """'India 175/6 · England 160' : each side's innings in order."""
     g = inn[inn.match_id == mid].sort_values("innings_no")
     return " · ".join(f"{r.team} {r.runs}" + ("" if r.all_out else f"/{r.wickets}") for r in g.itertuples())
+
+
+def aim_table(career, section: str, me: str, fits=None) -> dict:
+    """The score to aim for of `me` against every other team in one competition (Insights, your answer 7 of 13
+    November), at home, away and on a neutral ground: the places this competition is played in only (an ICC event's
+    neutral grounds, a league's home and away). One-day and T20 cricket: for each opponent the total for an even game
+    and for a 70% chance batting first (the same sums as Opponent preview, `targets`), how many games their batting
+    rests on and whether it's few. Multi-day cricket: `me`'s first-innings totals against each opponent in games won,
+    drawn and lost, home, away and neutral (the typical, middle one of each, and how many games). Returns kind, none,
+    venues, rows and, for one-day and T20, the fit's games, right, right_alone, home, my_bowling, my_bowling_n."""
+    m = career.matches[career.matches.section == section]
+    out: dict = dict(kind="", none="", venues=[], rows=[])
+    if m.empty:
+        out["none"] = "No matches here yet."
+        return out
+    teams = sorted(set(m.home) | set(m.away))
+    if me not in teams:
+        out["none"] = f"{me} haven't played here yet."
+        return out
+    venues = [v for v in VENUES if (v == "neutral" and m.neutral.astype(bool).any())
+              or (v != "neutral" and (~m.neutral.astype(bool)).any())]
+    out["venues"] = venues
+    length = LENGTH.get(m.format.mode().iloc[0], "t20")
+    mine = m[(m.home == me) | (m.away == me)]
+    met = {t: int(((mine.home == t) | (mine.away == t)).sum()) for t in teams if t != me}
+    if length == "multi":
+        out["kind"] = "multi"
+        ids = list(m.match_id)
+        for opp in teams:
+            if opp == me or not met[opp]:
+                continue
+            a = score_to_aim(career, ids, me, opp)
+            for venue in venues:
+                v = a["venues"].get(venue)
+                if not v or not v["games"]:
+                    continue
+                t = v["typical"]
+                out["rows"].append(dict(opp=opp, venue=venue, games=len(v["games"]),
+                                        **{f"{r}": t[r]["typical"] for r in ("won", "drawn", "lost")},
+                                        **{f"{r}_n": t[r]["n"] for r in ("won", "drawn", "lost")}))
+        if not out["rows"]:
+            out["none"] = f"No first-innings totals of {me}'s here yet."
+        return out
+    out["kind"] = "limited"
+    fit = (fits or (lambda n: model(career, n)))(length)
+    if fit is None or section not in fit["secs"]:
+        out["none"] = "No finished games here yet to work it out from."
+        return out
+    st = fit["st"][section]
+    bowl, n_bowl = st["bowl"].get(me, (0.0, 0))
+    out.update(games=int(fit["games"][section]), right=float(fit["right"][section] * 100),
+               right_alone=float(fit["right0"][section] * 100), home=float(st["home"]), my_bowling=bowl,
+               my_bowling_n=int(n_bowl))
+    for opp in teams:
+        if opp == me:
+            continue
+        row = dict(opp=opp, met=met[opp])
+        for venue in venues:
+            t = targets(fit, section, me, opp, venue)
+            row[venue] = dict(even=int(round(t["even"])), seventy=int(round(t["seventy"])),
+                              beyond=bool(t["seventy"] > fit["high"][section]), below=bool(t["even"] < fit["low"][section]))
+            row.update(their_batting=t["their_batting"], their_batting_n=int(t["their_batting_n"]),
+                       few=bool(min(t["my_bowling_n"], t["their_batting_n"], t["games"]) < FEW))
+        out["rows"].append(row)
+    return out

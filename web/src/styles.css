@@ -765,3 +765,5 @@ td.bold .tn, td.bold { font-weight: 800; }
 .tev .td { color: var(--dim); font-weight: 600; }
 .tev b { color: var(--ink); }
 .tev.player b { color: var(--blue); }
+/* Insights (stage 3): the page's one-line description above its tabs */
+.intro { grid-column: span 12; font: 500 15px Inter; color: var(--soft); margin: 2px 0 -6px; }

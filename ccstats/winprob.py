@@ -124,22 +124,23 @@ def chance(st_: pd.DataFrame, innings_no: int, t1_batting: bool, wickets: int, l
     # the usual result for this innings (each match once), for pulling small samples towards
     _, first = np.unique(mi[keep], return_index=True)
     prior = np.bincount(oc[keep][first], minlength=4) / max(len(first), 1)
-    band = BAND[kind]
-    sel = None
-    used_w = (wickets, wickets)
+    # widen the runs either side (up to 1.6^4 times the usual band), then the wickets either side, until enough
+    # matches are alike; each wider wicket spread starts again from the usual band of runs (it used to carry on from
+    # the widest, so the band grew to thousands of runs), and the band and wickets given back are the ones used
+    base = BAND[kind]
+    sel, band, used_w = None, base, (wickets, wickets)
     for wspread in (0, 1, 2):
         pool = keep & (np.abs(wk - wickets) <= wspread)
-        b = band
-        for _ in range(5):
+        b = base
+        for step in range(5):
             cand = pool & (np.abs(ld - lead) <= b)
             n_matches = len(np.unique(mi[cand]))
-            if n_matches >= MIN_GAMES:
+            if n_matches >= MIN_GAMES or step == 4:
                 break
             b *= 1.6
+        sel, band, used_w = cand, b, (max(0, wickets - wspread), min(9, wickets + wspread))
         if n_matches >= MIN_GAMES:
-            sel, band, used_w = cand, b, (wickets - wspread, wickets + wspread)
             break
-        sel, band = cand, b
     if sel is None or not sel.any():
         return empty
     _, firsts = np.unique(mi[sel], return_index=True)  # one state per match

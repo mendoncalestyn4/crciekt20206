@@ -450,7 +450,7 @@ def overview(career, section, season, team, venue) -> dict:
                                                  if x in secs_of(sec_key) else 99),
                     is_=f"Every {team} match in {scope_words}, placed by how much stronger (right) or weaker (left) the other "
                         "side was rated just before it.", best_label="Best win",
-                    best=(f"v {top['opp']}, rated {abs(top['gap'])} {'above' if top['gap'] >= 0 else 'below'} them, "
+                    best=(f"v {top['opp']}, rated {SG.gap_words(top['gap'])}, "
                           f"{SG._day(top['date'])}") if top else "No wins yet.",
                     shows=f"In {scope_words}, {rec(up, 'above')}; {rec(down, 'below')}. Each dot is a match, placed by how "
                           f"much stronger (right) or weaker (left) the other side was rated just before it.",

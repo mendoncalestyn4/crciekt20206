@@ -329,7 +329,7 @@ export function Rankings() {
             {d.units.note && <div className="note">{d.units.note}</div>}</Tile>}
           {d.teams && <Tile span={12} title={`Against stronger and weaker sides · ${d.team}`} right="by the ratings just before each match">
             <div className="drops"><Pick label="Team" value={d.team ?? ""} options={d.teams} set={(v) => set({ team: v })} /></div>
-            {d.strength ? <><StrengthPanel rows={d.strength.rows} lanes={d.strength.lanes} />
+            {d.strength ? <><StrengthPanel rows={d.strength.rows} lanes={d.strength.lanes} who={d.team} />
               <Explain is_={d.strength.is_} best={d.strength.best} best_label={d.strength.best_label} for_={d.strength.for_} /></> : <Missing why="No rated matches yet." />}
           </Tile>}
         </>}

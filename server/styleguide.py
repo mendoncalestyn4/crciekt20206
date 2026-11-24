@@ -528,8 +528,14 @@ def strength(career, team: str, rs: list[dict]) -> list[dict]:
         if me is None or them is None:   # no result: not rated
             continue
         out.append(dict(id=r["id"], date=r["date"], section=r["section"], opp=r["opp"], outcome=r["outcome"],
-                        me=round(me), them=round(them), gap=round(them - me)))
+                        me=round(me), them=round(them), gap=round(them) - round(me)))   # the gap of the two ratings shown
     return out
+
+
+def gap_words(gap: int) -> str:
+    """How the other side was rated against this one before a match: '40 above them', '12 below them', or 'level with
+    them' (a gap of nought: both still on the starting rating)."""
+    return "level with them" if not gap else f"{abs(gap)} {'above' if gap > 0 else 'below'} them"
 
 
 def bat_first(career, team: str, ids) -> dict:

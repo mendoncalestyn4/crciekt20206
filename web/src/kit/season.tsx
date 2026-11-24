@@ -273,19 +273,19 @@ export function BatFirstSides({ bf, who }: { bf: BatFirst; who?: string }) {
 
 /** Against stronger and weaker sides: the record each way, every match placed by the rating gap, the best win and the
  *  worst defeat. */
-export function StrengthPanel({ rows, lanes }: { rows: Strength[]; lanes: string[] }) {
+export function StrengthPanel({ rows, lanes, who }: { rows: Strength[]; lanes: string[]; who?: string }) {
   const rec = (x: Strength[]) => ({ played: x.length, won: x.filter((r) => r.outcome === "W").length, lost: x.filter((r) => r.outcome === "L").length });
   const above = rows.filter((r) => r.gap > 0), level = rows.filter((r) => r.gap === 0), below = rows.filter((r) => r.gap < 0);
   const best = rows.filter((r) => r.outcome === "W" && r.gap > 0).sort((a, b) => b.gap - a.gap)[0];
   const worst = rows.filter((r) => r.outcome === "L" && r.gap < 0).sort((a, b) => a.gap - b.gap)[0];
   return (
     <>
-      <div className="trio" data-chart><Side title="V stronger sides" rec={rec(above)} sub="Rated above you before the match" />
+      <div className="trio" data-chart><Side title="V stronger sides" rec={rec(above)} sub={`Rated above ${who ?? "you"} before the match`} />
         <Side title="Level" rec={rec(level)} sub="First meetings, both still at the starting rating" />
-        <Side title="V weaker sides" rec={rec(below)} sub="Rated below you before the match" /></div>
-      <div style={{ marginTop: 14 }}><StrengthDots rows={rows} lanes={lanes} /></div>
-      {best && <div className="fact"><span>Best win · beat the side rated furthest above you</span><b>+{best.gap}<small>{best.opp} · {day(best.date)}</small></b></div>}
-      {worst && <div className="fact"><span>Worst defeat · lost to the side rated furthest below you</span><b>{worst.gap}<small>{worst.opp} · {day(worst.date)}</small></b></div>}
+        <Side title="V weaker sides" rec={rec(below)} sub={`Rated below ${who ?? "you"} before the match`} /></div>
+      <div style={{ marginTop: 14 }}><StrengthDots rows={rows} lanes={lanes} who={who} /></div>
+      {best && <div className="fact"><span>Best win · beat the side rated furthest above {who ?? "you"}</span><b>+{best.gap}<small>{best.opp} · {day(best.date)}</small></b></div>}
+      {worst && <div className="fact"><span>Worst defeat · lost to the side rated furthest below {who ?? "you"}</span><b>{worst.gap}<small>{worst.opp} · {day(worst.date)}</small></b></div>}
     </>
   );
 }

@@ -30,7 +30,10 @@ PAGES = ["/", "/inbox", "/style-guide", "/settings", "/players", "/players/J Bet
          "/leaders/rankings?tab=Team ratings&section=ODIs", "/leaders/rankings?tab=Teams by runs and wickets&section=ODIs|T20Is",
          "/leaders/rankings?section=Tests|ODIs|T20Is&what=all-round", "/leaders/hall", "/leaders/hall?tab=Player of the Match",
          "/leaders/hall?tab=Batting duos&section=ODIs|T20Is", "/leaders/hall?tab=All-round matches", "/leaders/hall?tab=Firsts&team=India",
-         "/insights", "/no-such-page"]
+         "/insights", "/insights?tab=Score to aim for&section=ODIs", "/insights?tab=Score to aim for&section=Tests",
+         "/insights?tab=Chase calculator&section=Tests", "/insights?tab=Home advantage",
+         "/insights?tab=Season by season&section=Indian Premier League", "/insights?tab=Breakout players&section=T20 Blast",
+         "/insights?tab=Innings by innings", "/insights/analytics", "/no-such-page"]
 
 
 @pytest.fixture(scope="module")
@@ -608,11 +611,11 @@ SAME_NAMES = """() => {
         if (!el.title) { out.push(`${h} ${c[i]} with no sum on hover in [${head.join(', ')}]`); return; }
         // and the sum adds up: the figure is its parts worked out, to its last shown digit
         const n = (x) => Number(x.replace(/,/g, ''));
-        const m = /([\d,]+) (?:runs|balls) ÷ ([\d,]+) (?:times out|broken stands|wickets|balls)( × (?:100|6))? = ([\d.]+)/.exec(el.title);
+        const m = /([\\d,]+) (?:runs|balls) ÷ ([\\d,]+) (?:times out|broken stands|wickets|balls)( × (?:100|6))? = ([\\d.]+)/.exec(el.title);
         if (!m) { if (!/ = /.test(el.title)) out.push(`${h} ${c[i]}: hover "${el.title}" isn't a sum`); return; }
-        const got = n(m[1]) / n(m[2]) * (m[3] ? Number(m[3].replace(/\D/g, '')) : 1), shown = m[4];
+        const got = n(m[1]) / n(m[2]) * (m[3] ? Number(m[3].replace(/\\D/g, '')) : 1), shown = m[4];
         const dec = (shown.split('.')[1] || '').length;
-        if (shown !== c[i].replace(/\*$/, '') || Math.abs(got - Number(shown)) > 0.5 * 10 ** -dec + 1e-9)
+        if (shown !== c[i].replace(/\\*$/, '') || Math.abs(got - Number(shown)) > 0.5 * 10 ** -dec + 1e-9)
           out.push(`${h} ${c[i]}: "${el.title}" doesn't add up (${got})`); } });
     }
   }

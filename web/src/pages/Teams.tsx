@@ -152,7 +152,7 @@ function Body({ tab, b, team, keep, race }: { tab: string; b: TeamBody; team: st
       {b.streaks ? <><Streaks cal={b.streaks} /><Explain {...three(b.streaks)} /></>
         : m.streaks ? <Missing why={m.streaks} /> : <div className="plain">No matches yet.</div>}</Tile>
     <Tile span={12} title="Against stronger and weaker sides" right="by the ratings (Elo) just before each match">
-      {b.strength ? <><StrengthPanel rows={b.strength.rows} lanes={b.strength.lanes} /><Explain {...three(b.strength)} /></>
+      {b.strength ? <><StrengthPanel rows={b.strength.rows} lanes={b.strength.lanes} who={team} /><Explain {...three(b.strength)} /></>
         : m.strength ? <Missing why={m.strength} /> : <div className="plain">No rated matches yet (a no-result isn't rated).</div>}</Tile>
     <Tile span={12} title="Home, away and neutral">
       {b.venues ? <><VenueRecord v={b.venues} team={team} />

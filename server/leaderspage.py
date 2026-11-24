@@ -617,7 +617,7 @@ def _strength_of(career, team, ids, where) -> dict | None:
     return dict(rows=rows, lanes=sorted({r["section"] for r in rows}),
                 **SG.lines(f"Every {team} match in {where}, placed by how much stronger (right) or weaker (left) the other "
                            "side was rated just before it.",
-                           (f"v {top['opp']}, rated {abs(top['gap'])} {'above' if top['gap'] >= 0 else 'below'} them, "
+                           (f"v {top['opp']}, rated {SG.gap_words(top['gap'])}, "
                             f"{SG._day(top['date'])}") if top else "No wins yet.",
                            "Whether they beat the strong sides or only the weak ones, and their best win by the ratings.",
                            best_label="Best win"),

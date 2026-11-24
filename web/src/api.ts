@@ -535,3 +535,22 @@ export type HallPage = {
   bars?: { rows: SbsBar[] } & Explained; big?: GridT | null; note?: string; table?: NGrid;
   teams?: string[]; team?: string; events?: { date: string; year: number; kind: string; what: string; who: string; id: string | null; section: string }[];
 };
+
+/** Insights (stage 3, server/insightspage.py): one competition at a time; each tab fills only its own part. */
+export type InsightSide = { title: string; none?: string; label?: string; value?: string; small?: string; note?: string };
+export type HomeRow = { label: string; section: string; home: number; away: number; other: number; home_text: string; away_text: string; other_text: string };
+export type SeasonChart = { label: string; id: string; dec: number; points: { season: string; v: number; text: string; matches: number }[] } & Three;
+export type InsightsPage = {
+  choices: { section: string; matches: number }[]; tabs: string[]; tab: string; options?: string[]; section?: string; none?: string;
+  seasons?: string[]; season?: string; what?: string; score?: number; default?: number; multi?: boolean;
+  board?: { label: string; pct: string; line: string; res: string }; teams?: string[]; team?: string;
+  sides?: InsightSide[]; sides_note?: string; bands?: { rows: SignedBar[]; size: number } & Three; strong?: NGrid;
+  kind?: string; aim?: NGrid; aim_none?: string; aim_lines?: { is_: string; for_: string };
+  bat_first?: BatFirst & Three & { who: string }; strength?: ({ rows: Strength[]; lanes: string[]; shows?: string } & Three) | null;
+  target?: number; now?: number; down?: number; won?: string; chase_none?: string; kpis?: { k: string; v: string }[]; line?: string; table?: NGrid;
+  home?: { rows: HomeRow[] } & Three;
+  one?: string; charts?: SeasonChart[];
+  mins?: number[]; min?: number; earlier?: boolean; first?: string;
+  parts?: ({ title: string; sub: string; none?: string; rows?: SignedBar[] } & Partial<Three>)[]; note?: string;
+  innings?: { rows: SignedBar[] } & Three; innings_none?: string; lead?: NGrid; lead_none?: string; follow?: NGrid; follow_none?: string;
+};

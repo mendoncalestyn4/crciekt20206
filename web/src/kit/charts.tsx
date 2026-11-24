@@ -295,7 +295,7 @@ export function TugOfWar({ matches, progress, team, opp, height = 380 }: {
 
 /** Every match placed by how the two sides were rated just before it (theirs minus ours), one row per format; dots
  *  that would touch move up or down within their row, so every match can be seen. */
-export function StrengthDots({ rows, lanes, height = 360 }: { rows: Strength[]; lanes: string[]; height?: number }) {
+export function StrengthDots({ rows, lanes, height = 360, who }: { rows: Strength[]; lanes: string[]; height?: number; who?: string }) {
   const t = useTheme();
   const [box, w] = useWidth();
   const option = useMemo<Option>(() => {
@@ -316,8 +316,8 @@ export function StrengthDots({ rows, lanes, height = 360 }: { rows: Strength[]; 
     });
     return {
       grid: G,
-      tooltip: { ...L.TT, formatter: (p: { data: { name: string; gap: number } }) => `${p.data.name}: rated ${p.data.gap > 0 ? `${p.data.gap} above you` : p.data.gap < 0 ? `${-p.data.gap} below you` : "level"}` },
-      xAxis: { type: "value", ...L.AX, min: -gapMax, max: gapMax, interval: step, name: "← rated below you   ·   their rating minus yours   ·   above you →",
+      tooltip: { ...L.TT, formatter: (p: { data: { name: string; gap: number } }) => `${p.data.name}: rated ${p.data.gap > 0 ? `${p.data.gap} above ${who ?? "you"}` : p.data.gap < 0 ? `${-p.data.gap} below ${who ?? "you"}` : "level"}` },
+      xAxis: { type: "value", ...L.AX, min: -gapMax, max: gapMax, interval: step, name: who ? `← rated below ${who}   ·   their rating minus ${who}'s   ·   above ${who} →` : "← rated below you   ·   their rating minus yours   ·   above you →",
         nameLocation: "middle", nameGap: 34, nameTextStyle: { color: t.dim, fontFamily: "Inter", fontSize: 13 }, splitLine: { lineStyle: { color: t.split } } },
       // the dots sit on a value axis; the format names come from a category axis whose rows line up with it
       yAxis: [{ type: "value", min: -0.5, max: lanes.length - 0.5, show: false },
@@ -325,7 +325,7 @@ export function StrengthDots({ rows, lanes, height = 360 }: { rows: Strength[]; 
       series: [{ type: "scatter", symbolSize: 18, data: pts,
         markLine: { silent: true, symbol: "none", lineStyle: { color: t.ink, width: 2 }, data: [{ xAxis: 0 }], label: { show: false } } }],
     };
-  }, [t, rows, lanes, height, w]);
+  }, [t, rows, lanes, height, w, who]);
   return <div ref={box}><EChart option={option} height={height} label="Against stronger and weaker sides" /></div>;
 }
 
