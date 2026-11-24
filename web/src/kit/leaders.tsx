@@ -15,15 +15,17 @@ export function RankBars({ rows, reference, decimals, best }: { rows: SbsBar[]; 
   const t = useTheme();
   const option = useMemo<Option>(() => {
     const L = look(t), col = best ? t.blue : t.loss;
+    // room on the right for the longest figure and what follows it, so nothing is cut off
+    const room = Math.max(...rows.map((r) => r.text.length * 11 + (r.sub ?? ab(r.team)).length * 9), 40) + 24;
     return {
-      grid: { left: 6, right: 70, top: 6, bottom: 6, containLabel: true },
+      grid: { left: 6, right: room, top: 6, bottom: 6, containLabel: true },
       xAxis: { type: "value", show: false, scale: false },
       yAxis: { type: "category", inverse: true, data: rows.map((r) => r.player), triggerEvent: true, axisLine: { show: false }, axisTick: { show: false },
         axisLabel: { color: t.ink, fontFamily: "Bebas Neue", fontSize: ts(17), margin: 10 } },
       tooltip: { ...L.TT, formatter: (p: { dataIndex: number }) => { const r = rows[p.dataIndex]; return r ? `${r.player} (${r.team}): ${r.text}` : ""; } },
       series: [{ type: "bar", barWidth: "60%",
         data: rows.map((r) => ({ value: r.value, name: r.player, itemStyle: { color: r.hi ? t.led : col, borderRadius: 0, ...(r.hi ? L.glow(alpha(t.led, 0.5)) : {}) } })),
-        label: { show: true, position: "right", formatter: (p: { dataIndex: number }) => `{v|${rows[p.dataIndex]?.text ?? ""}}{t|${ab(rows[p.dataIndex]?.team ?? "")}}`,
+        label: { show: true, position: "right", formatter: (p: { dataIndex: number }) => { const r = rows[p.dataIndex]; return r ? `{v|${r.text}}{t|${r.sub ?? ab(r.team)}}` : ""; },
           rich: { v: { ...L.VAL(17) }, t: { fontFamily: "Bebas Neue", fontSize: ts(14), color: t.dim, padding: [0, 0, 0, 8] } } },
         ...(reference != null ? { markLine: { silent: true, symbol: "none", lineStyle: { color: t.dim, type: "dashed", width: 1.5 },
           label: { formatter: `average ${show(reference, Math.max(decimals, 1))}`, color: t.dim, fontFamily: "Inter", fontSize: ts(10), position: "end" },

@@ -486,7 +486,7 @@ export type HonoursPage = { tabs: string[]; tab: string; none: string; boards?: 
   cabinet?: GridT | null; cabinet_none?: string };
 
 // ---------------------------------------------------------------- stage 3: Leaders and records
-export type SbsBar = { player: string; team: string; value: number; text: string; hi: boolean };
+export type SbsBar = { player: string; team: string; value: number; text: string; hi: boolean; sub?: string };
 export type SbsDot = { title: string; x_label: string; y_label: string; line: "slope" | "flat"; value: number | null; better_below: boolean;
   decimals: number; points: { player: string; team: string; x: number; y: number; ranked: boolean; named: boolean; hi: boolean }[];
   explain: [string, string][] } & Explained;

@@ -589,7 +589,7 @@ def _rank_history(career, sec, what, picked) -> dict:
                                     for p in lines if p["points"]),
                           "Shows who is rising and who is falling, match day by match day.", best_label="From first to now"))
     out["peaks"] = dict(rows=[dict(player=r.player, team=r.team, value=round(r.rating, 2),
-                                   text=f"{r.rating:.2f} ({r.date:%b %Y})", hi=False) for r in peaks.itertuples()],
+                                   text=f"{r.rating:.2f}", sub=f"{r.date:%b %Y}", hi=False) for r in peaks.itertuples()],
                         **SG.lines(f"The highest {word} rating each player reached in {sec}, and when.",
                                    f"{peaks.player.iloc[0]}, {peaks.rating.iloc[0]:.2f} on {peaks.date.iloc[0]:%d %b %Y}",
                                    "Who reached the greatest heights, not just who is on top today.",

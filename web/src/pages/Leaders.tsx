@@ -2,6 +2,7 @@
 // for each page (as Teams has). Every number comes from the server (server/leaderspage.py); the page only shows it.
 import { useQuery } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
+import { dayY } from "../format";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { get, type RankingsPage, type RecordsPage, type StatByStat, remember } from "../api";
 import { Drop, Explain, MatchLink, Missing, Pick, Tile } from "../kit/base";
@@ -297,10 +298,7 @@ export function Rankings() {
         </Tile>
         {d.none ? <Tile span={12}><Missing why={d.none} /></Tile> : null}
         {d.tab === d.tabs[0] && <>
-          {d.bars && <Tile span={5} title={`Top 10 · ${d.kinds.find((k) => k.id === d.what)?.label.toLowerCase()}`} right={d.latest}>
-            <RankBars rows={d.bars.rows} reference={null} decimals={2} best />
-            <Explain is_={d.bars.is_} best={d.bars.best} best_label={d.bars.best_label} for_={d.bars.for_} /></Tile>}
-          {d.rows && <Tile span={7} title="The rankings" right="point at a rating for how it's worked out">
+          {d.rows && <Tile span={12} title="The rankings" right="point at a rating for how it's worked out">
             <div className="scrollx"><table className="c"><thead><tr><th className="r">#</th><th>Player</th><th>Team</th><th className="r">Rating</th><th>Move</th>
               <th className="r">Peak</th><th>When</th><th className="r">At No. 1</th><th className="r">Inns</th><th className="r">Series</th></tr></thead>
               <tbody>{d.rows.map((r) => (
@@ -313,8 +311,11 @@ export function Rankings() {
                   <td className="r"><span className="tn">{r.series}</span></td></tr>))}</tbody></table></div>
             <div className="note">Move: places up or down since before the competition's last match day. At No. 1: matches played in the competition while
               they were top. Peak: the best rating they reached, and when.</div></Tile>}
-          {d.table && <Tile span={7} title="The rankings" right="each competition's rating, combined by innings"><Grid t={d.table} /></Tile>}
-          {d.near && d.near.length > 0 && <Tile span={12} title="Not ranked yet" right={d.need ? `${d.need} innings needed` : undefined}>
+          {d.bars && <Tile span={6} title={`Top 10 · ${d.kinds.find((k) => k.id === d.what)?.label.toLowerCase()}`} right={d.latest}>
+            <RankBars rows={d.bars.rows} reference={null} decimals={2} best />
+            <Explain is_={d.bars.is_} best={d.bars.best} best_label={d.bars.best_label} for_={d.bars.for_} /></Tile>}
+          {d.table && <Tile span={12} title="The rankings" right="each competition's rating, combined by innings"><Grid t={d.table} /></Tile>}
+          {d.near && d.near.length > 0 && <Tile span={6} title="Not ranked yet" right={d.need ? `${d.need} innings needed` : undefined}>
             <table className="c"><thead><tr><th>Player</th><th>Team</th><th className="r">Inns</th><th className="r">Rating so far</th><th>Still needs</th></tr></thead>
               <tbody>{d.near.map((r) => <tr key={r.player}><td><span className="why"><T>{r.player}</T></span></td><td><span className="why">{r.team}</span></td>
                 <td className="r"><span className="tn">{r.inns}</span></td><td className="r"><span className="tn">{r.rating}</span></td><td><span className="why">{r.needs}</span></td></tr>)}</tbody></table>
@@ -345,7 +346,7 @@ export function Rankings() {
           </Tile>}
         </>}
         {d.tab === d.tabs[3] && !d.none && <>
-          {d.bars && <Tile span={5} title="Most runs" right={d.date}>
+          {d.bars && <Tile span={5} title="Most runs" right={d.date ? dayY(d.date) : undefined}>
             <RankBars rows={d.bars.rows} reference={null} decimals={0} best />
             <Explain is_={d.bars.is_} best={d.bars.best} best_label={d.bars.best_label} for_={d.bars.for_} /></Tile>}
           {d.table && <Tile span={7} title="Every team by runs and wickets"><Grid t={d.table} />{d.table.note && <div className="note">{d.table.note}</div>}</Tile>}
