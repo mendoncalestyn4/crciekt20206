@@ -700,3 +700,138 @@ def _rank_totals(career, ticked, date, mine) -> dict:
                                   "Who has made the most runs and taken the most wickets so far: a long view of strength.",
                                   best_label="Most runs"))
     return out
+
+
+# --------------------------------------------------------------------------- Hall of fame
+HALL_TABS = ["Inductions", "Player of the Match", "Batting duos", "All-round matches", "Firsts"]
+
+
+def hall_page(career, q: dict, mine: list[str]) -> dict:
+    """Hall of fame (your answers 19, 20, 23, 26, 30, 31): real inductions with a plaque and who's next in, Player of
+    the Match, the best batting duos, the best all-round matches and a timeline of firsts. No fielding (answer 20)."""
+    ch = choices(career)
+    if not ch:
+        return SG.clean(dict(choices=[], none=SG.NO_MATCHES, tabs=HALL_TABS, tab=HALL_TABS[0]))
+    every = [c["section"] for c in ch]
+    tab = q.get("tab") if q.get("tab") in HALL_TABS else HALL_TABS[0]
+    asked = [s for s in every if s in set(secs_of(q.get("section", "")))] or [every[0]]
+    ticked = asked[:1] if tab == HALL_TABS[0] else asked   # inductions are each competition's own (answer 23)
+    m = career.matches
+    here = m[m.section.isin(ticked)]
+    seasons = sorted(map(str, here.season.unique()), reverse=True)
+    season = q.get("season", "") if q.get("season", "") in set(seasons) and tab in HALL_TABS[1:4] else ""
+    teams = sorted(set(m.home) | set(m.away))
+    team = q.get("team", "") if q.get("team", "") in set(teams) else next((t for t in mine if t in set(teams)), teams[0])
+    head = dict(choices=[dict(section=c["section"], matches=c["matches"]) for c in ch], ticked=ticked, section="|".join(ticked),
+                tabs=HALL_TABS, tab=tab, seasons=seasons, season=season)
+    ids = tuple(sorted(Scope(sections=ticked, seasons=[season] if season else []).match_ids(m)))
+    where = " + ".join(ticked) + (f" {season}" if season else "")
+    if tab == HALL_TABS[0]:
+        body = kept(career, ("hall_ind", ticked[0], tuple(mine)), lambda: _inducted(career, ticked[0], mine))
+    elif tab == HALL_TABS[1]:
+        body = kept(career, ("hall_pom", ids), lambda: _pom(career, ids, where))
+    elif tab == HALL_TABS[2]:
+        body = kept(career, ("hall_duos", ids, tuple(mine)), lambda: _duos(career, ids, where, mine))
+    elif tab == HALL_TABS[3]:
+        body = kept(career, ("hall_ar", ids, tuple(ticked)), lambda: _all_round(career, ids, ticked, where))
+    else:
+        body = dict(teams=teams, team=team, **kept(career, ("hall_firsts", team), lambda: _firsts(career, team)))
+    return SG.clean({**head, **body})
+
+
+def _inducted(career, sec, mine) -> dict:
+    from ccstats import hall as H
+    kind = H.kind_of(career, sec)
+    ind = H.inductions(career, sec)
+    nxt = H.next_in(career, sec)
+    rule = ("Inducted on the day a player first reaches, in this competition: "
+            + "; ".join(label for label, _ in H.routes(kind)) + ". Each competition has its own Hall of fame, the bar "
+            "growing with the length of game (T20 1,500 runs, 75 wickets or 10 Player of the Match awards; one-day 2,500 "
+            "runs or 100 wickets; Tests and first-class 4,000 runs or 150 wickets; all-rounders 1,000 runs and 50 wickets).")
+    plaques = []
+    for r in ind.iloc[::-1].itertuples():   # the newest first
+        pl = H.plaque(career, sec, r.player)
+        plaques.append(dict(player=r.player, team=r.team, date=f"{r.date:%d %b %Y}", id=r.match_id, route=r.route,
+                            also=r.also, matches=int(r.matches), runs=int(r.runs), wickets=int(r.wickets), pom=int(r.pom),
+                            average=fmt(pl["average"], 2) if pl["average"] is not None else "–",
+                            bowl_average=fmt(pl["bowl_average"], 2) if pl["bowl_average"] is not None else "–",
+                            moments=[dict(what=x["what"], date=f"{x['date']:%d %b %Y}", id=x["id"]) for x in pl["moments"]],
+                            mine=r.team in set(mine)))
+    return dict(rule=rule, plaques=plaques,
+                none="" if plaques else f"Nobody has been inducted in {sec} yet: the players closest are below.",
+                next=[dict(player=r.player, team=r.team, share=round(float(r.share) * 100), needs=r.needs) for r in nxt.itertuples()])
+
+
+def _pom(career, ids, where) -> dict:
+    from ccstats import extras as E
+    p = E.player_of_match(career, ids)
+    if p.empty:
+        return dict(none="No Player of the Match awards in these matches.")
+    top = p.head(12)
+    t0 = top.iloc[0]
+    big = p[p.knockouts > 0].sort_values(["finals", "knockouts"], ascending=False)
+    return dict(bars=dict(rows=[dict(player=r.player, team=r.team, value=int(r.awards), text=str(int(r.awards)),
+                                     sub=f"{r.rate:.0f}% of games" if r.rate == r.rate else "", hi=False) for r in top.itertuples()],
+                          **SG.lines(f"Player of the Match awards in {where}, the most first.",
+                                     SG.best_line(zip(p.player, p.awards), fmt=lambda v: f"{v:.0f} awards"),
+                                     "Who wins matches on their own most often. Rate = awards as a share of the matches "
+                                     "they played here.", best_label="Most awards"),
+                          shows=f"{t0.player} has {int(t0.awards)} award{'s' if t0.awards != 1 else ''} in {int(t0.matches)} "
+                                f"matches: {t0.rate:.0f}% of their games, {int(t0.knockouts)} of them in knockouts."),
+                big=table(["Player", "Team", "Knockouts", "Finals"],
+                          [[r.player, r.team, int(r.knockouts), int(r.finals)] for r in big.itertuples()], num=[2, 3])
+                if len(big) else None,
+                note="Rate = awards as a share of the matches they played here. The game names one Player of the Match "
+                     "per scorecard.")
+
+
+def _duos(career, ids, where, mine) -> dict:
+    from ccstats import hall as H
+    d = H.duos(career, ids)
+    if d.empty:
+        return dict(none="No partnerships where the card says who batted together yet.")
+    rows = [[r.pair, r.team, int(r.stands), f"{int(r.runs):,}", fmt(r.average, 2), r.best, int(r.fifty_plus), int(r.hundred_plus)]
+            for r in d.itertuples()]
+    t = table(["Pair", "Team", "Stands", "Runs", "Avg", "Best", "50+", "100+"], rows, num=[2, 3, 4, 6, 7],
+              hi=[r.team in set(mine) for r in d.itertuples()],
+              parts=[dict(runs=int(r.runs), outs=int(round(r.runs / r.average)) if r.average == r.average and r.average else None,
+                          what="stands") for r in d.itertuples()])
+    t["note"] = ("Only stands where the scorecard shows who batted together. Avg: runs per stand that was broken, as every "
+                 "partnership average on the site; * = unbroken.")
+    top = d.head(10)
+    return dict(table=t, bars=dict(rows=[dict(player=r.pair, team=r.team, value=int(r.runs), text=f"{int(r.runs):,}",
+                                              sub=f"{int(r.stands)} stands", hi=r.team in set(mine)) for r in top.itertuples()],
+                                   **SG.lines(f"The batting pairs with the most runs together in {where}.",
+                                              SG.best_line(zip(d.pair, d.runs), fmt=lambda v: f"{v:,.0f} runs"),
+                                              "The partnerships a side is built on: who bats best together.",
+                                              best_label="Most runs together")))
+
+
+def _all_round(career, ids, ticked, where) -> dict:
+    from ccstats import extras as E
+    m = career.matches
+    parts = [E.all_round_matches(career, [i for i in ids if i in set(m[m.section == s].match_id)]) for s in ticked]
+    parts = [x for x in parts if len(x)]
+    if not parts:
+        return dict(none="Nobody has both scored runs and taken wickets in the same match here yet.")
+    ar = pd.concat(parts, ignore_index=True).sort_values(["score", "date"], ascending=[False, True]).head(12)
+    wv = {s: x.attrs.get("wicket_value", 0) for s, x in zip(ticked, parts)}
+    a0 = ar.iloc[0]
+    worth = "; ".join(f"{fmt(v, 1)} in {s}" for s, v in wv.items())
+    return dict(bars=dict(rows=[dict(player=f"{r.player} v {r.against} ({r.date:%d %b %Y})", team=r.team, value=round(float(r.score)),
+                                     text=r.figures, sub="won" if r.won else "", hi=False, id=r.match_id) for r in ar.itertuples()],
+                          **SG.lines(f"The best all-round games in {where}: runs and wickets in the same match, each wicket "
+                                     "worth the competition's runs per wicket.",
+                                     f"{a0.player} v {a0.against}, {a0.figures}, a match score of {a0.score:.0f}",
+                                     f"Ranks the best all-round games. Each wicket counts as the average runs per wicket "
+                                     f"({worth}), so runs and wickets can be added up. Only players who both scored and "
+                                     "took a wicket in the match are listed.", best_label="The best")))
+
+
+def _firsts(career, team) -> dict:
+    from ccstats import hall as H
+    f = H.firsts(career, team)
+    if f.empty:
+        return dict(none=f"{team} haven't played yet.", events=[])
+    return dict(events=[dict(date=f"{r.date:%d %b %Y}", year=int(r.date.year), kind=r.kind, what=r.what, who=r.who,
+                             id=r.match_id or None, section=r.section) for r in f.itertuples()])

@@ -564,6 +564,13 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             c, _with_memory(c, q, ("section",)), myteam.teams_by_latest(c, site.my_teams(c))))()
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
+    async def hall_(request: Request):
+        """Hall of fame: inductions, Player of the Match, batting duos, all-round matches and the firsts timeline."""
+        q = dict(request.query_params)
+        data = await _with_career(lambda c: leaderspage.hall_page(
+            c, _with_memory(c, q, ("section",)), myteam.teams_by_latest(c, site.my_teams(c))))()
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
     # ------------------------------------------------------------------ Players
     async def players_(request: Request):
         data = await _with_career(lambda c: kept(c, ("players-landing", tuple(site.my_teams(c))),
@@ -703,7 +710,8 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                                        "/api/planner", "/api/competition", "/api/season", "/api/review", "/api/honours",
                                        "/api/rivalries", "/api/names", "/api/statbystat",
                                        "/api/statbystat?disc=Bowling", "/api/records",
-                                       "/api/rankings", "/api/rankings?what=bowling", "/api/rankings?what=all-round")]
+                                       "/api/rankings", "/api/rankings?what=bowling", "/api/rankings?what=all-round",
+                                       "/api/hall", "/api/hall?tab=Firsts")]
         steps += [("ratings", sec) for sec in sorted(c.matches.section.unique())]
         # every competition, and each of its seasons: the parts every player's page there shares, worked out through
         # its top run-scorer's page there, so the first player you open in any competition or season is quick too
@@ -919,6 +927,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/statbystat", statbystat_),
         Route("/api/records", records_),
         Route("/api/rankings", rankings_),
+        Route("/api/hall", hall_),
         Route("/api/competition", competition_),
         Route("/api/season", season_),
         Route("/api/review", review_),
