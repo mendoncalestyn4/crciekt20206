@@ -456,3 +456,247 @@ def _timeline(career, ids, pick: str, ticked, season) -> dict:
                 shows=f"{pick} in {where}: first set at {first.value} by {first.holder} on {first.date:%d %b %Y}, beaten "
                       f"{beaten} time{'' if beaten == 1 else 's'} since. It stands at {now.value} by {now.holder}, set on "
                       f"{now.date:%d %b %Y}.")
+
+
+# --------------------------------------------------------------------------- Rankings
+RANK_TABS = ["Players", "Rankings history", "Team ratings", "Teams by runs and wickets"]
+RANK_KINDS = {"batting": "Batting", "bowling": "Bowling", "all-round": "All-rounders"}
+
+
+def rankings_page(career, q: dict, mine: list[str]) -> dict:
+    """Rankings (your answers 1, 4-6, 14, 21, 24, 25, 28, 29): batters, bowlers and all-rounders ranked on the marks out
+    of 10, their peaks, time at No. 1 and movement; the rankings history; team ratings (Elo) and every team ranked by
+    runs and wickets up to any date."""
+    from ccstats import ranking as RK
+    ch = choices(career)
+    if not ch:
+        return SG.clean(dict(choices=[], none=SG.NO_MATCHES, tabs=RANK_TABS, tab=RANK_TABS[0]))
+    every = [c["section"] for c in ch]
+    tab = q.get("tab") if q.get("tab") in RANK_TABS else RANK_TABS[0]
+    asked = [s for s in every if s in set(secs_of(q.get("section", "")))] or [every[0]]
+    # several competitions mean something on Players and on runs and wickets; the history and team ratings are one at a
+    # time (your rule: ratings are never combined)
+    ticked = asked if tab in (RANK_TABS[0], RANK_TABS[3]) else asked[:1]
+    what = q.get("what") if q.get("what") in RANK_KINDS else "batting"
+    if tab == RANK_TABS[2]:
+        what = "batting"
+    head = dict(choices=[dict(section=c["section"], matches=c["matches"]) for c in ch], ticked=ticked,
+                section="|".join(ticked), tabs=RANK_TABS, tab=tab, kinds=[dict(id=k, label=v) for k, v in RANK_KINDS.items()],
+                what=what)
+    if tab == RANK_TABS[0]:
+        body = kept(career, ("rank_players", tuple(ticked), what), lambda: _rank_players(career, ticked, what, mine))
+    elif tab == RANK_TABS[1]:
+        picked = tuple(x for x in str(q.get("players", "")).split("|") if x)
+        body = kept(career, ("rank_history", ticked[0], what, picked), lambda: _rank_history(career, ticked[0], what, picked))
+    elif tab == RANK_TABS[2]:
+        teams = tuple(x for x in str(q.get("teams", "")).split("|") if x)
+        body = kept(career, ("rank_teams", ticked[0], teams, q.get("team", ""), tuple(mine)),
+                    lambda: _rank_teams(career, ticked[0], teams, q.get("team", ""), mine))
+    else:
+        body = kept(career, ("rank_totals", tuple(ticked), q.get("date", "")),
+                    lambda: _rank_totals(career, ticked, q.get("date", ""), mine))
+    return SG.clean({**head, **body})
+
+
+def _move(v, new: bool) -> str:
+    if new:
+        return "new"
+    if v is None or v != v or not v:
+        return "–"
+    return f"▲{int(v)}" if v > 0 else f"▼{int(-v)}"
+
+
+def _rank_players(career, ticked, what, mine) -> dict:
+    from ccstats import ranking as RK
+    word = RANK_KINDS[what].lower()
+    how_rule = ("A rating is the player's marks out of 10 (the Player page's) for every series or tournament in the "
+                "competition's last two seasons, each counting for its games, a series that ended a year ago counting "
+                "half. " + ("All-rounders are ranked on batting × bowling, as the official rankings are, shown on the "
+                            "same 1 to 10 scale. " if what == "all-round" else "")
+                + "Ranked: at least 10 innings in the last two seasons in T20 cricket, 8 in one-day, Test and first-class "
+                  "cricket (bowlers: innings bowled), from at least 3 different series or tournaments (a competition "
+                  "played as one tournament a season: from both seasons).")
+    if len(ticked) > 1:
+        c = RK.combined(career, ticked, what)
+        if c.empty:
+            return dict(none=f"Nobody is ranked in {' + '.join(ticked)} yet.", rule=how_rule)
+        rows = [[int(r.rank), r.player, r.team, f"{r.rating:.2f}", int(r.inns), int(r.formats), r.parts]
+                for r in c.itertuples()]
+        t = table(["#", "Player", "Team", "Rating", "Inns", "Formats", "Each one"], rows, num=[0, 3, 4, 5],
+                  hi=[r.team in set(mine) for r in c.itertuples()])
+        top = c.head(10)
+        return dict(rule=how_rule + " Several competitions ticked: each player's rating where he is ranked, combined by "
+                                    "his innings in each, so the format he plays most counts most.",
+                    combined=True, table=t, bars=dict(rows=[dict(player=r.player, team=r.team, value=round(r.rating, 2),
+                                                                 text=f"{r.rating:.2f}", hi=r.team in set(mine))
+                                                            for r in top.itertuples()],
+                                                      **SG.lines(f"The top 10 {word} across {' + '.join(ticked)}, each "
+                                                                 "player's ratings combined by his innings in each.",
+                                                                 SG.best_line(zip(c.player, c.rating), fmt=lambda v: f"{v:.2f}"),
+                                                                 "One ranking across formats, so an all-format star can be "
+                                                                 "compared with a specialist.")))
+    sec = ticked[0]
+    b = RK.board(career, sec, what)
+    t, near = b["table"], b["near"]
+    out: dict = dict(rule=how_rule, combined=False, latest=f"{b['latest']:%d %b %Y}" if b["latest"] is not None else "")
+    if t is None or len(t) == 0:
+        out["none"] = f"Nobody is ranked in {sec} yet: the players closest are listed below."
+    else:
+        hows = []
+        for r in t.itertuples():
+            parts, val = RK.breakdown(career, sec, r.player, what)
+            k = "bat" if what == "batting" else "bowl" if what == "bowling" else None
+            bits = ([f"{p['series']}: {p[k]} ({p['games']} game{'s' if p['games'] != 1 else ''}, weight {p['weight']:.1f})"
+                     for p in parts if p[k] is not None]
+                    if k else [f"{p['series']}: batting {p['bat'] if p['bat'] is not None else '–'}, bowling "
+                               f"{p['bowl'] if p['bowl'] is not None else '–'}" for p in parts])
+            hows.append(f"{r.rating:.2f} = " + ("the weighted average of " if k else "√(batting × bowling); ")
+                        + "; ".join(bits))
+        out["rows"] = [dict(rank=int(r.rank), player=r.player, team=r.team, rating=f"{r.rating:.2f}",
+                            move=_move(r.moved, r.new), peak=f"{r.peak:.2f}" if r.peak == r.peak else "–",
+                            peak_date=f"{r.peak_date:%d %b %Y}" if r.peak_date == r.peak_date else "",
+                            at_one=int(r.at_one), inns=int(r.inns), series=int(r.series), how=h,
+                            mine=r.team in set(mine)) for r, h in zip(t.itertuples(), hows)]
+        top = t.head(10)
+        out["bars"] = dict(rows=[dict(player=r.player, team=r.team, value=round(r.rating, 2), text=f"{r.rating:.2f}",
+                                      hi=r.team in set(mine)) for r in top.itertuples()],
+                           **SG.lines(f"The top 10 {word} in {sec} as of {b['latest']:%d %b %Y}, on the marks out of 10.",
+                                      SG.best_line(zip(t.player, t.rating), fmt=lambda v: f"{v:.2f}"),
+                                      "Who is playing best right now: recent series count most, so it moves with form."))
+    out["near"] = [dict(player=r.player, team=r.team, inns=int(r.inns), rating=f"{r.rating:.2f}", needs=r.needs)
+                   for r in near.head(15).itertuples()]
+    out["need"] = b.get("need")
+    return out
+
+
+def _rank_history(career, sec, what, picked) -> dict:
+    from ccstats import ranking as RK
+    h = RK.history(career, sec, what)
+    if h.empty:
+        return dict(none=f"Nobody has been ranked in {sec} yet, so there's no rankings history.")
+    b = RK.board(career, sec, what)
+    now = b["table"]
+    every = list(dict.fromkeys(list(now.player) + list(h.sort_values("rating", ascending=False).player)))
+    players = [p for p in picked if p in set(every)][:6] or list(now.player.head(5)) or every[:5]
+    lines = [dict(player=p, points=[dict(date=f"{d:%Y-%m-%d}", rating=round(float(r), 2), rank=int(k))
+                                    for d, r, k in zip(g.date, g.rating, g["rank"])])
+             for p in players for g in [h[h.player == p]]]
+    peaks = b["peaks"].head(10)
+    word = RANK_KINDS[what].lower()
+    out = dict(players=every, picked=players, lines=lines,
+               **SG.lines(f"The {word} rating of the players picked after every match day in {sec} they were ranked.",
+                          "; ".join(f"{p['player']} {p['points'][0]['rating']:.2f} → {p['points'][-1]['rating']:.2f}"
+                                    for p in lines if p["points"]),
+                          "Shows who is rising and who is falling, match day by match day.", best_label="From first to now"))
+    out["peaks"] = dict(rows=[dict(player=r.player, team=r.team, value=round(r.rating, 2),
+                                   text=f"{r.rating:.2f} ({r.date:%b %Y})", hi=False) for r in peaks.itertuples()],
+                        **SG.lines(f"The highest {word} rating each player reached in {sec}, and when.",
+                                   f"{peaks.player.iloc[0]}, {peaks.rating.iloc[0]:.2f} on {peaks.date.iloc[0]:%d %b %Y}",
+                                   "Who reached the greatest heights, not just who is on top today.",
+                                   best_label="The highest ever"))
+    rv = b["reigns"][::-1]
+    out["reigns"] = table(["No. 1", "From", "To", "Matches at No. 1"],
+                          [[" & ".join(x["players"]), f"{x['start']:%d %b %Y}", f"{x['to']:%d %b %Y}", x["matches"]] for x in rv],
+                          num=[3])
+    out["reigns"]["note"] = ("A reign is counted in matches played in the competition while they were top (level at the "
+                             "top: both count).")
+    return out
+
+
+def _strength_of(career, team, ids, where) -> dict | None:
+    rs = SG.in_played_order(career, SG.results(career, team, ids))
+    rows = SG.strength(career, team, rs)
+    if not rows:
+        return None
+    wins = [r for r in rows if r["outcome"] == "W"]
+    top = max(wins, key=lambda r: (r["gap"], r["date"])) if wins else None
+    up = [r for r in rows if r["gap"] > 0]
+    down = [r for r in rows if r["gap"] < 0]
+    rec = lambda x, word: (f"against sides rated {word} them they won {sum(r['outcome'] == 'W' for r in x)} of {len(x)}"   # noqa: E731
+                           if x else f"they haven't played a side rated {word} them")
+    return dict(rows=rows, lanes=sorted({r["section"] for r in rows}),
+                **SG.lines(f"Every {team} match in {where}, placed by how much stronger (right) or weaker (left) the other "
+                           "side was rated just before it.",
+                           (f"v {top['opp']}, rated {abs(top['gap'])} {'above' if top['gap'] >= 0 else 'below'} them, "
+                            f"{SG._day(top['date'])}") if top else "No wins yet.",
+                           "Whether they beat the strong sides or only the weak ones, and their best win by the ratings.",
+                           best_label="Best win"),
+                shows=f"In {where}, {rec(up, 'above')}; {rec(down, 'below')}.")
+
+
+def _rank_teams(career, sec, teams, team, mine) -> dict:
+    from ccstats import rankings as R
+    from ccstats import teamdeep as TD
+    elo, hist = R.team_elo(career, sec)
+    if elo.empty:
+        return dict(none="No finished matches yet.")
+    all_teams = list(elo.team)
+    picked = [t for t in teams if t in set(all_teams)] or all_teams[:4]
+    e0, e1 = elo.iloc[0], elo.iloc[-1]
+    out = dict(teams=all_teams, picked=picked,
+               elo=dict(rows=[dict(label=f"{r.team} ({r.elo:.0f})", value=round(r.elo - 1500, 1), text=f"{r.elo - 1500:+.0f}",
+                                   note=f"{r.played} matches · best {r.peak:.0f}") for r in elo.itertuples()],
+                        **SG.lines(f"Every team's rating (Elo) in {sec} now, above (blue) or below (red) the 1500 every team "
+                                   "starts on.", f"{e0.team}, {e0.elo:.0f} ({e0.elo - 1500:+.0f})",
+                                   "The strongest teams right now, allowing for who they beat: beating a top side counts "
+                                   "for more.", best_label="On top"),
+                        shows=f"{e0.team} lead on {e0.elo:.0f} ({e0.elo - 1500:+.0f}); {e1.team} are lowest on "
+                              f"{e1.elo:.0f} ({e1.elo - 1500:+.0f})."))
+    rise = elo.sort_values("peak", ascending=False).iloc[0]
+    out["lines"] = dict(teams=[dict(team=t, points=[dict(date=f"{d:%Y-%m-%d}", elo=round(float(a), 1), id=mid)
+                                                    for d, a, mid in zip(g.date, g.after, g.match_id)])
+                               for t in picked for g in [hist[hist.team == t]]],
+                        **SG.lines(f"The rating (Elo) of the teams picked after every match in {sec}.",
+                                   f"{rise.team} at {rise.peak:.0f} (now {rise.elo:.0f})",
+                                   "Shows each team's strength over time: rising lines are teams on a run.",
+                                   best_label="The highest anyone has been"))
+    out["note"] = (f"Every team starts at 1500. The winner takes points from the loser: up to {R.ELO_K:g} in a league match "
+                   f"and {R.ELO_K_KNOCKOUT:g} in a knockout, more for beating a stronger side. A draw or tie moves the two "
+                   "sides towards each other. Points are only swapped, so the average stays at 1500.")
+    ids = career.matches[career.matches.section == sec].match_id
+    ur = TD.unit_ratings(career, ids)
+    out["units"] = table(["Team", "Batting", "#", "Bowling", "#", "Matches"],
+                         [[r.team, f"{r.batting:.0f}", int(r.batting_rank), f"{r.bowling:.0f}", int(r.bowling_rank), int(r.matches)]
+                          for r in ur.itertuples()], num=[1, 2, 3, 4, 5], hi=[r.team in set(mine) for r in ur.itertuples()])
+    out["units"]["note"] = ("Batting: runs per wicket against what each opponent's bowlers usually allow (and, in "
+                            "white-ball cricket, the run rate against their usual economy). Bowling: the same the other "
+                            "way round. 1100 = 10% better than an average side against the same opponents. Recent games "
+                            "count most.")
+    who = team if team in set(all_teams) else next((t for t in mine if t in set(all_teams)), all_teams[0])
+    out["team"] = who
+    out["strength"] = _strength_of(career, who, ids, sec)
+    return out
+
+
+def _rank_totals(career, ticked, date, mine) -> dict:
+    """Every team ranked by runs (off the bat) and wickets, from the start of the career up to any date (answers 1,
+    4, 5, 6): a calendar opening on the latest match, and the end of each season to jump to."""
+    from ccstats import rankings as R
+    m = career.matches[career.matches.section.isin(ticked)]
+    latest = m.date.max()
+    try:
+        upto = pd.Timestamp(date) if date else latest
+    except ValueError:
+        upto = latest
+    upto = min(max(upto, m.date.min()), latest)
+    ends = m.groupby("season").date.max().sort_values()
+    out = dict(date=f"{upto:%Y-%m-%d}", first=f"{m.date.min():%Y-%m-%d}", last=f"{latest:%Y-%m-%d}",
+               ends=[dict(label=f"End of {s} season", date=f"{d:%Y-%m-%d}") for s, d in ends.items()][::-1])
+    t = R.team_totals(career, m.match_id, upto)
+    if t.empty:
+        out["none"] = "No matches up to this date."
+        return out
+    rows = [[int(r.runs_rank), r.team, int(r.matches), f"{int(r.runs):,}", f"{r.runs_per_match:.1f}", int(r.wickets_rank),
+             int(r.wickets), f"{r.wickets_per_match:.1f}"] for r in t.itertuples()]
+    out["table"] = table(["By runs", "Team", "Mat", "Runs", "Runs/match", "By wkts", "Wkts", "Wkts/match"], rows,
+                         num=[0, 2, 3, 4, 5, 6, 7], hi=[r.team in set(mine) for r in t.itertuples()])
+    out["table"]["note"] = ("Runs off the bat (extras are no one's, as in every share on the site); wickets: every "
+                            "wicket that fell to them, run-outs included. Equal totals share a rank.")
+    where = " + ".join(ticked)
+    out["bars"] = dict(rows=[dict(player=r.team, team=r.team, value=int(r.runs), text=f"{int(r.runs):,}", hi=r.team in set(mine))
+                             for r in t.head(12).itertuples()],
+                       **SG.lines(f"Every team's runs off the bat in {where} up to {upto:%d %b %Y}, most first.",
+                                  SG.best_line(zip(t.team, t.runs), mine=next((x for x in mine if x in set(t.team)), None)),
+                                  "Who has made the most runs and taken the most wickets so far: a long view of strength.",
+                                  best_label="Most runs"))
+    return out
