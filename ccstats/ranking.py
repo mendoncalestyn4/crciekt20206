@@ -151,7 +151,7 @@ def table_at(st: pd.DataFrame, section: str, date, what: str) -> pd.DataFrame:
     def rate(col):
         x = last[last[col].notna()]
         r = (x[col] * x.w).groupby(x.player).sum() / x.w.groupby(x.player).sum()
-        return r
+        return r.round(9)   # a weighted average of 7s is 7, not 7.000000000000001
 
     bat, bowl = rate("bat_mark"), rate("bowl_mark")
     team = last.sort_values("date").groupby("player").team.last()
