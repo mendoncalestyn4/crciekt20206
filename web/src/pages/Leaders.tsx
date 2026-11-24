@@ -3,11 +3,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import { get, type RecordsPage, type StatByStat, remember } from "../api";
+import { get, type RankingsPage, type RecordsPage, type StatByStat, remember } from "../api";
 import { Drop, Explain, MatchLink, Missing, Pick, Tile } from "../kit/base";
-import { DotSpread, PaceBars, RankBars, RecordSteps } from "../kit/leaders";
+import { DotSpread, PaceBars, RankBars, RecordSteps, TimeLines } from "../kit/leaders";
 import { BestTable } from "../kit/match";
-import { Streaks } from "../kit/season";
+import { StrengthPanel, Streaks } from "../kit/season";
+import { SignedBars } from "../kit/teams";
 import { Grid } from "../kit/teams";
 import { T } from "../shell/names";
 import { useReady } from "../ready";
@@ -239,6 +240,117 @@ function RecordGroup({ g, keep }: { g: NonNullable<RecordsPage["groups"]>[number
           <Grid t={t} keep={keep} />
           {t.near && <div className="note"><T>{t.near}</T></div>}
         </Tile>))}
+    </>
+  );
+}
+
+const RK_KEYS = ["tab", "section", "what", "players", "teams", "team", "date"];
+
+/** Rankings (stage 3): batters, bowlers and all-rounders on the marks out of 10, the rankings history, team ratings
+ *  and every team ranked by runs and wickets up to any date. */
+export function Rankings() {
+  const { career, noCareer, nation } = useShell();
+  const [params] = useSearchParams();
+  const go = useNavigate();
+  const want = Object.fromEntries(RK_KEYS.map((k) => [k, params.get(k) ?? ""]));
+  const qs = RK_KEYS.filter((k) => want[k]).map((k) => `${k}=${encodeURIComponent(want[k]!)}`).join("&");
+  const q = useQuery({ queryKey: ["rankings", qs, career?.name], enabled: Boolean(career), retry: false,
+    queryFn: () => get<RankingsPage>(`/api/rankings?${qs}`), placeholderData: (was) => was });
+  useReady(Boolean(q.data || q.error || noCareer), qs);
+  const set = (changes: Record<string, string>) => {
+    if (changes.section) remember({ section: changes.section });
+    const next: Record<string, string> = { ...want, ...changes };
+    if ("section" in changes || "what" in changes) Object.assign(next, { players: "", teams: "", team: "" });
+    if (nation) next.nation = nation;
+    go(`/leaders/rankings?${new URLSearchParams(Object.entries(next).filter(([, v]) => v)).toString()}`);
+  };
+  const head = <LeadersHead on={3} crumb="Rankings · who's on top right now" />;
+  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career on the current site for now.</div></Tile></div></>;
+  if (q.error) return <>{head}<div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
+  if (!q.data) return <>{head}<div className="empty">Ranking everyone…</div></>;
+  const d = q.data;
+  if (!d.choices.length) return <>{head}<div className="grid"><Tile span={12}><Missing why={d.none} /></Tile></div></>;
+  const one = d.tab === d.tabs[1] || d.tab === d.tabs[2];
+  const comps = d.choices.map((c) => c.section);
+  const note = (x: string) => `${d.choices.find((c) => c.section === x)?.matches ?? ""} matches`;
+  const join = (v: string[]) => v.join("|");
+  return (
+    <>
+      {head}
+      <div className="grid">
+        <div className="itabs">{d.tabs.map((x, i) => (
+          <button key={x} className={x === d.tab ? "on" : ""} onClick={() => set({ tab: i === 0 ? "" : x })}>{x}</button>))}</div>
+        <Tile span={12} className="pickbar">
+          <div className="drops">
+            {one ? <Pick label="Competition" value={d.ticked[0]!} options={comps.map((c) => ({ v: c, label: c, note: note(c) }))} set={(v) => set({ section: v })} />
+              : <Drop label="Competition" all={comps} on={d.ticked} set={(v) => set({ section: join(v) })} keepOne note={note} />}
+            {d.tab !== d.tabs[2] && d.tab !== d.tabs[3] && <Pick label="Ranking" value={d.what} options={d.kinds.map((k) => ({ v: k.id, label: k.label }))} set={(v) => set({ what: v })} />}
+            {d.tab === d.tabs[1] && d.players && <Drop label="Players to draw" all={d.players} on={d.picked ?? []} set={(v) => set({ players: join(v) })} none="The top five now" />}
+            {d.tab === d.tabs[2] && d.teams && <Drop label="Teams to draw" all={d.teams} on={d.picked ?? []} set={(v) => set({ teams: join(v) })} none="The top four" />}
+            {d.tab === d.tabs[3] && d.date && <div className="drop"><label className="droplab" htmlFor="rk-date">Up to</label>
+              <input id="rk-date" className="typed" type="date" min={d.first} max={d.last} value={d.date} onChange={(e) => e.target.value && set({ date: e.target.value })} /></div>}
+            {d.tab === d.tabs[3] && d.ends && d.ends.length > 0 && <Pick label="Jump to" value={d.ends.find((e) => e.date === d.date)?.date ?? ""}
+              options={[...(d.ends.some((e) => e.date === d.date) ? [] : [{ v: "", label: "Pick a season's end" }]), ...d.ends.map((e) => ({ v: e.date, label: e.label }))]}
+              set={(v) => v && set({ date: v })} />}
+          </div>
+          {d.tab === d.tabs[0] && d.rule && <div className="note">{d.rule}</div>}
+        </Tile>
+        {d.none ? <Tile span={12}><Missing why={d.none} /></Tile> : null}
+        {d.tab === d.tabs[0] && <>
+          {d.bars && <Tile span={5} title={`Top 10 · ${d.kinds.find((k) => k.id === d.what)?.label.toLowerCase()}`} right={d.latest}>
+            <RankBars rows={d.bars.rows} reference={null} decimals={2} best />
+            <Explain is_={d.bars.is_} best={d.bars.best} best_label={d.bars.best_label} for_={d.bars.for_} /></Tile>}
+          {d.rows && <Tile span={7} title="The rankings" right="point at a rating for how it's worked out">
+            <div className="scrollx"><table className="c"><thead><tr><th className="r">#</th><th>Player</th><th>Team</th><th className="r">Rating</th><th>Move</th>
+              <th className="r">Peak</th><th>When</th><th className="r">At No. 1</th><th className="r">Inns</th><th className="r">Series</th></tr></thead>
+              <tbody>{d.rows.map((r) => (
+                <tr key={r.player} className={r.mine ? "me" : ""}><td className="r"><span className="tn">{r.rank}</span></td>
+                  <td><span className="why"><T>{r.player}</T></span></td><td><span className="why">{r.team}</span></td>
+                  <td className="r"><span className="tn how-tip" title={r.how}>{r.rating}</span></td>
+                  <td><span className={`why ${r.move.startsWith("▲") ? "up" : r.move.startsWith("▼") ? "down" : ""}`}>{r.move}</span></td>
+                  <td className="r"><span className="tn">{r.peak}</span></td><td><span className="why">{r.peak_date}</span></td>
+                  <td className="r"><span className="tn">{r.at_one}</span></td><td className="r"><span className="tn">{r.inns}</span></td>
+                  <td className="r"><span className="tn">{r.series}</span></td></tr>))}</tbody></table></div>
+            <div className="note">Move: places up or down since before the competition's last match day. At No. 1: matches played in the competition while
+              they were top. Peak: the best rating they reached, and when.</div></Tile>}
+          {d.table && <Tile span={7} title="The rankings" right="each competition's rating, combined by innings"><Grid t={d.table} /></Tile>}
+          {d.near && d.near.length > 0 && <Tile span={12} title="Not ranked yet" right={d.need ? `${d.need} innings needed` : undefined}>
+            <table className="c"><thead><tr><th>Player</th><th>Team</th><th className="r">Inns</th><th className="r">Rating so far</th><th>Still needs</th></tr></thead>
+              <tbody>{d.near.map((r) => <tr key={r.player}><td><span className="why"><T>{r.player}</T></span></td><td><span className="why">{r.team}</span></td>
+                <td className="r"><span className="tn">{r.inns}</span></td><td className="r"><span className="tn">{r.rating}</span></td><td><span className="why">{r.needs}</span></td></tr>)}</tbody></table>
+          </Tile>}
+        </>}
+        {d.tab === d.tabs[1] && !d.none && <>
+          {d.lines && Array.isArray(d.lines) && <Tile span={12} title="Rating over time">
+            <TimeLines series={d.lines.map((l) => ({ name: l.player, points: l.points.map((p) => ({ date: p.date, v: p.rating })) }))} y="Rating" />
+            <Explain is_={d.is_} best={d.best} best_label={d.best_label} for_={d.for_ ?? ""} /></Tile>}
+          {d.peaks && <Tile span={6} title="Highest ratings ever" right="the peak each player reached, and when">
+            <RankBars rows={d.peaks.rows} reference={null} decimals={2} best />
+            <Explain is_={d.peaks.is_} best={d.peaks.best} best_label={d.peaks.best_label} for_={d.peaks.for_} /></Tile>}
+          {d.reigns && <Tile span={6} title="No. 1 reigns" right="newest first"><Grid t={d.reigns} />{d.reigns.note && <div className="note">{d.reigns.note}</div>}</Tile>}
+        </>}
+        {d.tab === d.tabs[2] && !d.none && <>
+          {d.elo && <Tile span={5} title="Team ratings now" right="above or below 1500"><SignedBars rows={d.elo.rows} />
+            <Explain is_={d.elo.is_} best={d.elo.best} best_label={d.elo.best_label} for_={d.elo.for_} /></Tile>}
+          {d.lines && !Array.isArray(d.lines) && <Tile span={7} title="Ratings over time" right="every match moves both teams">
+            <TimeLines series={d.lines.teams.map((x) => ({ name: x.team, points: x.points.map((p) => ({ date: p.date, v: p.elo, id: p.id })) }))} y="Elo rating" base={1500} dec={0} />
+            <Explain is_={d.lines.is_} best={d.lines.best} best_label={d.lines.best_label} for_={d.lines.for_} />
+            {d.note && <div className="note">{d.note}</div>}</Tile>}
+          {d.units && <Tile span={12} title="Batting and bowling ratings" right="each half of every team, 1000 = average"><Grid t={d.units} />
+            {d.units.note && <div className="note">{d.units.note}</div>}</Tile>}
+          {d.teams && <Tile span={12} title={`Against stronger and weaker sides · ${d.team}`} right="by the ratings just before each match">
+            <div className="drops"><Pick label="Team" value={d.team ?? ""} options={d.teams} set={(v) => set({ team: v })} /></div>
+            {d.strength ? <><StrengthPanel rows={d.strength.rows} lanes={d.strength.lanes} />
+              <Explain is_={d.strength.is_} best={d.strength.best} best_label={d.strength.best_label} for_={d.strength.for_} /></> : <Missing why="No rated matches yet." />}
+          </Tile>}
+        </>}
+        {d.tab === d.tabs[3] && !d.none && <>
+          {d.bars && <Tile span={5} title="Most runs" right={d.date}>
+            <RankBars rows={d.bars.rows} reference={null} decimals={0} best />
+            <Explain is_={d.bars.is_} best={d.bars.best} best_label={d.bars.best_label} for_={d.bars.for_} /></Tile>}
+          {d.table && <Tile span={7} title="Every team by runs and wickets"><Grid t={d.table} />{d.table.note && <div className="note">{d.table.note}</div>}</Tile>}
+        </>}
+      </div>
     </>
   );
 }

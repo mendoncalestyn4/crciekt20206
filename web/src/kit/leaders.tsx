@@ -114,3 +114,25 @@ export function RecordSteps({ points, end, unit }: { points: { date: string; y: 
   }, [t, points, end, unit]);
   return <EChart option={option} height={340} label="The record over time" />;
 }
+
+/** Lines over time: one per player (a rating) or team (Elo), each point a match day; `base` draws a dashed line
+ *  (1500 for Elo). */
+export function TimeLines({ series, y, base, dec = 2 }: { series: { name: string; points: { date: string; v: number; id?: string }[] }[]; y: string; base?: number; dec?: number }) {
+  const t = useTheme();
+  const option = useMemo<Option>(() => {
+    const L = look(t), pal = [t.led, t.blue, t.win, t.violet, t.warm, t.teal, t.grey];
+    return {
+      legend: { top: 0, textStyle: { color: t.ink, fontFamily: "Inter", fontSize: ts(11) } },
+      grid: { left: 56, right: 24, top: 40, bottom: 36 },
+      xAxis: { type: "time", ...L.AX },
+      yAxis: { type: "value", name: y, scale: true, nameTextStyle: { color: t.dim, fontFamily: "Inter", fontSize: ts(11) }, ...L.AX },
+      tooltip: { ...L.TT, trigger: "axis", valueFormatter: (v: number) => (dec ? v.toFixed(dec) : String(Math.round(v))) },
+      series: series.map((s, i) => ({ name: s.name, type: "line", step: "end", symbol: "circle", symbolSize: 5, showSymbol: s.points.length < 60,
+        lineStyle: { width: 2.5, color: pal[i % pal.length] }, itemStyle: { color: pal[i % pal.length] },
+        data: s.points.map((p) => ({ value: [p.date, p.v], ...(p.id ? { match: p.id } : {}) })),
+        ...(i === 0 && base != null ? { markLine: { silent: true, symbol: "none", lineStyle: { color: t.dim, type: "dashed" }, label: { show: false }, data: [{ yAxis: base }] } } : {}) })),
+    };
+  }, [t, series, y, base, dec]);
+  if (!series.length) return <div className="empty">Pick someone to draw.</div>;
+  return <EChart option={option} height={380} label={`${y} over time`} />;
+}

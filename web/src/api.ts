@@ -513,3 +513,17 @@ export type RecordsPage = {
   timeline?: { names: string[]; none?: string; pick?: string; unit?: string; end?: string;
     points?: { date: string; y: number; label: string; holder: string; id: string }[]; table?: GridT } & Partial<Explained>;
 };
+export type RankRow = { rank: number; player: string; team: string; rating: string; move: string; peak: string; peak_date: string;
+  at_one: number; inns: number; series: number; how: string; mine: boolean };
+export type RankingsPage = {
+  choices: { section: string; matches: number }[]; ticked: string[]; section: string; tabs: string[]; tab: string;
+  kinds: { id: string; label: string }[]; what: string; none?: string; rule?: string; combined?: boolean; latest?: string;
+  rows?: RankRow[]; near?: { player: string; team: string; inns: number; rating: string; needs: string }[]; need?: number;
+  table?: NGrid; bars?: { rows: SbsBar[] } & Explained;
+  players?: string[]; picked?: string[]; lines?: { player: string; points: { date: string; rating: number; rank: number }[] }[] |
+    ({ teams: { team: string; points: { date: string; elo: number; id: string }[] }[] } & Explained);
+  peaks?: { rows: SbsBar[] } & Explained; reigns?: NGrid; is_?: string; best?: string; best_label?: string; for_?: string;
+  teams?: string[]; elo?: { rows: SignedBar[] } & Explained; note?: string; units?: NGrid; team?: string;
+  strength?: ({ rows: Strength[]; lanes: string[] } & Explained) | null;
+  date?: string; first?: string; last?: string; ends?: { label: string; date: string }[];
+};
