@@ -431,6 +431,9 @@ def _role_labels(career, ids, kind: str, min_matches: int = 3) -> pd.DataFrame:
     reg_w["sr"] = reg_w.balls / reg_w.wkts.replace(0, np.nan)
     reg_w["econ"] = reg_w.runs / reg_w.balls * 6
     q = lambda s, p: s.quantile(p) if s.notna().any() else np.nan  # noqa: E731
+    # the thresholds are the same for every player: worked out once (they were worked out again for each player)
+    b_bpct75, b_sr50, b_avg75 = q(reg_b.bpct, 0.75), q(reg_b.sr, 0.5), q(reg_b.avg, 0.75)
+    w_sr25, w_econ25 = q(reg_w.sr, 0.25), q(reg_w.econ, 0.25)
     rows = []
     for p, n in matches.items():
         if n < min_matches:
@@ -458,15 +461,15 @@ def _role_labels(career, ids, kind: str, min_matches: int = 3) -> pd.DataFrame:
             tags.append("Wicketkeeper")
         if p in reg_b.index:
             r = reg_b.loc[p]
-            if limited and r.bpct >= q(reg_b.bpct, 0.75) and r.sr >= q(reg_b.sr, 0.5):
+            if limited and r.bpct >= b_bpct75 and r.sr >= b_sr50:
                 tags.append("Big hitter")
-            if r.avg >= q(reg_b.avg, 0.75) and r.sr < q(reg_b.sr, 0.5):
+            if r.avg >= b_avg75 and r.sr < b_sr50:
                 tags.append("Anchor")
         if p in reg_w.index:
             r = reg_w.loc[p]
-            if r.sr <= q(reg_w.sr, 0.25):
+            if r.sr <= w_sr25:
                 tags.append("Strike bowler")
-            if limited and r.econ <= q(reg_w.econ, 0.25):
+            if limited and r.econ <= w_econ25:
                 tags.append("Economist")
         rows.append(dict(player=p, role=role, tags=tags, usual_position=up, matches=int(n)))
     return pd.DataFrame(rows, columns=cols)

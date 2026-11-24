@@ -693,3 +693,50 @@ a.lkrow:hover, a.mlk:hover { background: var(--tile2); }
 /* how it's worked out: point at a number for its sum; dotted when it rests on few games */
 .how-tip { cursor: help; }
 .few { text-decoration: underline dotted; text-underline-offset: 3px; }
+
+/* stage 3: one choice out of a few, as buttons; several at once as tick boxes on their own line; the ranked figure in
+   bold; the key under a chart */
+.seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.seg button { cursor: pointer; border-radius: 999px; padding: 6px 14px; font: 600 15px Inter; background: var(--tile2);
+  border: 1px solid var(--edge); color: var(--ink); }
+.seg button.on { background: var(--led); border-color: var(--led); color: var(--led-ink); }
+.field.multi { align-items: flex-start; }
+.field.multi > label { padding-top: 1px; min-width: 150px; }
+.field.multi .ticks { margin: 2px 0 0; }
+.tick.none { cursor: default; color: var(--dim); font-style: italic; }
+.field label.tick { font: 600 14px Inter; letter-spacing: 0; text-transform: none; color: var(--dim); }
+.field label.tick.on { color: var(--ink); }
+td.bold .tn, td.bold { font-weight: 800; }
+.keylist { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 4px; font: 400 15.4px/1.45 Inter; color: var(--dim); }
+.keylist li { padding-left: 22px; position: relative; }
+.keylist li::before { content: ""; position: absolute; left: 0; top: 7px; width: 14px; height: 6px; }
+.keylist li.line::before { border-top: 2px dashed var(--dim); height: 0; top: 9px; }
+.keylist li.shade::before { background: color-mix(in srgb, var(--win) 25%, transparent); height: 12px; top: 4px; }
+.keylist li.dot::before { width: 10px; height: 10px; border-radius: 50%; background: var(--blue); top: 5px; }
+.keylist li.dot.neg::before { background: var(--loss); }
+
+/* dropdowns at the top of a page (24 November): a row of them, each a button that opens its list */
+.drops { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; }
+.drop { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.droplab { font: 400 19px 'Bebas Neue'; letter-spacing: .1em; color: var(--dim); }
+.dropbtn { display: flex; align-items: center; gap: 10px; max-width: 340px; cursor: pointer; font: 500 16px Inter; background: var(--page);
+  color: var(--ink); border: 1px solid var(--edge); border-radius: 10px; padding: 8px 12px; text-align: left; }
+.dropbtn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dropbtn i { font-style: normal; color: var(--dim); margin-left: auto; }
+.dropbtn[aria-expanded="true"] { border-color: var(--led); }
+.dropmenu { position: absolute; top: 100%; left: 0; z-index: 30; margin-top: 6px; min-width: 320px; max-width: 440px; max-height: 420px;
+  overflow-y: auto; background: var(--tile); border: 1px solid var(--edge); border-radius: 12px; padding: 6px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .25); }
+.droprow { display: flex; align-items: center; gap: 8px; padding: 2px 6px; border-radius: 8px; }
+.droprow:hover { background: var(--tile2); }
+.droprow.on button { color: var(--ink); font-weight: 700; }
+.droprow input { accent-color: var(--gold); width: 16px; height: 16px; margin: 0; cursor: pointer; flex: none; }
+.droprow .dropbox { width: 16px; flex: none; }
+.droprow button { flex: 1; text-align: left; background: none; border: 0; cursor: pointer; padding: 7px 4px; font: 500 15.5px Inter;
+  color: var(--soft); display: flex; justify-content: space-between; gap: 12px; }
+.droprow button small { color: var(--dim); font-size: 13px; font-weight: 500; white-space: nowrap; align-self: center; }
+.drophint { font: 400 13px/1.4 Inter; color: var(--dim); padding: 8px 6px 4px; border-top: 1px solid var(--edge); margin-top: 4px; }
+/* the tile holding the dropdowns lets their lists hang over the tiles below */
+.t.pickbar { overflow: visible; z-index: 20; }
+.t.pickbar::before { border-radius: var(--r) var(--r) 0 0; }
+.t.pickbar .drops + .drops { margin-top: 14px; }

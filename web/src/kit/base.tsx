@@ -1,5 +1,5 @@
 // The page's building blocks: tiles, the hero panel, numbers and names in their fonts, won / lost lamps, logos.
-import { useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Link } from "react-router";
 import type { Outcome } from "../api";
 import { useShell } from "../shell/Shell";
@@ -151,5 +151,48 @@ export function FormatTicks({ all, on, set }: { all: string[]; on: string[]; set
             if (next.length) set(all.filter((y) => next.includes(y)));
           }} />{fmtOf(x)}</label>);
     })}</div>
+  );
+}
+
+/** A dropdown at the top of a page (your choice of 24 November: no rows of tick boxes). Click a name for just that
+ *  one; where several can be counted together (`multi`), the tick box by a name adds it to the others. `none`: what
+ *  nothing picked means ("All seasons"); `keepOne`: one always stays picked (a competition). */
+export function Drop({ label, all, on, set, none, multi = true, keepOne = false, say, note }: {
+  label: string; all: string[]; on: string[]; set: (v: string[]) => void; none?: string; multi?: boolean; keepOne?: boolean;
+  say?: (x: string) => string; note?: (x: string) => string;
+}) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: MouseEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", away);
+    document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", esc); };
+  }, [open]);
+  if (!all.length) return null;
+  const name = (x: string) => (say ? say(x) : x);
+  const shown = !on.length ? (none ?? "") : on.length <= 2 ? on.map(name).join(" + ") : `${name(on[0]!)} + ${on.length - 1} more`;
+  return (
+    <div className="drop" ref={box}>
+      <span className="droplab">{label}</span>
+      <button className="dropbtn" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(!open)}><span>{shown}</span><i>▾</i></button>
+      {open && <div className="dropmenu" role="listbox" aria-label={label}>
+        {none && !keepOne && <div className={`droprow ${on.length ? "" : "on"}`}><span className="dropbox" />
+          <button onClick={() => { set([]); setOpen(false); }}>{none}</button></div>}
+        {all.map((x) => {
+          const ticked = on.includes(x);
+          return (
+            <div key={x} className={`droprow ${ticked ? "on" : ""}`}>
+              {multi ? <input type="checkbox" checked={ticked} aria-label={`Count ${name(x)} too`} title="Tick to count it together with the others"
+                onChange={() => { const next = ticked ? on.filter((y) => y !== x) : all.filter((y) => y === x || on.includes(y));
+                  if (keepOne && !next.length) return; set(next); }} /> : <span className="dropbox" />}
+              <button onClick={() => { set([x]); setOpen(false); }}>{name(x)}{note && <small>{note(x)}</small>}</button>
+            </div>);
+        })}
+        {multi && <div className="drophint">Click a name for just that one; tick boxes to count several together.</div>}
+      </div>}
+    </div>
   );
 }

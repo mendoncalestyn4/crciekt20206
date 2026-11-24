@@ -7,16 +7,13 @@ import { Head, SECTIONS } from "../shell/Shell";
 export const PLANS: Record<string, { stage: string; crumb: string; items: string[]; from: string }> = {
   "/fixtures": { stage: "Stage 4", crumb: "Your schedule",
     items: ["Schedule, add matches, change or delete (with undo), series, calendar", "WTC race, milestones, goals"], from: "Fixtures" },
-  "/leaders": { stage: "Stage 3", crumb: "Leaders, records, hall of fame, rankings",
-    items: ["Stat by stat leaders", "Records with timeline, hall of fame", "Rankings: player ratings, history, team Elo"],
-    from: "Stat by stat, Records, Hall of fame, Rankings" },
   "/insights": { stage: "Stage 3", crumb: "What wins games",
     items: ["Score chances, par by opponent, chase calculator, runs above expected, fair averages",
       "What wins games, expected wins, match-winners, style maps, boom or bust, form, bat or bowl first"],
     from: "Insights, Analytics" },
 };
 
-const PICKED: Record<string, string> = { "/leaders": "competition" };
+const PICKED: Record<string, string> = {};
 
 export function Section({ path }: { path: string }) {
   const plan = PLANS[path]!;

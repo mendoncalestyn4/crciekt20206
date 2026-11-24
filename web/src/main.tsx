@@ -15,6 +15,7 @@ import { Competitions } from "./pages/Competitions";
 import { Season } from "./pages/Season";
 import { Review } from "./pages/Review";
 import { Honours } from "./pages/Honours";
+import { LeadersToCome, StatByStat } from "./pages/Leaders";
 import { MyTeam } from "./pages/MyTeam";
 import { PlayersHome, PlayerView } from "./pages/Players";
 import { MatchesHome, MatchView } from "./pages/Matches";
@@ -51,6 +52,11 @@ createRoot(document.getElementById("root")!).render(
               <Route key={p} path={p} element={<Section path={p} />} />,
               <Route key={`${p}/pick`} path={`${p}/:pick`} element={<Section path={p} />} />,
             ])}
+            <Route path="/leaders" element={<StatByStat />} />
+            <Route path="/leaders/records" element={<LeadersToCome on={1} what="The record books, the best stand for each wicket, the best games ever and streaks." />} />
+            <Route path="/leaders/hall" element={<LeadersToCome on={2} what="Inductions with their plaques, who's next in, batting duos, Player of the Match, all-round matches and the firsts timeline." />} />
+            <Route path="/leaders/rankings" element={<LeadersToCome on={3} what="Batters, bowlers and all-rounders ranked on the marks out of 10, their peaks and time at No. 1, the rankings history, team ratings and every team ranked by runs and wickets." />} />
+            <Route path="/leaders/:pick" element={<StatByStat />} />
             <Route path="/teams" element={<Teams />} />
             <Route path="/teams/vs" element={<TeamVsTeam />} />
             <Route path="/teams/preview" element={<Preview />} />

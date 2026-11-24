@@ -319,7 +319,7 @@ export type InboxItem = InboxMsg & { id: string; team: string; read: boolean };
 export type InboxPage = { teams: string[]; messages: InboxItem[]; unread: number };
 
 // ------------------------------------------------------------------ Teams (stage 2)
-export type GridT = { cols: string[]; rows: (string | number | null)[][]; num: number[]; hi: boolean[]; links: (string | null)[]; dim?: boolean[];
+export type GridT = { cols: string[]; rows: (string | number | null)[][]; num: number[]; hi: boolean[]; links: (string | null)[]; dim?: boolean[]; bold?: number;
   badges?: number[]; parts?: (Parts | null)[] };   // badges: the columns that name teams ("India", or "India v Australia"), each shown with its badge
 /** The numbers a row's average, strike rate or economy is made from, when the row doesn't show them (web/src/howto.ts):
  *  batting runs, times out, balls faced and innings; bowling runs, balls, wickets and innings; `what` names what the average is
@@ -484,3 +484,20 @@ export type Wrap = { none: string; formats: string[]; format: string; teams: str
   slides?: WrapSlide[]; note?: string ; view?: string };
 export type HonoursPage = { tabs: string[]; tab: string; none: string; boards?: (GridT & { title: string })[]; note?: string;
   cabinet?: GridT | null; cabinet_none?: string };
+
+// ---------------------------------------------------------------- stage 3: Leaders and records
+export type SbsBar = { player: string; team: string; value: number; text: string; hi: boolean };
+export type SbsDot = { title: string; x_label: string; y_label: string; line: "slope" | "flat"; value: number | null; better_below: boolean;
+  decimals: number; points: { player: string; team: string; x: number; y: number; ranked: boolean; named: boolean; hi: boolean }[];
+  explain: [string, string][] } & Explained;
+export type StatByStat = {
+  choices: { section: string; matches: number }[]; ticked: string[]; section: string; seasons: string[]; picked_seasons: string[];
+  discs: string[]; disc: string; events: string[]; picked_events: string[]; teams: string[]; picked_teams: string[];
+  venues: string[]; picked_venues: string[]; hows: string[]; picked_how: string[]; groups: string[]; picked_groups: string[];
+  single: boolean; picked_single: number[]; view: "Best" | "Worst"; tops: string[]; top: string;
+  stats?: { id: string; label: string }[]; stat?: string; measures?: { id: string; label: string }[]; measure?: string;
+  minimum?: { options: { v: number; label: string }[]; value: number }; names?: string[]; find?: string; only?: string[];
+  statdef?: { label: string; definition: string; note: string }; none?: string; found?: string;
+  bars?: { title: string; rows: SbsBar[]; reference: number | null; decimals: number; lower: boolean } & Explained;
+  dots?: SbsDot; table?: NGrid & { bold: number }; csv?: string;
+};
