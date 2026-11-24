@@ -15,7 +15,7 @@ import { Competitions } from "./pages/Competitions";
 import { Season } from "./pages/Season";
 import { Review } from "./pages/Review";
 import { Honours } from "./pages/Honours";
-import { LeadersToCome, Rankings, Records, StatByStat } from "./pages/Leaders";
+import { HallOfFame, Rankings, Records, StatByStat } from "./pages/Leaders";
 import { MyTeam } from "./pages/MyTeam";
 import { PlayersHome, PlayerView } from "./pages/Players";
 import { MatchesHome, MatchView } from "./pages/Matches";
@@ -54,7 +54,7 @@ createRoot(document.getElementById("root")!).render(
             ])}
             <Route path="/leaders" element={<StatByStat />} />
             <Route path="/leaders/records" element={<Records />} />
-            <Route path="/leaders/hall" element={<LeadersToCome on={2} what="Inductions with their plaques, who's next in, batting duos, Player of the Match, all-round matches and the firsts timeline." />} />
+            <Route path="/leaders/hall" element={<HallOfFame />} />
             <Route path="/leaders/rankings" element={<Rankings />} />
             <Route path="/leaders/:pick" element={<StatByStat />} />
             <Route path="/teams" element={<Teams />} />

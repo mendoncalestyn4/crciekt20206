@@ -753,3 +753,15 @@ td.bold .tn, td.bold { font-weight: 800; }
 .drops.row { display: inline-grid; grid-auto-flow: column; grid-auto-columns: minmax(210px, 280px); grid-template-columns: none; }
 .drop input.typed { width: 100%; min-width: 0; flex: none; }
 .drop input.typed.num { width: 120px; }
+
+/* Hall of fame: plaques, and the firsts timeline (a year, then each first on its own line) */
+.t.plaque .tl { color: var(--led); }
+.t.plaque.mine { border-color: var(--led); }
+.timeline { display: grid; gap: 18px; }
+.tyear { display: grid; gap: 6px; }
+.tyear .ty { font: 400 34px 'Bebas Neue'; letter-spacing: .06em; color: var(--led); }
+.tev { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 12px; align-items: baseline; padding: 6px 0;
+  border-bottom: 1px solid var(--edge); font: 400 16px/1.45 Inter; color: var(--soft); }
+.tev .td { color: var(--dim); font-weight: 600; }
+.tev b { color: var(--ink); }
+.tev.player b { color: var(--blue); }

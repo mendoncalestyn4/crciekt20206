@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { dayY } from "../format";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import { get, type RankingsPage, type RecordsPage, type StatByStat, remember } from "../api";
+import { get, type HallPage, type RankingsPage, type RecordsPage, type StatByStat, remember } from "../api";
 import { Drop, Explain, MatchLink, Missing, Pick, Tile } from "../kit/base";
 import { DotSpread, PaceBars, RankBars, RecordSteps, TimeLines } from "../kit/leaders";
 import { BestTable } from "../kit/match";
@@ -129,18 +129,6 @@ export function StatByStat() {
           </Tile>}
         </>}
       </div>
-    </>
-  );
-}
-
-/** A page of this section still to be built (stage 3 goes page by page). */
-export function LeadersToCome({ on, what }: { on: number; what: string }) {
-  useReady(true, on);
-  return (
-    <>
-      <LeadersHead on={on} crumb={LEADER_PAGES[on]!.label} />
-      <div className="grid"><Tile span={12} title="Coming in stage 3"><div className="plain">{what}</div>
-        <div className="plain">Until then the current site has it: start it with <b>Start Stats Pack.bat</b>.</div></Tile></div>
     </>
   );
 }
@@ -351,6 +339,92 @@ export function Rankings() {
             <Explain is_={d.bars.is_} best={d.bars.best} best_label={d.bars.best_label} for_={d.bars.for_} /></Tile>}
           {d.table && <Tile span={7} title="Every team by runs and wickets"><Grid t={d.table} />{d.table.note && <div className="note">{d.table.note}</div>}</Tile>}
         </>}
+      </div>
+    </>
+  );
+}
+
+const HALL_KEYS = ["tab", "section", "season", "team"];
+
+/** Hall of fame (stage 3): inductions with their plaques and who's next in, Player of the Match, the best batting
+ *  duos, the best all-round matches and the firsts timeline. */
+export function HallOfFame() {
+  const { career, noCareer, nation } = useShell();
+  const [params] = useSearchParams();
+  const go = useNavigate();
+  const want = Object.fromEntries(HALL_KEYS.map((k) => [k, params.get(k) ?? ""]));
+  const qs = HALL_KEYS.filter((k) => want[k]).map((k) => `${k}=${encodeURIComponent(want[k]!)}`).join("&");
+  const q = useQuery({ queryKey: ["hall", qs, career?.name], enabled: Boolean(career), retry: false,
+    queryFn: () => get<HallPage>(`/api/hall?${qs}`), placeholderData: (was) => was });
+  useReady(Boolean(q.data || q.error || noCareer), qs);
+  const [kind, setKind] = useState("all");
+  const set = (changes: Record<string, string>) => {
+    if (changes.section) remember({ section: changes.section });
+    const next: Record<string, string> = { ...want, ...changes };
+    if ("section" in changes) next.season = "";
+    if (nation) next.nation = nation;
+    go(`/leaders/hall?${new URLSearchParams(Object.entries(next).filter(([, v]) => v)).toString()}`);
+  };
+  const head = <LeadersHead on={2} crumb="Hall of fame · the big performers" />;
+  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career on the current site for now.</div></Tile></div></>;
+  if (q.error) return <>{head}<div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
+  if (!q.data) return <>{head}<div className="empty">Opening the Hall of fame…</div></>;
+  const d = q.data;
+  if (!d.choices.length) return <>{head}<div className="grid"><Tile span={12}><Missing why={d.none} /></Tile></div></>;
+  const comps = d.choices.map((c) => c.section);
+  const note = (x: string) => `${d.choices.find((c) => c.section === x)?.matches ?? ""} matches`;
+  const firsts = d.tab === "Firsts", ind = d.tab === "Inductions";
+  const events = (d.events ?? []).filter((e) => kind === "all" || e.kind === kind);
+  const years = [...new Set(events.map((e) => e.year))];
+  return (
+    <>
+      {head}
+      <div className="grid">
+        <div className="itabs">{d.tabs.map((x, i) => (
+          <button key={x} className={x === d.tab ? "on" : ""} onClick={() => set({ tab: i === 0 ? "" : x })}>{x}</button>))}</div>
+        <Tile span={12} className="pickbar">
+          <div className="drops">
+            {firsts ? <><Pick label="Team" value={d.team ?? ""} options={d.teams ?? []} set={(v) => set({ team: v })} />
+              <Pick label="Show" value={kind} options={[{ v: "all", label: "Everything" }, { v: "team", label: "The team's firsts" }, { v: "player", label: "Its players' firsts" }]} set={setKind} /></>
+              : ind ? <Pick label="Competition" value={d.ticked[0]!} options={comps.map((c) => ({ v: c, label: c, note: note(c) }))} set={(v) => set({ section: v })} />
+              : <><Drop label="Competition" all={comps} on={d.ticked} set={(v) => set({ section: v.join("|") })} keepOne note={note} />
+                <Pick label="Season" value={d.season || "All seasons"} options={["All seasons", ...d.seasons]} set={(v) => set({ season: v === "All seasons" ? "" : v })} /></>}
+          </div>
+          {ind && d.rule && <div className="note">{d.rule}</div>}
+          {firsts && <div className="note">Every first in {d.team}'s career and its players': first match and win in each format, against each side, series and
+            titles, big totals and chases; its players' first fifties, hundreds, five-fors, big stands, awards, No. 1 rankings and Hall of fame entries.</div>}
+        </Tile>
+        {d.none ? <Tile span={12}><Missing why={d.none} /></Tile> : null}
+        {ind && <>
+          {(d.plaques ?? []).map((p) => (
+            <Tile key={p.player} span={4} title={p.player} right={p.team} className={`plaque${p.mine ? " mine" : ""}`}>
+              <div className="plain"><b>Inducted {p.date}</b> · <MatchLink id={p.id} className="lk">the match</MatchLink></div>
+              <div className="plain">{p.route}{p.also ? ` · also ${p.also}` : ""}</div>
+              <div className="note">{p.figures}</div>
+              {p.moments.length > 0 && <><div className="glabel" style={{ marginTop: 8 }}>Best moments</div>
+                <ul className="dots">{p.moments.map((x) => <li key={x.id + x.what}><MatchLink id={x.id} className="lk">{x.what}</MatchLink> <span className="why">{x.date}</span></li>)}</ul></>}
+            </Tile>))}
+          {d.next && d.next.length > 0 && <Tile span={12} title="Next in" right="the closest, and what each still needs">
+            <table className="c"><thead><tr><th>Player</th><th>Team</th><th className="r">How close</th><th>Still needs</th></tr></thead>
+              <tbody>{d.next.map((r) => <tr key={r.player}><td><span className="why"><T>{r.player}</T></span></td><td><span className="why">{r.team}</span></td>
+                <td className="r"><span className="tn">{r.share}%</span></td><td><span className="why">{r.needs}</span></td></tr>)}</tbody></table></Tile>}
+        </>}
+        {(d.tab === "Player of the Match" || d.tab === "Batting duos" || d.tab === "All-round matches") && d.bars && <Tile span={d.tab === "All-round matches" ? 12 : 7}
+          title={d.tab === "Player of the Match" ? "Most Player of the Match awards" : d.tab === "Batting duos" ? "Most runs together" : "Best all-round matches"}>
+          <RankBars rows={d.bars.rows} reference={null} decimals={0} best />
+          <Explain is_={d.bars.is_} best={d.bars.best} best_label={d.bars.best_label} for_={d.bars.for_} />
+          {d.note && <div className="note">{d.note}</div>}</Tile>}
+        {d.tab === "Player of the Match" && <Tile span={5} title="Big-game players" right="awards in knockouts and finals">
+          {d.big ? <Grid t={d.big} /> : <Missing why="No knockout matches here yet." />}</Tile>}
+        {d.tab === "Batting duos" && d.table && <Tile span={12} title="The best batting duos"><Grid t={d.table} />{d.table.note && <div className="note">{d.table.note}</div>}</Tile>}
+        {firsts && events.length > 0 && <Tile span={12} title={`Firsts · ${d.team}`} right={`${events.length} so far`}>
+          <div className="timeline">{years.map((y) => (
+            <div key={y} className="tyear"><div className="ty">{y}</div>
+              {events.filter((e) => e.year === y).map((e, i) => (
+                <div key={i} className={`tev ${e.kind}`}><span className="td">{e.date.slice(0, 6)}</span>
+                  <span className="tw"><b>{e.what}</b> <T>{e.who}</T></span>
+                  {e.id ? <MatchLink id={e.id} className="lk">match</MatchLink> : <span />}</div>))}</div>))}</div>
+        </Tile>}
       </div>
     </>
   );

@@ -122,7 +122,7 @@ def next_in(career, section: str, n: int = 8) -> pd.DataFrame:
     return out.sort_values(["share", "player"], ascending=[False, True]).head(n).reset_index(drop=True)
 
 
-def plaque(career, section: str, player: str) -> dict:
+def plaque(career, section: str, player: str, bowler_first: bool = False) -> dict:
     """His best moments in the competition: the three highest innings and the two best bowling figures, each with its
     match, and his figures."""
     ids = set(career.matches[career.matches.section == section].match_id)
@@ -133,8 +133,9 @@ def plaque(career, section: str, player: str) -> dict:
     best_bowl = w.assign(k=w.wickets * 1000 - w.runs).sort_values(["k", "match_id"], ascending=[False, True]).head(2)
     moments = [dict(what=f"{int(r.runs)}{'' if r.out else '*'} v {r.opposition}", date=meta.date[r.match_id], id=r.match_id)
                for r in best_bat.itertuples() if r.runs > 0]
-    moments += [dict(what=f"{int(r.wickets)}/{int(r.runs)} v {r.opposition}", date=meta.date[r.match_id], id=r.match_id)
-                for r in best_bowl.itertuples() if r.wickets > 0]
+    spells = [dict(what=f"{int(r.wickets)}/{int(r.runs)} v {r.opposition}", date=meta.date[r.match_id], id=r.match_id)
+              for r in best_bowl.itertuples() if r.wickets > 0]
+    moments = spells + moments if bowler_first else moments + spells   # what took him in comes first
     outs = int(b.out.sum())
     return dict(moments=moments, runs=int(b.runs.sum()), average=(b.runs.sum() / outs) if outs else None,
                 wickets=int(w.wickets.sum()), bowl_average=(w.runs.sum() / w.wickets.sum()) if w.wickets.sum() else None)

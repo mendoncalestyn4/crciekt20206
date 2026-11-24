@@ -28,7 +28,9 @@ PAGES = ["/", "/inbox", "/style-guide", "/settings", "/players", "/players/J Bet
          "/leaders?pos=Openers (1-2)&view=Worst&measure=season", "/leaders/records",
          "/leaders/records?section=ODIs|T20Is&season=2026&top=5", "/leaders/rankings", "/leaders/rankings?tab=Rankings history",
          "/leaders/rankings?tab=Team ratings&section=ODIs", "/leaders/rankings?tab=Teams by runs and wickets&section=ODIs|T20Is",
-         "/leaders/rankings?section=Tests|ODIs|T20Is&what=all-round", "/insights", "/no-such-page"]
+         "/leaders/rankings?section=Tests|ODIs|T20Is&what=all-round", "/leaders/hall", "/leaders/hall?tab=Player of the Match",
+         "/leaders/hall?tab=Batting duos&section=ODIs|T20Is", "/leaders/hall?tab=All-round matches", "/leaders/hall?tab=Firsts&team=India",
+         "/insights", "/no-such-page"]
 
 
 @pytest.fixture(scope="module")

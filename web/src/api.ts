@@ -486,7 +486,7 @@ export type HonoursPage = { tabs: string[]; tab: string; none: string; boards?: 
   cabinet?: GridT | null; cabinet_none?: string };
 
 // ---------------------------------------------------------------- stage 3: Leaders and records
-export type SbsBar = { player: string; team: string; value: number; text: string; hi: boolean; sub?: string };
+export type SbsBar = { player: string; team: string; value: number; text: string; hi: boolean; sub?: string; id?: string };
 export type SbsDot = { title: string; x_label: string; y_label: string; line: "slope" | "flat"; value: number | null; better_below: boolean;
   decimals: number; points: { player: string; team: string; x: number; y: number; ranked: boolean; named: boolean; hi: boolean }[];
   explain: [string, string][] } & Explained;
@@ -526,4 +526,12 @@ export type RankingsPage = {
   teams?: string[]; elo?: { rows: SignedBar[] } & Explained; note?: string; units?: NGrid; team?: string;
   strength?: ({ rows: Strength[]; lanes: string[] } & Explained) | null;
   date?: string; first?: string; last?: string; ends?: { label: string; date: string }[];
+};
+export type Plaque = { player: string; team: string; date: string; id: string; route: string; also: string; figures: string;
+  moments: { what: string; date: string; id: string }[]; mine: boolean };
+export type HallPage = {
+  choices: { section: string; matches: number }[]; ticked: string[]; section: string; tabs: string[]; tab: string; seasons: string[]; season: string;
+  none?: string; rule?: string; plaques?: Plaque[]; next?: { player: string; team: string; share: number; needs: string }[];
+  bars?: { rows: SbsBar[] } & Explained; big?: GridT | null; note?: string; table?: NGrid;
+  teams?: string[]; team?: string; events?: { date: string; year: number; kind: string; what: string; who: string; id: string | null; section: string }[];
 };

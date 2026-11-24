@@ -750,11 +750,16 @@ def _inducted(career, sec, mine) -> dict:
             "runs or 100 wickets; Tests and first-class 4,000 runs or 150 wickets; all-rounders 1,000 runs and 50 wickets).")
     plaques = []
     for r in ind.iloc[::-1].itertuples():   # the newest first
-        pl = H.plaque(career, sec, r.player)
+        pl = H.plaque(career, sec, r.player, bowler_first="wickets" in r.route and "runs" not in r.route)
+        figs = [f"{int(r.matches)} matches"]
+        if r.runs:
+            figs.append(f"{int(r.runs):,} runs" + (f" at {fmt(pl['average'], 2)}" if pl["average"] is not None else ""))
+        if r.wickets:
+            figs.append(f"{int(r.wickets)} wickets" + (f" at {fmt(pl['bowl_average'], 2)}" if pl["bowl_average"] is not None else ""))
+        if r.pom:
+            figs.append(f"{int(r.pom)} Player of the Match")
         plaques.append(dict(player=r.player, team=r.team, date=f"{r.date:%d %b %Y}", id=r.match_id, route=r.route,
-                            also=r.also, matches=int(r.matches), runs=int(r.runs), wickets=int(r.wickets), pom=int(r.pom),
-                            average=fmt(pl["average"], 2) if pl["average"] is not None else "–",
-                            bowl_average=fmt(pl["bowl_average"], 2) if pl["bowl_average"] is not None else "–",
+                            also=r.also, figures=" · ".join(figs),
                             moments=[dict(what=x["what"], date=f"{x['date']:%d %b %Y}", id=x["id"]) for x in pl["moments"]],
                             mine=r.team in set(mine)))
     return dict(rule=rule, plaques=plaques,
