@@ -780,4 +780,4 @@ td.bold .tn, td.bold { font-weight: 800; }
 tr.gone .why, tr.gone .tn { text-decoration: line-through; opacity: .7; }
 .tlname { display: inline-flex; align-items: center; gap: 8px; }
 .t.mine { border-color: var(--led); }
-table.tl td .why { white-space: nowrap; }
+table.tleads td .why { white-space: nowrap; }

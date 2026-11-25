@@ -64,7 +64,12 @@ def _body(career, ticked, season, disc, picked, like) -> dict:
         out["few"] = "Pick at least two players."
     rows = table.set_index("player").loc[chosen] if chosen else table.iloc[0:0]
     fields = BAT_FIELDS if disc == "Batting" else BOWL_FIELDS
-    out["summary"] = dict(cols=[""] + chosen, rows=[[label] + [(str(rows.loc[p, col]) if d is None else fmt(rows.loc[p, col], d))
+    def shown(v, d):   # whole numbers with a comma for thousands, as everywhere else on the site
+        if d is None:
+            return str(v)
+        t = fmt(v, d)
+        return f"{int(round(float(v))):,}" if d == 0 and t != "–" else (f"{float(v):,.{d}f}" if t != "–" else t)
+    out["summary"] = dict(cols=[""] + chosen, rows=[[label] + [shown(rows.loc[p, col], d)
                                                             for p in chosen] for label, col, d in fields],
                           num=list(range(1, len(chosen) + 1)), hi=[], links=[])
     # one chart per stat (the stat-by-stat page's definitions), the average marked when one competition is picked
@@ -82,7 +87,7 @@ def _body(career, ticked, season, disc, picked, like) -> dict:
         charts.append(dict(id=st.id, label=st.label, better="higher is better" if st.better == "high" else "lower is better",
                            reference=round(float(ref), 4) if ref is not None else None, dec=st.decimals,
                            rows=[dict(player=p, value=round(float(v), 4) if v is not None and np.isfinite(float(v)) else 0,
-                                      text=fmt(float(v), st.decimals) if v is not None and np.isfinite(float(v)) else "–") for p, v in vals],
+                                      text=shown(float(v), st.decimals) if v is not None and np.isfinite(float(v)) else "–") for p, v in vals],
                            **SG.lines(f"{st.label} of the players picked in {where}"
                                       + (", the competition's average dashed." if ref is not None else "."),
                                       best, st.definition, best_label="Best of them")))

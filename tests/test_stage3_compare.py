@@ -57,7 +57,7 @@ def test_figures_equal_stat_by_stat(career):
         label = "Runs above avg" if disc == "Batting" else "Runs saved"
         row = next(r for r in d["summary"]["rows"] if r[0] == label)
         for p, v in zip(d["players"], row[1:]):
-            assert v == f"{t.loc[p, col]:.1f}"
+            assert v.replace(",", "") == f"{t.loc[p, col]:.1f}"
         assert d["combined"] and all(c["reference"] is None for c in d["charts"])
     d = page(career, section="ODIs")
     assert any(c["reference"] is not None for c in d["charts"])

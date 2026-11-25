@@ -139,7 +139,8 @@ export function CareerCurves({ series, what, order }: { series: { player: string
       series: series.map((s) => { const col = pal[order.indexOf(s.player) % 4] ?? t.blue;
         return { name: s.player, type: "line", symbol: "circle", symbolSize: 5, showSymbol: s.points.length < 40,
           lineStyle: { width: 2.5, color: col }, itemStyle: { color: col }, data: s.points.map((v, i) => [i + 1, v]),
-          endLabel: { show: true, formatter: s.player, color: col, fontFamily: "Inter", fontSize: ts(12) } }; }),
+          endLabel: { show: true, formatter: s.player, color: col, fontFamily: "Inter", fontSize: ts(12) },
+          labelLayout: { moveOverlap: "shiftY" } }; }),   // two lines ending together keep their names apart
     };
   }, [t, series, what, order]);
   if (!series.some((s) => s.points.length)) return <div className="empty">No innings yet.</div>;

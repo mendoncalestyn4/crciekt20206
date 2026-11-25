@@ -216,10 +216,10 @@ def _body(career, here, base_scope, scope_for, a, b, ids_a, ids_b, venue_a, venu
         second = "batting second" if sides[0]["multi"] else "chasing"
         what = f"their meetings in {where_scope}" if h2h else f"each side's own games against anyone in {where_scope}"
         def better(x):
-            sh = [(w, r["won"] / (r["won"] + r["lost"]) * 100) for w, r in (("batting first", x["first"]), (second, x["chase"]))
-                  if r["won"] + r["lost"]]
+            sh = [(w, r["won"] / r["played"] * 100) for w, r in (("batting first", x["first"]), (second, x["chase"]))
+                  if r["played"]]   # out of the games played, as the chart says it
             if not sh:
-                return f"{x['team']}: no wins or defeats yet"
+                return f"{x['team']}: no games yet"
             top = max(sh, key=lambda t: t[1])
             if len(sh) == 2 and sh[0][1] == sh[1][1]:
                 return f"{x['team']}: level, {top[1]:.0f}% won each way"

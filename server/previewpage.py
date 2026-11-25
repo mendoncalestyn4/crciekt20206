@@ -315,13 +315,14 @@ def _their_record(career, ids, opp, where_note, part) -> None:
                  for_=f"Whether they would rather set a total or chase one, and the totals that have been enough against "
                       f"them: think about it at the toss.")
         def share(r):
-            return r["won"] / (r["won"] + r["lost"]) * 100 if r["won"] + r["lost"] else None
+            # out of the games played (a draw or tie is a game not won), as the chart above it and the Teams page say it
+            return r["won"] / r["played"] * 100 if r["played"] else None
         a, c = share(x["first"]), share(x["chase"])
         each = [f"batting first, {a:.0f}% won" if a is not None else "", f"{second}, {c:.0f}% won" if c is not None else ""]
         x.update(is_=f"{poss(opp)} wins and defeats batting first and {second} in {where_note}, with the totals that decided them.",
                  best_label="Better at",
                  best=(each[0] if c is None or (a is not None and a > c) else each[1] if a is None or c > a else
-                       f"level, {a:.0f}% won each way") if a is not None or c is not None else "No wins or defeats yet.")
+                       f"level, {a:.0f}% won each way") if a is not None or c is not None else "No games yet.")
         return x
     part("bat_first", bat_first)
 

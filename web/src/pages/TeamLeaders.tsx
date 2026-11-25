@@ -14,7 +14,7 @@ const KEYS = ["section", "season", "teams"];
 
 function Rows({ rows, unit }: { rows: TLRow[]; unit: string }) {
   return (
-    <table className="c tl"><thead><tr><th className="r">#</th><th>Player</th><th className="r">Share</th><th className="r">{unit}</th><th className="r">Mat</th></tr></thead>
+    <table className="c tleads"><thead><tr><th className="r">#</th><th>Player</th><th className="r">Share</th><th className="r">{unit}</th><th className="r">Mat</th></tr></thead>
       <tbody>{rows.map((r, i) => (
         <tr key={r.player} className={r.gone ? "gone" : ""} title={r.gone ? "No game for the team here in its last two seasons" : undefined}>
           <td className="r"><span className="tn">{i + 1}</span></td><td><span className="why"><T>{r.player}</T></span></td>

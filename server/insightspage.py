@@ -228,13 +228,14 @@ def _aim(career, sec, team, mine) -> dict:
     if x is not None:
         second = "batting second" if x["multi"] else "chasing"
         def share(r):
-            return r["won"] / (r["won"] + r["lost"]) * 100 if r["won"] + r["lost"] else None
+            # out of the games played (a draw or tie is a game not won), as the chart above it and the Teams page say it
+            return r["won"] / r["played"] * 100 if r["played"] else None
         f_, c_ = share(x["first"]), share(x["chase"])
         each = [f"batting first, {f_:.0f}% won" if f_ is not None else "", f"{second}, {c_:.0f}% won" if c_ is not None else ""]
         x.update(who=team, **SG.lines(
             f"{poss(team)} wins and defeats batting first and {second} in {sec}, with the totals that decided them.",
             (each[0] if c_ is None or (f_ is not None and f_ > c_) else each[1] if f_ is None or c_ > f_ else
-             f"level, {f_:.0f}% won each way") if f_ is not None or c_ is not None else "No wins or defeats yet.",
+             f"level, {f_:.0f}% won each way") if f_ is not None or c_ is not None else "No games yet.",
             "Whether to set a total or chase one at the toss, and the totals that have been enough.", best_label="Better at"))
         out["bat_first"] = x
     out["strength"] = _strength_of(career, team, ids, sec)

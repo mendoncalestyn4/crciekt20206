@@ -319,3 +319,17 @@ def test_no_fielding_words(career):
     for tab in IP.TABS:
         text = json.dumps(page(career, tab=tab)).lower()
         assert not any(w in text for w in ("catch", "caught", "stumping", "run-out credit"))
+
+
+def test_batting_first_line_matches_its_chart(career):
+    """Found in the stage 3 screenshots: the chart said "won 60%" (21 of 35 played, two drawn) and the line under it
+    "64% won" (draws left out). Both now count out of the games played, as the Teams page does."""
+    for sec in ("Tests", "ODIs"):
+        for team in sorted(set(career.matches[career.matches.section == sec].home))[:4]:
+            bf = page(career, tab="Score to aim for", section=sec, team=team).get("bat_first")
+            if not bf:
+                continue
+            for key, word in (("first", "batting first"), ("chase", "batting second" if bf["multi"] else "chasing")):
+                r = bf[key]
+                if r["played"] and word in bf["best"]:
+                    assert f"{r['won'] / r['played'] * 100:.0f}% won" in bf["best"], (team, bf["best"], r)
