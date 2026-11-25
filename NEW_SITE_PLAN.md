@@ -1237,6 +1237,75 @@ finished until each of these is put right:
    site's own pages, which hold logic of their own in places.
 8. **Saving a chart as a picture** (section 5, "Charts and tables") isn't on the new site's charts.
 
+## 17. Stage 3: what was built
+
+Every promise of stage 3 (section 8's row, your answers 1-34) with where it is on the site and how it was checked.
+Each page's nothing-lost lines are ticked in design/STAGE3_CHECKLIST.md with where each old line now lives.
+
+**Leaders and records** (menu: Leaders; chips Stat by stat, Records, Hall of fame, Rankings)
+- Stat by stat (/leaders): every stat ranked, where everyone sits, the full figures with role; every competition its
+  own choice, any ticked together, each against its own average (answers 11, 18); each season's own average and the
+  competitions inside a section kept. Checked: tests/test_stage3_leaders.py (the old page's numbers, the leaders
+  counted again, combining counted again).
+- Records (/leaders/records): every record group with near misses and 🆕, on pace, the record timeline; new: best
+  stand for each wicket with top 5 (answer 8), best games ever with Top 5/10/20 (answer 9), one team's streaks and every
+  team's longest runs (answer 10); no fielding records (answer 20). Checked: stands and runs counted again from the
+  fall of wickets and the results (same test file).
+- Hall of fame (/leaders/hall): real inductions with plaques at the agreed milestones (answers 19, 23), next in (31),
+  Player of the Match, best batting duos (in place of Deadly duos), all-round matches, the firsts timeline with your
+  team and players first and any team (26, 30); fielding pieces out (20). Checked: tests/test_stage3_hall.py
+  (inductions counted again match by match in played order, duos from the stands, firsts checked against the matches).
+- Rankings (/leaders/rankings): the marks out of 10 as the Player page, recent series counting more (a year old counts
+  half, answer 28), batters, bowlers and all-rounders (24), who's ranked and "not ranked yet" (25), peak, time at
+  No. 1 and movement (21), the history chart, team ratings with stronger and weaker sides (14), every team by runs and
+  wickets up to any date (1, 4-6); International rating replaced by ticking formats (29). Checked:
+  tests/test_stage3_rankings.py (marks equal the Player page, every rating counted again from its series).
+
+**Insights** (menu: Insights; chips Insights, Analytics)
+- Insights (/insights): all seven tabs of the old page; new: the score to aim for of your team (or any team) against
+  every opponent at home, away and neutral, even game and 70%, Tests the first-innings totals that won, drew and lost
+  (answer 7), with batting first v chasing and stronger and weaker sides for that team (14); "is it enough against a
+  good side?" kept on its tab. Checked: tests/test_stage3_insights.py (board, bands, home advantage, season by season,
+  innings by innings and breakouts counted again; every target equal to Opponent preview's and put back into the fit
+  for exactly 50% and 70%; the chase calculator's similar games counted again).
+- Analytics (/insights/analytics): all nine tabs; new: the match-winners chart with a team dropdown (14). Checked:
+  tests/test_stage3_analytics.py (runs above expected, fair averages' sums, luck, match-winners, style corners and the
+  toss record counted again).
+
+**Players** (chips Find a player, Player stories, Compare players)
+- Player stories (/players/stories): all 15 tabs in the same order (3); Batter v bowler adds up the competitions
+  ticked (32), the "Every competition" switch gone (17); no fielding (20). Checked: tests/test_stage3_stories.py.
+- Compare players (/players/compare): up to 4 players, the competition dropdown with tick boxes (22), every stat as a
+  chart with the average, career curves; plays like inside one competition (15), for bowlers too (16), click to add
+  (12), "remove one first" at four. Checked: tests/test_stage3_compare.py (plays like worked out again by hand).
+
+**Teams** (new chip Team leaders)
+- Team leaders (/teams/leaders): each team's top two by share of its runs off the bat and of its wickets, one
+  competition and season (All time first), yours ticked, All teams with yours first then A to Z (13), crossed out when
+  no longer playing. Checked: tests/test_stage3_teamleaders.py.
+
+**Every page:** dropdowns for every choice (your choice of 24 November), the three lines under every chart, competition
+order, no fielding, remembered picks, the background preparation (the warm-up asks for each new page), the browser
+checks (tests/test_web.py PAGES: every tab of every new page) and the fit check.
+
+**Decided by me, told to you (stage 3):**
+- All-rounders on Rankings show √(batting × bowling), the same order as batting × bowling but on the same 0-10 scale.
+- Insights, Analytics and Player stories are one competition at a time (a total, a chase, a style map or a pitch
+  wearing means nothing across formats); Batter v bowler, Stat by stat, Records, Rankings, Compare and Hall of fame's
+  lists take several. Team leaders one at a time, as agreed.
+- The stronger and weaker half stays on "Is this total enough?" (with its season picker); the score to aim for tab
+  points to it.
+- On pace (Records) is the old engine's projection, which can be jumpy after two matches.
+
+**Found and fixed on the way (each with a test):**
+- The chase calculator's "similar games" widened to thousands of runs (the band grew with each wider wicket spread):
+  it now starts again from the usual band, and says plainly when there are too few close chases. The same sum draws the
+  match pages' win chance line, which is now right too.
+- The rating gap ("rated 10 above them") could differ by one from the two ratings shown beside it; a gap of nought now
+  says "level with them".
+- Two chart parts the site needed were never switched on (labels kept apart, words drawn on a chart).
+- A stray escape in the browser checks' script.
+
 ## Appendix: technical outline
 
 **Kept**

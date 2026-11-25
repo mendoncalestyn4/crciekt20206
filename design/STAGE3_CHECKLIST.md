@@ -66,16 +66,16 @@ a page isn't finished while any of its lines is open (your safeguards of 13 Nove
 - [x] Kept as its own page (answer 2); chart: the match-winners (answer 14)
 
 **Player stories** (Players)
-- [ ] All 15 tabs in the same order (answer 3); Batter v bowler one competition at a time, the "Every
+- [x] All 15 tabs in the same order (answer 3); Batter v bowler one competition at a time, the "Every
       competition" switch gone (answer 17); any fielding taken out (answer 20)
 
 **Compare players** (Players)
-- [ ] Up to 4 players, one competition and season, format tick boxes (answer 22)
-- [ ] Plays like: the three most alike inside the same competition (answer 15), for bowlers too when on Bowling
+- [x] Up to 4 players, one competition and season, format tick boxes (answer 22)
+- [x] Plays like: the three most alike inside the same competition (answer 15), for bowlers too when on Bowling
       (answer 16), each with how alike; clicking one adds them to the comparison (answer 12)
 
 **Team leaders** (Teams)
-- [ ] Each team's two biggest contributors to its runs and to its wickets; formats apart; a season picker (All
+- [x] Each team's two biggest contributors to its runs and to its wickets; formats apart; a season picker (All
       time, then each season as the game names it); tick the teams (yours ticked) or All teams (yours first, then
       A to Z) (answer 13); every share on runs off the bat
 
@@ -861,380 +861,384 @@ Fielding lines are taken out by your answer of 19 November and are marked so whe
 
 ### Player stories (311 lines)
 
-- [ ] *markdown* Player stories
-- [ ] *title* The stories behind the numbers
-- [ ] *markdown* Who's in form, who's closing in on a milestone or a record, who wins games, who stands up when the team loses, and the odd ones: nervous nineties, pairs and not-outs.
-- [ ] *selectbox* Section [10 options: Indian Premier League · 52 matches, ODIs · 14 matches, T20 Blast · 10 matches, T20Is · 7 matches, Tests · 6 matches, Ranji Trophy · 5 matches, The Hundred · 4 matches, County Championship · Division 1 (3)…]
-- [ ] *selectbox* Season [3 options: All seasons, 2027, 2026]
-- [ ] *tab* Form guide
-- [ ] *markdown* **Batters** · last 5 innings (oldest first), against their own average
-- [ ] *caption* Batters need 6+ innings.
-- [ ] *markdown* **Bowlers** · last 5 innings, wickets per innings against their own
-- [ ] *caption* Bowlers need 6+ innings.
-- [ ] *caption* ▲ hotter than usual (25%+ above their own average) · ▼ colder · ▬ about normal. Your team's players are highlighted. Analytics → Is the form real? says whether a hot run is more than luck.
-- [ ] *tab* Milestones and records
-- [ ] *markdown* **Milestone watch** · close to a round number in ODIs (all seasons)
-- [ ] *markdown* Player Team Milestone Now Needs H Nicholls New Zealand 250 runs 241 9 S Gill India 500 runs 472 28 H Brook England 250 runs 229 21
-- [ ] *markdown* **Record watch** · records in ODIs that could fall
-- [ ] *markdown* Record Holder Chaser Now Needs Career wickets J Duffy 11 N Smith 11 1
-- [ ] *caption* Career records: players within 15% of the leader. Season records: players within 25% while the season is still going.
-- [ ] *tab* Win when they fire
-- [ ] *markdown* **When they make 50+** · their team's win % in those games and in the rest
-- [ ] *markdown* Player Team Times Win % then Win % otherwise Lift B Stokes England 3 100% – – D Conway New Zealand 3 100% 0% +100 S Gill India 3 100% – – B Duckett England 3 67% 100% -33 H Nicholls New Zealand 3 67% 100% -33
-- [ ] *markdown* **When they take 4+ wickets** · their team's win % in those games and in the rest
-- [ ] *caption* Nobody has 3+ 4-wicket hauls yet.
-- [ ] *tab* Heroes in defeat
-- [ ] *markdown* **Best innings in a losing side**
-- [ ] *markdown* Player Score For Against Match B Ahern 127 (104) New Zealand England 11 Jun 2027 T Head 111 (78) Australia South Africa 01 Oct 2026 H Shahidi 111* (126) Afghanistan Ireland 07 Aug 2026 H Nicholls 94 (84) New Zealand Bangladesh 17 Apr 2026 S Ayub 77 (54) Pakistan Australia 23 Jun 2027 J Greaves 75 (78) West Indies Sri Lanka 08 Jun 2026 L Das 75 (106) Bangladesh New Zealand 20 Apr 2026 H Nawaz 73 (8
-- [ ] *markdown* **Best bowling in a losing side**
-- [ ] *markdown* Player Figures For Against Match B Fortuin 4/52 South Africa England 13 Jun 2027 M Rahman 4/53 Bangladesh New Zealand 20 Apr 2026 M Rahman 4/60 Bangladesh New Zealand 23 Apr 2026 F Farooqi 4/64 Afghanistan Ireland 07 Aug 2026 A Hosein 4/78 West Indies Sri Lanka 08 Jun 2026 W O&#x27;Rourke 3/45 New Zealand England 11 Jun 2027 A Zampa 3/51 Australia South Africa 01 Oct 2026 W Stelling 3/58 South Afr
-- [ ] *tab* Carried the team
-- [ ] *markdown* **One-man shows** · biggest share of the team's total in one innings
-- [ ] *markdown* Player Runs Team total Share Match S Gill 161* 258 62% India v West Indies S Gill 211* 377 56% India v England L Das 75 169 44% Bangladesh v New Zealand T Head 111 254 44% Australia v South Africa H Shahidi 111* 257 43% Afghanistan v Ireland B Ahern 127 319 40% New Zealand v England T Hridoy 113 288 39% Bangladesh v New Zealand P Rathnayake 142 384 37% Sri Lanka v West Indies P Stirling 93 261 36%
-- [ ] *markdown* **Who carries their team** · share of the team's runs over all their innings (5+)
-- [ ] *chart* 1 series · x: % of the team's runs
-- [ ] *markdown* What it shows: D Conway makes 15.6% of New Zealand's runs in the innings they bat (216 of 1385). An even share across 11 batters would be about 9%. What it's for: Shows which teams lean on one batter: if they fail, the team usually does too.
-- [ ] *tab* Quirks
-- [ ] *markdown* **Nervous nineties** · out between 90 and 99
-- [ ] *markdown* Player Times Scores H Nicholls 1 94 P Stirling 1 93
-- [ ] *markdown* **Pairs** · out for 0 in both innings of a match
-- [ ] *caption* Nobody yet (only possible in two-innings matches).
-- [ ] *markdown* **Not out** · most unbeaten innings
-- [ ] *markdown* Player Not out Inns % J Archer 2 2 100% J Duffy 2 2 100% R Hossain 2 2 100% S Gill 2 3 67% S Joseph 2 3 67% H Brook 2 4 50% N Smith 2 5 40% A Elahi 1 1 100% A Husnain 1 1 100% A Kamboj 1 1 100% A McBrine 1 1 100% C Bosch 1 1 100% C Campher 1 1 100% C Esterhuizen 1 1 100% D Wellalage 1 1 100%
-- [ ] *tab* After a hundred
-- [ ] *markdown* **The innings after a hundred** · do they kick on or come back down?
-- [ ] *markdown* Player Hundreds Next innings Avg next innings Avg overall S Gill 3 161*, 100 261.0 472.0 H Brook 1 25 25.0 114.5 T Head 1 69 69.0 90.0 T Hridoy 1 30 30.0 39.2 W Hasaranga 1 8 8.0 66.0
-- [ ] *tab* Pairs
-- [ ] *markdown* **Batting partners** · stands together (2+)
-- [ ] *markdown* Pair Team Stands Runs Avg Best 50+ S Gill &amp; Y Jaiswal India 3 311 103.7 171 2 D Conway &amp; R Ravindra New Zealand 4 292 73.0 131 3 D Mitchell &amp; H Nicholls New Zealand 3 259 86.3 133 3 B Stokes &amp; H Brook England 2 238 119.0 120 2 M Hasan Miraz &amp; M Naim Bangladesh 3 163 54.3 106 1 S Gill &amp; V Kohli India 2 160 80.0 156 1 B Duckett &amp; T Banton England 3 152 50.7 133 1 D Jurel
-- [ ] *caption* Only stands where the scorecard shows who batted together (see Records → partnerships).
-- [ ] *markdown* **Bowling partners** · both bowled in the same innings (3+)
-- [ ] *markdown* Pair Team Inns Wkts Wkts/inns Econ J Duffy &amp; N Smith New Zealand 4 20 5.0 5.04 G Atkinson &amp; J Archer England 3 15 5.0 6.10 H Mahmud &amp; M Rahman Bangladesh 3 13 4.3 4.98 J Duffy &amp; M Henry New Zealand 4 16 4.0 5.20 G Atkinson &amp; R Ahmed England 3 12 4.0 5.87 J Duffy &amp; R Ravindra New Zealand 4 15 3.8 5.23 A Singh &amp; H Pandya India 3 11 3.7 5.13 H Mahmud &amp; T Islam Banglade
-- [ ] *markdown* **Partnership chemistry** · named pairs (3+ stands) against the average stand for the same wickets
-- [ ] *markdown* Pair Team Stands Avg Expected Chemistry S Gill &amp; Y Jaiswal India 3 103.7 48.9 +112% D Mitchell &amp; H Nicholls New Zealand 3 86.3 40.8 +112% D Conway &amp; R Ravindra New Zealand 4 73.0 48.9 +49% M Hasan Miraz &amp; M Naim Bangladesh 3 54.3 51.2 +6% B Duckett &amp; T Banton England 3 50.7 48.9 +4% L Das &amp; S Sarkar Bangladesh 4 30.5 48.9 -38%
-- [ ] *caption* Expected: what the average pair makes for the same wickets here, so an opening pair is compared with opening stands. +50% = half as much again.
-- [ ] *markdown* **Strike-rate pressure** · how fast their partners score when batting with them (top-7 batters)
-- [ ] *markdown* Batter Team Inns Partners&#x27; SR with them Partners&#x27; SR otherwise Effect C Esterhuizen South Africa 4 111.8 170.0 -34% L Das Bangladesh 10 72.3 89.9 -20% S Gill India 11 97.3 120.3 -19% K Carty West Indies 3 76.7 92.7 -17% B Duckett England 6 95.5 114.3 -16% M Bracewell New Zealand 3 91.2 107.6 -15% M Naim Bangladesh 6 93.3 74.7 +25% H Nicholls New Zealand 4 99.3 76.7 +29% S Iyer India 3 13
-- [ ] *caption* The slowest-scoring partnerships first, then the fastest. The scorecards don't split a stand's runs, so this uses the partners' whole innings: a hint, not proof.
-- [ ] *tab* Player of the Series
-- [ ] *markdown* **Player of the Series** · most impact over each bilateral series
-- [ ] *markdown* Started Series Player For Runs Wkts Impact Oct 2026 India v West Indies S Gill India 261 0 261 Oct 2026 South Africa v Australia W Mulder South Africa 24 4 157 Aug 2026 Ireland v Afghanistan F Farooqi Afghanistan 0 4 133 Jul 2026 England v India S Gill India 211 0 211 Jun 2026 West Indies v Sri Lanka W Hasaranga Sri Lanka 124 2 190 Apr 2026 Bangladesh v New Zealand J Duffy New Zealand 10 9 308 Apr
-- [ ] *caption* Impact = runs, plus each wicket worth the section's runs per wicket.
-- [ ] *tab* Upsets
-- [ ] *markdown* **Biggest upsets in ODIs** · wins the ratings gave the least chance (all seasons)
-- [ ] *markdown* Match Winner Beat Their chance Elo going in 11 Jun 2027 England New Zealand 46% 1490 v 1520 17 Apr 2026 New Zealand Bangladesh 47% 1490 v 1510 23 Jun 2027 Australia Pakistan 49% 1490 v 1500 13 Jun 2027 England South Africa 49% 1501 v 1510
-- [ ] *caption* Chance from the two teams' Elo ratings before the game (see Rankings).
-- [ ] *tab* Fastest to
-- [ ] *caption* Counted in innings, across every season of ODIs.
-- [ ] *info* Nobody has reached a milestone here yet.
-- [ ] *tab* Match impact
-- [ ] *markdown* **Biggest single-match impact**
-- [ ] *markdown* Player Team Impact Did Match S Gill India 252 211 &amp; 0 wkts v England, 16 Jul 2026 W Hasaranga Sri Lanka 236 124 &amp; 2 wkts v West Indies, 08 Jun 2026 J Duffy New Zealand 220 0 &amp; 6 wkts v Bangladesh, 17 Apr 2026 S Gill India 183 161 &amp; 0 wkts v West Indies, 01 Oct 2026 B Fortuin South Africa 181 32 &amp; 4 wkts v England, 13 Jun 2027 H Mahmud Bangladesh 166 0 &amp; 4 wkts v New Zealand
-- [ ] *markdown* **Most impact per match** · regulars only
-- [ ] *chart* 1 series · x: Impact per match
-- [ ] *markdown* What it shows: S Gill averages 188 a match, +257% on the average player's 53. What it's for: One number for everything a player does in a match: runs, plus each wicket worth the section's runs per wicket (34), with scoring speed and economy counted in white-ball cricket, plus catches and stumpings.
-- [ ] *tab* Badges
-- [ ] *markdown* **Badges earned in ODIs** · newest first
-- [ ] *markdown* Badge Player Team Match 🏅 Player of the Match in a final A Hardie Australia 23 Jun 2027 🏅 Player of the Match in a final B Stokes England 23 Jun 2027 🏅 Three 50s in a row B Stokes England ODIs 23 Jun 2027 🏅 Hundred on debut B Ahern New Zealand 127 11 Jun 2027 🏅 Three 50s in a row S Gill India ODIs 03 Oct 2026 🏅 150 in a one-day game S Gill India 161* 01 Oct 2026 🏅 150 in a one-day game S Gill Indi
-- [ ] *markdown* **How common each badge is here**
-- [ ] *markdown* Badge Times Three 50s in a row 3 Player of the Match in a final 2 150 in a one-day game 2 Hundred on debut 1 One-day double hundred 1 One-day five-for 1
-- [ ] *caption* T20: 5-for, hundred, 100 at a strike rate of 200+, fifty off 20 balls. One-day: 150, double hundred, five-for. Tests: double and triple hundreds, seven in an innings, ten in a match, a hundred or five-for in both innings, carried the bat, a pair. Any format: hundred on debut, hundred and five-for in a match, three big scores in a row, a hundred or Player of the Match in a final.
-- [ ] *markdown* **England**: 🏆 Clean sweep 3–0 (v Pakistan, Tests)
-- [ ] *tab* Batter v bowler
-- [ ] *selectbox* Batter [153 options: A Auguste, A Awais, A Carey, A Elahi, A Hardie, A Hosein, A Husnain, A Jangoo…]
-- [ ] *selectbox* Bowler [83 options: A Awais, A Elahi, A Fernando, A Ghazanfar, A Hardie, A Hosein, A Husnain, A Joseph…]
-- [ ] *toggle* Every competition
-- [ ] *caption* Pick a batter, a bowler, or both.
-- [ ] *tab* Clutch
-- [ ] *caption* Big games: knockouts, close games (by this format's margins) and series deciders. Players need 3+ innings each way.
-- [ ] *markdown* **Batters in big games** · average then against average otherwise (top-7 batters)
-- [ ] *caption* Not enough big games yet.
-- [ ] *markdown* **Bowlers in big games** · wickets per innings then against otherwise
-- [ ] *caption* Not enough big games yet.
-  - [ ] *info* Load a career on the Home page first.
-  - [ ] *page_header* Player stories
-  - [ ] *page_header* The stories behind the numbers
-  - [ ] *page_header* Who's in form, who's closing in on a milestone or a record, who wins games, who stands up when the team loses, and the odd ones: nervous nineties, pairs and not-outs.
-  - [ ] *selectbox* Section
-  - [ ] *selectbox* st_section
-  - [ ] *selectbox* section
-  - [ ] *selectbox* Season
-  - [ ] *selectbox* All seasons
-  - [ ] *selectbox* st_season
-  - [ ] *selectbox* season
-  - [ ] *tabs* Form guide
-  - [ ] *tabs* Milestones and records
-  - [ ] *tabs* Win when they fire
-  - [ ] *tabs* Heroes in defeat
-  - [ ] *tabs* Carried the team
-  - [ ] *tabs* Quirks
-  - [ ] *tabs* After a hundred
-  - [ ] *tabs* Pairs
-  - [ ] *tabs* Player of the Series
-  - [ ] *tabs* Upsets
-  - [ ] *tabs* Fastest to
-  - [ ] *tabs* Match impact
-  - [ ] *tabs* Badges
-  - [ ] *tabs* Batter v bowler
-  - [ ] *tabs* Clutch
-  - [ ] *safe_section* form guide
-  - [ ] *markdown* **Batters** · last 5 innings (oldest first), against their own average
-  - [ ] *caption* Batters need 6+ innings.
-  - [ ] *html_table* Player
-  - [ ] *html_table* Team
-  - [ ] *html_table* Last 5
-  - [ ] *html_table* Avg last 5
-  - [ ] *html_table* Avg
-  - [ ] *markdown* **Bowlers** · last 5 innings, wickets per innings against their own
-  - [ ] *caption* Bowlers need 6+ innings.
-  - [ ] *html_table* Wkts/inns last 5
-  - [ ] *html_table* Wkts/inns
-  - [ ] *html_table* Econ last 5
-  - [ ] *caption* ▲ hotter than usual (25%+ above their own average) · ▼ colder · ▬ about normal. Your team's players are highlighted. Analytics → Is the form real? says whether a hot run is more than luck.
-  - [ ] *safe_section* milestones
-  - [ ] *markdown* **Milestone watch** · close to a round number in {section} (all seasons)
-  - [ ] *caption* Nobody is close to a milestone right now.
-  - [ ] *html_table* Milestone
-  - [ ] *html_table* Now
-  - [ ] *html_table* Needs
-  - [ ] *markdown* **Record watch** · records in {section} that could fall
-  - [ ] *caption* No record is under threat right now.
-  - [ ] *html_table* Record
-  - [ ] *html_table* Holder
-  - [ ] *html_table* Chaser
-  - [ ] *caption* Career records: players within 15% of the leader. Season records: players within 25% while the season is still going.
-  - [ ] *safe_section* win when they fire
-  - [ ] *markdown* **{title}** · their team's win % in those games and in the rest
-  - [ ] *caption* Nobody has 3+ {what} yet.
-  - [ ] *html_table* Times
-  - [ ] *html_table* Win % then
-  - [ ] *html_table* Win % otherwise
-  - [ ] *html_table* Lift
-  - [ ] *safe_section* heroes in defeat
-  - [ ] *markdown* **Best innings in a losing side**
-  - [ ] *html_table* Score
-  - [ ] *html_table* For
-  - [ ] *html_table* Against
-  - [ ] *html_table* Match
-  - [ ] *caption* Nothing yet.
-  - [ ] *markdown* **Best bowling in a losing side**
-  - [ ] *html_table* Figures
-  - [ ] *safe_section* carried the team
-  - [ ] *markdown* **One-man shows** · biggest share of the team's total in one innings
-  - [ ] *html_table* Runs
-  - [ ] *html_table* Team total
-  - [ ] *html_table* Share
-  - [ ] *markdown* **Who carries their team** · share of the team's runs over all their innings (5+)
-  - [ ] *caption* Not enough innings yet.
-  - [ ] *chart_note* {t0.player} makes {t0.share}% of {poss(t0.team)} runs in the innings they bat ({t0.runs} of {t0.team_runs}). An even share across 11 batters would be about 9%.
-  - [ ] *chart_note* Shows which teams lean on one batter: if they fail, the team usually does too.
-  - [ ] *safe_section* quirks
-  - [ ] *markdown* **Nervous nineties** · out between 90 and 99
-  - [ ] *html_table* Scores
-  - [ ] *caption* Nobody yet.
-  - [ ] *markdown* **Pairs** · out for 0 in both innings of a match
-  - [ ] *caption* Nobody yet (only possible in two-innings matches).
-  - [ ] *markdown* **Not out** · most unbeaten innings
-  - [ ] *html_table* Not out
-  - [ ] *html_table* Inns
-  - [ ] *safe_section* after a hundred
-  - [ ] *markdown* **The innings after a hundred** · do they kick on or come back down?
-  - [ ] *caption* No hundreds followed by another innings yet.
-  - [ ] *html_table* Hundreds
-  - [ ] *html_table* Next innings
-  - [ ] *html_table* Avg next innings
-  - [ ] *html_table* Avg overall
-  - [ ] *safe_section* pairs
-  - [ ] *markdown* **Batting partners** · stands together (2+)
-  - [ ] *html_table* Pair
-  - [ ] *html_table* Stands
-  - [ ] *html_table* Best
-  - [ ] *html_table* {bp.attrs.get('stand', 50)}+
-  - [ ] *caption* No pairs yet.
-  - [ ] *caption* Only stands where the scorecard shows who batted together (see Records → partnerships).
-  - [ ] *markdown* **Bowling partners** · both bowled in the same innings (3+)
-  - [ ] *html_table* Wkts
-  - [ ] *html_table* Econ
-  - [ ] *safe_section* chemistry
-  - [ ] *markdown* **Partnership chemistry** · named pairs (3+ stands) against the average stand for the same wickets
-  - [ ] *caption* No pair has 3 named stands yet.
-  - [ ] *html_table* {r.average}
-  - [ ] *html_table* {r.expected}
-  - [ ] *html_table* Expected
-  - [ ] *html_table* Chemistry
-  - [ ] *caption* Expected: what the average pair makes for the same wickets here, so an opening pair is compared with opening stands. +50% = half as much again.
-  - [ ] *safe_section* strike-rate pressure
-  - [ ] *markdown* **Strike-rate pressure** · how fast their partners score when batting with them (top-7 batters)
-  - [ ] *caption* White-ball cricket only, and batters need 3+ named stands.
-  - [ ] *html_table* Batter
-  - [ ] *html_table* Partners' SR with them
-  - [ ] *html_table* Partners' SR otherwise
-  - [ ] *html_table* Effect
-  - [ ] *caption* The slowest-scoring partnerships first, then the fastest. The scorecards don't split a stand's runs, so this uses the partners' whole innings: a hint, not proof.
-  - [ ] *safe_section* player of the series
-  - [ ] *markdown* **Player of the Series** · most impact over each bilateral series
-  - [ ] *caption* No bilateral series here.
-  - [ ] *html_table* Started
-  - [ ] *html_table* Series
-  - [ ] *html_table* Impact
-  - [ ] *caption* Impact = runs, plus each wicket worth the section's runs per wicket.
-  - [ ] *safe_section* upsets
-  - [ ] *markdown* **Biggest upsets in {section}** · wins the ratings gave the least chance (all seasons)
-  - [ ] *caption* No upsets yet.
-  - [ ] *html_table* Winner
-  - [ ] *html_table* Beat
-  - [ ] *html_table* Their chance
-  - [ ] *html_table* Elo going in
-  - [ ] *caption* Chance from the two teams' Elo ratings before the game (see Rankings).
-  - [ ] *safe_section* fastest
-  - [ ] *caption* Counted in {unit_}
-  - [ ] *caption* matches
-  - [ ] *caption* (as Test records are)
-  - [ ] *caption* , across every season of {section}.
-  - [ ] *info* Nobody has reached a milestone here yet.
-  - [ ] *markdown* **Fastest to {ms} {what}** · {len(g)} player{'s' if len(g) != 1 else ''} got there
-  - [ ] *html_table* {r.taken} {unit_}
-  - [ ] *html_table* {r.date}
-  - [ ] *html_table* Took
-  - [ ] *html_table* Reached
-  - [ ] *safe_section* match impact
-  - [ ] *info* No matches yet.
-  - [ ] *markdown* **Biggest single-match impact**
-  - [ ] *html_table* {r.impact}
-  - [ ] *html_table* {int(r.runs)} &
-  - [ ] *html_table* wkt
-  - [ ] *html_table* v {r.opponent}, {r.date}
-  - [ ] *html_table* Did
-  - [ ] *markdown* **Most impact per match** · regulars only
-  - [ ] *chart_note* {g.player.iloc[0]} averages {g.avg.iloc[0]} a match, {(g.avg.iloc[0] / mi.impact.mean() - 1) * 100}% on the average player's {mi.impact.mean()}.
-  - [ ] *chart_note* One number for everything a player does in a match: runs, plus each wicket worth the section's runs per wicket ({mi.attrs['rpw']})
-  - [ ] *chart_note* kind
-  - [ ] *chart_note* multi
-  - [ ] *chart_note* , with scoring speed and economy counted in white-ball cricket
-  - [ ] *chart_note* , plus catches and stumpings.
-  - [ ] *safe_section* badges
-  - [ ] *markdown* **Badges earned in {section}** · newest first
-  - [ ] *caption* No badges yet.
-  - [ ] *html_table* 🏅 {r.badge}
-  - [ ] *html_table* Badge
-  - [ ] *markdown* **How common each badge is here**
-  - [ ] *caption* T20: 5-for, hundred, 100 at a strike rate of 200+, fifty off 20 balls. One-day: 150, double hundred, five-for. Tests: double and triple hundreds, seven in an innings, ten in a match, a hundred or five-for in both innings, carried the bat, a pair. Any format: hundred on debut, hundred and five-for in a match, three big scores in a row, a hundred or Player of the Match in a final.
-  - [ ] *markdown* **{t}**:
-  - [ ] *markdown* 🏆 {r.badge} ({r.detail})
-  - [ ] *safe_section* batter v bowler
-  - [ ] *selectbox* st_bvb_bat
-  - [ ] *selectbox* Pick a batter
-  - [ ] *selectbox* · out to them {met_bowl[x]}×
-  - [ ] *selectbox* · met
-  - [ ] *selectbox* Bowler
-  - [ ] *selectbox* st_bvb_bowl
-  - [ ] *selectbox* Pick a bowler
-  - [ ] *selectbox* · got them out {met_bat[x]}×
-  - [ ] *toggle* Every competition
-  - [ ] *toggle* st_bvb_all
-  - [ ] *toggle · help* Count every match in the career, not only this section.
-  - [ ] *info* No {other} met {one} yet
-  - [ ] *info* in {section}
-  - [ ] *markdown* **{one} against every {other[:-1]} met** · most dismissals first; pick one above for every innings between them
-  - [ ] *html_table* Innings met
-  - [ ] *html_table* Got out
-  - [ ] *html_table* Got them out
-  - [ ] *html_table* Batter's runs in those innings
-  - [ ] *caption* Pick a batter, a bowler, or both.
-  - [ ] *info* {bowler} has never bowled at {poss(batter)} side while {batter} batted
-  - [ ] *kpis* {bv['meetings']}
-  - [ ] *kpis* {bowler.split()[-1]} got them out
-  - [ ] *kpis* {bv['dismissals']}
-  - [ ] *kpis* {bv['runs']}
-  - [ ] *kpis* Average v this bowler
-  - [ ] *kpis* dismissals
-  - [ ] *kpis* runs_when_out
-  - [ ] *markdown* **Verdict: {verdict}** ({_n(bv['dismissals'], 'dismissal')} in {bv['meetings']} innings).
-  - [ ] *html_table* {r.runs}{'' if r.out else '*'} ({r.balls})
-  - [ ] *html_table* not out
-  - [ ] *html_table* {r.bowl_wkts}/{r.bowl_runs}
-  - [ ] *html_table* Batter's score
-  - [ ] *html_table* How out
-  - [ ] *html_table* Bowler's figures
-  - [ ] *caption* The scorecards don't say which bowler each run came off, so these are the batter's whole innings when the two met. ✔ = this bowler got them out.
-  - [ ] *safe_section* clutch
-  - [ ] *caption* Big games: knockouts, close games (by this format's margins) and series deciders
-  - [ ] *caption* , plus the 4th innings of a multi-day game.
-  - [ ] *caption* Players need 3+ innings each way.
-  - [ ] *markdown* **Batters in big games** · average then against average otherwise (top-7 batters)
-  - [ ] *caption* Not enough big games yet.
-  - [ ] *html_table* Big-game inns
-  - [ ] *html_table* Avg then
-  - [ ] *html_table* Avg otherwise
-  - [ ] *markdown* **Bowlers in big games** · wickets per innings then against otherwise
-  - [ ] *html_table* {r.clutch_wpi}
-  - [ ] *html_table* {r.other_wpi}
-  - [ ] *html_table* Wkts/inns then
-  - [ ] *html_table* Otherwise
-  - [ ] *html_table* Econ then
+**Ticked 25 November** (/players/stories, under Players): all 15 tabs in the same order with every table, chart and note; the section and season pickers are dropdowns, one competition at a time except Batter v bowler, where the competition dropdown's tick boxes add meetings up (answer 32); the "Every competition" switch is gone (answer 17); match impact counts runs and wickets only, so "plus catches and stumpings" is gone (answer 20); tile headings keep their words, the longest second lines shortened to fit ("in one innings", "could fall", "0 twice in a match"); chart notes are the three lines; the page's title line is its heading's second line.
+
+- [x] *markdown* Player stories
+- [x] *title* The stories behind the numbers
+- [x] *markdown* Who's in form, who's closing in on a milestone or a record, who wins games, who stands up when the team loses, and the odd ones: nervous nineties, pairs and not-outs.
+- [x] *selectbox* Section [10 options: Indian Premier League · 52 matches, ODIs · 14 matches, T20 Blast · 10 matches, T20Is · 7 matches, Tests · 6 matches, Ranji Trophy · 5 matches, The Hundred · 4 matches, County Championship · Division 1 (3)…]
+- [x] *selectbox* Season [3 options: All seasons, 2027, 2026]
+- [x] *tab* Form guide
+- [x] *markdown* **Batters** · last 5 innings (oldest first), against their own average
+- [x] *caption* Batters need 6+ innings.
+- [x] *markdown* **Bowlers** · last 5 innings, wickets per innings against their own
+- [x] *caption* Bowlers need 6+ innings.
+- [x] *caption* ▲ hotter than usual (25%+ above their own average) · ▼ colder · ▬ about normal. Your team's players are highlighted. Analytics → Is the form real? says whether a hot run is more than luck.
+- [x] *tab* Milestones and records
+- [x] *markdown* **Milestone watch** · close to a round number in ODIs (all seasons)
+- [x] *markdown* Player Team Milestone Now Needs H Nicholls New Zealand 250 runs 241 9 S Gill India 500 runs 472 28 H Brook England 250 runs 229 21
+- [x] *markdown* **Record watch** · records in ODIs that could fall
+- [x] *markdown* Record Holder Chaser Now Needs Career wickets J Duffy 11 N Smith 11 1
+- [x] *caption* Career records: players within 15% of the leader. Season records: players within 25% while the season is still going.
+- [x] *tab* Win when they fire
+- [x] *markdown* **When they make 50+** · their team's win % in those games and in the rest
+- [x] *markdown* Player Team Times Win % then Win % otherwise Lift B Stokes England 3 100% – – D Conway New Zealand 3 100% 0% +100 S Gill India 3 100% – – B Duckett England 3 67% 100% -33 H Nicholls New Zealand 3 67% 100% -33
+- [x] *markdown* **When they take 4+ wickets** · their team's win % in those games and in the rest
+- [x] *caption* Nobody has 3+ 4-wicket hauls yet.
+- [x] *tab* Heroes in defeat
+- [x] *markdown* **Best innings in a losing side**
+- [x] *markdown* Player Score For Against Match B Ahern 127 (104) New Zealand England 11 Jun 2027 T Head 111 (78) Australia South Africa 01 Oct 2026 H Shahidi 111* (126) Afghanistan Ireland 07 Aug 2026 H Nicholls 94 (84) New Zealand Bangladesh 17 Apr 2026 S Ayub 77 (54) Pakistan Australia 23 Jun 2027 J Greaves 75 (78) West Indies Sri Lanka 08 Jun 2026 L Das 75 (106) Bangladesh New Zealand 20 Apr 2026 H Nawaz 73 (8
+- [x] *markdown* **Best bowling in a losing side**
+- [x] *markdown* Player Figures For Against Match B Fortuin 4/52 South Africa England 13 Jun 2027 M Rahman 4/53 Bangladesh New Zealand 20 Apr 2026 M Rahman 4/60 Bangladesh New Zealand 23 Apr 2026 F Farooqi 4/64 Afghanistan Ireland 07 Aug 2026 A Hosein 4/78 West Indies Sri Lanka 08 Jun 2026 W O&#x27;Rourke 3/45 New Zealand England 11 Jun 2027 A Zampa 3/51 Australia South Africa 01 Oct 2026 W Stelling 3/58 South Afr
+- [x] *tab* Carried the team
+- [x] *markdown* **One-man shows** · biggest share of the team's total in one innings
+- [x] *markdown* Player Runs Team total Share Match S Gill 161* 258 62% India v West Indies S Gill 211* 377 56% India v England L Das 75 169 44% Bangladesh v New Zealand T Head 111 254 44% Australia v South Africa H Shahidi 111* 257 43% Afghanistan v Ireland B Ahern 127 319 40% New Zealand v England T Hridoy 113 288 39% Bangladesh v New Zealand P Rathnayake 142 384 37% Sri Lanka v West Indies P Stirling 93 261 36%
+- [x] *markdown* **Who carries their team** · share of the team's runs over all their innings (5+)
+- [x] *chart* 1 series · x: % of the team's runs
+- [x] *markdown* What it shows: D Conway makes 15.6% of New Zealand's runs in the innings they bat (216 of 1385). An even share across 11 batters would be about 9%. What it's for: Shows which teams lean on one batter: if they fail, the team usually does too.
+- [x] *tab* Quirks
+- [x] *markdown* **Nervous nineties** · out between 90 and 99
+- [x] *markdown* Player Times Scores H Nicholls 1 94 P Stirling 1 93
+- [x] *markdown* **Pairs** · out for 0 in both innings of a match
+- [x] *caption* Nobody yet (only possible in two-innings matches).
+- [x] *markdown* **Not out** · most unbeaten innings
+- [x] *markdown* Player Not out Inns % J Archer 2 2 100% J Duffy 2 2 100% R Hossain 2 2 100% S Gill 2 3 67% S Joseph 2 3 67% H Brook 2 4 50% N Smith 2 5 40% A Elahi 1 1 100% A Husnain 1 1 100% A Kamboj 1 1 100% A McBrine 1 1 100% C Bosch 1 1 100% C Campher 1 1 100% C Esterhuizen 1 1 100% D Wellalage 1 1 100%
+- [x] *tab* After a hundred
+- [x] *markdown* **The innings after a hundred** · do they kick on or come back down?
+- [x] *markdown* Player Hundreds Next innings Avg next innings Avg overall S Gill 3 161*, 100 261.0 472.0 H Brook 1 25 25.0 114.5 T Head 1 69 69.0 90.0 T Hridoy 1 30 30.0 39.2 W Hasaranga 1 8 8.0 66.0
+- [x] *tab* Pairs
+- [x] *markdown* **Batting partners** · stands together (2+)
+- [x] *markdown* Pair Team Stands Runs Avg Best 50+ S Gill &amp; Y Jaiswal India 3 311 103.7 171 2 D Conway &amp; R Ravindra New Zealand 4 292 73.0 131 3 D Mitchell &amp; H Nicholls New Zealand 3 259 86.3 133 3 B Stokes &amp; H Brook England 2 238 119.0 120 2 M Hasan Miraz &amp; M Naim Bangladesh 3 163 54.3 106 1 S Gill &amp; V Kohli India 2 160 80.0 156 1 B Duckett &amp; T Banton England 3 152 50.7 133 1 D Jurel
+- [x] *caption* Only stands where the scorecard shows who batted together (see Records → partnerships).
+- [x] *markdown* **Bowling partners** · both bowled in the same innings (3+)
+- [x] *markdown* Pair Team Inns Wkts Wkts/inns Econ J Duffy &amp; N Smith New Zealand 4 20 5.0 5.04 G Atkinson &amp; J Archer England 3 15 5.0 6.10 H Mahmud &amp; M Rahman Bangladesh 3 13 4.3 4.98 J Duffy &amp; M Henry New Zealand 4 16 4.0 5.20 G Atkinson &amp; R Ahmed England 3 12 4.0 5.87 J Duffy &amp; R Ravindra New Zealand 4 15 3.8 5.23 A Singh &amp; H Pandya India 3 11 3.7 5.13 H Mahmud &amp; T Islam Banglade
+- [x] *markdown* **Partnership chemistry** · named pairs (3+ stands) against the average stand for the same wickets
+- [x] *markdown* Pair Team Stands Avg Expected Chemistry S Gill &amp; Y Jaiswal India 3 103.7 48.9 +112% D Mitchell &amp; H Nicholls New Zealand 3 86.3 40.8 +112% D Conway &amp; R Ravindra New Zealand 4 73.0 48.9 +49% M Hasan Miraz &amp; M Naim Bangladesh 3 54.3 51.2 +6% B Duckett &amp; T Banton England 3 50.7 48.9 +4% L Das &amp; S Sarkar Bangladesh 4 30.5 48.9 -38%
+- [x] *caption* Expected: what the average pair makes for the same wickets here, so an opening pair is compared with opening stands. +50% = half as much again.
+- [x] *markdown* **Strike-rate pressure** · how fast their partners score when batting with them (top-7 batters)
+- [x] *markdown* Batter Team Inns Partners&#x27; SR with them Partners&#x27; SR otherwise Effect C Esterhuizen South Africa 4 111.8 170.0 -34% L Das Bangladesh 10 72.3 89.9 -20% S Gill India 11 97.3 120.3 -19% K Carty West Indies 3 76.7 92.7 -17% B Duckett England 6 95.5 114.3 -16% M Bracewell New Zealand 3 91.2 107.6 -15% M Naim Bangladesh 6 93.3 74.7 +25% H Nicholls New Zealand 4 99.3 76.7 +29% S Iyer India 3 13
+- [x] *caption* The slowest-scoring partnerships first, then the fastest. The scorecards don't split a stand's runs, so this uses the partners' whole innings: a hint, not proof.
+- [x] *tab* Player of the Series
+- [x] *markdown* **Player of the Series** · most impact over each bilateral series
+- [x] *markdown* Started Series Player For Runs Wkts Impact Oct 2026 India v West Indies S Gill India 261 0 261 Oct 2026 South Africa v Australia W Mulder South Africa 24 4 157 Aug 2026 Ireland v Afghanistan F Farooqi Afghanistan 0 4 133 Jul 2026 England v India S Gill India 211 0 211 Jun 2026 West Indies v Sri Lanka W Hasaranga Sri Lanka 124 2 190 Apr 2026 Bangladesh v New Zealand J Duffy New Zealand 10 9 308 Apr
+- [x] *caption* Impact = runs, plus each wicket worth the section's runs per wicket.
+- [x] *tab* Upsets
+- [x] *markdown* **Biggest upsets in ODIs** · wins the ratings gave the least chance (all seasons)
+- [x] *markdown* Match Winner Beat Their chance Elo going in 11 Jun 2027 England New Zealand 46% 1490 v 1520 17 Apr 2026 New Zealand Bangladesh 47% 1490 v 1510 23 Jun 2027 Australia Pakistan 49% 1490 v 1500 13 Jun 2027 England South Africa 49% 1501 v 1510
+- [x] *caption* Chance from the two teams' Elo ratings before the game (see Rankings).
+- [x] *tab* Fastest to
+- [x] *caption* Counted in innings, across every season of ODIs.
+- [x] *info* Nobody has reached a milestone here yet.
+- [x] *tab* Match impact
+- [x] *markdown* **Biggest single-match impact**
+- [x] *markdown* Player Team Impact Did Match S Gill India 252 211 &amp; 0 wkts v England, 16 Jul 2026 W Hasaranga Sri Lanka 236 124 &amp; 2 wkts v West Indies, 08 Jun 2026 J Duffy New Zealand 220 0 &amp; 6 wkts v Bangladesh, 17 Apr 2026 S Gill India 183 161 &amp; 0 wkts v West Indies, 01 Oct 2026 B Fortuin South Africa 181 32 &amp; 4 wkts v England, 13 Jun 2027 H Mahmud Bangladesh 166 0 &amp; 4 wkts v New Zealand
+- [x] *markdown* **Most impact per match** · regulars only
+- [x] *chart* 1 series · x: Impact per match
+- [x] *markdown* What it shows: S Gill averages 188 a match, +257% on the average player's 53. What it's for: One number for everything a player does in a match: runs, plus each wicket worth the section's runs per wicket (34), with scoring speed and economy counted in white-ball cricket, plus catches and stumpings.
+- [x] *tab* Badges
+- [x] *markdown* **Badges earned in ODIs** · newest first
+- [x] *markdown* Badge Player Team Match 🏅 Player of the Match in a final A Hardie Australia 23 Jun 2027 🏅 Player of the Match in a final B Stokes England 23 Jun 2027 🏅 Three 50s in a row B Stokes England ODIs 23 Jun 2027 🏅 Hundred on debut B Ahern New Zealand 127 11 Jun 2027 🏅 Three 50s in a row S Gill India ODIs 03 Oct 2026 🏅 150 in a one-day game S Gill India 161* 01 Oct 2026 🏅 150 in a one-day game S Gill Indi
+- [x] *markdown* **How common each badge is here**
+- [x] *markdown* Badge Times Three 50s in a row 3 Player of the Match in a final 2 150 in a one-day game 2 Hundred on debut 1 One-day double hundred 1 One-day five-for 1
+- [x] *caption* T20: 5-for, hundred, 100 at a strike rate of 200+, fifty off 20 balls. One-day: 150, double hundred, five-for. Tests: double and triple hundreds, seven in an innings, ten in a match, a hundred or five-for in both innings, carried the bat, a pair. Any format: hundred on debut, hundred and five-for in a match, three big scores in a row, a hundred or Player of the Match in a final.
+- [x] *markdown* **England**: 🏆 Clean sweep 3–0 (v Pakistan, Tests)
+- [x] *tab* Batter v bowler
+- [x] *selectbox* Batter [153 options: A Auguste, A Awais, A Carey, A Elahi, A Hardie, A Hosein, A Husnain, A Jangoo…]
+- [x] *selectbox* Bowler [83 options: A Awais, A Elahi, A Fernando, A Ghazanfar, A Hardie, A Hosein, A Husnain, A Joseph…]
+- [x] *toggle* Every competition
+- [x] *caption* Pick a batter, a bowler, or both.
+- [x] *tab* Clutch
+- [x] *caption* Big games: knockouts, close games (by this format's margins) and series deciders. Players need 3+ innings each way.
+- [x] *markdown* **Batters in big games** · average then against average otherwise (top-7 batters)
+- [x] *caption* Not enough big games yet.
+- [x] *markdown* **Bowlers in big games** · wickets per innings then against otherwise
+- [x] *caption* Not enough big games yet.
+  - [x] *info* Load a career on the Home page first.
+  - [x] *page_header* Player stories
+  - [x] *page_header* The stories behind the numbers
+  - [x] *page_header* Who's in form, who's closing in on a milestone or a record, who wins games, who stands up when the team loses, and the odd ones: nervous nineties, pairs and not-outs.
+  - [x] *selectbox* Section
+  - [x] *selectbox* st_section
+  - [x] *selectbox* section
+  - [x] *selectbox* Season
+  - [x] *selectbox* All seasons
+  - [x] *selectbox* st_season
+  - [x] *selectbox* season
+  - [x] *tabs* Form guide
+  - [x] *tabs* Milestones and records
+  - [x] *tabs* Win when they fire
+  - [x] *tabs* Heroes in defeat
+  - [x] *tabs* Carried the team
+  - [x] *tabs* Quirks
+  - [x] *tabs* After a hundred
+  - [x] *tabs* Pairs
+  - [x] *tabs* Player of the Series
+  - [x] *tabs* Upsets
+  - [x] *tabs* Fastest to
+  - [x] *tabs* Match impact
+  - [x] *tabs* Badges
+  - [x] *tabs* Batter v bowler
+  - [x] *tabs* Clutch
+  - [x] *safe_section* form guide
+  - [x] *markdown* **Batters** · last 5 innings (oldest first), against their own average
+  - [x] *caption* Batters need 6+ innings.
+  - [x] *html_table* Player
+  - [x] *html_table* Team
+  - [x] *html_table* Last 5
+  - [x] *html_table* Avg last 5
+  - [x] *html_table* Avg
+  - [x] *markdown* **Bowlers** · last 5 innings, wickets per innings against their own
+  - [x] *caption* Bowlers need 6+ innings.
+  - [x] *html_table* Wkts/inns last 5
+  - [x] *html_table* Wkts/inns
+  - [x] *html_table* Econ last 5
+  - [x] *caption* ▲ hotter than usual (25%+ above their own average) · ▼ colder · ▬ about normal. Your team's players are highlighted. Analytics → Is the form real? says whether a hot run is more than luck.
+  - [x] *safe_section* milestones
+  - [x] *markdown* **Milestone watch** · close to a round number in {section} (all seasons)
+  - [x] *caption* Nobody is close to a milestone right now.
+  - [x] *html_table* Milestone
+  - [x] *html_table* Now
+  - [x] *html_table* Needs
+  - [x] *markdown* **Record watch** · records in {section} that could fall
+  - [x] *caption* No record is under threat right now.
+  - [x] *html_table* Record
+  - [x] *html_table* Holder
+  - [x] *html_table* Chaser
+  - [x] *caption* Career records: players within 15% of the leader. Season records: players within 25% while the season is still going.
+  - [x] *safe_section* win when they fire
+  - [x] *markdown* **{title}** · their team's win % in those games and in the rest
+  - [x] *caption* Nobody has 3+ {what} yet.
+  - [x] *html_table* Times
+  - [x] *html_table* Win % then
+  - [x] *html_table* Win % otherwise
+  - [x] *html_table* Lift
+  - [x] *safe_section* heroes in defeat
+  - [x] *markdown* **Best innings in a losing side**
+  - [x] *html_table* Score
+  - [x] *html_table* For
+  - [x] *html_table* Against
+  - [x] *html_table* Match
+  - [x] *caption* Nothing yet.
+  - [x] *markdown* **Best bowling in a losing side**
+  - [x] *html_table* Figures
+  - [x] *safe_section* carried the team
+  - [x] *markdown* **One-man shows** · biggest share of the team's total in one innings
+  - [x] *html_table* Runs
+  - [x] *html_table* Team total
+  - [x] *html_table* Share
+  - [x] *markdown* **Who carries their team** · share of the team's runs over all their innings (5+)
+  - [x] *caption* Not enough innings yet.
+  - [x] *chart_note* {t0.player} makes {t0.share}% of {poss(t0.team)} runs in the innings they bat ({t0.runs} of {t0.team_runs}). An even share across 11 batters would be about 9%.
+  - [x] *chart_note* Shows which teams lean on one batter: if they fail, the team usually does too.
+  - [x] *safe_section* quirks
+  - [x] *markdown* **Nervous nineties** · out between 90 and 99
+  - [x] *html_table* Scores
+  - [x] *caption* Nobody yet.
+  - [x] *markdown* **Pairs** · out for 0 in both innings of a match
+  - [x] *caption* Nobody yet (only possible in two-innings matches).
+  - [x] *markdown* **Not out** · most unbeaten innings
+  - [x] *html_table* Not out
+  - [x] *html_table* Inns
+  - [x] *safe_section* after a hundred
+  - [x] *markdown* **The innings after a hundred** · do they kick on or come back down?
+  - [x] *caption* No hundreds followed by another innings yet.
+  - [x] *html_table* Hundreds
+  - [x] *html_table* Next innings
+  - [x] *html_table* Avg next innings
+  - [x] *html_table* Avg overall
+  - [x] *safe_section* pairs
+  - [x] *markdown* **Batting partners** · stands together (2+)
+  - [x] *html_table* Pair
+  - [x] *html_table* Stands
+  - [x] *html_table* Best
+  - [x] *html_table* {bp.attrs.get('stand', 50)}+
+  - [x] *caption* No pairs yet.
+  - [x] *caption* Only stands where the scorecard shows who batted together (see Records → partnerships).
+  - [x] *markdown* **Bowling partners** · both bowled in the same innings (3+)
+  - [x] *html_table* Wkts
+  - [x] *html_table* Econ
+  - [x] *safe_section* chemistry
+  - [x] *markdown* **Partnership chemistry** · named pairs (3+ stands) against the average stand for the same wickets
+  - [x] *caption* No pair has 3 named stands yet.
+  - [x] *html_table* {r.average}
+  - [x] *html_table* {r.expected}
+  - [x] *html_table* Expected
+  - [x] *html_table* Chemistry
+  - [x] *caption* Expected: what the average pair makes for the same wickets here, so an opening pair is compared with opening stands. +50% = half as much again.
+  - [x] *safe_section* strike-rate pressure
+  - [x] *markdown* **Strike-rate pressure** · how fast their partners score when batting with them (top-7 batters)
+  - [x] *caption* White-ball cricket only, and batters need 3+ named stands.
+  - [x] *html_table* Batter
+  - [x] *html_table* Partners' SR with them
+  - [x] *html_table* Partners' SR otherwise
+  - [x] *html_table* Effect
+  - [x] *caption* The slowest-scoring partnerships first, then the fastest. The scorecards don't split a stand's runs, so this uses the partners' whole innings: a hint, not proof.
+  - [x] *safe_section* player of the series
+  - [x] *markdown* **Player of the Series** · most impact over each bilateral series
+  - [x] *caption* No bilateral series here.
+  - [x] *html_table* Started
+  - [x] *html_table* Series
+  - [x] *html_table* Impact
+  - [x] *caption* Impact = runs, plus each wicket worth the section's runs per wicket.
+  - [x] *safe_section* upsets
+  - [x] *markdown* **Biggest upsets in {section}** · wins the ratings gave the least chance (all seasons)
+  - [x] *caption* No upsets yet.
+  - [x] *html_table* Winner
+  - [x] *html_table* Beat
+  - [x] *html_table* Their chance
+  - [x] *html_table* Elo going in
+  - [x] *caption* Chance from the two teams' Elo ratings before the game (see Rankings).
+  - [x] *safe_section* fastest
+  - [x] *caption* Counted in {unit_}
+  - [x] *caption* matches
+  - [x] *caption* (as Test records are)
+  - [x] *caption* , across every season of {section}.
+  - [x] *info* Nobody has reached a milestone here yet.
+  - [x] *markdown* **Fastest to {ms} {what}** · {len(g)} player{'s' if len(g) != 1 else ''} got there
+  - [x] *html_table* {r.taken} {unit_}
+  - [x] *html_table* {r.date}
+  - [x] *html_table* Took
+  - [x] *html_table* Reached
+  - [x] *safe_section* match impact
+  - [x] *info* No matches yet.
+  - [x] *markdown* **Biggest single-match impact**
+  - [x] *html_table* {r.impact}
+  - [x] *html_table* {int(r.runs)} &
+  - [x] *html_table* wkt
+  - [x] *html_table* v {r.opponent}, {r.date}
+  - [x] *html_table* Did
+  - [x] *markdown* **Most impact per match** · regulars only
+  - [x] *chart_note* {g.player.iloc[0]} averages {g.avg.iloc[0]} a match, {(g.avg.iloc[0] / mi.impact.mean() - 1) * 100}% on the average player's {mi.impact.mean()}.
+  - [x] *chart_note* One number for everything a player does in a match: runs, plus each wicket worth the section's runs per wicket ({mi.attrs['rpw']})
+  - [x] *chart_note* kind
+  - [x] *chart_note* multi
+  - [x] *chart_note* , with scoring speed and economy counted in white-ball cricket
+  - [x] *chart_note* , plus catches and stumpings.
+  - [x] *safe_section* badges
+  - [x] *markdown* **Badges earned in {section}** · newest first
+  - [x] *caption* No badges yet.
+  - [x] *html_table* 🏅 {r.badge}
+  - [x] *html_table* Badge
+  - [x] *markdown* **How common each badge is here**
+  - [x] *caption* T20: 5-for, hundred, 100 at a strike rate of 200+, fifty off 20 balls. One-day: 150, double hundred, five-for. Tests: double and triple hundreds, seven in an innings, ten in a match, a hundred or five-for in both innings, carried the bat, a pair. Any format: hundred on debut, hundred and five-for in a match, three big scores in a row, a hundred or Player of the Match in a final.
+  - [x] *markdown* **{t}**:
+  - [x] *markdown* 🏆 {r.badge} ({r.detail})
+  - [x] *safe_section* batter v bowler
+  - [x] *selectbox* st_bvb_bat
+  - [x] *selectbox* Pick a batter
+  - [x] *selectbox* · out to them {met_bowl[x]}×
+  - [x] *selectbox* · met
+  - [x] *selectbox* Bowler
+  - [x] *selectbox* st_bvb_bowl
+  - [x] *selectbox* Pick a bowler
+  - [x] *selectbox* · got them out {met_bat[x]}×
+  - [x] *toggle* Every competition
+  - [x] *toggle* st_bvb_all
+  - [x] *toggle · help* Count every match in the career, not only this section.
+  - [x] *info* No {other} met {one} yet
+  - [x] *info* in {section}
+  - [x] *markdown* **{one} against every {other[:-1]} met** · most dismissals first; pick one above for every innings between them
+  - [x] *html_table* Innings met
+  - [x] *html_table* Got out
+  - [x] *html_table* Got them out
+  - [x] *html_table* Batter's runs in those innings
+  - [x] *caption* Pick a batter, a bowler, or both.
+  - [x] *info* {bowler} has never bowled at {poss(batter)} side while {batter} batted
+  - [x] *kpis* {bv['meetings']}
+  - [x] *kpis* {bowler.split()[-1]} got them out
+  - [x] *kpis* {bv['dismissals']}
+  - [x] *kpis* {bv['runs']}
+  - [x] *kpis* Average v this bowler
+  - [x] *kpis* dismissals
+  - [x] *kpis* runs_when_out
+  - [x] *markdown* **Verdict: {verdict}** ({_n(bv['dismissals'], 'dismissal')} in {bv['meetings']} innings).
+  - [x] *html_table* {r.runs}{'' if r.out else '*'} ({r.balls})
+  - [x] *html_table* not out
+  - [x] *html_table* {r.bowl_wkts}/{r.bowl_runs}
+  - [x] *html_table* Batter's score
+  - [x] *html_table* How out
+  - [x] *html_table* Bowler's figures
+  - [x] *caption* The scorecards don't say which bowler each run came off, so these are the batter's whole innings when the two met. ✔ = this bowler got them out.
+  - [x] *safe_section* clutch
+  - [x] *caption* Big games: knockouts, close games (by this format's margins) and series deciders
+  - [x] *caption* , plus the 4th innings of a multi-day game.
+  - [x] *caption* Players need 3+ innings each way.
+  - [x] *markdown* **Batters in big games** · average then against average otherwise (top-7 batters)
+  - [x] *caption* Not enough big games yet.
+  - [x] *html_table* Big-game inns
+  - [x] *html_table* Avg then
+  - [x] *html_table* Avg otherwise
+  - [x] *markdown* **Bowlers in big games** · wickets per innings then against otherwise
+  - [x] *html_table* {r.clutch_wpi}
+  - [x] *html_table* {r.other_wpi}
+  - [x] *html_table* Wkts/inns then
+  - [x] *html_table* Otherwise
+  - [x] *html_table* Econ then
 
 ### Compare players (62 lines)
 
-- [ ] *markdown* Compare players
-- [ ] *title* Side by side
-- [ ] *markdown* Pick a section and up to four players. Each chart shows one stat, with the section average as a dashed line.
-- [ ] *selectbox* Section [10 options: Indian Premier League · 52 matches, ODIs · 14 matches, T20 Blast · 10 matches, T20Is · 7 matches, Tests · 6 matches, Ranji Trophy · 5 matches, The Hundred · 4 matches, County Championship · Division 1 (3)…]
-- [ ] *selectbox* Season [3 options: All seasons, 2027, 2026]
-- [ ] *button_group* Discipline [2 options: Batting, Bowling]
-- [ ] *multiselect* Players (up to 4) [153 options: A Auguste, A Awais, A Carey, A Elahi, A Hardie, A Hosein, A Husnain, A Jangoo…]
-- [ ] *markdown* **ODIs**
-- [ ] *table* 12 rows · columns: S Gill, H Nicholls
-- [ ] *subheader* Stat by stat
-- [ ] *markdown* **Runs** · higher is better
-- [ ] *chart* 1 series · x: Runs
-- [ ] *markdown* What it shows: S Gill is best on this one: 472. What it's for: Total runs scored. Rewards volume, so players who bat often rise to the top.
-- [ ] *markdown* **Strike rate** · higher is better
-- [ ] *chart* 1 series · x: Strike rate
-- [ ] *markdown* What it shows: S Gill is best on this one: 133.3 (+39% on the section average of 95.9). What it's for: Runs per 100 balls faced. Higher is better.
-- [ ] *markdown* **Sixes** · higher is better
-- [ ] *chart* 1 series · x: Sixes
-- [ ] *markdown* What it shows: S Gill is best on this one: 9. What it's for: Total sixes hit.
-- [ ] *markdown* **Ducks** · lower is better
-- [ ] *chart* 1 series · x: Ducks
-- [ ] *markdown* What it shows: S Gill is best on this one: 0. What it's for: Dismissed without scoring. Lower is better, so 'Best' shows the fewest.
-- [ ] *markdown* **Average** · higher is better
-- [ ] *chart* 1 series · x: Average
-- [ ] *markdown* What it shows: S Gill is best on this one: 472.0 (+1310% on the section average of 33.5). What it's for: Runs per dismissal. Higher is better. Batters never dismissed have no average and are left out.
-- [ ] *markdown* **50+ scores** · higher is better
-- [ ] *chart* 1 series · x: 50+ scores
-- [ ] *markdown* What it shows: S Gill is best on this one: 3. What it's for: Innings of 50 or more, hundreds included.
-- [ ] *markdown* **Boundary %** · higher is better
-- [ ] *chart* 1 series · x: Boundary %
-- [ ] *markdown* What it shows: S Gill is best on this one: 69.1 (+11% on the section average of 62.0). What it's for: Share of a batter's runs that came from fours and sixes. High means a big hitter, low means someone who runs ones and twos.
-- [ ] *markdown* **Runs above average** · higher is better
-- [ ] *chart* 1 series · x: Runs above average
-- [ ] *markdown* What it shows: S Gill is best on this one: 132.5. What it's for: Runs scored minus what an average batter would score from the same balls. Rewards scoring a lot and scoring fast.
-- [ ] *markdown* **Career so far · total runs after each innings**
-- [ ] *chart* 2 series · x: Innings played · y: Total runs · series: S Gill, H Nicholls
-- [ ] *markdown* What it shows: S Gill has the most runs: 472 in 3 innings. S Gill gets there fastest: 157.3 an innings. What it's for: Shows how each career has built up. A steeper line means more per innings; where a line ends shows how many innings they've played.
-  - [ ] *info* Load a career on the Home page first.
-  - [ ] *page_header* Compare players
-  - [ ] *page_header* Side by side
-  - [ ] *page_header* Pick a section and up to four players. Each chart shows one stat, with the section average as a dashed line.
-  - [ ] *selectbox* Section
-  - [ ] *selectbox* cp_section
-  - [ ] *selectbox* section
-  - [ ] *selectbox* Season
-  - [ ] *selectbox* All seasons
-  - [ ] *selectbox* cp_season
-  - [ ] *selectbox* season
-  - [ ] *segmented_control* Discipline
-  - [ ] *segmented_control* Batting
-  - [ ] *segmented_control* Bowling
-  - [ ] *segmented_control* cp_disc
-  - [ ] *multiselect* Players (up to 4)
-  - [ ] *multiselect* cp_players_{disc}_{section}_{season}
-  - [ ] *info* Pick at least two players.
-  - [ ] *markdown* **{section}{'' if season == 'All seasons' else ' ' + season}**
-  - [ ] *dataframe* stretch
-  - [ ] *subheader* Stat by stat
-  - [ ] *markdown* **{stat.label}** · {better}
-  - [ ] *chart_note* {stat.definition}
-  - [ ] *markdown* **Career so far · total {what} after each innings**
-  - [ ] *chart_note* Shows how each career has built up. A steeper line means more per innings; where a line ends shows how many innings they've played.
+**Ticked 25 November** (/players/compare, under Players): the summary table, a chart per stat with the average dashed (one competition picked), and the career curves, each chart with the three lines (the old What it shows / What it's for); the section picker is the competition dropdown with tick boxes (answer 22), Season and Discipline dropdowns, Players (up to 4) a dropdown; new: plays like (answers 12, 15, 16).
+
+- [x] *markdown* Compare players
+- [x] *title* Side by side
+- [x] *markdown* Pick a section and up to four players. Each chart shows one stat, with the section average as a dashed line.
+- [x] *selectbox* Section [10 options: Indian Premier League · 52 matches, ODIs · 14 matches, T20 Blast · 10 matches, T20Is · 7 matches, Tests · 6 matches, Ranji Trophy · 5 matches, The Hundred · 4 matches, County Championship · Division 1 (3)…]
+- [x] *selectbox* Season [3 options: All seasons, 2027, 2026]
+- [x] *button_group* Discipline [2 options: Batting, Bowling]
+- [x] *multiselect* Players (up to 4) [153 options: A Auguste, A Awais, A Carey, A Elahi, A Hardie, A Hosein, A Husnain, A Jangoo…]
+- [x] *markdown* **ODIs**
+- [x] *table* 12 rows · columns: S Gill, H Nicholls
+- [x] *subheader* Stat by stat
+- [x] *markdown* **Runs** · higher is better
+- [x] *chart* 1 series · x: Runs
+- [x] *markdown* What it shows: S Gill is best on this one: 472. What it's for: Total runs scored. Rewards volume, so players who bat often rise to the top.
+- [x] *markdown* **Strike rate** · higher is better
+- [x] *chart* 1 series · x: Strike rate
+- [x] *markdown* What it shows: S Gill is best on this one: 133.3 (+39% on the section average of 95.9). What it's for: Runs per 100 balls faced. Higher is better.
+- [x] *markdown* **Sixes** · higher is better
+- [x] *chart* 1 series · x: Sixes
+- [x] *markdown* What it shows: S Gill is best on this one: 9. What it's for: Total sixes hit.
+- [x] *markdown* **Ducks** · lower is better
+- [x] *chart* 1 series · x: Ducks
+- [x] *markdown* What it shows: S Gill is best on this one: 0. What it's for: Dismissed without scoring. Lower is better, so 'Best' shows the fewest.
+- [x] *markdown* **Average** · higher is better
+- [x] *chart* 1 series · x: Average
+- [x] *markdown* What it shows: S Gill is best on this one: 472.0 (+1310% on the section average of 33.5). What it's for: Runs per dismissal. Higher is better. Batters never dismissed have no average and are left out.
+- [x] *markdown* **50+ scores** · higher is better
+- [x] *chart* 1 series · x: 50+ scores
+- [x] *markdown* What it shows: S Gill is best on this one: 3. What it's for: Innings of 50 or more, hundreds included.
+- [x] *markdown* **Boundary %** · higher is better
+- [x] *chart* 1 series · x: Boundary %
+- [x] *markdown* What it shows: S Gill is best on this one: 69.1 (+11% on the section average of 62.0). What it's for: Share of a batter's runs that came from fours and sixes. High means a big hitter, low means someone who runs ones and twos.
+- [x] *markdown* **Runs above average** · higher is better
+- [x] *chart* 1 series · x: Runs above average
+- [x] *markdown* What it shows: S Gill is best on this one: 132.5. What it's for: Runs scored minus what an average batter would score from the same balls. Rewards scoring a lot and scoring fast.
+- [x] *markdown* **Career so far · total runs after each innings**
+- [x] *chart* 2 series · x: Innings played · y: Total runs · series: S Gill, H Nicholls
+- [x] *markdown* What it shows: S Gill has the most runs: 472 in 3 innings. S Gill gets there fastest: 157.3 an innings. What it's for: Shows how each career has built up. A steeper line means more per innings; where a line ends shows how many innings they've played.
+  - [x] *info* Load a career on the Home page first.
+  - [x] *page_header* Compare players
+  - [x] *page_header* Side by side
+  - [x] *page_header* Pick a section and up to four players. Each chart shows one stat, with the section average as a dashed line.
+  - [x] *selectbox* Section
+  - [x] *selectbox* cp_section
+  - [x] *selectbox* section
+  - [x] *selectbox* Season
+  - [x] *selectbox* All seasons
+  - [x] *selectbox* cp_season
+  - [x] *selectbox* season
+  - [x] *segmented_control* Discipline
+  - [x] *segmented_control* Batting
+  - [x] *segmented_control* Bowling
+  - [x] *segmented_control* cp_disc
+  - [x] *multiselect* Players (up to 4)
+  - [x] *multiselect* cp_players_{disc}_{section}_{season}
+  - [x] *info* Pick at least two players.
+  - [x] *markdown* **{section}{'' if season == 'All seasons' else ' ' + season}**
+  - [x] *dataframe* stretch
+  - [x] *subheader* Stat by stat
+  - [x] *markdown* **{stat.label}** · {better}
+  - [x] *chart_note* {stat.definition}
+  - [x] *markdown* **Career so far · total {what} after each innings**
+  - [x] *chart_note* Shows how each career has built up. A steeper line means more per innings; where a line ends shows how many innings they've played.
 
