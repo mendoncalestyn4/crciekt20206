@@ -12,3 +12,5 @@ Not part of the site. Each piece goes back in when work resumes.
   `browser_stress.js` (fast clicking). They expect the scratchpad layout of the session that wrote them.
 
 **Stage 1 stress test: finished 6 November** (results in NEW_SITE_PLAN.md, end of section 15). The tools above are what it ran.
+
+- **Stage 6, first open faster** (parked 25 November, the owner: do it with stage 6): `stage6_speed_first_open.patch`. Saved sums stamped with only the code they use (`ccstats/keep.py` version_of, on_disk, engine files per career), used for honours, marks, rankings, Hall of Fame and match ratings; the read-in career keyed by the loader's code only; tests at the end of `tests/test_speed.py`. Not yet passing: the memo lock fix (version_of's own lock) is in the patch but untested. Plan: NEW_SITE_PLAN.md section 8, stage 6 row.

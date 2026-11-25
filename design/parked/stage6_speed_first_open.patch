@@ -1,0 +1,418 @@
+diff --git a/ccstats/extras.py b/ccstats/extras.py
+index e39ebd6..b2e941c 100644
+--- a/ccstats/extras.py
++++ b/ccstats/extras.py
+@@ -421,15 +421,8 @@ def honours(career) -> pd.DataFrame:
+     the final; a competition without knockouts (a league, or a bilateral series)
+     has its table leader or series winner.  Worked out once per career (several
+     pages ask for it); a copy is returned so nobody can change the stored one."""
+-    cached = getattr(career, "_honours_cache", None)
+-    if cached is not None and cached[0] is career.matches:
+-        return cached[1].copy()
+-    h = _honours(career)
+-    try:
+-        object.__setattr__(career, "_honours_cache", (career.matches, h))
+-    except Exception:  # noqa: BLE001 - a career that can't hold a cache just works it out each time
+-        pass
+-    return h.copy()
++    from .keep import on_disk   # kept on disk too, across updates that don't change how it's worked out
++    return on_disk(career, ("honours",), lambda: _honours(career), ("extras",)).copy()
+ 
+ 
+ def _honours(career) -> pd.DataFrame:
+diff --git a/ccstats/hall.py b/ccstats/hall.py
+index fe5b102..6643321 100644
+--- a/ccstats/hall.py
++++ b/ccstats/hall.py
+@@ -64,8 +64,8 @@ def routes(kind: str) -> list[tuple[str, dict]]:
+ def inductions(career, section: str) -> pd.DataFrame:
+     """Everyone inducted in a competition, earliest first: player, team, date, match_id, route (what took him in),
+     also (other routes reached since), and his figures there now."""
+-    from .keep import on_career
+-    return on_career(career, ("hall_inductions", section), lambda: _inductions(career, section))
++    from .keep import on_disk
++    return on_disk(career, ("hall_inductions", section), lambda: _inductions(career, section), ("hall",))
+ 
+ 
+ def _inductions(career, section: str) -> pd.DataFrame:
+@@ -166,8 +166,8 @@ def duos(career, ids, n: int = 15) -> pd.DataFrame:
+ def firsts(career, team: str) -> pd.DataFrame:
+     """A team's firsts and its players' firsts, oldest first: date, kind (team / player), what, who, match_id, section.
+     Kept with the career."""
+-    from .keep import on_career
+-    return on_career(career, ("hall_firsts", team), lambda: _firsts(career, team))
++    from .keep import on_disk
++    return on_disk(career, ("hall_firsts", team), lambda: _firsts(career, team), ("hall",))
+ 
+ 
+ def _firsts(career, team: str) -> pd.DataFrame:
+diff --git a/ccstats/keep.py b/ccstats/keep.py
+index be95513..5cec22e 100644
+--- a/ccstats/keep.py
++++ b/ccstats/keep.py
+@@ -42,8 +42,63 @@ def version() -> str:
+     return _version
+ 
+ 
++_scoped: dict[str, str] = {}
++_vlock = threading.Lock()   # its own lock: version_of is asked while _lock is held (memo reading its file)
++
++
++def _imports(name: str) -> set[str]:
++    """The engine modules one engine module uses (its `from .x import`, `from . import x` and `from .x.y` lines)."""
++    import re
++    f = Path(__file__).resolve().parent / f"{name}.py"
++    try:
++        text = f.read_text(encoding="utf-8")
++    except OSError:
++        return set()
++    out = set(re.findall(r"^\s*from \.(\w+)", text, re.M))
++    for group in re.findall(r"^\s*from \. import ([\w ,()]+)", text, re.M):
++        out |= {w.split(" as ")[0].strip() for w in group.replace("(", "").replace(")", "").split(",") if w.strip()}
++    return {x for x in out if (f.parent / f"{x}.py").is_file()}
++
++
++def version_of(*modules: str) -> str:
++    """A fingerprint of just the code an answer is worked out with: the engine modules named, every engine module they
++    use (all the way down), the Python and pandas and numpy versions. An update that doesn't touch any of them keeps
++    the answers (an update that does is worked out afresh, so nothing can be out of date)."""
++    key = "|".join(sorted(modules))
++    with _vlock:
++        if key in _scoped:
++            return _scoped[key]
++    import sys
++    import numpy as np
++    import pandas as pd
++    seen: set[str] = set()
++    todo = list(modules)
++    while todo:
++        m = todo.pop()
++        if m in seen:
++            continue
++        seen.add(m)
++        todo += sorted(_imports(m) - seen)
++    root = Path(__file__).resolve().parent
++    h = hashlib.sha1(f"{sys.version_info[:2]}|{pd.__version__}|{np.__version__}".encode())
++    for m in sorted(seen):
++        f = root / f"{m}.py"
++        h.update(m.encode())
++        if f.is_file():
++            h.update(f.read_bytes())
++    v = h.hexdigest()[:12]
++    with _vlock:
++        _scoped[key] = v
++    return v
++
++
++# what each kind of kept answer is worked out with (its file is stamped with that code only)
++MEMO_CODE = {"parsed": ("loader",), "stands": ("partnerships",)}
++
++
+ def _file(kind: str) -> Path | None:
+-    return DIR / f"memo-{kind}-{version()}.pickle" if DIR else None
++    v = version_of(*MEMO_CODE[kind]) if kind in MEMO_CODE else version()
++    return DIR / f"memo-{kind}-{v}.pickle" if DIR else None
+ 
+ 
+ def memo(kind: str) -> dict:
+@@ -72,6 +127,8 @@ def save() -> None:
+     """Write every kind with new answers (to a temporary file first, so a crash never leaves half a file)."""
+     if not DIR:
+         return
++    DIR.mkdir(parents=True, exist_ok=True)
++    _save_engine()
+     with _lock:
+         todo = [(k, dict(_memos[k])) for k in _dirty if k in _memos]
+         _dirty.clear()
+@@ -82,9 +139,12 @@ def save() -> None:
+         with open(tmp, "wb") as fh:
+             pickle.dump(values, fh, protocol=pickle.HIGHEST_PROTOCOL)
+         os.replace(tmp, f)
+-    # older versions' files are never read again
++    # files made by other code than each kind's own are never read again
++    current = {f.name for f in (_file(k) for k in set(MEMO_CODE) | {k for k, _ in todo}) if f}
+     for old in DIR.glob("memo-*.pickle"):
+-        if not old.stem.endswith(version()):
++        kind = old.stem[len("memo-"):].rsplit("-", 1)[0]
++        mine = _file(kind)
++        if mine and old.name != mine.name and old.name not in current:
+             try:
+                 old.unlink()
+             except OSError:
+@@ -105,6 +165,112 @@ def stamp(career, *extra) -> str:
+     return h.hexdigest()
+ 
+ 
++# --------------------------------------------------------------------------- kept on disk, across updates
++ENGINE_FILES = 4            # per-career files kept (the newest: a career or two, and the one before the latest match)
++_engine_dirty: dict[str, object] = {}
++
++
++def career_print(career) -> str:
++    """A career's fingerprint without the site's version: its exact scorecards, its Data check choices, its matches as
++    the site sees them (home and away from your schedule included) and whether fielding counts."""
++    sig = (id(career.matches), len(career.matches))
++    got = getattr(career, "_engine_print", None)
++    if got and got[0] == sig:
++        return got[1]
++    import pandas as pd
++    h = hashlib.sha1()
++    for source in sorted(career.texts):
++        h.update(source.encode())
++        t = career.texts[source]
++        h.update(t.encode() if isinstance(t, str) else bytes(t))
++    h.update(career.fixes.to_json().encode())
++    # the tables exactly as read (so an update to how scorecards are read can never leave a sum out of date)
++    for name in ("matches", "innings", "batting", "bowling", "fow", "fielding"):
++        t = getattr(career, name, None)
++        if isinstance(t, pd.DataFrame):
++            h.update(name.encode() + repr(list(t.columns)).encode() + repr(list(map(str, t.dtypes))).encode())
++            if len(t):
++                h.update(pd.util.hash_pandas_object(t.astype(str), index=False).to_numpy().tobytes())
++    h.update(repr(getattr(career, "count_fielding", None)).encode())
++    fp = h.hexdigest()[:20]
++    try:
++        object.__setattr__(career, "_engine_print", (sig, fp))
++    except Exception:   # noqa: BLE001
++        pass
++    return fp
++
++
++def _engine_store(career) -> dict | None:
++    """The career's sums kept on disk ({(code version, key): value}), read the first time."""
++    if not DIR:
++        return None
++    fp = career_print(career)
++    got = getattr(career, "_engine_disk", None)
++    if got and got[0] == fp:
++        return got[1]
++    values: dict = {}
++    f = DIR / f"engine-{fp}.pickle"
++    if f.is_file():
++        try:
++            with open(f, "rb") as fh:
++                values = pickle.load(fh)
++        except Exception:   # noqa: BLE001 - a damaged or half-written file: worked out again
++            values = {}
++    try:
++        object.__setattr__(career, "_engine_disk", (fp, values))
++    except Exception:   # noqa: BLE001
++        return None
++    return values
++
++
++def on_disk(career, key, make, code: tuple[str, ...]):
++    """`make()` worked out once per career and kept on disk, so it survives restarts and updates: stamped with the
++    career's exact scorecards (career_print) and only the code it's worked out with (`code`: the engine modules,
++    version_of). An update that changes any of that code works it out afresh, so it is never out of date."""
++    code = tuple(sorted(code))
++    v = version_of(*code)
++    full = (code, v) + tuple(key)
++    def make_kept():
++        store = _engine_store(career)
++        if store is not None and full in store:
++            return store[full]
++        value = make()
++        if store is not None:
++            with _lock:
++                store[full] = value
++                _engine_dirty[career_print(career)] = career
++        return value
++    return on_career(career, ("disk",) + full, make_kept)
++
++
++def _save_engine() -> None:
++    with _lock:
++        todo = list(_engine_dirty.items())
++        _engine_dirty.clear()
++    for fp, career in todo:
++        got = getattr(career, "_engine_disk", None)
++        if not got or got[0] != fp:
++            continue
++        with _lock:
++            values = dict(got[1])
++        # sums worked out with code that has since changed are never read again: left out
++        values = {k: x for k, x in values.items() if version_of(*k[0]) == k[1]}
++        f = DIR / f"engine-{fp}.pickle"
++        tmp = f.with_suffix(f".{os.getpid()}.{threading.get_ident()}.tmp")
++        try:
++            with open(tmp, "wb") as fh:
++                pickle.dump(values, fh, protocol=pickle.HIGHEST_PROTOCOL)
++            os.replace(tmp, f)
++        except Exception:   # noqa: BLE001 - a full disk: worked out again next time
++            continue
++    old = sorted(DIR.glob("engine-*.pickle"), key=lambda p: p.stat().st_mtime, reverse=True)[ENGINE_FILES:]
++    for p in old:
++        try:
++            p.unlink()
++        except OSError:
++            pass
++
++
+ def on_career(career, key, make):
+     """`make()` worked out once per career in memory (kept until its matches change): for a sum several pages ask for
+     with the same matches."""
+diff --git a/ccstats/local.py b/ccstats/local.py
+index 3d6f168..93e23c5 100644
+--- a/ccstats/local.py
++++ b/ccstats/local.py
+@@ -319,7 +319,9 @@ def _ready_copy(d: Path, raw: bytes) -> Career:
+     import hashlib
+     import pickle
+     from . import keep as KEEP
+-    key = hashlib.sha1(KEEP.version().encode() + raw + repr(sorted(_names_read.items())).encode()).hexdigest()
++    # stamped with the code that reads a career (the loader and what it uses), not the whole site: an update that
++    # doesn't change how scorecards are read keeps the ready copy
++    key = hashlib.sha1(KEEP.version_of("loader").encode() + raw + repr(sorted(_names_read.items())).encode()).hexdigest()
+     f = d / "career.ready.pickle"
+     try:
+         with open(f, "rb") as fh:
+diff --git a/ccstats/marks.py b/ccstats/marks.py
+index 0317c4d..0599de1 100644
+--- a/ccstats/marks.py
++++ b/ccstats/marks.py
+@@ -125,16 +125,9 @@ def _figures(r) -> str:
+ def series_marks(career, ids=None) -> pd.DataFrame:
+     """Every player's mark out of 10 in every series or tournament (all teams), ranked within his side's series.
+     For the whole career it's kept with the career until its matches change (a few seconds on a big one)."""
+-    if ids is None:
+-        stamp = (id(career.matches), len(career.matches), counts_fielding(career))
+-        kept = getattr(career, "_series_marks", None)
+-        if kept is None or kept[0] != stamp:
+-            kept = (stamp, _series_marks(career, None))
+-            try:
+-                career._series_marks = kept
+-            except AttributeError:
+-                pass
+-        return kept[1]
++    if ids is None:   # kept on disk too, across updates that don't change how marks are worked out
++        from .keep import on_disk
++        return on_disk(career, ("series_marks", counts_fielding(career)), lambda: _series_marks(career, None), ("marks",))
+     return _series_marks(career, ids)
+ 
+ 
+diff --git a/ccstats/ranking.py b/ccstats/ranking.py
+index 61764ec..e466627 100644
+--- a/ccstats/ranking.py
++++ b/ccstats/ranking.py
+@@ -37,8 +37,8 @@ KINDS = ("batting", "bowling", "all-round")
+ def states(career) -> pd.DataFrame:
+     """Every player's series as it stood after each of his matches: one row per player per match, with his batting
+     and bowling marks for the series so far (the Player page's marks once the series is over). Kept with the career."""
+-    from .keep import on_career
+-    return on_career(career, ("ranking_states",), lambda: _states(career))
++    from .keep import on_disk
++    return on_disk(career, ("ranking_states",), lambda: _states(career), ("ranking",))
+ 
+ 
+ def _states(career) -> pd.DataFrame:
+@@ -207,8 +207,8 @@ def _tables(sec_states: pd.DataFrame, date, whats=KINDS) -> dict[str, pd.DataFra
+ def history(career, section: str, what: str) -> pd.DataFrame:
+     """The rankings after every match day of a competition: date, matches (played that day), player, rating, rank
+     (ranked players only). Kept with the career; the three lists are worked out together."""
+-    from .keep import on_career
+-    return on_career(career, ("ranking_history", section), lambda: _history(career, section))[what]
++    from .keep import on_disk
++    return on_disk(career, ("ranking_history", section), lambda: _history(career, section), ("ranking",))[what]
+ 
+ 
+ def _history(career, section: str) -> dict[str, pd.DataFrame]:
+diff --git a/server/matchpage.py b/server/matchpage.py
+index 09fd89c..c6bedd6 100644
+--- a/server/matchpage.py
++++ b/server/matchpage.py
+@@ -104,7 +104,9 @@ def ratings(career, section: str) -> pd.DataFrame:
+     def make():
+         ids = career.matches[career.matches.section == section].match_id
+         return X.rate(career, ids)
+-    return kept(career, ("excitement", section), make)
++    # kept on disk too, across updates that don't change how the rating is worked out (ccstats/excitement.py)
++    from ccstats import keep as KEEP
++    return kept(career, ("excitement", section), lambda: KEEP.on_disk(career, ("excitement", section), make, ("excitement",)))
+ 
+ 
+ def all_ratings(career) -> pd.DataFrame:
+diff --git a/tests/test_speed.py b/tests/test_speed.py
+index fac536a..7051ec7 100644
+--- a/tests/test_speed.py
++++ b/tests/test_speed.py
+@@ -172,3 +172,79 @@ def test_a_junk_competition_name_on_my_team_is_the_normal_page_at_once(tmp_path)
+         assert time.time() - t < 1.0
+     finally:
+         live.stop()
++
++
++# ---------------------------------------------------------------- the heavy sums kept on disk across updates
++def _heavy(c):
++    from ccstats import extras as E
++    from ccstats import hall as H
++    from ccstats import marks as M
++    from ccstats import ranking as R
++    sec = c.matches.section.iloc[0]
++    return dict(honours=E.honours(c), marks=M.series_marks(c), states=R.states(c),
++                inductions=H.inductions(c, sec))
++
++
++def _same(a, b):
++    for k in a:
++        if isinstance(a[k], pd.DataFrame):
++            pd.testing.assert_frame_equal(a[k], b[k])
++        else:
++            assert repr(a[k]) == repr(b[k]), k
++
++
++def test_heavy_sums_survive_a_restart_and_an_unrelated_update_with_the_same_numbers(kept_dir, monkeypatch):
++    first = _heavy(build(FIXTURES))
++    KEEP.save()
++    assert len(list(kept_dir.glob("engine-*.pickle"))) == 1
++    # a restart after an update to code these sums don't use: read back, nothing worked out again
++    KEEP.reset()
++    import ccstats.extras as E
++    monkeypatch.setattr(E, "_honours", lambda c: (_ for _ in ()).throw(AssertionError("worked out again")))
++    again = _heavy(build(FIXTURES))
++    _same(first, again)
++
++
++def test_heavy_sums_are_worked_out_afresh_when_their_own_code_changes(kept_dir, monkeypatch):
++    _heavy(build(FIXTURES))
++    KEEP.save()
++    KEEP.reset()
++    real = KEEP.version_of
++    # the honours code (extras.py) "changed": its saved answer is never used
++    monkeypatch.setattr(KEEP, "version_of", lambda *m: "changed" if "extras" in m else real(*m))
++    import ccstats.extras as E
++    calls = []
++    orig = E._honours
++    monkeypatch.setattr(E, "_honours", lambda c: calls.append(1) or orig(c))
++    _heavy(build(FIXTURES))
++    assert calls == [1]
++    # and saving leaves out what the old code worked out
++    KEEP.save()
++    import pickle
++    (f,) = kept_dir.glob("engine-*.pickle")
++    keys = pickle.loads(f.read_bytes()).keys()
++    assert all(KEEP.version_of(*k[0]) == k[1] for k in keys)
++
++
++def test_heavy_sums_are_never_shared_between_different_scorecards(kept_dir):
++    a = build(FIXTURES)
++    _heavy(a)
++    KEEP.save()
++    KEEP.reset()
++    b = build(FIXTURES[:-1])
++    assert KEEP.career_print(a) != KEEP.career_print(b)
++    from ccstats import extras as E
++    fresh = E._honours(b)
++    pd.testing.assert_frame_equal(E.honours(b), fresh)
++
++
++def test_a_version_covers_every_engine_module_it_uses():
++    # ranking.py uses other engine modules; a change in any of them is a change of version for ranking's sums
++    used = set()
++    todo = ["ranking"]
++    while todo:
++        m = todo.pop()
++        if m not in used:
++            used.add(m)
++            todo += list(KEEP._imports(m))
++    assert len(used) > 1
