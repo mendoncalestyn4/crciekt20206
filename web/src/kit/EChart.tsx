@@ -3,8 +3,9 @@
 // for a legend, every label of a short category axis shown, two-line pie labels that don't overlap, and the number
 // in a donut's hole shrunk with the hole.
 import { BarChart, LineChart, PieChart, ScatterChart } from "echarts/charts";
-import { GridComponent, LegendComponent, MarkAreaComponent, MarkLineComponent, MarkPointComponent, TitleComponent, TooltipComponent } from "echarts/components";
+import { GraphicComponent, GridComponent, LegendComponent, MarkAreaComponent, MarkLineComponent, MarkPointComponent, TitleComponent, TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";
+import { LabelLayout } from "echarts/features";
 import { SVGRenderer } from "echarts/renderers";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
@@ -13,7 +14,7 @@ import { useShell } from "../shell/Shell";
 import { ts } from "./look";
 
 echarts.use([BarChart, LineChart, PieChart, ScatterChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent,
-  MarkAreaComponent, MarkLineComponent, MarkPointComponent, SVGRenderer]);
+  MarkAreaComponent, MarkLineComponent, MarkPointComponent, GraphicComponent, LabelLayout, SVGRenderer]);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Option = Record<string, any>;

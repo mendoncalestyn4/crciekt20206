@@ -71,6 +71,7 @@ export function StatByStat() {
     <>
       {head}
       <div className="grid">
+        <div className="intro">Pick a competition and a stat. The left chart ranks players on that one stat; the right chart shows where every qualifying player sits.</div>
         <Tile span={12} className="pickbar">
           <div className="drops">
             <Drop label="Competition" all={d.choices.map((c) => c.section)} on={d.ticked} set={(v) => set({ section: join(v) })} keepOne
@@ -267,6 +268,7 @@ export function Rankings() {
     <>
       {head}
       <div className="grid">
+        <div className="intro">Batters, bowlers and all-rounders ranked on their marks out of 10, team ratings (Elo) and every team by runs and wickets. Recent series count most, so these move as you play.</div>
         <div className="itabs">{d.tabs.map((x, i) => (
           <button key={x} className={x === d.tab ? "on" : ""} onClick={() => set({ tab: i === 0 ? "" : x })}>{x}</button>))}</div>
         <Tile span={12} className="pickbar">
@@ -380,6 +382,7 @@ export function HallOfFame() {
     <>
       {head}
       <div className="grid">
+        <div className="intro">Players inducted when they reach a milestone, the Player of the Match awards, the best batting pairs, the best all-round performances in a single match, and every first.</div>
         <div className="itabs">{d.tabs.map((x, i) => (
           <button key={x} className={x === d.tab ? "on" : ""} onClick={() => set({ tab: i === 0 ? "" : x })}>{x}</button>))}</div>
         <Tile span={12} className="pickbar">

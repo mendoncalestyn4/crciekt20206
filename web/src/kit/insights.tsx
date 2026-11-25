@@ -1,6 +1,6 @@
 // Insights (stage 3): home wins against away wins in every competition, and one measure of scoring season by season.
 import { useMemo } from "react";
-import type { HomeRow, SeasonChart } from "../api";
+import type { HomeRow, Quad, QuadPoint, SeasonChart } from "../api";
 import { useTheme } from "../theme";
 import { EChart, type Option } from "./EChart";
 import { look, ts } from "./look";
@@ -60,4 +60,40 @@ export function SeasonLine({ c }: { c: SeasonChart }) {
   }, [t, c]);
   if (!c.points.length) return <div className="empty">No figures yet.</div>;
   return <EChart option={option} height={250} label={c.label} />;
+}
+
+/** Every player as a dot, split into four by the average lines (dashed): the best corner's dots blue, the rest grey,
+ *  each corner named in the key under it; the furthest-out players named on the chart, everyone on hover. */
+export function Quadrant({ q }: { q: Quad }) {
+  const t = useTheme();
+  const option = useMemo<Option>(() => {
+    const L = look(t);
+    const xs = q.points.map((p) => p.x), ys = q.points.map((p) => p.y);
+    const x0 = Math.min(q.x_ref, ...xs), x1 = Math.max(q.x_ref, ...xs), y0 = Math.min(q.y_ref, ...ys), y1 = Math.max(q.y_ref, ...ys);
+    const px = (x1 - x0) * 0.1 || 1, py = (y1 - y0) * 0.12 || 1;
+    const good = (p: QuadPoint) => (q.x_low ? p.x <= q.x_ref : p.x >= q.x_ref) && (q.y_low ? p.y <= q.y_ref : p.y >= q.y_ref);
+    const far = (p: QuadPoint) => Math.abs(p.x - q.x_ref) / ((x1 - x0) || 1) + Math.abs(p.y - q.y_ref) / ((y1 - y0) || 1);
+    const named = new Set([...q.points].sort((a, b) => far(b) - far(a)).slice(0, 5).map((p) => p.player));
+    const ax = (name: string, min: number, max: number, gap: number) => ({ type: "value", name, nameLocation: "middle", nameGap: gap,
+      min: Math.floor(min), max: Math.ceil(max), ...L.AX, axisLabel: { ...L.AX.axisLabel, showMinLabel: false, showMaxLabel: false },
+      nameTextStyle: { color: t.dim, fontFamily: "Inter", fontSize: ts(11) }, splitLine: { show: false } });
+    const G = { left: 72, right: 24, top: 20, bottom: 54, containLabel: false };
+    return {
+      grid: G,
+      xAxis: ax(q.x_label, x0 - px, x1 + px, 30), yAxis: ax(q.y_label, y0 - py, y1 + py, 44),
+      tooltip: { ...L.TT, trigger: "item", formatter: (p: { data: { p: QuadPoint } }) => { const d = p.data.p;
+        return `<b>${d.player}</b> · ${d.team}<br/>${q.x_label}: ${d.x.toFixed(1)}<br/>${q.y_label}: ${d.y.toFixed(1)}<br/>${d.style}`; } },
+      series: [{ type: "scatter", symbolSize: 10,
+        data: q.points.map((p) => ({ value: [p.x, p.y], name: p.player, p, itemStyle: { color: good(p) ? t.blue : t.grey, opacity: good(p) ? 1 : 0.7 },
+          label: { show: named.has(p.player), formatter: p.player, position: "right", color: t.ink, fontFamily: "Inter", fontSize: ts(11) } })),
+        labelLayout: { hideOverlap: true },
+        markLine: { silent: true, symbol: "none", label: { show: false }, lineStyle: { color: t.dim, type: "dashed", width: 1.2 },
+          data: [{ xAxis: q.x_ref }, { yAxis: q.y_ref }] } }],
+    };
+  }, [t, q]);
+  if (q.points.length < 3) return <div className="empty">Not enough players yet.</div>;
+  return (<>
+    <EChart option={option} height={420} label={`${q.y_label} against ${q.x_label}`} />
+    <div className="quadkey">{(["↗", "↖", "↘", "↙"] as const).map((a, i) => <span key={a}><b>{a}</b> {q.corners[i]}</span>)}</div>
+  </>);
 }

@@ -5,10 +5,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { get, type InsightsPage, remember } from "../api";
+import { get, type AnalyticsPage, type InsightsPage, type NGrid, type Quad, remember } from "../api";
 import { Explain, Missing, Num, Pick, Tile, three } from "../kit/base";
-import { HomeBars, SeasonLine } from "../kit/insights";
-import { BatFirstSides, StrengthPanel } from "../kit/season";
+import { HomeBars, Quadrant, SeasonLine } from "../kit/insights";
+import { BatFirstSides, MatchWinners, StrengthPanel } from "../kit/season";
 import { Grid, SignedBars } from "../kit/teams";
 import { T } from "../shell/names";
 import { useReady } from "../ready";
@@ -174,6 +174,107 @@ export function Insights() {
             {d.follow_none ? <div className="plain">{d.follow_none}</div> : d.follow && <><Grid t={d.follow} />{d.follow.note && <div className="note">{d.follow.note}</div>}</>}
           </Tile>
         </>)}
+      </div>
+    </>
+  );
+}
+
+const AN_KEYS = ["tab", "section", "season", "team"];
+
+/** A table with its note under it. */
+function Noted({ t }: { t: NGrid }) {
+  return <><Grid t={t} />{t.note && <div className="note">{t.note}</div>}</>;
+}
+
+/** Analytics (stage 3): the deeper numbers for one competition and season, kept as its own page (your answer 2), with
+ *  the match-winners chart (your answer 14). Every number comes from the server (server/analyticspage.py). */
+export function Analytics() {
+  const { career, noCareer, nation } = useShell();
+  const t = useTheme();
+  const [params] = useSearchParams();
+  const go = useNavigate();
+  const want = Object.fromEntries(AN_KEYS.map((k) => [k, params.get(k) ?? ""]));
+  const qs = AN_KEYS.filter((k) => want[k]).map((k) => `${k}=${encodeURIComponent(want[k]!)}`).join("&");
+  const q = useQuery({ queryKey: ["analytics", qs, career?.name], enabled: Boolean(career), retry: false,
+    queryFn: () => get<AnalyticsPage>(`/api/analytics?${qs}`), placeholderData: (was) => was });
+  useReady(Boolean(q.data || q.error || noCareer), qs);
+  const set = (changes: Record<string, string>) => {
+    if (changes.section) remember({ section: changes.section });
+    if ("season" in changes && changes.season) remember({ season: changes.season });
+    const next: Record<string, string> = { ...want, ...changes };
+    if ("section" in changes) Object.assign(next, { season: "", team: "" });
+    if (nation) next.nation = nation;
+    go(`/insights/analytics?${new URLSearchParams(Object.entries(next).filter(([, v]) => v)).toString()}`);
+  };
+  const head = <InsightsHead on={1} crumb="Under the bonnet · the deeper numbers" />;
+  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career on the current site for now.</div></Tile></div></>;
+  if (q.error) return <>{head}<div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
+  if (!q.data) return <>{head}<div className="empty">Working it out…</div></>;
+  const d = q.data;
+  if (!d.choices.length) return <>{head}<div className="grid"><Tile span={12}><Missing why={d.none} /></Tile></div></>;
+  const tab = d.tab, T_ = d.tabs;
+  const note = (x: string) => `${d.choices.find((c) => c.section === x)?.matches ?? ""} matches`;
+  const none = (why?: string) => <div className="plain">{why}</div>;
+  return (
+    <>
+      {head}
+      <div className="grid">
+        <div className="intro">Deeper numbers for one competition: runs against what the situation called for, averages made fair, what really wins
+          games, luck, match-winners, styles, consistency and whether a run of form is real.</div>
+        <div className="itabs">{T_.map((x, i) => (
+          <button key={x} className={x === tab ? "on" : ""} onClick={() => set({ tab: i === 0 ? "" : x })}>{x}</button>))}</div>
+        <Tile span={12} className="pickbar"><div className="drops">
+          <Pick label="Competition" value={d.section ?? ""} options={d.choices.map((c) => ({ v: c.section, label: c.section, note: note(c.section) }))} set={(v) => set({ section: v })} />
+          <Pick label="Season" value={d.season ?? ""} options={[{ v: "", label: "All seasons" }, ...(d.seasons ?? [])]} set={(v) => set({ season: v })} />
+          {tab === T_[4] && d.teams && <Pick label="Match-winners of" value={d.team ?? ""} options={d.teams} set={(v) => set({ team: v })} />}
+        </div></Tile>
+
+        {tab === T_[0] && <>
+          <Tile span={12} title="Runs above expected" right="against the average batter in the same spot">
+            {d.rae ? <><SignedBars rows={d.rae.rows} /><Explain {...three(d.rae)} /></> : none(d.rae_none)}</Tile>
+          {d.rae_table && <Tile span={12} title="Everyone with 5+ innings"><Noted t={d.rae_table} /></Tile>}
+        </>}
+
+        {tab === T_[1] && <>
+          <Tile span={6} title="Batting averages made fair">{d.bat ? <Noted t={d.bat as NGrid} /> : none(d.bat_none)}</Tile>
+          <Tile span={6} title="Bowling averages made fair" right="lower is better">{d.bowl ? <Noted t={d.bowl as NGrid} /> : none(d.bowl_none)}</Tile>
+          {d.note && <div className="note" style={{ gridColumn: "span 12" }}>{d.note}</div>}
+        </>}
+
+        {tab === T_[2] && <Tile span={12} title="What wins games" right="% of games won by the side that did more of each">
+          {d.wins ? <><SignedBars rows={d.wins.rows} colour={t.blue} /><Explain {...three(d.wins)} /></> : none(d.wins_none)}</Tile>}
+
+        {tab === T_[3] && <Tile span={12} title="Wins against expected wins" right="from the runs each team scored and gave away">
+          {d.luck ? <><SignedBars rows={d.luck.rows} /><Explain {...three(d.luck)} /></> : none(d.luck_none)}</Tile>}
+
+        {tab === T_[4] && <>
+          {d.winners && <Tile span={12} title={`Who won ${d.winners.team}'s matches`} right="their players of the match in their wins">
+            {d.winners.players.length ? <><MatchWinners w={d.winners} />{d.winners.lines && <Explain {...three(d.winners.lines)} />}</> : none(d.winners.shows)}</Tile>}
+          <Tile span={6} title="Match-winners" right="the winners' biggest contributor in each win">{d.table ? <Noted t={d.table} /> : none(d.table_none)}</Tile>
+          <Tile span={6} title="Who each team leans on" right={d.leans_head ?? ""}>{d.leans ? <Noted t={d.leans} /> : none(d.leans_none)}</Tile>
+        </>}
+
+        {tab === T_[5] && <>
+          <Tile span={6} title="Batting styles" right={`${d.least ?? ""}+ balls faced`}>
+            {d.bat ? <><Quadrant q={d.bat as Quad} /><Explain {...three(d.bat as Quad)} /></> : none(d.bat_none)}</Tile>
+          <Tile span={6} title="Bowling styles" right={`${d.least ?? ""}+ balls bowled`}>
+            {d.bowl ? <><Quadrant q={d.bowl as Quad} /><Explain {...three(d.bowl as Quad)} /></> : none(d.bowl_none)}</Tile>
+          {d.note && <div className="note" style={{ gridColumn: "span 12" }}>{d.note}</div>}
+        </>}
+
+        {tab === T_[6] && (d.boom ? <>
+          <Tile span={12} title="Boom or bust" right="how a batter's scores are spread (8+ innings)"><Quadrant q={d.boom} /><Explain {...three(d.boom)} /></Tile>
+          {d.boom_table && <Tile span={12} title="Batter by batter"><Noted t={d.boom_table} /></Tile>}</>
+          : <Tile span={12} title="Boom or bust">{none(d.boom_none)}</Tile>)}
+
+        {tab === T_[7] && <Tile span={12} title="Is the form real?" right="last 8 innings against their earlier innings">
+          {d.form ? <Noted t={d.form} /> : none(d.form_none)}</Tile>}
+
+        {tab === T_[8] && <>
+          <Tile span={12} title="Bat or bowl first?">
+            {d.toss ? <><div className="verdict2">{d.toss.verdict}</div><div className="plain">{d.toss.line}</div></> : none(d.toss_none)}</Tile>
+          {d.teams_table && <Tile span={12} title="Team by team" right="their own win % each way"><Noted t={d.teams_table} /></Tile>}
+        </>}
       </div>
     </>
   );

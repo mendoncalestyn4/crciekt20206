@@ -7,10 +7,6 @@ import { Head, SECTIONS } from "../shell/Shell";
 export const PLANS: Record<string, { stage: string; crumb: string; items: string[]; from: string; title?: string }> = {
   "/fixtures": { stage: "Stage 4", crumb: "Your schedule",
     items: ["Schedule, add matches, change or delete (with undo), series, calendar", "WTC race, milestones, goals"], from: "Fixtures" },
-  "/insights/analytics": { stage: "Stage 3", crumb: "Under the bonnet", title: "Insights",
-    items: ["Runs above expected, fair averages, what wins games, expected wins, match-winners",
-      "Style maps, boom or bust, form, bat or bowl first"],
-    from: "Analytics" },
 };
 
 const PICKED: Record<string, string> = {};

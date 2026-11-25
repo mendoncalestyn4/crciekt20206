@@ -19,7 +19,7 @@ import { HallOfFame, Rankings, Records, StatByStat } from "./pages/Leaders";
 import { MyTeam } from "./pages/MyTeam";
 import { PlayersHome, PlayerView } from "./pages/Players";
 import { MatchesHome, MatchView } from "./pages/Matches";
-import { Insights } from "./pages/Insights";
+import { Analytics, Insights } from "./pages/Insights";
 import { NotFound, PLANS, Section } from "./pages/Sections";
 import { Settings } from "./pages/Settings";
 import { StyleGuide } from "./pages/StyleGuide";
@@ -59,6 +59,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/leaders/rankings" element={<Rankings />} />
             <Route path="/leaders/:pick" element={<StatByStat />} />
             <Route path="/insights" element={<Insights />} />
+            <Route path="/insights/analytics" element={<Analytics />} />
             <Route path="/teams" element={<Teams />} />
             <Route path="/teams/vs" element={<TeamVsTeam />} />
             <Route path="/teams/preview" element={<Preview />} />

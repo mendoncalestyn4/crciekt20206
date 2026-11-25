@@ -767,3 +767,5 @@ td.bold .tn, td.bold { font-weight: 800; }
 .tev.player b { color: var(--blue); }
 /* Insights (stage 3): the page's one-line description above its tabs */
 .intro { grid-column: span 12; font: 500 15px Inter; color: var(--soft); margin: 2px 0 -6px; }
+.quadkey { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 18px; font: 500 13px Inter; color: var(--soft); margin: 4px 0 6px; }
+.quadkey b { color: var(--led); margin-right: 4px; }

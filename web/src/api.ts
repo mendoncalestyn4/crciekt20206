@@ -554,3 +554,19 @@ export type InsightsPage = {
   parts?: ({ title: string; sub: string; none?: string; rows?: SignedBar[] } & Partial<Three>)[]; note?: string;
   innings?: { rows: SignedBar[] } & Three; innings_none?: string; lead?: NGrid; lead_none?: string; follow?: NGrid; follow_none?: string;
 };
+
+/** Analytics (stage 3, server/analyticspage.py): one competition and season; each tab fills only its own part. */
+export type QuadPoint = { player: string; team: string; x: number; y: number; style: string };
+export type Quad = { points: QuadPoint[]; x_label: string; y_label: string; x_ref: number; y_ref: number; x_low: boolean; y_low: boolean;
+  corners: string[] } & Three;
+export type AnalyticsPage = {
+  choices: { section: string; matches: number }[]; tabs: string[]; tab: string; section?: string; seasons?: string[]; season?: string; none?: string;
+  rae?: { rows: SignedBar[] } & Three; rae_table?: NGrid; rae_none?: string;
+  bat?: NGrid | Quad; bowl?: NGrid | Quad; bat_none?: string; bowl_none?: string; note?: string; least?: number;
+  wins?: { rows: SignedBar[]; reference: number } & Three; wins_none?: string;
+  luck?: { rows: SignedBar[] } & Three; luck_none?: string;
+  table?: NGrid; table_none?: string; leans?: NGrid; leans_none?: string; leans_head?: string;
+  teams?: string[]; team?: string; winners?: Winners & { team: string; yours: boolean };
+  boom?: Quad; boom_table?: NGrid; boom_none?: string; form?: NGrid; form_none?: string;
+  toss?: { verdict: string; line: string }; toss_none?: string; teams_table?: NGrid;
+};
