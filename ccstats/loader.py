@@ -663,6 +663,10 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
     for name, types in TYPES.items():   # a career with no matches yet gets the same column types as a full one
         if frames[name].empty:
             frames[name] = frames[name].astype(types)
+        else:   # and a number column is always numbers, even when no row has one (a one-match career won by runs has
+            # no wickets margin at all: it was a column of None, which a comparison like ">= 10" can't take)
+            for col in [c for c, t in types.items() if t == _F]:
+                frames[name][col] = pd.to_numeric(frames[name][col], errors="coerce").astype(float)
     _one_row_per_key(frames)
     return frames
 

@@ -110,3 +110,14 @@ def test_hall_page_tabs_and_no_fielding(career):
     assert "catch" not in text.lower() and "stump" not in text.lower()
     j = LP.hall_page(career, dict(tab="junk", team="Nobody", season="1066"), [])
     assert j["tab"] == "Inductions"
+
+
+def test_firsts_on_a_one_match_career_won_by_runs():
+    """Found by the stage 3 stress test: a career of one Blast match won by runs had no wickets margin anywhere, so the
+    column was all empty and "won by 10 wickets?" broke the firsts. Number columns are now always numbers."""
+    one = next(f for f in FIXTURES if "blast" in f.name.lower())
+    c = Career.build("One", [(one.name, one.read_bytes())])
+    c.count_fielding = False
+    assert str(c.matches.margin_wickets.dtype) == "float64" and str(c.matches.margin_runs.dtype) == "float64"
+    for team in sorted(set(c.matches.home) | set(c.matches.away)):
+        assert LP.hall_page(c, dict(tab="Firsts", section=c.matches.section.iloc[0], team=team), [])["events"]

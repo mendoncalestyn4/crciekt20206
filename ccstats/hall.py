@@ -192,17 +192,17 @@ def _firsts(career, team: str) -> pd.DataFrame:
     m = m.assign(opp=opp, won=m.winner == team)
     inns = career.innings[career.innings.match_id.isin(m.match_id)]
     by_id = m.set_index("match_id")
-    margin = lambda r: (f"by {int(r.margin_runs)} runs" if r.margin_runs == r.margin_runs and r.margin_runs and not r.innings_win   # noqa: E731
-                        else f"by an innings and {int(r.margin_runs)} runs" if r.innings_win and r.margin_runs == r.margin_runs
-                        else f"by {int(r.margin_wickets)} wickets" if r.margin_wickets == r.margin_wickets and r.margin_wickets else "")
+    margin = lambda r: (f"by {int(r.margin_runs)} runs" if pd.notna(r.margin_runs) and r.margin_runs and not r.innings_win   # noqa: E731
+                        else f"by an innings and {int(r.margin_runs)} runs" if r.innings_win and pd.notna(r.margin_runs)
+                        else f"by {int(r.margin_wickets)} wickets" if pd.notna(r.margin_wickets) and r.margin_wickets else "")
     for r in m.itertuples():
         add(("match", r.section), r.date, "team", f"First match in {r.section}", f"v {r.opp}", r.match_id, r.section)
         if r.won:
             add(("win", r.section), r.date, "team", f"First win in {r.section}", f"v {r.opp} {margin(r)}".strip(), r.match_id, r.section)
             add(("beat", r.opp), r.date, "team", f"First win against {r.opp}", f"{r.section}, {margin(r)}".strip(", "), r.match_id, r.section)
-            if r.margin_runs == r.margin_runs and r.margin_runs >= 100 and not r.innings_win:
+            if pd.notna(r.margin_runs) and r.margin_runs >= 100 and not r.innings_win:
                 add(("big_runs",), r.date, "team", "First win by 100 runs or more", f"by {int(r.margin_runs)} runs v {r.opp}", r.match_id, r.section)
-            if r.margin_wickets == r.margin_wickets and r.margin_wickets >= 10:
+            if pd.notna(r.margin_wickets) and r.margin_wickets >= 10:
                 add(("big_wkts",), r.date, "team", "First win by 10 wickets", f"v {r.opp}", r.match_id, r.section)
         if r.result_type == "tie":
             add(("tie",), r.date, "team", "First tie" + (" and super-over win" if r.tiebreak_winner == team else ""), f"v {r.opp}", r.match_id, r.section)
