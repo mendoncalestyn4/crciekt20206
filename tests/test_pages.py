@@ -946,7 +946,7 @@ def test_team_record_overview_charts_counted_by_hand(every):
             for r in st:
                 opp = r["opp"]
                 assert (r["me"], r["them"]) == (round(elo[(r["id"], team)]), round(elo[(r["id"], opp)]))
-                assert r["gap"] == round(elo[(r["id"], opp)] - elo[(r["id"], team)])
+                assert r["gap"] == round(elo[(r["id"], opp)]) - round(elo[(r["id"], team)])   # the gap of the two ratings shown
             assert {r["id"] for r in st} == {k for k, o in out.items() if (k, team) in elo.index}
             v = b["venues"]
             for venue in ("home", "away", "neutral"):
