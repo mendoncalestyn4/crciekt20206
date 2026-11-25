@@ -570,3 +570,23 @@ export type AnalyticsPage = {
   boom?: Quad; boom_table?: NGrid; boom_none?: string; form?: NGrid; form_none?: string;
   toss?: { verdict: string; line: string }; toss_none?: string; teams_table?: NGrid;
 };
+
+/** Player stories (stage 3, server/storiespage.py): the 15 tabs; each fills only its own part. */
+export type StoriesPage = {
+  choices: { section: string; matches: number }[]; tabs: string[]; tab: string; ticked?: string[]; section?: string; seasons?: string[];
+  season?: string; none?: string; note?: string; sec?: string;
+  bat?: NGrid; bowl?: NGrid; bat_none?: string; bowl_none?: string;
+  miles?: NGrid; miles_none?: string; records?: NGrid; records_none?: string;
+  parts?: { title: string; none?: string; table?: NGrid }[];
+  one?: NGrid; share?: { rows: SignedBar[] } & Three; share_none?: string;
+  nineties?: NGrid; pairs?: NGrid; not_outs?: NGrid; after?: NGrid; after_none?: string;
+  chem?: NGrid; chem_none?: string; pressure?: NGrid; pressure_none?: string;
+  series?: NGrid; series_none?: string; upsets?: NGrid; upsets_none?: string;
+  fast?: { title: string; right: string; table: NGrid }[]; fast_none?: string; fast_note?: string;
+  top?: NGrid; per?: { rows: SignedBar[] } & Three; impact_none?: string;
+  badges?: NGrid; badges_none?: string; common?: NGrid; badge_note?: string; team_badges?: string[];
+  batter?: string; bowler?: string; where?: string; batters?: PickOptT[]; bowlers?: PickOptT[]; one_none?: string; one_title?: string;
+  pick?: string; both_none?: string; kpis?: { k: string; v: string; how?: string }[]; verdict?: string; meetings?: NGrid;
+  clutch_note?: string;
+};
+export type PickOptT = { v: string; label: string; note?: string };

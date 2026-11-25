@@ -37,7 +37,15 @@ PAGES = ["/", "/inbox", "/style-guide", "/settings", "/players", "/players/J Bet
          "/insights/analytics?tab=Fair averages&section=Indian Premier League", "/insights/analytics?tab=What wins games",
          "/insights/analytics?tab=Luck", "/insights/analytics?tab=Match-winners&section=ODIs",
          "/insights/analytics?tab=Style maps&section=Indian Premier League", "/insights/analytics?tab=Boom or bust&section=Indian Premier League",
-         "/insights/analytics?tab=Is the form real%3F", "/insights/analytics?tab=Bat or bowl first%3F", "/no-such-page"]
+         "/insights/analytics?tab=Is the form real%3F", "/insights/analytics?tab=Bat or bowl first%3F",
+         "/players/stories?section=Indian Premier League", "/players/stories?tab=Milestones and records&section=ODIs",
+         "/players/stories?tab=Win when they fire&section=Indian Premier League", "/players/stories?tab=Heroes in defeat",
+         "/players/stories?tab=Carried the team&section=Indian Premier League", "/players/stories?tab=Quirks&section=Tests",
+         "/players/stories?tab=After a hundred&section=ODIs", "/players/stories?tab=Pairs&section=Indian Premier League",
+         "/players/stories?tab=Player of the Series&section=ODIs", "/players/stories?tab=Upsets", "/players/stories?tab=Fastest to&section=ODIs",
+         "/players/stories?tab=Match impact&section=ODIs", "/players/stories?tab=Badges&section=ODIs",
+         "/players/stories?tab=Batter v bowler&section=ODIs|T20Is&batter=S Gill", "/players/stories?tab=Clutch&section=Indian Premier League",
+         "/no-such-page"]
 
 
 @pytest.fixture(scope="module")

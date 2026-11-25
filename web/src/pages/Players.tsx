@@ -3,6 +3,7 @@
 // of the team, the matches they won, their marks out of 10, the career journey; then batting, bowling, fielding and
 // their story for one competition and season.
 import { useQuery } from "@tanstack/react-query";
+import { PlayersHead } from "./Stories";
 import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { get, type ByInnings, type Each, type InningsCol, type InningsMarks, type Lines, type PlayerPage, type PlayersLanding, type Split, remember } from "../api";
@@ -40,7 +41,7 @@ export function PlayersHome() {
   if (career && career.matches === 0) return <><Head title="Players" crumb="Pick a player" /><div className="grid"><Tile span={12}><Missing why={NO_MATCHES} /></Tile></div></>;
   return (
     <>
-      <Head title="Players" crumb="Pick a player" />
+      <PlayersHead on={0} crumb="Pick a player" />
       <div className="grid">
         <Tile span={12} title="Find a player" right={`${d.players.length.toLocaleString("en-GB")} who have batted or bowled`}>
           <div className="field"><input className="typed" autoFocus value={typed} onChange={(e) => setTyped(e.target.value)}

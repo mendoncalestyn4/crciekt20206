@@ -20,6 +20,7 @@ import { MyTeam } from "./pages/MyTeam";
 import { PlayersHome, PlayerView } from "./pages/Players";
 import { MatchesHome, MatchView } from "./pages/Matches";
 import { Analytics, Insights } from "./pages/Insights";
+import { Stories } from "./pages/Stories";
 import { NotFound, PLANS, Section } from "./pages/Sections";
 import { Settings } from "./pages/Settings";
 import { StyleGuide } from "./pages/StyleGuide";
@@ -72,6 +73,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/seasons/honours" element={<Honours />} />
             <Route path="/inbox" element={<Inbox />} />
             <Route path="/players" element={<PlayersHome />} />
+            <Route path="/players/stories" element={<Stories />} />
             <Route path="/players/:pick" element={<PlayerView />} />
             <Route path="/matches" element={<MatchesHome />} />
             <Route path="/matches/:pick" element={<MatchView />} />
