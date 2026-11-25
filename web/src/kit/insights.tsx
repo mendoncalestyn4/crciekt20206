@@ -128,11 +128,13 @@ export function CareerCurves({ series, what, order }: { series: { player: string
   const t = useTheme();
   const option = useMemo<Option>(() => {
     const L = look(t), pal = pickColours(t);
-    const ax = (name: string, extra: object) => ({ type: "value", name, nameLocation: "middle", nameGap: 32, ...L.AX,
+    const ax = (name: string, gap: number, extra: object) => ({ type: "value", name, nameLocation: "middle", nameGap: gap, ...L.AX,
       nameTextStyle: { color: t.dim, fontFamily: "Inter", fontSize: ts(11) }, ...extra });
     return {
-      grid: { left: 60, right: 110, top: 20, bottom: 48 },
-      xAxis: ax("Innings played", { minInterval: 1 }), yAxis: ax(`Total ${what}`, { minInterval: 1 }),
+      grid: { left: 14, right: 110, top: 34, bottom: 24, containLabel: true },
+      // the totals' name above their axis (never against its numbers, however wide they get)
+      xAxis: ax("Innings played", 30, { minInterval: 1 }),
+      yAxis: { ...ax(`Total ${what}`, 12, { minInterval: 1 }), nameLocation: "end", nameTextStyle: { color: t.dim, fontFamily: "Inter", fontSize: ts(11), align: "left" } },
       tooltip: { ...L.TT, trigger: "item", formatter: (p: { seriesName: string; value: [number, number] }) => `<b>${p.seriesName}</b><br/>after innings ${p.value[0]}: ${p.value[1]} ${what}` },
       series: series.map((s) => { const col = pal[order.indexOf(s.player) % 4] ?? t.blue;
         return { name: s.player, type: "line", symbol: "circle", symbolSize: 5, showSymbol: s.points.length < 40,

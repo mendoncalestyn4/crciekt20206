@@ -63,10 +63,9 @@ export function TeamLeaders() {
         </div><div className="note">{d.note}</div></Tile>
         {d.blocks?.map((b) => (
           <Tile key={b.team} span={6} title={<span className="tlname"><Logo team={b.team} size={26} /> {b.team}</span>} right={`${b.matches} match${b.matches === 1 ? "" : "es"}`} className={b.yours ? "mine" : ""}>
-            <div className="two">
-              <div><div className="glabel" style={{ marginTop: 0 }}>Runs</div>{b.runs.length ? <Rows rows={b.runs} unit="Runs" /> : <div className="plain">No runs yet.</div>}</div>
-              <div><div className="glabel" style={{ marginTop: 0 }}>Wickets</div>{b.no_wickets ? <div className="plain">{b.no_wickets}</div> : <Rows rows={b.wickets} unit="Wkts" />}</div>
-            </div>
+            {/* runs, then wickets under them: one table across the tile, so a long name always fits */}
+            <div className="glabel" style={{ marginTop: 0 }}>Runs</div>{b.runs.length ? <Rows rows={b.runs} unit="Runs" /> : <div className="plain">No runs yet.</div>}
+            <div className="glabel">Wickets</div>{b.no_wickets ? <div className="plain">{b.no_wickets}</div> : <Rows rows={b.wickets} unit="Wkts" />}
           </Tile>))}
       </div>
     </>
