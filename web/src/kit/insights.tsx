@@ -1,6 +1,6 @@
 // Insights (stage 3): home wins against away wins in every competition, and one measure of scoring season by season.
 import { useMemo } from "react";
-import type { HomeRow, Quad, QuadPoint, SeasonChart } from "../api";
+import type { CompareChart, HomeRow, Quad, QuadPoint, SeasonChart } from "../api";
 import { useTheme } from "../theme";
 import { EChart, type Option } from "./EChart";
 import { look, ts } from "./look";
@@ -96,4 +96,50 @@ export function Quadrant({ q }: { q: Quad }) {
     <EChart option={option} height={420} label={`${q.y_label} against ${q.x_label}`} />
     <div className="quadkey">{(["↗", "↖", "↘", "↙"] as const).map((a, i) => <span key={a}><b>{a}</b> {q.corners[i]}</span>)}</div>
   </>);
+}
+
+/** The colours of the players compared, in the order picked (the first is always blue). */
+export const pickColours = (t: ReturnType<typeof useTheme>) => [t.blue, t.led, t.win, t.violet];
+
+/** One stat for the players compared: a bar each in their own colour, the competition's average dashed. */
+export function CompareBars({ c, order }: { c: CompareChart; order: string[] }) {
+  const t = useTheme();
+  const option = useMemo<Option>(() => {
+    const L = look(t), pal = pickColours(t);
+    return {
+      grid: { left: 6, right: 70, top: c.reference != null ? 22 : 6, bottom: 6, containLabel: true },
+      xAxis: { type: "value", show: false, scale: false },
+      yAxis: { type: "category", inverse: true, data: c.rows.map((r) => r.player), axisLine: { show: false }, axisTick: { show: false },
+        axisLabel: { color: t.ink, fontFamily: "Bebas Neue", fontSize: ts(15), margin: 10 } },
+      tooltip: { ...L.TT, formatter: (p: { dataIndex: number }) => { const r = c.rows[p.dataIndex]; return r ? `${r.player}: ${r.text}` : ""; } },
+      series: [{ type: "bar", barWidth: "56%",
+        data: c.rows.map((r) => ({ value: r.value, name: r.player, itemStyle: { color: pal[order.indexOf(r.player) % 4] ?? t.blue } })),
+        label: { show: true, position: "right", ...L.VAL(14), color: t.ink, formatter: (p: { dataIndex: number }) => c.rows[p.dataIndex]?.text ?? "" },
+        ...(c.reference != null ? { markLine: { silent: true, symbol: "none", lineStyle: { color: t.dim, type: "dashed", width: 1.4 },
+          label: { formatter: `average ${c.reference.toFixed(Math.max(c.dec, 1))}`, color: t.dim, fontFamily: "Inter", fontSize: ts(10), position: "end" },
+          data: [{ xAxis: c.reference }] } } : {}) }],
+    };
+  }, [t, c, order]);
+  return <EChart option={option} height={60 + c.rows.length * 40} label={c.label} />;
+}
+
+/** Each player's running total after every innings, a line each in their colour, named at its end. */
+export function CareerCurves({ series, what, order }: { series: { player: string; points: number[] }[]; what: string; order: string[] }) {
+  const t = useTheme();
+  const option = useMemo<Option>(() => {
+    const L = look(t), pal = pickColours(t);
+    const ax = (name: string, extra: object) => ({ type: "value", name, nameLocation: "middle", nameGap: 32, ...L.AX,
+      nameTextStyle: { color: t.dim, fontFamily: "Inter", fontSize: ts(11) }, ...extra });
+    return {
+      grid: { left: 60, right: 110, top: 20, bottom: 48 },
+      xAxis: ax("Innings played", { minInterval: 1 }), yAxis: ax(`Total ${what}`, { minInterval: 1 }),
+      tooltip: { ...L.TT, trigger: "item", formatter: (p: { seriesName: string; value: [number, number] }) => `<b>${p.seriesName}</b><br/>after innings ${p.value[0]}: ${p.value[1]} ${what}` },
+      series: series.map((s) => { const col = pal[order.indexOf(s.player) % 4] ?? t.blue;
+        return { name: s.player, type: "line", symbol: "circle", symbolSize: 5, showSymbol: s.points.length < 40,
+          lineStyle: { width: 2.5, color: col }, itemStyle: { color: col }, data: s.points.map((v, i) => [i + 1, v]),
+          endLabel: { show: true, formatter: s.player, color: col, fontFamily: "Inter", fontSize: ts(12) } }; }),
+    };
+  }, [t, series, what, order]);
+  if (!series.some((s) => s.points.length)) return <div className="empty">No innings yet.</div>;
+  return <EChart option={option} height={380} label={`Total ${what} after each innings`} />;
 }

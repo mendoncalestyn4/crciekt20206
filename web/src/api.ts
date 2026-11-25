@@ -590,3 +590,15 @@ export type StoriesPage = {
   clutch_note?: string;
 };
 export type PickOptT = { v: string; label: string; note?: string };
+
+/** Compare players (stage 3, server/comparepage.py). */
+export type CompareChart = { id: string; label: string; better: string; reference: number | null; dec: number;
+  rows: { player: string; value: number; text: string }[] } & Three;
+export type ComparePage = {
+  choices: { section: string; matches: number }[]; ticked?: string[]; section?: string; seasons?: string[]; season?: string;
+  discs?: string[]; disc?: string; none?: string; names?: string[]; players?: string[]; where?: string; one?: boolean; few?: string;
+  summary?: GridT; charts?: CompareChart[]; combined?: string;
+  curves?: { series: { player: string; points: number[] }[]; what: string } & Three;
+  like?: { player: string; section: string; full: boolean; own: string; none: string; note: string;
+    rows: { player: string; team: string; alike: string; figures: string; picked: boolean }[] };
+};

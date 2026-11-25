@@ -769,3 +769,10 @@ td.bold .tn, td.bold { font-weight: 800; }
 .intro { grid-column: span 12; font: 500 15px Inter; color: var(--soft); margin: 2px 0 -6px; }
 .quadkey { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 18px; font: 500 13px Inter; color: var(--soft); margin: 4px 0 6px; }
 .quadkey b { color: var(--led); margin-right: 4px; }
+/* Compare players: who plays like whom */
+.likes { display: grid; gap: 4px; }
+.like { display: grid; grid-template-columns: 70px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 8px 0; border-top: 1px solid var(--edge); }
+.like:first-child { border-top: 0; }
+.like .alike { font: 700 24px 'Space Grotesk'; color: var(--led); }
+.pickkey { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 12px; font: 500 15px Inter; color: var(--ink); }
+.pickkey i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 7px; vertical-align: -1px; }
