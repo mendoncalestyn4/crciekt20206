@@ -33,7 +33,7 @@ from ccstats.colours import TEAM_COLOURS
 from ccstats.local import CareerStore
 from ccstats.competitions import ordered as in_order
 
-from . import analyticspage, comparepage, comppage, storiespage, insightspage, leaderspage, matchpage, myteam, plannerpage, playerpage, previewpage, reviewpage, rivalriespage, seasonpage, styleguide, teampage, tvtpage
+from . import analyticspage, comparepage, comppage, leaderteams, storiespage, insightspage, leaderspage, matchpage, myteam, plannerpage, playerpage, previewpage, reviewpage, rivalriespage, seasonpage, styleguide, teampage, tvtpage
 from .cache import _stamp as cache_stamp, kept, put as cache_put, save as save_kept
 from . import warmers
 from .site import Site
@@ -602,6 +602,13 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             c, _with_memory(c, q, ("section", "season")), myteam.teams_by_latest(c, site.my_teams(c))))()
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
+    async def team_leaders_(request: Request):
+        """Team leaders: each team's top two by share of its runs and of its wickets."""
+        q = dict(request.query_params)
+        data = await _with_career(lambda c: leaderteams.page(
+            c, _with_memory(c, q, ("section", "season")), myteam.teams_by_latest(c, site.my_teams(c))))()
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
     # ------------------------------------------------------------------ Players
     async def players_(request: Request):
         data = await _with_career(lambda c: kept(c, ("players-landing", tuple(site.my_teams(c))),
@@ -744,7 +751,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                                        "/api/rankings", "/api/rankings?what=bowling", "/api/rankings?what=all-round",
                                        "/api/hall", "/api/hall?tab=Firsts", "/api/insights",
                                        "/api/insights?tab=Score%20to%20aim%20for", "/api/analytics",
-                                       "/api/stories", "/api/compare", "/api/compare?disc=Bowling")]
+                                       "/api/stories", "/api/compare", "/api/compare?disc=Bowling", "/api/teamleaders")]
         steps += [("ratings", sec) for sec in sorted(c.matches.section.unique())]
         # every competition, and each of its seasons: the parts every player's page there shares, worked out through
         # its top run-scorer's page there, so the first player you open in any competition or season is quick too
@@ -965,6 +972,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/analytics", analytics_),
         Route("/api/stories", stories_),
         Route("/api/compare", compare_),
+        Route("/api/teamleaders", team_leaders_),
         Route("/api/competition", competition_),
         Route("/api/season", season_),
         Route("/api/review", review_),

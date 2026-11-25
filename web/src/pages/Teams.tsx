@@ -19,7 +19,7 @@ const VENUES: [string, string][] = [["Overall", "all"], ["Home", "home"], ["Away
 /** The Teams section's pages, switched from the top of each. */
 export const TEAM_PAGES = [{ label: "Team record", to: "/teams" }, { label: "Team v team", to: "/teams/vs" },
   { label: "Opponent preview", to: "/teams/preview" }, { label: "Planner", to: "/teams/planner" },
-  { label: "Rivalries", to: "/teams/rivalries" }];
+  { label: "Rivalries", to: "/teams/rivalries" }, { label: "Team leaders", to: "/teams/leaders" }];
 
 export function Teams() {
   const { career, noCareer, nation } = useShell();

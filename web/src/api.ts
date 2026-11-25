@@ -602,3 +602,11 @@ export type ComparePage = {
   like?: { player: string; section: string; full: boolean; own: string; none: string; note: string;
     rows: { player: string; team: string; alike: string; figures: string; picked: boolean }[] };
 };
+
+/** Team leaders (stage 3, server/leaderteams.py). */
+export type TLRow = { player: string; share: string; value: number; matches: number; gone: boolean };
+export type TeamLeadersPage = {
+  choices: { section: string; matches: number }[]; section?: string; seasons?: string[]; season?: string; none?: string;
+  teams?: string[]; picked?: string[]; all?: boolean; note?: string;
+  blocks?: { team: string; yours: boolean; runs: TLRow[]; wickets: TLRow[]; team_runs: number; team_wickets: number; matches: number; no_wickets?: string }[];
+};

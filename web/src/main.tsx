@@ -22,6 +22,7 @@ import { MatchesHome, MatchView } from "./pages/Matches";
 import { Analytics, Insights } from "./pages/Insights";
 import { Stories } from "./pages/Stories";
 import { Compare } from "./pages/Compare";
+import { TeamLeaders } from "./pages/TeamLeaders";
 import { NotFound, PLANS, Section } from "./pages/Sections";
 import { Settings } from "./pages/Settings";
 import { StyleGuide } from "./pages/StyleGuide";
@@ -67,6 +68,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/teams/preview" element={<Preview />} />
             <Route path="/teams/planner" element={<Planner />} />
             <Route path="/teams/rivalries" element={<Rivalries />} />
+            <Route path="/teams/leaders" element={<TeamLeaders />} />
             <Route path="/teams/:pick" element={<Teams />} />
             <Route path="/seasons" element={<Competitions />} />
             <Route path="/seasons/season" element={<Season />} />
