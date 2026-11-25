@@ -5,24 +5,26 @@ answers 1-27) and design/INVENTORY.md. Each line is ticked with where it is on t
 a page isn't finished while any of its lines is open (your safeguards of 13 November).
 
 ## Every page (the same for all nine)
-- [ ] Nothing lost: every line of the old page below shown on the new page, or marked where it moved and why
-- [ ] Parity test: the page's numbers equal the old site's for the same career (old-site bugs listed, not copied)
-- [ ] Every new number counted another way (a second count from the scorecards)
-- [ ] Sums in the engine (ccstats/), the server only passes them on; the website does no cricket maths
-- [ ] Format tick boxes (combine any formats, each against its own average; opens on one format) where combining
+
+**Ticked 25 November:** each page's own section below says where every line is; the checks are tests/test_stage3_*.py (the old site's numbers and every new number counted again), tests/test_web.py (every tab of every page at every width, dark and light, one short name per heading, how it's worked out on hover, the fit check), the warm-up (every new page asked for in the background), and the stress test below. Screenshots: sent with the stage summary.
+- [x] Nothing lost: every line of the old page below shown on the new page, or marked where it moved and why
+- [x] Parity test: the page's numbers equal the old site's for the same career (old-site bugs listed, not copied)
+- [x] Every new number counted another way (a second count from the scorecards)
+- [x] Sums in the engine (ccstats/), the server only passes them on; the website does no cricket maths
+- [x] Format tick boxes (combine any formats, each against its own average; opens on one format) where combining
       means something; one at a time where it doesn't
-- [ ] Competition order: Tests, ODIs, T20Is, then franchise, then domestic, most matches first
-- [ ] One short name per stat in every table heading, its meaning on hover; how it's worked out on every average,
+- [x] Competition order: Tests, ODIs, T20Is, then franchise, then domestic, most matches first
+- [x] One short name per stat in every table heading, its meaning on hover; how it's worked out on every average,
       strike rate and economy; the few-games note; "–" for what doesn't apply and 0 for zero
-- [ ] Every chart with What it is / Who's best / What it's for, a saved picture, donuts for shares
-- [ ] No fielding anywhere (no catches, stumpings or run-out credits shown or counted)
-- [ ] Remembered picks; every player name opens the player menu; every match opens its page; logos and badges
-- [ ] Fast: the page joins the background preparation (your team first), under a second once ready (speed guard)
-- [ ] Works for every team and competition (national, franchise, domestic) and for odd careers (empty, one match,
+- [x] Every chart with What it is / Who's best / What it's for, a saved picture, donuts for shares
+- [x] No fielding anywhere (no catches, stumpings or run-out credits shown or counted)
+- [x] Remembered picks; every player name opens the player menu; every match opens its page; logos and badges
+- [x] Fast: the page joins the background preparation (your team first), under a second once ready (speed guard)
+- [x] Works for every team and competition (national, franchise, domestic) and for odd careers (empty, one match,
       a shared name, a renamed team, abandoned games)
-- [ ] Browser test: every option, every tab, every width, dark and light, no errors, the fit check
-- [ ] A self-review with cricket sense on your scorecards before you see it
-- [ ] Screenshots
+- [x] Browser test: every option, every tab, every width, dark and light, no errors, the fit check
+- [x] A self-review with cricket sense on your scorecards before you see it
+- [x] Screenshots
 
 ## Page by page: what the plan and your answers promise
 
@@ -80,10 +82,10 @@ a page isn't finished while any of its lines is open (your safeguards of 13 Nove
       A to Z) (answer 13); every share on runs off the bat
 
 ## Stage end
-- [ ] The full sweep on your 2,720 cards (every page and option), junk and load, every server's error log
-- [ ] The stress test; the browser at every width, dark and light
+- [x] The full sweep on your 2,720 cards (every page and option), junk and load, every server's error log
+- [x] The stress test; the browser at every width, dark and light
 - [ ] The full test suite and the Windows run
-- [ ] NEW_SITE_PLAN.md "Stage 3: what was built": a line for every promise above (built, where, how checked)
+- [x] NEW_SITE_PLAN.md "Stage 3: what was built": a line for every promise above (built, where, how checked)
 - [ ] Screenshots of every page and tab, then your approval
 
 ## Nothing lost: every line of the old pages (from design/INVENTORY.md)

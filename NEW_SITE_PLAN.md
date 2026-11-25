@@ -1297,6 +1297,20 @@ checks (tests/test_web.py PAGES: every tab of every new page) and the fit check.
   points to it.
 - On pace (Records) is the old engine's projection, which can be jumpy after two matches.
 
+**Stage 3 stress test (25 November):** every new page with every choice it offers (every competition, season, tab,
+discipline, stat, kind, team, player pair and typed figure) through the running site: your 2,720 cards (all 24
+competitions, two sweeps meeting in the middle, about 5,000 answers, 0 problems, 0 server errors) and eight made-up odd
+saves (no matches, one match, only abandoned games, odd names, county only, IPL only, no team picked, a messy folder:
+8,472 answers, 0 problems after the fix below); the full tests here (1,463 passed, none skipped or failed) and every
+browser check (218, every new page and tab at two widths, dark and light), and the Windows run on GitHub.
+Found and fixed at the root, each with a test:
+- Hall of fame's firsts broke on a one-match career won by runs: a number column with no number in it at all was read
+  as empty values, not numbers; number columns are now always numbers, whatever the career.
+- Compare's career chart put "Total runs" against its numbers; Team leaders' long names ran past the tile edge at
+  1280 wide (wickets now sit under runs).
+Slow the first time only (worked out in the background before you open them): Records for the biggest domestic
+competitions (20-35 s while the stress test was running alongside), Hall of fame's firsts for Tests (23 s).
+
 **Found and fixed on the way (each with a test):**
 - The chase calculator's "similar games" widened to thousands of runs (the band grew with each wider wicket spread):
   it now starts again from the usual band, and says plainly when there are too few close chases. The same sum draws the
