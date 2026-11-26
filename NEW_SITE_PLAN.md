@@ -1437,9 +1437,17 @@ Stage 5 starts only when you say so ("I'll tell you when to start"); stage 4 sta
    your careers, updates and reopens on the same page.
 5. **The install list:** Streamlit and Plotly off (as agreed), Pillow listed by name (the new site draws the logos with
    it; until now it only came with Streamlit), openpyxl off (only the old site used it).
-6. **The icon:** you'll send it.
+6. **The icon:** you sent it (see 10).
 7. **Speed:** stage 5 times every page and the first start on your biggest save and reports the seconds; the speed work
    stays in stage 6 as agreed.
+8. **The name:** "Cricket Captain Stats Pack" (the program and its updates repository, `cricket-captain-stats-pack`).
+9. **Extras picked (26 November):** its own app window (no address bar or tabs; closing it closes the program); only one
+   copy runs (opening it again brings the open window forward); safe updates (each download checked complete and
+   unchanged before it's installed, else the version you have stays and it tries again later); "What's new" in plain
+   words after each update; a clear message window if it can't start (what happened and what to do). Not picked:
+   desktop and Start menu shortcuts, going back one version.
+10. **The icon:** your design ("Cricket Stats Pack": navy tile, faint charts, red ball and bat), redrawn sharp: the
+    full design at the big sizes, the ball and bat alone at the small ones (shown 26 November; your yes still to come).
 
 ## Appendix: technical outline
 
