@@ -7,6 +7,7 @@ import { Link, useLocation } from "react-router";
 
 type Open = { player: string; x: number; y: number };
 const WIDTH = 230;
+const SCROLL_KEYS = new Set(["PageUp", "PageDown", "Home", "End", "ArrowUp", "ArrowDown"]);
 
 export function PlayerMenu({ keep }: { keep: string }) {
   const [open, setOpen] = useState<Open | null>(null);
@@ -30,7 +31,7 @@ export function PlayerMenu({ keep }: { keep: string }) {
       } else setOpen(null);
     };
     const key = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(null);
+      if (e.key === "Escape" || SCROLL_KEYS.has(e.key)) setOpen(null);
       const el = (e.target as Element | null)?.closest?.("[data-player]");
       if ((e.key === "Enter" || e.key === " ") && el) { e.preventDefault(); at(el); }
     };
@@ -43,12 +44,16 @@ export function PlayerMenu({ keep }: { keep: string }) {
     window.addEventListener("player-menu", fromChart);
     document.addEventListener("click", click, true);
     document.addEventListener("keydown", key);
-    window.addEventListener("scroll", away, true);
+    // closed when you scroll (the wheel, a touch, the scroll keys), never when the page moves by itself: a tile filling
+    // in above shifts the page, and the browser's own scroll then closed a menu just opened
+    window.addEventListener("wheel", away, { capture: true, passive: true });
+    window.addEventListener("touchmove", away, { capture: true, passive: true });
     window.addEventListener("resize", away);
     return () => {
       document.removeEventListener("click", click, true);
       document.removeEventListener("keydown", key);
-      window.removeEventListener("scroll", away, true);
+      window.removeEventListener("wheel", away, true);
+      window.removeEventListener("touchmove", away, true);
       window.removeEventListener("resize", away);
       window.removeEventListener("player-menu", fromChart);
     };
