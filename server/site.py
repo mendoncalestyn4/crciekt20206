@@ -221,12 +221,13 @@ class Site:
         couldn't be read."""
         from ccstats.records import new_records
         self.checked_at = time.time()
-        try:
-            self.store.backup_all_due()
+        events: list[dict] = []
+        try:   # every career's weekly backup, each one checked by reading it back (your picks, 26 November)
+            _, problems = self.store.checked_backup_all_due()
+            events += [dict(type="problem", where="backups", what=w) for w in problems]
         except OSError:
             pass  # a full or read-only disk must never stop the site; the next check tries again
         folders = sorted({s.folder for n in self.names() if (s := self.settings(n)) and s.folder})
-        events: list[dict] = []
         for folder in folders:
             try:
                 res = self.watcher.sync(folder)

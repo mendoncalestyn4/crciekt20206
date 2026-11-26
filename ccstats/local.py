@@ -11,6 +11,7 @@ from __future__ import annotations
 import copy
 import json
 import os
+import shutil
 import re
 import time
 from dataclasses import asdict, dataclass, field, fields
@@ -256,6 +257,10 @@ class CareerStore:
         d.mkdir(parents=True, exist_ok=True)
         stamp = time.strftime("%Y-%m-%d_%H%M%S", time.localtime(now))
         dest = d / f"{stamp}{'_' + _slug(note) if note else ''}.stats-pack.zip"
+        k = 2
+        while dest.exists():   # two backups in the same second never share a file (one would replace the other)
+            dest = d / f"{stamp}{'_' + _slug(note) if note else ''}-{k}.stats-pack.zip"
+            k += 1
         write_atomic(dest, src.read_bytes())
         for old, _ in self.backups(name)[self.BACKUPS_KEPT:]:
             old.unlink()
@@ -287,6 +292,115 @@ class CareerStore:
         career, _ = self.load(name)
         self.save(career, settings)
         return career
+
+    # ------------------------------------------------------------ stage 4: rename, remove, reset, safe backups
+    def rename(self, old: str, new: str) -> None:
+        """Give a career a new name: its saved file, settings and backups move with it, the folder it watches stays
+        its own, and it stays the one on screen if it was."""
+        new = new.strip()
+        if not new:
+            raise ValueError("Give the career a name.")
+        if new == old:
+            return
+        if new in self.names() or (self._dir(new).exists() and _slug(new) != _slug(old)):
+            raise ValueError("A career with that name already exists. Pick another name.")
+        if old not in self.names():
+            raise KeyError(old)
+        src, dst = self._dir(old), self._dir(new)
+        _, settings = self.load_settings(old, fresh=True)
+        if src != dst:
+            dst.mkdir(parents=True, exist_ok=True)
+            for f in src.iterdir():
+                if f.is_file():
+                    os.replace(f, dst / f.name)
+            shutil.rmtree(src, ignore_errors=True)
+        settings.name = new
+        write_atomic(dst / "settings.json", json.dumps(asdict(settings), indent=1))
+        b_old, b_new = self._backup_dir(old), self._backup_dir(new)
+        if b_old.is_dir() and b_old != b_new:
+            b_new.mkdir(parents=True, exist_ok=True)
+            for f in b_old.iterdir():
+                os.replace(f, b_new / f.name)
+            shutil.rmtree(b_old, ignore_errors=True)
+        Watcher(self).renamed(old, new)
+        if self.last_used() is None or read_json(self.root / "last.json").get("career") == old:
+            write_atomic(self.root / "last.json", json.dumps({"career": new}))
+
+    def remove(self, name: str) -> Path | None:
+        """Take a career off this PC, with a backup made first (kept in its backups folder). The game's Scorecards
+        folder is never touched. Returns the backup."""
+        if name not in self.names():
+            raise KeyError(name)
+        made = None
+        if (self._dir(name) / "career.stats-pack.zip").is_file():
+            made = self.backup(name, note="before-remove")
+        Watcher(self).forget_career(name)
+        shutil.rmtree(self._dir(name), ignore_errors=True)
+        return made
+
+    def reset_all(self) -> dict:
+        """Delete every career and every backup on this PC, and the answers kept for them (the full reset you asked
+        for, 26 November). The game's Scorecards folders and your preferences (the logos folder) are never touched."""
+        n_careers, n_backups = len(self.names()), sum(len(self.backups(n)) for n in self._backup_names())
+        for d in (self.careers_dir, self.root / "backups", self.root / "kept"):
+            shutil.rmtree(d, ignore_errors=True)
+        for f in ("folders.json", "last.json"):
+            (self.root / f).unlink(missing_ok=True)
+        return dict(careers=n_careers, backups=n_backups)
+
+    def _backup_names(self) -> list[str]:
+        d = self.root / "backups"
+        return [p.name for p in d.iterdir() if p.is_dir()] if d.is_dir() else []
+
+    def all_backups(self) -> int:
+        d = self.root / "backups"
+        return sum(1 for _ in d.glob("*/*.stats-pack.zip")) if d.is_dir() else 0
+
+    def room_for_backup(self, name: str) -> tuple[bool, int, int]:
+        """(room enough, bytes free, bytes the backup needs with a safe margin): a backup is only made when the disk
+        has three times the career file's size plus 50 MB free, so a full disk never leaves half a backup."""
+        src = self._dir(name) / "career.stats-pack.zip"
+        need = (src.stat().st_size if src.is_file() else 0) * 3 + 50 * 1024 * 1024
+        try:
+            free = shutil.disk_usage(self.root if self.root.exists() else self.root.parent).free
+        except OSError:
+            return True, -1, need
+        return free >= need, free, need
+
+    def checked_backup(self, name: str, note: str = "", now: float | None = None) -> tuple[Path | None, str]:
+        """A backup that tests itself (your pick, 26 November): made only with room on the disk, then opened and
+        read back; one that doesn't read back as the same career is made again, once. Returns (the backup, "") or
+        (None or the backup, what went wrong in plain words)."""
+        ok, free, need = self.room_for_backup(name)
+        if not ok:
+            return None, (f"Not enough room on the disk for a backup of {name}: {free / 1e6:,.0f} MB free, "
+                          f"{need / 1e6:,.0f} MB needed. Free some space and it's made at the next check.")
+        src = self._dir(name) / "career.stats-pack.zip"
+        if not src.is_file():
+            return None, ""
+        want = src.read_bytes()
+        for attempt in range(2):
+            made = self.backup(name, now, note)
+            try:
+                got = made.read_bytes()
+                if got == want and Career.is_pack(got) and len(Career.from_pack(got).matches) >= 0:
+                    return made, ""
+            except Exception:  # noqa: BLE001 - a backup that can't be read back: made again
+                pass
+            made.unlink(missing_ok=True)
+        return None, f"A backup of {name} didn't read back correctly twice; your career itself is fine. It's tried again at the next check."
+
+    def checked_backup_all_due(self, now: float | None = None) -> tuple[list[str], list[str]]:
+        """The weekly backup of every career on this PC, each one checked: (careers backed up, problems)."""
+        done, problems = [], []
+        for name in self.names():
+            if (self._dir(name) / "career.stats-pack.zip").is_file() and self.backup_due(name, now):
+                made, why = self.checked_backup(name, now=now)
+                if made:
+                    done.append(name)
+                if why:
+                    problems.append(why)
+        return done, problems
 
     def last_used(self) -> str | None:
         f = self.root / "last.json"
@@ -413,6 +527,23 @@ class Watcher:
         """The career that watches this folder, if any."""
         name = self._all().get(folder, {}).get("career")
         return name if name in self.store.names() else None
+
+    def renamed(self, old: str, new: str) -> None:
+        """A career was renamed: the folders it watches stay its own."""
+        data = self._all()
+        hit = False
+        for v in data.values():
+            if v.get("career") == old:
+                v["career"], hit = new, True
+        if hit:
+            self._write(data)
+
+    def forget_career(self, name: str) -> None:
+        """A career was removed: its folders are no longer watched (a new career can take them)."""
+        data = self._all()
+        keep = {k: v for k, v in data.items() if v.get("career") != name}
+        if keep != data:
+            self._write(keep)
 
     def rescan(self, folder: str) -> None:
         """Forget which files in a folder were already read, so the next sync

@@ -33,7 +33,7 @@ from ccstats.colours import TEAM_COLOURS
 from ccstats.local import CareerStore
 from ccstats.competitions import ordered as in_order
 
-from . import analyticspage, comparepage, comppage, fixturespage, leaderteams, storiespage, insightspage, leaderspage, matchpage, myteam, plannerpage, playerpage, previewpage, reviewpage, rivalriespage, seasonpage, styleguide, teampage, tvtpage
+from . import analyticspage, comparepage, comppage, fixturespage, settingspage, leaderteams, storiespage, insightspage, leaderspage, matchpage, myteam, plannerpage, playerpage, previewpage, reviewpage, rivalriespage, seasonpage, styleguide, teampage, tvtpage
 from .cache import _stamp as cache_stamp, kept, put as cache_put, save as save_kept
 from . import warmers
 from .site import Site
@@ -314,6 +314,166 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         if saved is None:
             return _error("No career is open yet.", 404)
         return _json({"note": saved, "saved": bool(saved)})
+
+    # ------------------------------------------------------------------ Settings, careers, backups (stage 4)
+    UPLOADS: dict[str, dict] = {}
+
+    def _backup_noted(name: str, note: str) -> None:
+        made, why = site.store.checked_backup(name, note=note)
+        if why:
+            problems.add("server", "backups", why, career=name)
+
+    async def settings_(request: Request):
+        if request.method == "GET":
+            return _json(await anyio.to_thread.run_sync(lambda: settingspage.page(site)))
+        try:
+            b = await _body(request)
+        except ValueError as e:
+            return _error(str(e), 415)
+        action = str(b.get("action", ""))
+
+        def go():
+            st = site.store
+            if action == "browse":
+                return dict(folder=settingspage.choose_folder(str(b.get("start", ""))) or "",
+                            unavailable="" if settingspage._can_browse() else
+                            "The Windows folder window only opens when the site runs on Windows: paste the folder path instead.")
+            if action == "add_folder":
+                out = settingspage.add_folder(site, str(b.get("name", "")), str(b.get("folder", "")))
+                return dict(out, message=f"Added {out['name']}")
+            if action == "demo":
+                out = settingspage.demo(site)
+                return dict(out, message="The demo league is open")
+            if action == "rename":
+                old, new = str(b.get("name", "")), str(b.get("new", ""))
+                try:
+                    st.rename(old, new)
+                except ValueError as e:
+                    raise settingspage.Refused(str(e)) from None
+                except KeyError:
+                    raise settingspage.Refused("There's no career by that name any more.") from None
+                site.forget(old)
+                if site.current_name == old:
+                    site.current_name = new.strip()
+                return dict(message=f"Renamed {old} to {new.strip()}")
+            if action == "remove":
+                name = str(b.get("name", ""))
+                if b.get("sure") is not True:
+                    raise settingspage.Refused("Tick 'Yes, remove it' first.")
+                try:
+                    made = st.remove(name)
+                except KeyError:
+                    raise settingspage.Refused("There's no career by that name any more.") from None
+                site.forget(name)
+                if site.current_name == name:
+                    site.current_name = None
+                return dict(message=f"Removed {name}" + (" (a backup was made first)" if made else ""))
+            if action == "reset":
+                if b.get("sure") != "DELETE EVERYTHING":
+                    raise settingspage.Refused("Type DELETE EVERYTHING in the box to confirm.")
+                n = st.reset_all()
+                for name in list(site._careers):
+                    site.forget(name)
+                site.current_name = None
+                return dict(message=f"Deleted {n['careers']} career{'s' if n['careers'] != 1 else ''} and "
+                                    f"{n['backups']} backup{'s' if n['backups'] != 1 else ''}. Your game's Scorecards folders weren't touched.")
+            if action == "teams":
+                teams = [str(t) for t in (b.get("teams") or [])]
+                ok = set(settingspage.team_choices(site.career()))
+                bad = [t for t in teams if t not in ok]
+                if bad:
+                    raise settingspage.Refused(f"Not a team in the game: {', '.join(bad)}.")
+                site.update_settings(lambda x: (setattr(x, "my_teams", teams), setattr(x, "teams_asked", True)))
+                if teams:
+                    st.save_preference("last_teams", teams)
+                return dict(message="Saved your teams" if teams else "No teams picked")
+            if action == "teams_never":
+                site.update_settings(lambda x: setattr(x, "teams_asked", True))
+                return dict(message="Won't ask again for this career")
+            if action == "backup_now":
+                name = site.current() or ""
+                made, why = st.checked_backup(name)
+                if not made:
+                    raise settingspage.Refused(why or "No career to back up.")
+                return dict(message="Backed up.")
+            if action == "restore":
+                name = site.current() or ""
+                hit = next((p for p, _ in st.backups(name) if p.name == str(b.get("file", ""))), None)
+                if hit is None:
+                    raise settingspage.Refused("That backup isn't there any more.")
+                made = next(t for p, t in st.backups(name) if p == hit)
+                st.restore(name, hit)
+                s2 = site.settings(name)
+                if s2 and s2.folder:
+                    site.watcher.rescan(s2.folder)
+                site.forget(name)
+                return dict(message=f"Restored the backup from {time.strftime('%d %b %Y, %H:%M', time.localtime(made))}. "
+                                    "Any newer matches still in your Scorecards folder are added back within a few seconds.")
+            if action == "logos_folder":
+                st.save_preference("logos_folder", str(b.get("folder", "")).strip())
+                return dict(message="Logos folder saved")
+            raise settingspage.Refused(f"Unknown change {action!r}.")
+        try:
+            out = await anyio.to_thread.run_sync(go)
+        except settingspage.Refused as e:
+            return _error(str(e), 400)
+        return _json(out)
+
+    async def upload_(request: Request):
+        """Uploaded scorecards come in batches ({token, files: [{name, data (base64)}]}), then {token, finish: mode,
+        name}: a new career, or added to the one on screen."""
+        try:
+            b = await _body(request)
+        except ValueError as e:
+            return _error(str(e), 415)
+
+        def go():
+            token = str(b.get("token") or "") or FX_new_token()
+            box = UPLOADS.setdefault(token, {"files": [], "at": time.time()})
+            for k in [k for k, v in UPLOADS.items() if time.time() - v["at"] > 3600]:
+                UPLOADS.pop(k, None)
+            box["files"] += settingspage.decode(list(b.get("files") or []))
+            if not b.get("finish"):
+                return dict(token=token, got=len(box["files"]))
+            files = UPLOADS.pop(token, {"files": []})["files"]
+            out = settingspage.from_upload(site, files, str(b.get("finish")), str(b.get("name", "")))
+            return dict(out, message=f"Loaded into {out['name']}")
+        try:
+            out = await anyio.to_thread.run_sync(go)
+        except settingspage.Refused as e:
+            return _error(str(e), 400)
+        return _json(out)
+
+    def FX_new_token() -> str:
+        import secrets
+        return secrets.token_hex(8)
+
+    async def career_file(request: Request):
+        name = request.path_params["name"]
+        if name not in site.names():
+            return _error(f"There's no career called {name!r}.", 404)
+        data = (site.store._dir(name) / "career.stats-pack.zip").read_bytes()
+        safe = "".join(ch if ch.isalnum() or ch in " -_" else "_" for ch in name).strip() or "career"
+        return Response(data, media_type="application/zip",
+                        headers={"Content-Disposition": f'attachment; filename="{safe}.stats-pack.zip"',
+                                 "Cache-Control": "no-store"})
+
+    def _before_update() -> None:
+        """A copy of every career before an update (your answer 13): the site's code changed since it last started."""
+        st = site.store
+        now = KEEP.version()
+        last = str(st.preferences().get("last_version") or "")
+        if last and last != now:
+            for name in site.names():
+                try:
+                    _backup_noted(name, "before-update")
+                except Exception:  # noqa: BLE001 - a backup that fails is noted, never stops the start
+                    pass
+        if last != now:
+            try:
+                st.save_preference("last_version", now)
+            except OSError:
+                pass
 
     # ------------------------------------------------------------------ Fixtures (stage 4)
     def _fixtures(c, q):
@@ -922,6 +1082,8 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                     ASKING[0] -= 1
                 for e in found:
                     hub.publish(e)
+                    if e.get("type") == "problem":   # a backup that couldn't be made or didn't read back
+                        problems.add("server", e.get("where", "backups"), e.get("what", ""), career=e.get("career", ""))
                     if e.get("type") == "failed":   # kept in Settings → Problems: a career keeps only what it could read
                         for f in e["files"]:
                             # a match still being saved by the game is read again once it's finished: not a problem
@@ -944,6 +1106,11 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
 
     @contextlib.asynccontextmanager
     async def lifespan(app):
+        if watch_every:
+            try:
+                await anyio.to_thread.run_sync(_before_update)
+            except Exception:  # noqa: BLE001
+                pass
         task = asyncio.create_task(watch_loop()) if watch_every else None
         try:
             yield
@@ -996,6 +1163,9 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/match/{mid}", match_),
         Route("/api/notes", note_, methods=["POST"]),
         Route("/api/fixtures", fixtures_, methods=["GET", "POST"]),
+        Route("/api/settings", settings_, methods=["GET", "POST"]),
+        Route("/api/upload", upload_, methods=["POST"]),
+        Route("/api/careers/{name}/file", career_file),
         Route("/api/inbox", inbox_, methods=["GET", "POST"]),
         Route("/api/players", players_),
         Route("/api/names", names_),
