@@ -97,25 +97,14 @@ def uncredited(career) -> pd.DataFrame:
 
 
 def merge_suggestions(career) -> pd.DataFrame:
-    """Pairs of names that might be one player: same surname and first initial,
-    at least one team in common, and never in the same match together."""
-    appear = pd.concat([career.batting[["match_id", "team", "player"]], career.bowling[["match_id", "team", "player"]]])
-    matches_of = appear.groupby("player").match_id.apply(set)
-    teams_of = appear.groupby("player").team.apply(set)
-    by_key: dict[tuple, list[str]] = {}
-    for p in matches_of.index:
-        by_key.setdefault((_surname(p), _initial(p)), []).append(p)
-    rows = []
-    for names in by_key.values():
-        for a, b in combinations(sorted(names), 2):
-            shared = teams_of[a] & teams_of[b]
-            if not shared or matches_of[a] & matches_of[b]:
-                continue
-            ma, mb = len(matches_of[a]), len(matches_of[b])
-            keep, other = (a, b) if ma >= mb else (b, a)
-            rows.append(dict(keep=keep, other=other, keep_matches=max(ma, mb), other_matches=min(ma, mb),
-                             teams=", ".join(sorted(shared))))
-    return pd.DataFrame(rows, columns=["keep", "other", "keep_matches", "other_matches", "teams"])
+    """Pairs of names that might be one player and wait for your click (lookalike.py: the same initial and surname,
+    a missing or extra initial, near-spellings on the same team, a move between teams with the very same surname;
+    never two names in the same match). The pairs sure to be one player are joined already (career.auto_joins).
+    Columns: keep, other, keep_matches, other_matches, teams, why, and the numbers of each."""
+    from . import lookalike as LA
+    p = LA.pairs(LA.from_tables(career.batting, career.bowling, career.matches), career.fixes.keep_apart)
+    p = p[~p.sure.astype(bool)].rename(columns={"team": "teams"})
+    return p.reset_index(drop=True)
 
 
 def split_suggestions(career) -> pd.DataFrame:

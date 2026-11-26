@@ -1366,6 +1366,16 @@ Asked before building, as questions with the answers written out (your choice); 
     (each opened in the background to check it restores; a broken one made again and noted on Problems) and a low
     disk warning before a backup. Not picked: the folder-missing warning, renamed teams spotted, undo a restore for a
     day, the changes log.
+22. **Names that may be one player** (your answers of 26 November, changing answer 16 and the rule of 14 November):
+    Data check looks wider: besides the same initial and surname on the same team, a missing or extra initial, and on
+    the same team a surname one letter apart (Harmer/Harper) or different only in its vowels (Mohammed/Muhammad); a
+    move between teams (one name's games all before the other's) only with the very same surname and never between
+    two national sides; never two names that played in the same match, and never a "Jr." with a name without one. Each pair says why it was listed, with both names'
+    numbers side by side. **Pairs beyond doubt are joined by themselves**: same team, never in the same match, one
+    name's last game for the team followed straight away by the other's first (at most two of the team's games of
+    that format between), and neither name has any other candidate. Each automatic join is listed on Data check
+    (Player with two names, and Your changes) with an Undo that keeps the two apart for good, and an alert says so
+    when it happens. Anything less sure is only listed, never pre-ticked: your click joins it.
 
 ## 19. Stage 4: what was built
 
@@ -1393,6 +1403,16 @@ there with where it is. Built by me one piece at a time, as in stage 3 (your cho
   team only when something needs you (answer 17); every change made in the background after a backup, the site usable
   and other career changes waiting meanwhile (answer 18); the fix preview (answer 20). Checked: 10 tests, including
   that nothing is ever joined without your saved choice and parity with the current site.
+- **Names that may be one player** (answer 22; `ccstats/lookalike.py`, joined while reading in `ccstats/loader.py`,
+  Data check · Player with two names and Your changes, an alert in `ccstats/alerts.py`): the wider search, each pair
+  with why; pairs beyond doubt joined by themselves, each listed with "Undo: two players" (the numbers before and
+  after first) and joined again from Your changes; an alert once when it happens; the rest wait for your click. On
+  your career it lists 2 pairs (N Reddy / N Kumar Reddy at Andhra; R Ali Shah / R Shah) and joins none; a first try
+  listed 23, mostly two different players (Bird/Broad), so the rules were tightened. Found and fixed on the way: "Jr."
+  was read as a surname and hyphenated surnames were split (the old finder too); an empty list lost its column types;
+  the alerts' memory was cut alphabetically at 3,000, so a goal reached could have been said again (lasting ones are
+  now kept for good). Checked: 9 tests, including every number with a player printed two ways and joined by itself
+  equal to one name all along, and a browser click-through (joined, kept apart, joined again).
 - **Alerts, the daily summary, the weekly recheck** (`ccstats/alerts.py`, `server/site.py`, `server/app.py`): Goal
   reached!, Series won (and titles), Milestone reached, Career best, Streaks, Ranking moves, for your teams only, each
   said once and nothing old on the first run (answers 19, 21); what happened since you last looked, once a day; once a

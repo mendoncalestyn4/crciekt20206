@@ -215,3 +215,37 @@ def test_data_check_end_to_end(browser, pc):
         assert said == [], said
     finally:
         pg.close()
+
+
+def test_names_joined_by_themselves_undone_and_joined_again(browser, tmp_path):
+    """A player printed two ways (the test data of test_stage4_names): joined by itself and listed with why; "Undo: two
+    players" shows the numbers before and after, keeps them apart, and Your changes joins them again."""
+    from test_stage4_names import renamed
+    cards = tmp_path / "cards"
+    cards.mkdir()
+    paths = []
+    for name, data in renamed(FIXTURES):
+        (cards / name).write_bytes(data)
+        paths.append(cards / name)
+    store, folder, game = make_pc(tmp_path, team="England", files=paths)
+    live = Live(create_app(store, web=WEB, watch_every=0))
+    pg, said = open_page(browser, live, "/settings/data-check?tab=Player with two names")
+    try:
+        pg.wait_for_selector("text=Joined by themselves, sure to be one player (1)")
+        row = pg.locator(".fxitem", has_text="now counts as")
+        assert "Duckett" in row.inner_text() and "Why:" in row.inner_text()
+        assert pg.evaluate(f"(\n{FIT}\n)()") == []
+        row.locator("button:has-text('Undo: two players')").click()
+        pg.wait_for_selector(".editbox table")                       # the numbers before and after
+        pg.click("button:has-text('Yes, keep them apart')")
+        pg.wait_for_selector(".saidok:has-text('✓'):has-text('kept apart')", timeout=120000)
+        c, _ = store.load("My career")
+        assert c.auto_joins.empty and {"B Duckett", "BM Duckett"} <= set(c.batting.player)
+        pg.click(".itabs button:has-text('Your changes')")
+        pg.locator(".hist", has_text="You kept").locator("button:has-text('Undo')").click()
+        pg.wait_for_selector(".saidok:has-text('✓'):has-text('joined again')", timeout=120000)
+        assert len(store.load("My career")[0].auto_joins) == 1
+        assert said == [], said
+    finally:
+        pg.close()
+        live.stop()

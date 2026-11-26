@@ -56,6 +56,10 @@ def summary(career) -> dict:
     todo, fine = [], []
     if len(merges):
         todo.append(f"**{len(merges)} players** may appear under two names → the Player with two names tab")
+    joined = getattr(career, "auto_joins", None)
+    if joined is not None and len(joined):
+        fine.append(f"🔗 {len(joined)} pair{'s' if len(joined) > 1 else ''} of names joined by themselves, sure to be one "
+                    "player each (can be undone) → the Player with two names tab")
     if len(shared):
         todo.append(f"**{len(shared)} names** are still used by two different players → the Shared names tab")
     if len(conflicts):
@@ -79,8 +83,10 @@ def summary(career) -> dict:
         fine.append(f"ℹ️ {len(unknown)} game{'s' if len(unknown) > 1 else ''} in competitions the site doesn't know by name "
                     f"({', '.join(names_[:4])}{' …' if len(names_) > 4 else ''}): each is a section of its own, with its "
                     "format read from the scorecards")
-    n_changes = len(fx.merges) + len(fx.splits) + len(fx.include) + len(fx.exclude) + len(fx.keep_together)
-    counts = {"Shared names": int(auto.player.nunique()) + len(shared), "Player with two names": len(merges),
+    n_changes = (len(fx.merges) + len(fx.splits) + len(fx.include) + len(fx.exclude) + len(fx.keep_together)
+                 + len(fx.keep_apart) + (len(joined) if joined is not None else 0))
+    counts = {"Shared names": int(auto.player.nunique()) + len(shared),
+              "Player with two names": len(merges) + (len(joined) if joined is not None else 0),
               "Games left out": len(left) + int(conflicts.match_id.nunique()),
               "Scorecards": bad + len(failed) + len(career.corrections), "Copies": len(dups), "Your changes": n_changes}
     return dict(todo=todo, fine=fine, counts=counts, needs_you=len(todo))
@@ -92,8 +98,8 @@ class Refused(ValueError):
 
 
 def change(career, action: str, b: dict) -> tuple[Fixes, str]:
-    """The Data check choices after one change, and what to say about it. Nothing is joined unless asked for here by
-    name (your rule of 14 November)."""
+    """The Data check choices after one change, and what to say about it. Two names are joined only by your click
+    here, or by themselves when sure to be one player (your answer of 26 November), which `keep_apart` undoes."""
     f = copy.deepcopy(career.fixes)
     if action == "undo_auto_split":          # keep a name as one player after all
         p = str(b.get("player", ""))
@@ -132,6 +138,13 @@ def change(career, action: str, b: dict) -> tuple[Fixes, str]:
             raise Refused(f"{a} and {keep} played in the same match, so they can't be one player.")
         f.merges[a] = keep
         return f, f"Done: {a}'s games now count for {keep}."
+    if action == "keep_apart":               # a pair joined by themselves: two players after all
+        a, keep = str(b.get("other", "")), str(b.get("keep", ""))
+        j = career.auto_joins
+        if j[(j.other == a) & (j.keep == keep)].empty:
+            raise Refused("Those two names aren't joined any more.")
+        f.keep_apart = f.keep_apart + [[a, keep]]
+        return f, f"Done: {a} and {keep} are kept apart, two players."
     if action == "count_it":
         mid = str(b.get("match_id", ""))
         left = career.leftovers[career.leftovers.match_id == mid]
@@ -168,6 +181,11 @@ def change(career, action: str, b: dict) -> tuple[Fixes, str]:
         if kind == "keep_together":
             f.keep_together = [x for x in f.keep_together if x != key]
             return f, f"Undone: {key} is kept apart again."
+        if kind == "auto_join":            # a join made by itself: kept apart for good
+            return change(career, "keep_apart", dict(other=key[0], keep=key[1]))
+        if kind == "keep_apart":
+            f.keep_apart = [x for x in f.keep_apart if list(x) != list(key)]
+            return f, f"Undone: {key[0]} and {key[1]} are joined again (sure to be one player)."
         raise Refused("That change can't be undone.")
     raise Refused(f"Unknown change {action!r}.")
 
@@ -191,6 +209,12 @@ def your_changes(career) -> list[dict]:
     out += [dict(kind="merge", key=a, text=f"**{a}** counts as **{b}**") for a, b in fx.merges.items()]
     out += [dict(kind="keep_together", key=p, text=f"**{p}** kept as one player (you undid the automatic split)")
             for p in fx.keep_together]
+    j = getattr(career, "auto_joins", None)
+    if j is not None:
+        out += [dict(kind="auto_join", key=[r.other, r.keep], text=f"**{r.other}** joined to **{r.keep}** by itself at "
+                     f"{r.team}: {r.why}, never in the same match, one name straight after the other") for r in j.itertuples()]
+    out += [dict(kind="keep_apart", key=list(x), text=f"You kept **{x[0]}** and **{x[1]}** apart (they had been joined by "
+                 "themselves)") for x in fx.keep_apart]
     out += [dict(kind="exclude", key=mid, text=f"You left out **{game(mid)}**") for mid in fx.exclude]
     out += [dict(kind="include", key=mid, text=f"You count **{game(mid)}** again (it looked like it was from an earlier playthrough)")
             for mid in fx.include]
@@ -233,4 +257,15 @@ def preview(career, action: str, b: dict) -> dict:
         before = [dict(name=n, **_totals(career, bat[bat.player == n], bowl[bowl.player == n])) for n in (a, keep)]
         after = [dict(name=keep, **_totals(career, bat[bat.player.isin([a, keep])], bowl[bowl.player.isin([a, keep])]))]
         return dict(before=before, after=after, together=played_together(career, a, keep))
+    if action == "keep_apart":             # a pair joined by itself, taken apart again: the numbers as read under each name
+        a, keep = str(b.get("other", "")), str(b.get("keep", ""))
+        j = career.auto_joins
+        r = j[(j.other == a) & (j.keep == keep)]
+        if r.empty:
+            return dict(before=[], after=[])
+        r = r.iloc[0]
+        before = [dict(name=keep, **_totals(career, bat[bat.player == keep], bowl[bowl.player == keep]))]
+        after = [dict(name=n, matches=int(r[f"{w}_matches"]), runs=int(r[f"{w}_runs"]), wickets=int(r[f"{w}_wickets"]),
+                      innings=int(r[f"{w}_innings"])) for n, w in ((a, "other"), (keep, "keep"))]
+        return dict(before=before, after=after)
     return dict(before=[], after=[])

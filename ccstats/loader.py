@@ -60,17 +60,19 @@ class Fixes:
     # names the user chose to keep as one player, though they played for two teams in one competition and season
     # (the automatic split undone on the data check page)
     keep_together: list[str] = field(default_factory=list)
+    # pairs of names joined by themselves (sure to be one player) that the user chose to keep apart after all
+    keep_apart: list[list[str]] = field(default_factory=list)
 
     def to_json(self) -> str:
         return json.dumps({"merges": self.merges, "splits": self.splits, "credits": self.credits,
                            "suggested": self.suggested, "include": self.include, "exclude": self.exclude,
-                           "keep_together": self.keep_together}, indent=1)
+                           "keep_together": self.keep_together, "keep_apart": self.keep_apart}, indent=1)
 
     @classmethod
     def from_json(cls, text: str) -> "Fixes":
         d = json.loads(text or "{}")
         return cls(d.get("merges", {}), d.get("splits", []), d.get("credits", {}), d.get("suggested", []),
-                   d.get("include", []), d.get("exclude", []), d.get("keep_together", []))
+                   d.get("include", []), d.get("exclude", []), d.get("keep_together", []), d.get("keep_apart", []))
 
     def rename(self, name: str, team: str) -> str:
         # the splits looked up by (name, team), the first one for each as before (the list is only ever replaced,
@@ -163,6 +165,8 @@ PACK_SOURCES = "sources.json"  # stored file name -> the scorecard's own file na
 PACK_TIMES = "times.json"  # stored file name -> when the game saved it
 CORRECTION_COLUMNS = ["match_id", "source", "correction"]
 AUTO_SPLIT_COLUMNS = ["player", "team", "new_name", "keep", "games", "where"]
+NM_JOIN_COLUMNS = ["other", "keep", "team", "why", "other_matches", "keep_matches", "other_runs", "keep_runs",
+                   "other_wickets", "keep_wickets", "other_innings", "keep_innings", "sure"]   # as lookalike.JOIN_COLUMNS
 LEFTOVER_COLUMNS = ["match_id", "source", "date", "competition", "stage", "home", "away", "result", "saved", "reason", "auto"]
 
 
@@ -187,6 +191,8 @@ class Career:
     corrections: pd.DataFrame = field(default_factory=lambda: pd.DataFrame(columns=CORRECTION_COLUMNS))
     # names split automatically: one printed name for two teams in one competition and season (two players)
     auto_splits: pd.DataFrame = field(default_factory=lambda: pd.DataFrame(columns=AUTO_SPLIT_COLUMNS))
+    # two printed names joined by themselves, sure to be one player (your answer of 26 November; each can be undone)
+    auto_joins: pd.DataFrame = field(default_factory=lambda: pd.DataFrame(columns=NM_JOIN_COLUMNS))
 
     # ------------------------------------------------------------ building
     @classmethod
@@ -505,6 +511,33 @@ def _bowling_raw(inn: Innings) -> list[str]:
     return out
 
 
+def _typed_joins(df: pd.DataFrame) -> pd.DataFrame:
+    from . import lookalike as LA
+    return LA._typed(df)
+
+
+def auto_joins(parsed: list[Match], formats: list[str], fixes: Fixes) -> list[dict]:
+    """Two printed names joined by themselves when they are sure to be one player (your answer of 26 November; the
+    rules are in names.py): never two names in one match, the same team, one name's games straight after the other's,
+    no other candidate for either, and not a pair you kept apart. Your own joins and splits come first."""
+    from . import lookalike as LA
+    rows = []
+    for m, fmt in zip(parsed, formats):
+        for inn in m.innings:
+            for b, raw in zip(inn.batting, _batting_raw(inn)):
+                rows.append((fixes.rename(raw, inn.team), inn.team, m.match_id, m.date, fmt, b.runs or 0, int(bool(b.did_bat)), 0))
+            for w, raw in zip(inn.bowling, _bowling_raw(inn)):
+                rows.append((fixes.rename(raw, inn.bowling_team), inn.bowling_team, m.match_id, m.date, fmt, 0, 0, w.wickets or 0))
+    if not rows:
+        return []
+    a = pd.DataFrame(rows, columns=LA.APPEAR_COLUMNS)
+    a = a[(a.player != "") & (a.team != "")]
+    a = a.groupby(["player", "team", "match_id", "date", "format"], as_index=False)[["runs", "innings", "wickets"]].sum()
+    found = LA.pairs(a, fixes.keep_apart)
+    found = found[found.sure.astype(bool) & ~found.other.isin(set(fixes.merges)) & ~found.keep.isin(set(fixes.merges))]
+    return found.to_dict("records")
+
+
 def auto_splits(parsed: list[Match], where: list[tuple[str, str]], fixes: Fixes) -> list[dict]:
     """Names shared by different players, split automatically (your answer of 14 November: "yeah, split them"). A
     printed name that played for two or more teams in the same competition and season is different men: the name
@@ -569,6 +602,9 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
 
     where = [(section_of(c.competition, divisions[i] or stages[i], c.format, c.level), seasons[i])
              for i, c in enumerate(cls)]
+    joins = auto_joins(parsed, [c.format for c in cls], fixes)
+    if joins:   # the user's own joins first (never changed), then the sure ones found by themselves
+        fixes = dataclasses.replace(fixes, merges={**{x["other"]: x["keep"] for x in joins}, **fixes.merges})
     split = auto_splits(parsed, where, fixes)
     if split:   # the user's own splits first, then the automatic ones (the user's choices are never changed)
         fixes = dataclasses.replace(fixes, splits=list(fixes.splits) + [
@@ -651,6 +687,7 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
 
     frames = dict(
         auto_splits=pd.DataFrame(split, columns=AUTO_SPLIT_COLUMNS),
+        auto_joins=_typed_joins(pd.DataFrame(joins, columns=NM_JOIN_COLUMNS)),
         matches=pd.DataFrame(M, columns=MATCH_COLUMNS),
         innings=pd.DataFrame(I, columns=INNINGS_COLUMNS),
         batting=pd.DataFrame(B, columns=BATTING_COLUMNS),

@@ -77,9 +77,14 @@ def test_merge_suggestions_never_pair_players_from_the_same_match(career):
     target = b[b.player == "S Gill"].match_id.unique()
     b.loc[b.match_id.isin(target[:2]) & (b.player == "S Gill"), "player"] = "S  Gill"
     fake.batting = b
+    from ccstats import lookalike as LA
+    # his first two games under the second spelling, straight before the rest: beyond doubt, so it's one of the pairs
+    # joined by themselves (26 November), not one of those waiting for a click
+    every = LA.pairs(LA.from_tables(fake.batting, fake.bowling, fake.matches))
+    assert {("S Gill", "S  Gill", True)} <= set(zip(every.keep, every.other, every.sure))
     s = checks.merge_suggestions(fake)
-    assert {("S Gill", "S  Gill")} <= set(zip(s.keep, s.other))
-    for r in s.itertuples():
+    assert ("S Gill", "S  Gill") not in set(zip(s.keep, s.other))
+    for r in every.itertuples():
         ma = set(b[b.player == r.keep].match_id)
         mb = set(b[b.player == r.other].match_id)
         assert not ma & mb

@@ -16,7 +16,8 @@ type Preview = { before: Tot[]; after: Tot[]; together?: boolean };
 type Body = { explain?: string; none?: string; players?: string[];
   auto?: { player: string; keep: string; others: { team: string; new_name: string; games: number; where: string }[] }[];
   still?: { player: string; keep: string; separate: string[]; played: string; where: string }[]; kept_together?: string[];
-  pairs?: { keep: string; other: string; keep_matches: number; other_matches: number; teams: string }[];
+  pairs?: { keep: string; other: string; keep_matches: number; other_matches: number; teams: string; why: string }[];
+  joined?: { keep: string; other: string; keep_matches: number; other_matches: number; team: string; why: string }[];
   left?: { match_id: string; text: string; result: string; reason: string }[]; conflicts?: { match_id: string; text: string }[];
   conflict_warn?: string; matches?: { v: string; label: string }[];
   failed?: { file: string; why: string }[]; failed_line?: string; ok?: string; problems?: { file: string; what: string }[];
@@ -168,10 +169,21 @@ function Joins({ b, run, busy }: { b: Body; run: Run; busy: boolean }) {
   const players = b.players ?? [];
   return <>
     {b.none && <div className="saidok">{b.none}</div>}
+    {(b.joined ?? []).length > 0 && <>
+      <div className="plain" style={{ marginTop: 10 }}><b>Joined by themselves, sure to be one player ({(b.joined ?? []).length})</b></div>
+      {(b.joined ?? []).map((r) => (
+        <div key={r.other + r.keep} className="fxitem">
+          <div className="hist"><div><div><b>{r.other}</b> ({r.other_matches} games) now counts as <b>{r.keep}</b> ({r.keep_matches} games) · {r.team}</div>
+            <div className="note" style={{ marginTop: 2 }}>Why: {r.why}, never in the same match, one name straight after the other</div></div>
+            <button className="btn quiet sm" disabled={busy} onClick={() => setOpen(open === "j" + r.other ? "" : "j" + r.other)}>Undo: two players</button></div>
+          {open === "j" + r.other && <PreviewBox body={{ action: "keep_apart", other: r.other, keep: r.keep }} label="Yes, keep them apart" run={run} busy={busy} onCancel={() => setOpen("")} />}
+        </div>))}
+    </>}
+    {(b.pairs ?? []).length > 0 && <div className="plain" style={{ marginTop: 10 }}><b>May be one player: your choice ({(b.pairs ?? []).length})</b></div>}
     {(b.pairs ?? []).map((r) => (
       <div key={r.other + r.keep} className="fxitem">
-        <div className="hist"><span><b>{r.other}</b> ({r.other_matches} games) and <b>{r.keep}</b> ({r.keep_matches} games) · {r.teams}
-          <small> · After: all {r.other_matches + r.keep_matches} games count for {r.keep}</small></span>
+        <div className="hist"><div><div><b>{r.other}</b> ({r.other_matches} games) and <b>{r.keep}</b> ({r.keep_matches} games) · {r.teams}</div>
+          <div className="note" style={{ marginTop: 2 }}>Why: {r.why} · After: all {r.other_matches + r.keep_matches} games count for {r.keep}</div></div>
           <button className="btn quiet sm" disabled={busy} onClick={() => setOpen(open === r.other ? "" : r.other)}>Same player</button></div>
         {open === r.other && <PreviewBox body={{ action: "join", name: r.other, keep: r.keep }} label="Yes, the same player" run={run} busy={busy} onCancel={() => setOpen("")} />}
       </div>))}

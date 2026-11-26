@@ -1,6 +1,7 @@
 """The new alerts (stage 4, your picks of 26 November): Goal reached!, Series won, Milestone reached, Career best,
 Streaks (your winning run reaching 3, 5 or 10; a losing run reaching 3), Ranking moves (your team to No. 1 in a
-format; one of your players into the top 10 of the ratings). They pop up as new matches arrive, beside "New matches"
+format; one of your players into the top 10 of the ratings); and two names joined by themselves, sure to be one player
+(your answer of 26 November). They pop up as new matches arrive, beside "New matches"
 and "New record!". Each is said once: what has been said is remembered with the career (`seen`), so a restart or a
 second look never says it again. Only your teams and their players are alerted on.
 
@@ -13,6 +14,7 @@ import pandas as pd
 
 STREAK_WINS = (3, 5, 10)
 STREAK_LOSSES = (3,)
+LASTING = ("goal|", "join|")   # said about something that stays true: remembered for good
 MIN_BEST = 5       # a career best counts once the player has had this many innings (or bowled in this many matches)
 
 
@@ -28,12 +30,18 @@ def check(career, added: list[str], my_teams: list[str], goals: list[dict], seen
     m = career.matches
     new = m[m.source.isin(set(added))] if "source" in m else m.iloc[0:0]
     mine = [t for t in my_teams if t in set(m.home) | set(m.away)]
-    said = set(seen.get("said", []))
+    order = list(seen.get("said", []))      # in the order said (oldest first)
+    said = set(order)
+
+    def note(key: str) -> None:
+        if key not in said:
+            said.add(key)
+            order.append(key)
 
     def say(key: str, kind: str, title: str, text: str) -> None:
         if key in said:
             return
-        said.add(key)
+        note(key)
         if not first:
             out.append(dict(kind=kind, title=title, text=text))
 
@@ -148,7 +156,25 @@ def check(career, added: list[str], my_teams: list[str], goals: list[dict], seen
                 if team in mine and p not in was and was:
                     say(f"top10|{sec}|{kind}|{p}|{len(m)}", "rank", "Into the top 10",
                         f"{p} is into the top 10 of the {sec} {kind} ratings ({ordinal(top.index(p) + 1)}).")
-    seen["said"] = sorted(said)[-3000:]
+    # ---------------------------------------------------------------- names joined by themselves (sure to be one player)
+    joins = getattr(career, "auto_joins", None)
+    fresh = [r for r in (joins.itertuples() if joins is not None else []) if f"join|{r.other}|{r.keep}" not in said]
+    if len(fresh) > 3:     # many at once: one alert, the list is on Data check
+        for r in fresh:
+            note(f"join|{r.other}|{r.keep}")
+        if not first:
+            out.append(dict(kind="names", title="Names joined",
+                            text=f"{len(fresh)} pairs of names were joined, each sure to be one player. See them (and undo any) "
+                                 "on Data check."))
+    else:
+        for r in fresh:
+            say(f"join|{r.other}|{r.keep}", "names", "Names joined",
+                f"{r.other} now counts as {r.keep} ({r.team}): sure to be one player. Undo on Data check if not.")
+    # what's said about something that stays true (a goal reached, two names joined) is kept for good, or it would be
+    # said again; of the rest (each about one match) the newest 3,000 are kept
+    lasting = [k for k in order if k.startswith(LASTING)]
+    rest = [k for k in order if not k.startswith(LASTING)]
+    seen["said"] = lasting + rest[-3000:]
     seen["started"] = True
     return out, seen
 

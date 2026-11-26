@@ -52,12 +52,17 @@ def _body(career, tab: str) -> dict:
         mg = checks.merge_suggestions(career)
         return dict(
             explain=("**One player under two names.** Sometimes the same player shows up under two slightly different "
-                     "names. The names below look like one player: same initial and surname, same team, and never in the "
-                     "same match together. Different names are never joined by themselves (they could be different "
-                     "people): only your click joins them."),
+                     "names. The site looks for names that may be one player: the same initial and surname, a missing or "
+                     "extra initial, a surname spelt nearly the same on the same team, or a move between teams with the "
+                     "very same surname, and never two names that played in the same match. Pairs that are beyond doubt "
+                     "are joined by themselves (the same team, one name straight after the other, no other candidate); "
+                     "each is listed here with an Undo. The rest wait for your click."),
             pairs=[dict(keep=r.keep, other=r.other, keep_matches=int(r.keep_matches), other_matches=int(r.other_matches),
-                        teams=r.teams) for r in mg.itertuples()],
-            none="" if len(mg) else "No player appears under two names.", players=DC.players(career))
+                        teams=r.teams, why=r.why) for r in mg.itertuples()],
+            joined=[dict(other=r.other, keep=r.keep, team=r.team, why=r.why, other_matches=int(r.other_matches),
+                         keep_matches=int(r.keep_matches)) for r in career.auto_joins.itertuples()],
+            none="" if len(mg) or len(career.auto_joins) else "No player appears under two names.",
+            players=DC.players(career))
     if tab == "Games left out":
         left = career.leftovers
         conf = checks.replay_conflicts(career)

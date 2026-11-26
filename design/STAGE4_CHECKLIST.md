@@ -61,13 +61,17 @@ how it was checked; a page isn't finished while any of its lines is open (your s
 
 **Data check** (Settings section, its own page)
 - [x] Six tabs: Shared names (the automatic splits, each can be undone, plus "separate any other name yourself"), — ✓ Settings · Data check
-      Player with two names (pairs shown, never pre-ticked, joined only by your click; a pair that played in the same
-      match can never be joined), Games left out (count back), Scorecards (what doesn't add up, what was corrected),
+      Player with two names (pairs shown, never pre-ticked, joined only by your click, except pairs beyond doubt,
+      joined by themselves and undoable (answer 22); a pair that played in the same match can never be joined), Games left out (count back), Scorecards (what doesn't add up, what was corrected),
       Copies (a match saved twice), Your changes (each can be undone) (answers 15, 16); Team catches removed (no
       fielding)
 - [x] "Updating every number with your change…" with the progress bar, the site usable meanwhile (answer 18) — ✓ Data check (in the background; career changes wait for it; tested)
 - [x] On My team: "Worth a minute of your time → Data check", only when something needs you (answer 17) — ✓ My team, only when something needs you (tested)
-- [x] A test that no name is ever joined without your saved choice — ✓ tests/test_stage4_datacheck.py (nothing joined without your click; never in the same match)
+- [x] A test that no name is ever joined without your saved choice — ✓ tests/test_stage4_datacheck.py (nothing joined without your click; never in the same match); since answer 22, only pairs beyond doubt are joined by themselves (tests/test_stage4_names.py)
+- [x] Answer 22: the wider search (near-spellings, a missing or extra initial, a move with the very same surname), each pair with why — ✓ Data check · Player with two names ("Why: …" under each pair; tests/test_stage4_names.py)
+- [x] Answer 22: pairs beyond doubt joined by themselves, listed, "Undo: two players" with the numbers first, joined again from Your changes — ✓ Data check · Player with two names, Your changes (browser click-through in tests/test_web_stage4.py)
+- [x] Answer 22: an alert once when names are joined by themselves — ✓ "Names joined" pop-up (tests/test_stage4_names.py)
+- [x] Answer 22 parity: a player printed two ways and joined by itself gives every number the same as one name all along — ✓ tests/test_stage4_names.py
 
 **Live alerts** (every page)
 - [x] New matches, New record!, files that couldn't be read (as now) — ✓ as before, now with the new alerts beside them
@@ -113,7 +117,7 @@ Fielding lines (Team catches) are taken out by your rule of 14 November and are 
 - [x] *markdown* The scorecards leave a few things unclear. Each one is explained below, with a one-click fix where there's a safe answer. Nothing changes until you click, and every change can be undone under Your changes. — ✓ Data check · Scorecards (what doesn't add up, what was put right, files that couldn't be read)
 - [x] *markdown* **What needs you** — ✓ Data check · What needs you (top tile) and the page heading
 - [x] *markdown* - 👉 **4 names** are used by two different players, so their stats are mixed together (one click to keep them apart) → *Name shared by 2 players* - 👉 **2 knockout games** look like leftovers from a replayed season → *Games left out* — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
-- [x] *markdown* ✅ All 106 scorecards add up · ✅ No player appears under two names — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+- [x] *markdown* ✅ All 106 scorecards add up · ✅ No player appears under two names — ✓ Data check · Player with two names (pairs beyond doubt joined by themselves and undoable, the rest only by your click; never in the same match; the fix preview)
 - [x] *tab* Name shared by 2 players · 4 — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
 - [x] *markdown* **Two different players with the same name.** The game prints only an initial and surname, so two players can end up with the same name, like *R Patel* at Leicestershire and *R Patel* at Surrey. The site then adds their runs and wickets together as if they were one person. A player can't play for two teams in the same season of a competition, so each name below is almost certainly two people. — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
 - [x] *markdown* **Keep all 4 apart.** Each name stays with the team it played most games for, and the player at the other team gets the team added to their name, e.g. *M Khan (Lucknow Super Giants)*. — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
@@ -130,12 +134,12 @@ Fielding lines (Team catches) are taken out by your rule of 14 November and are 
 - [x] *caption* For a name the site didn't spot: pick the player, the team where it's really someone else, and the name to show for them. — ✓ Data check · Shared names · Separate any other name yourself (find a player, the team, the name to show; the fix preview)
 - [x] *selectbox* Player [587 options: A Afridi, A Ahmed, A Auguste, A Awais, A Azad, A Badoni, A Basith, A Carey…] — ✓ Data check · Shared names · Separate any other name yourself (find a player, the team, the name to show; the fix preview)
 - [x] *tab* Player with 2 names · 0 — ✓ Data check · the six tabs (your answer 15)
-- [x] *markdown* **One player under two names.** Sometimes the same player shows up under two slightly different names. The names below look like one player: same initial and surname, same team, and never in the same match together. — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
-- [x] *success* No player appears under two names. — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
-- [x] *expander* Join any two names yourself — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
-- [x] *selectbox* This name… [587 options: A Afridi, A Ahmed, A Auguste, A Awais, A Azad, A Badoni, A Basith, A Carey…] — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
-- [x] *selectbox* …is the same player as [587 options: A Afridi, A Ahmed, A Auguste, A Awais, A Azad, A Badoni, A Basith, A Carey…] — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
-- [x] *button* Count them as one player — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+- [x] *markdown* **One player under two names.** Sometimes the same player shows up under two slightly different names. The names below look like one player: same initial and surname, same team, and never in the same match together. — ✓ Data check · Player with two names (pairs beyond doubt joined by themselves and undoable, the rest only by your click; never in the same match; the fix preview)
+- [x] *success* No player appears under two names. — ✓ Data check · Player with two names (pairs beyond doubt joined by themselves and undoable, the rest only by your click; never in the same match; the fix preview)
+- [x] *expander* Join any two names yourself — ✓ Data check · Player with two names (pairs beyond doubt joined by themselves and undoable, the rest only by your click; never in the same match; the fix preview)
+- [x] *selectbox* This name… [587 options: A Afridi, A Ahmed, A Auguste, A Awais, A Azad, A Badoni, A Basith, A Carey…] — ✓ Data check · Player with two names (pairs beyond doubt joined by themselves and undoable, the rest only by your click; never in the same match; the fix preview)
+- [x] *selectbox* …is the same player as [587 options: A Afridi, A Ahmed, A Auguste, A Awais, A Azad, A Badoni, A Basith, A Carey…] — ✓ Data check · Player with two names (pairs beyond doubt joined by themselves and undoable, the rest only by your click; never in the same match; the fix preview)
+- [x] *button* Count them as one player — ✓ Data check · Player with two names (pairs beyond doubt joined by themselves and undoable, the rest only by your click; never in the same match; the fix preview)
 - [x] *tab* Games left out · 0 — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
 - [x] *markdown* **Games from an earlier playthrough.** When you reload a save and play part of a season again, the game saves each replayed match over its old file. But a knockout with different teams gets a new file, so the old game stays in your Scorecards folder. That's how one IPL season can end up with three finals. The site spots these from when each file was saved and leaves them out of every stat. Nothing — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
 - [x] *success* Every match counts: none are from an earlier playthrough. — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
@@ -288,19 +292,19 @@ Fielding lines (Team catches) are taken out by your rule of 14 November and are 
   - [x] *text_input* dc_spn_{t} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
   - [x] *button* Make them a separate player — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
   - [x] *button* dc_sp_go — ✓ the old site's internal name or setting, not shown; the new site has the same thing
-  - [x] *markdown* **One player under two names.** Sometimes the same player shows up under two slightly different names. The names below look like one player: same initial and surname, same team, and never in the same match together. — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
-  - [x] *success* No player appears under two names. — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+  - [x] *markdown* **One player under two names.** Sometimes the same player shows up under two slightly different names. The names below look like one player: same initial and surname, same team, and never in the same match together. — ✓ Data check · Player with two names (pairs beyond doubt joined by themselves and undoable, the rest only by your click; never in the same match; the fix preview)
+  - [x] *success* No player appears under two names. — ✓ Data check · Player with two names (pairs beyond doubt joined by themselves and undoable, the rest only by your click; never in the same match; the fix preview)
   - [x] *markdown* **{html.escape(r.other)}** ({r.other_matches} games) and **{html.escape(r.keep)}** ({r.keep_matches} games) · {html.escape(r.teams)} — ✓ Data check · Player with two names (each pair with their games and teams)
   - [x] *markdown* After: all {r.other_matches + r.keep_matches} games count for {html.escape(r.keep)} — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
-  - [x] *button* Same player — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+  - [x] *button* Same player — ✓ Data check · Player with two names (pairs beyond doubt joined by themselves and undoable, the rest only by your click; never in the same match; the fix preview)
   - [x] *button* dc_m_{i} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
-  - [x] *expander* Join any two names yourself — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
-  - [x] *selectbox* This name… — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+  - [x] *expander* Join any two names yourself — ✓ Data check · Player with two names (pairs beyond doubt joined by themselves and undoable, the rest only by your click; never in the same match; the fix preview)
+  - [x] *selectbox* This name… — ✓ Data check · Player with two names (pairs beyond doubt joined by themselves and undoable, the rest only by your click; never in the same match; the fix preview)
   - [x] *selectbox* dc_ma — ✓ the old site's internal name or setting, not shown; the new site has the same thing
-  - [x] *selectbox* …is the same player as — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+  - [x] *selectbox* …is the same player as — ✓ Data check · Player with two names (pairs beyond doubt joined by themselves and undoable, the rest only by your click; never in the same match; the fix preview)
   - [x] *selectbox* dc_mb — ✓ the old site's internal name or setting, not shown; the new site has the same thing
-  - [x] *warning* {a} and {b} played in the same match, so they can't be one player. — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
-  - [x] *button* Count them as one player — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+  - [x] *warning* {a} and {b} played in the same match, so they can't be one player. — ✓ Data check · Player with two names (pairs beyond doubt joined by themselves and undoable, the rest only by your click; never in the same match; the fix preview)
+  - [x] *button* Count them as one player — ✓ Data check · Player with two names (pairs beyond doubt joined by themselves and undoable, the rest only by your click; never in the same match; the fix preview)
   - [x] *button* dc_m_go — ✓ the old site's internal name or setting, not shown; the new site has the same thing
   - [x] *markdown* **Games from an earlier playthrough.** When you reload a save and play part of a season again, the game saves each replayed match over its old file. But a knockout with different teams gets a new file, so the old game stays in your Scorecards folder. That's how one IPL season can end up with three finals. The site spots these from when each file was saved and leaves them out of every stat. Nothing to do, unless one of them should count. — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
   - [x] *success* Every match counts: none are from an earlier playthrough. — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)

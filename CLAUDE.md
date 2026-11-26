@@ -62,8 +62,11 @@ Read these at the start of every session. They come from the owner and hold unti
 - No fielding anywhere on the new site (14 November): no catches, stumpings or run-out credits shown, and none in any
   calculation (marks, impact, MVP points); only who keeps wicket is worked out quietly. A name playing for two teams in
   the same competition and season is split automatically (listed on Data check, can be undone).
-- Different printed names are never merged automatically (14 November: "they could be different people"); only the
-  owner's own choice on the Data check page joins two names.
+- Different printed names (**changed 26 November**, the owner: "do what you feel; if you're confused, only I"): Data
+  check looks widely for names that may be one player (near-spellings, a missing or extra initial, a move between
+  teams; never two names in the same match) and lists every pair with why. Only pairs beyond doubt are joined by
+  themselves (same team, never together, one name stops exactly where the other starts, no other candidate): each is
+  listed, undoable, and the owner is told. Anything less sure waits for the owner's own click; never pre-ticked.
 - Competition order everywhere (14 November, "always"): Tests, ODIs, T20Is first, then franchise leagues, then
   domestic competitions; most matches first within each group.
 - The plan, stages and approvals: `NEW_SITE_PLAN.md`.
