@@ -18,8 +18,8 @@ the owner says go. Questions for every new piece are asked in one sitting first 
       page
 - [ ] Safe updates: each download checked complete and unchanged before it's installed; else the version you have
       stays and it tries again later
-- [ ] "What's new" in plain words after each update
-- [ ] The guided tour on first start (about five tips; "Show me around again" in Settings)
+- [ ] "What's new" in plain words after each update: only in Settings, with a small "Updated" mark in the menu
+- [ ] The guided tour on first start: every section (all ten menu items and the search bar), Next and Skip; "Show me around again" in Settings
 - [ ] Your data stays where it is (Documents\Cricket Captain Stats Pack); existing careers open with nothing to convert
 - [ ] The site reopens where you left off (your choice of 14 November)
 - [ ] Windows may warn "unknown publisher" once (not signed): said in the README
@@ -32,7 +32,7 @@ the owner says go. Questions for every new piece are asked in one sitting first 
 - [ ] 4. Selection review (My team): dropped after a good score, kept through a poor run, how often the side changes
 - [ ] 5. Records within reach (My team): career and all-time team records your players could break soon
 - [ ] 6. Stat by stat: against one chosen opponent; by result (wins, defeats, chasing only)
-- [ ] 8. Partnership breakers: bowlers who end stands of 50 and more
+- [ ] 8. Partnership breakers: bowlers who end stands of 50 and more, in Player stories and on Stat by stat, a line on each bowler's Player page
 - [ ] 9. Player form alerts: a hot streak or a slump, beside the team streak alerts
 - [ ] 10. Career arc: the usual development over a player's 1st, 2nd, 3rd seasons and on, each of your players against it
 - [ ] 11. Your eras: the strongest stretches by the ratings, named, with their key players and results

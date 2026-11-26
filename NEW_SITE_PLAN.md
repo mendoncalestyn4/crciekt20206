@@ -1540,6 +1540,40 @@ reopens where you left off.
 **After stage 6 (your plan, 26 November):** you review the whole finished Stats Pack, and anything you find is fixed
 then, at the root, with the same checks as every stage.
 
+## 22. Stage 5: the questions answered in one sitting (26 November)
+
+**The program:** your icon as redrawn (approved); an update looked for each time it opens; "What's new" only in
+Settings (no pop-up; a small "Updated" mark in the menu leads to it); the first-start tour points out every section
+(all ten menu items and the search bar), with Next and Skip.
+
+**The new pieces:**
+- **Who's fading:** this season clearly below their own earlier seasons in the same competition (the measure Breakout
+  players uses), at least 5 innings or 5 bowling matches in both; your teams' players only, each with a suggested
+  replacement.
+- **Then and now:** a tab on the Teams page for any team, with 1, 3 and 5 seasons ago (only those the career has).
+- **Selection review** (a tab on My team): a good score is 50+ in Tests and ODIs, 40+ in T20s, or 4+ wickets (5+ in
+  Tests), then left out of the next match; a poor run is 5 innings in a row under 15 (T20s under 10), or 5 matches
+  without a wicket, and still picked.
+- **Records within reach:** one good match away (100 runs in Tests, 75 in ODIs, 50 in T20s; 5 wickets, 3 in T20s);
+  career and all-time team records, your players, on My team.
+- **Partnership breakers:** in both places: a tab in Player stories and a new stat on Stat by stat (stands of 50+
+  ended), plus a line on each bowler's Player page.
+- **Form alerts:** hot is 3 scores of 50+ in a row (T20s 30+) or 3 matches in a row with 3+ wickets (T20s 2+); a
+  slump is 5 innings in a row under 15 (T20s under 10) or 5 matches without a wicket; your players, each said once.
+- **Career arc:** an Insights tab with the usual curve by season of career, and a line on each Player page (ahead of,
+  on or behind the usual curve).
+- **Your eras:** a tab on the Teams page (any team), stretches of 2+ seasons near the top of the ratings, named by
+  years, with key players and results; your current era also a line on My team.
+- **On this day:** shown only when something happened on that exact date in an earlier season; otherwise hidden.
+- **Stat by stat · against an opponent:** tick boxes, any number of opponents together.
+- **Opponent preview additions:** the 3 most in-form players on each side (last 5 innings or matches) and every record
+  within reach in that match.
+- **Scorecards put right by the fair guess:** only the quiet note on that match's page.
+
+**Decided by me (said here so you know):** the exact layout, wording and chart type of each new piece (in the site's
+style, with its three lines under every chart); how the updates repository is laid out; which old tests move or go;
+the README's wording; the order of building (the program first, the pages in its waits).
+
 ## Appendix: technical outline
 
 **Kept**
