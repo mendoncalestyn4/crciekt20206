@@ -1320,6 +1320,36 @@ competitions (20-35 s while the stress test was running alongside), Hall of fame
 - Two chart parts the site needed were never switched on (labels kept apart, words drawn on a chart).
 - A stray escape in the browser checks' script.
 
+## 18. Stage 4: your answers (26 November)
+
+Asked before building, as questions with the answers written out (your choice); the checklist is
+`design/STAGE4_CHECKLIST.md`.
+
+1. Fixtures keeps all 8 tabs with the old names.
+2. Schedules are made only for your teams; every other team's matches come from the saved scorecards by themselves.
+3. A franchise or county schedule: pick the competition, opponents from that league only (new, your yes).
+4. All four ways to add matches stay (series form, tournament form, "type your whole year", the match-by-match table).
+5. Undo: a list of recent changes, each with its own undo.
+6. Goals: the old four, plus (new, your yes) win a title, reach the playoffs / top N, unbeaten at home, reach No. 1 in
+   the ratings, beat a rival, win an away series, win streak, top scorer / top wicket-taker, season average target,
+   hundreds or five-fors. Not picked: Player of the Series, win X% of matches.
+7. Both calendars stay (your team's on Fixtures, each competition's on Seasons).
+8. Settings in tabs (Careers, Your teams, Backups, Logos, Colours, Problems); Data check its own page there.
+9. A career added all four ways (folder, uploaded folder, files or a zip, a career file), and downloaded as a file.
+10. Rename and remove a career (new, your yes), a backup made first.
+11. The first-start screen kept, with the demo league.
+12. "Which teams do you play as?" kept, offering all 235 of the game's teams.
+13. Backups weekly, newest 8, plus a copy before every Data check change and every update; and (your extra ask) one
+    button that deletes every backup and every career on the PC, a full reset asked twice (the game's Scorecards
+    folder is never touched).
+14. Every career on the PC gets its weekly copy.
+15. Data check's six tabs: Shared names, Player with two names, Games left out, Scorecards, Copies, Your changes (Team
+    catches goes: no fielding).
+16. Pairs that look like one player are shown, never pre-ticked; only your click joins them.
+17. A small "Worth a minute of your time → Data check" line on My team when something needs you.
+18. While a Data check change re-works every number: the message and the progress bar, the site usable.
+19. New alerts (your yes): Goal reached!, Series won, Milestone reached.
+
 ## Appendix: technical outline
 
 **Kept**
