@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { get, type AnalyticsPage, type InsightsPage, type NGrid, type Quad, remember } from "../api";
 import { Explain, Missing, Num, Pick, Tile, three } from "../kit/base";
+import { PName } from "../kit/base";
 import { HomeBars, Quadrant, SeasonLine } from "../kit/insights";
 import { BatFirstSides, MatchWinners, StrengthPanel } from "../kit/season";
 import { Grid, SignedBars } from "../kit/teams";
@@ -158,6 +159,12 @@ export function Insights() {
               <Tile key={p.title} span={6} title={p.title} right={p.sub}>
                 {p.none ? <div className="plain">{p.none}</div> : p.rows && <><SignedBars rows={p.rows} /><Explain {...three(p)} /></>}
               </Tile>))}
+            {d.fading && <Tile span={12} title={d.fading.title} right={d.fading.sub}>
+              {d.fading.none ? <div className="plain">{d.fading.none}</div> : <><table className="c"><thead><tr><th>Player</th><th>Team</th><th>Fading in</th>
+                <th className="r">Drop</th><th>Suggested replacement</th></tr></thead><tbody>{d.fading.rows?.map((r) => (
+                <tr key={r.player + r.what}><td><PName p={r.player} px={21} /><div className="how">{r.line}</div></td><td><span className="why">{r.team}</span></td>
+                  <td><span className="why">{r.what}</span></td><td className="r"><span className="tn">{r.drop}</span></td><td><span className="why">{r.pick}</span></td></tr>))}</tbody></table>
+                {d.fading.note && <div className="note">{d.fading.note}</div>}</>}</Tile>}
             {d.note && <div className="note" style={{ gridColumn: "span 12" }}>{d.note}</div>}
           </>}
         </>}

@@ -176,3 +176,24 @@ def test_preview_in_form_players(tmp_path):
             assert len(lifts) <= 3 and all(x > 0 for x in lifts) and lifts == sorted(lifts, reverse=True)
     finally:
         s.stop()
+
+
+# --------------------------------------------------------------------------- who's fading
+def test_whos_fading_picks_only_clear_drops_of_your_players(c):
+    """Only your teams' players, only a clear drop (by format), the biggest drop first; the measure is the breakouts'
+    own, so the numbers shown are the ones Breakout players works out."""
+    import pandas as pd
+    from server import insightspage as IP
+    from ccstats.stats import KIND
+    sec = "Tests" if "Tests" in set(c.matches.section) else c.matches.section.iloc[0]
+    kind = KIND.get(c.matches[c.matches.section == sec].format.iloc[0], "one")
+    cut = IP.FADE["bat"][kind]
+    bat = pd.DataFrame([dict(player="A Mine", teams="England", now=10.0, before=10.0 + cut + 2, now_innings=6, before_innings=8, jump=-(cut + 2)),
+                        dict(player="B Mine", teams="England", now=10.0, before=10.0 + cut - 1, now_innings=6, before_innings=8, jump=-(cut - 1)),
+                        dict(player="C Theirs", teams="India", now=1.0, before=30.0, now_innings=6, before_innings=8, jump=-29.0),
+                        dict(player="D Mine", teams="Lions / England", now=0.0, before=40.0, now_innings=6, before_innings=8, jump=-40.0)])
+    out = IP._fading(c, sec, "2027", bat, pd.DataFrame(), ["England"], 5)
+    assert [r["player"] for r in out["rows"]] == ["D Mine", "A Mine"]            # biggest drop first; B not clear; C not yours
+    assert out["rows"][0]["team"] == "England" and out["rows"][1]["drop"] == f"{-(cut + 2):+.1f}"
+    none = IP._fading(c, sec, "2027", bat, pd.DataFrame(), ["Nobody FC"], 5)
+    assert "none" in none and "rows" not in none

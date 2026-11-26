@@ -72,7 +72,7 @@ def insights_page(career, q: dict, mine: list[str]) -> dict:
         body = kept(career, ("insights_seasons", sec), lambda: _seasons(career, sec))
     elif tab == TABS[5]:
         season, least = str(q.get("season", "")), _int(q, "min", 0, 99)
-        body = kept(career, ("insights_breakouts", sec, season, least), lambda: _breakouts(career, sec, season, least))
+        body = kept(career, ("insights_breakouts", sec, season, least, mine_t), lambda: _breakouts(career, sec, season, least, mine))
     else:
         body = kept(career, ("insights_innings", sec), lambda: _innings(career, sec))
     return SG.clean({**head, **body})
@@ -347,7 +347,57 @@ def _seasons(career, sec) -> dict:
 
 
 # --------------------------------------------------------------------------- breakout players
-def _breakouts(career, sec, season, least) -> dict:
+FADE = {"bat": {"t20": 5.0, "one": 8.0, "multi": 10.0}, "bowl": {"t20": 4.0, "one": 6.0, "multi": 8.0}}   # a clear drop
+
+
+def _fading(career, sec, season, bat, bowl, mine, least) -> dict:
+    """Who's fading (stage 5, your answers of 26 November): your teams' players this season clearly below their own
+    earlier seasons here, on the same measure as the breakouts (at least `least` innings both ways), each with the best
+    pick to take their place from the Scouting list."""
+    from ccstats import scouting as SC
+    from ccstats.stats import KIND
+    m = career.matches[career.matches.section == sec]
+    kind = KIND.get(m.format.iloc[0], "one") if len(m) else "one"
+    mine_s = set(mine)
+    rows = []
+    for d, job in ((bat, "bat"), (bowl, "bowl")):
+        if d.empty:
+            continue
+        for r in d[d.jump <= -FADE[job][kind]].sort_values("jump").itertuples():
+            teams = [t for t in str(r.teams).split(" / ") if t in mine_s]
+            if not teams:
+                continue
+            team = teams[0]
+            pick = ""
+            try:
+                own = SC.own_numbers(career, team, sec)
+                if r.player in own.index:
+                    p = SC.picks_for(career, team, sec, r.player, own.loc[r.player].role, top=1)
+                    if p:
+                        pick = f"{p[0]['player']} ({p[0]['role'].lower()}{', ' + format(p[0]['gain'], '+.0%') + ' better' if p[0]['clears'] else ''})"
+            except Exception:  # noqa: BLE001 - no scouting pick for this competition: the player is still listed
+                pick = ""
+            unit = "runs above average" if job == "bat" else "runs saved"
+            rows.append(dict(player=r.player, team=team, what="batting" if job == "bat" else "bowling",
+                             now=fmt(r.now, 1), before=fmt(r.before, 1), drop=f"{r.jump:+.1f}",
+                             line=f"{unit} per innings: {fmt(r.now, 1)} in {season} ({int(r.now_innings)} inns) against "
+                                  f"{fmt(r.before, 1)} before ({int(r.before_innings)} inns)",
+                             pick=pick or "no clear replacement in the Scouting list yet"))
+    out = dict(title="Who's fading", sub=f"your players clearly below their own earlier seasons, {season}")
+    if not rows:
+        out["none"] = (f"None of your players is clearly down on their earlier seasons here (a drop of "
+                       f"{FADE['bat'][kind]:.0f}+ runs a innings batting, {FADE['bowl'][kind]:.0f}+ bowling, with "
+                       f"{least}+ innings both ways).")
+    else:
+        out["rows"] = rows
+        out["note"] = (f"A clear drop: {FADE['bat'][kind]:.0f} or more runs above average per innings batting, "
+                       f"{FADE['bowl'][kind]:.0f} or more runs saved per innings bowling, measured as the breakouts are. "
+                       "The replacement is the Scouting tab's best pick for their role (with how much better, when it "
+                       "clears the bar).")
+    return out
+
+
+def _breakouts(career, sec, season, least, mine=()) -> dict:
     m = career.matches
     seasons = sorted(map(str, m[m.section == sec].season.unique()), reverse=True)
     season = season if season in seasons else seasons[0]
@@ -377,6 +427,7 @@ def _breakouts(career, sec, season, least) -> dict:
                 "them).", best_label="Improved most"))
         parts.append(part)
     out["parts"] = parts
+    out["fading"] = _fading(career, sec, season, bat, bowl, mine, least)
     out["note"] = ("Each season is measured against that season's own average, so a year when everyone scored more doesn't "
                    "make everyone look improved. Hover a bar for the before-and-after figures.")
     return out

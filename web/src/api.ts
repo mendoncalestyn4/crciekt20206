@@ -548,6 +548,8 @@ export type SeasonChart = { label: string; id: string; dec: number; points: { se
 export type InsightsPage = {
   choices: { section: string; matches: number }[]; tabs: string[]; tab: string; options?: string[]; section?: string; none?: string;
   seasons?: string[]; season?: string; what?: string; score?: number; default?: number; multi?: boolean;
+  fading?: { title: string; sub: string; none?: string; note?: string;
+    rows?: { player: string; team: string; what: string; now: string; before: string; drop: string; line: string; pick: string }[] };
   board?: { label: string; pct: string; line: string; res: string }; teams?: string[]; team?: string;
   sides?: InsightSide[]; sides_note?: string; bands?: { rows: SignedBar[]; size: number } & Three; strong?: NGrid;
   kind?: string; aim?: NGrid; aim_none?: string; aim_lines?: { is_: string; for_: string };
