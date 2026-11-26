@@ -1451,34 +1451,30 @@ Stage 5 starts only when you say so ("I'll tell you when to start"); stage 4 sta
 
 ## 21. Stage 5: more added (26 November)
 
-New pieces go into stage 5 (your choice: "everything into stage 5", then trimmed and added to the same day). Stage 5
-grows from about 3–4 days to about 7–8. Each is asked about in full (what it shows, where it
-lives, edge cases) before it's built, and gets its checklist lines, tests and screenshots like the rest. There is no
-stage 7.
-1. **Next match briefing:** before each fixture, one page with the opponent's danger players and how your bowlers have
-   done against them, your in-form players, the last meetings, your chance and the score to aim for.
-2. **Who's rising, who's fading:** each of your players season by season, the clear risers and decliners named, and a
-   fading regular paired with a suggested replacement from the scouting list.
-3. **Then and now:** your team now against the same team 1, 3 or 5 seasons ago (batting, bowling, results, the players
-   who've changed).
-
-Also added (26 November, after checking what the site already shows; the splits against stronger or weaker teams, in
-wins and defeats, consistency, conversion and how they get out are on the Player page already):
-4. **Batting under pressure:** a new split on the Player page, "When they came in": the team in trouble, steady or
-   flying, from the score and wickets down when each batter walked in (worked out already, never shown until now).
-5. **Best batting pairs:** on the Teams page, which two named batters put on the most runs together over a career, on
-   average, and how often.
-6. **A career years from now:** a made-up 20-season career (about 15,000 matches) joins the checks, so every page is
-   shown correct and quick as your career grows.
-Not picked: finding next year's game (Cricket Captain 2027) by itself.
-Also added (26 November, all four picked):
-7. **Selection review** (My team): every XI you picked, from your scorecards: who was dropped straight after a good
+New pieces go into stage 5 (your choices of 26 November). **Checked against the site the same day:** five of the ideas
+first offered were already there, and are not built again: the opponent preview (Teams · Opponent preview: opens on
+your next match with form, the predicted result, a game plan, head to head and your best XI against them); batting
+under pressure (Player page · When they came in, with their rescue innings); big-match players (Player page · Big
+matches); batting pairs (Player stories · Pairs); risers (Insights · Breakout players). What's left, each asked about in
+full before it's built, with its checklist lines, tests and screenshots (stage 5 about 6–7 days):
+1. **On the opponent preview, the missing pieces:** your in-form players and the records your players could break in
+   that match (instead of a separate briefing page).
+2. **Who's fading:** beside Breakout players, your players whose numbers are clearly dropping season on season, each
+   paired with a suggested replacement from the scouting list.
+3. **Then and now:** your team now against the same team 1, 3 or 5 seasons ago, side by side (batting, bowling,
+   results, the players who've changed).
+4. **Selection review** (My team): every XI you picked, from your scorecards: who was dropped straight after a good
    score, who kept their place through a poor run, and how often you change the side compared with other teams.
-8. **Big-match players:** each player's numbers in knockouts and finals against ordinary games: a new split on the
-   Player page and a "best in big matches" list.
-9. **Records within reach:** team and career records your players could break soon ("140 runs off England's Test
-   record"), on My team and in the next match briefing.
-10. **Stat by stat, two more filters:** against one chosen opponent, and by result (in wins, in defeats, chasing only).
+5. **Records within reach:** career and all-time team records your players could break soon ("140 runs off England's
+   Test record"), on My team (the Fixtures page already lists series records in reach).
+6. **Stat by stat, two more filters:** against one chosen opponent, and by result (in wins, in defeats, chasing only).
+7. **A career years from now:** a made-up 20-season career (about 15,000 matches) joins the checks, so every page is
+   shown correct and quick as your career grows.
+
+Not wanted (26 November): finding next year's game by itself, keyboard shortcuts, table downloads, Windows
+notifications, a second safety copy, self-repair, the window remembered; nor bowler workload watch, record book
+history, a printable season report, search everything. Also checked in stage 5 (your choice of 14 November): the site
+reopens where you left off.
 
 **After stage 6 (your plan, 26 November):** you review the whole finished Stats Pack, and anything you find is fixed
 then, at the root, with the same checks as every stage.
