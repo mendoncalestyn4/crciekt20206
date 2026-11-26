@@ -125,3 +125,54 @@ def test_form_alerts_on_made_streaks(c):
 def test_form_alerts_only_for_your_players(c):
     from ccstats import alerts as AL
     assert AL.form_alerts(c, c.matches, ["Nobody FC"]) == []
+
+
+# --------------------------------------------------------------------------- records within reach
+def test_records_within_reach_counted_again_by_hand(c):
+    """Every record named is the real record (the team's own or the competition's), held by someone else, the player
+    still plays for the team, and he needs no more than one good match to pass it."""
+    from ccstats import reach as R
+    from ccstats.stats import KIND
+    m = c.matches
+    seen = 0
+    for sec in m.section.unique():
+        here = m[m.section == sec]
+        teams = sorted(set(here.home) | set(here.away))
+        w = R.within(c, sec, teams)
+        kind = KIND.get(here.format.iloc[0], "one")
+        bat = c.batting[c.batting.match_id.isin(here.match_id) & c.batting.did_bat.astype(bool)]
+        bowl = c.bowling[c.bowling.match_id.isin(here.match_id)]
+        for r in w.itertuples():
+            src = {"runs": bat.groupby(["player", "team"]).runs.sum(), "wickets": bowl.groupby(["player", "team"]).wickets.sum(),
+                   "hundreds": bat[bat.runs >= 100].groupby(["player", "team"]).size(),
+                   "five-wicket hauls": bowl[bowl.wickets >= 5].groupby(["player", "team"]).size()}[r.unit]
+            pool = src.xs(r.whose, level=1) if r.whose else src.groupby(level=0).sum()
+            assert pool.max() == r.record_value and pool[r.holder] == r.record_value and r.holder != r.player
+            assert pool[r.player] == r.now and r.needed == r.record_value - r.now + 1
+            limit = {"runs": R.RUNS[kind], "wickets": R.WICKETS[kind]}.get(r.unit, 1)
+            assert 0 < r.needed <= limit
+            tm = here[(here.home == r.team) | (here.away == r.team)]
+            last = tm[tm.season == tm.season.max()].match_id
+            assert r.player in set(c.batting[c.batting.match_id.isin(last) & (c.batting.team == r.team)].player) | \
+                set(c.bowling[c.bowling.match_id.isin(last) & (c.bowling.team == r.team)].player)
+            seen += 1
+    assert seen > 10
+
+
+def test_preview_in_form_players(tmp_path):
+    """The opponent preview's in-form players: at most 3 a side, each playing above their own usual over their last 5,
+    the biggest lift first, only current players."""
+    import json
+    from server.app import create_app
+    from serverkit import Live, make_pc
+    store, _, _ = make_pc(tmp_path, team="England", files=FIXTURES)
+    s = Live(create_app(store, web=tmp_path / "nothing", watch_every=0))
+    try:
+        d = s.json("/api/preview?section=Internationals&format=ODI")
+        form = (d.get("head") or {}).get("form") or []
+        assert form and form[-1]["team"] == d["opp"]
+        for side in form:
+            lifts = [float(r["lift"].rstrip("%")) for r in side["rows"]]
+            assert len(lifts) <= 3 and all(x > 0 for x in lifts) and lifts == sorted(lifts, reverse=True)
+    finally:
+        s.stop()

@@ -16,6 +16,7 @@ from ccstats import moments as MO
 from ccstats import analysis as A
 from ccstats import catalogue as CAT
 from ccstats import extras as E
+from ccstats import players as PL
 from ccstats import fixtures as FX
 from ccstats import preview as PV
 from ccstats import seasonal as SN
@@ -206,6 +207,45 @@ def _head(career, ids, me, opp, where_note, where_default) -> dict:
         part("predicted", predicted)
         part("plan", lambda: list(PV.game_plan(career, ids, me, opp)))
         part("aim", lambda: _aim(career, ids, me, opp))
+    part("form", lambda: [dict(team=t, rows=_in_form(career, ids, t)) for t in ([me] if me else []) + [opp]])
+    part("reach", lambda: _reach(career, ids, [t for t in (me, opp) if t]))
+    return out
+
+
+def _in_form(career, ids, team: str, n: int = 3) -> list[dict]:
+    """The side's 3 most in-form players (stage 5): their last 5 innings (or bowling innings) against their own usual,
+    batters and bowlers on the same footing (how far above their own average they are), current players only."""
+    fb, fw = PL.form_guide(career, ids, last=5, min_innings=5)
+    now = set(_current(career, ids, team))
+    rows = []
+    for r in fb[fb.team == team].itertuples():
+        if r.player in now and r.career_avg > 0:
+            rows.append((r.recent_avg / r.career_avg - 1, dict(player=r.player, what="batting", last=r.last,
+                         line=f"averaging {r.recent_avg:.1f} in the last 5 (usually {r.career_avg:.1f})")))
+    for r in fw[fw.team == team].itertuples():
+        if r.player in now and r.career_wpi > 0:
+            rows.append((r.recent_wpi / r.career_wpi - 1, dict(player=r.player, what="bowling", last=r.last,
+                         line=f"{r.recent_wpi:.1f} wickets an innings in the last 5 (usually {r.career_wpi:.1f})")))
+    rows.sort(key=lambda x: -x[0])
+    seen, out = set(), []
+    for lift, d in rows:
+        if lift <= 0 or d["player"] in seen:
+            continue
+        seen.add(d["player"])
+        out.append(dict(d, lift=f"{lift * 100:+.0f}%"))
+        if len(out) == n:
+            break
+    return out
+
+
+def _reach(career, ids, teams: list[str]) -> list[dict]:
+    """Every record within one good match for either side in this match's competitions (stage 5)."""
+    from ccstats import reach as R
+    secs = career.matches[career.matches.match_id.isin(ids)].section.unique()
+    out = []
+    for sec in secs:
+        w = kept(career, ("reach", sec, tuple(teams)), lambda s=sec: R.within(career, s, teams))
+        out += [dict(player=r.player, team=r.team, text=R.sentence(r)) for r in w.itertuples()]
     return out
 
 

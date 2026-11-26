@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { type Explained, get, type GridT, type HowTheyPlay as HowTheyPlayT, type NGrid, type Outcome, type PreviewPage, remember } from "../api";
-import { Explain, Lamps, Logo, Missing, Num, Pick, three, Tile } from "../kit/base";
+import { Explain, Lamps, Logo, Missing, Num, Pick, PName, three, Tile } from "../kit/base";
 import { LeaderBars, ShareRing } from "../kit/charts";
 import { BatFirstSides, VenueRecord } from "../kit/season";
 import { Grid, Md, SignedBars } from "../kit/teams";
@@ -87,6 +87,13 @@ export function Preview() {
           {me && <Tile span={5} title={`📋 Game plan for ${me} v ${d.opp}`}>
             {h.plan ? (h.plan.length ? <ul className="dots plan">{h.plan.map((x) => <li key={x}><Md s={x} /></li>)}</ul>
               : <div className="plain">Nothing stands out yet: not enough games for a clear pattern. Play a few more and it fills in.</div>) : <Missing why={h.missing.plan} />}</Tile>}
+          {h.form && h.form.map((f) => <Tile key={f.team} span={me ? 6 : 12} title={`🔥 ${f.team} in form`} right="their last 5 against their own usual">
+            {f.rows.length ? <table className="c"><tbody>{f.rows.map((r) => (
+              <tr key={r.player}><td><PName p={r.player} px={21} /></td><td><span className="why">{r.what}: {r.line}</span><div className="how">last 5: {r.last}</div></td>
+                <td className="r"><span className="tn">{r.lift}</span></td></tr>))}</tbody></table>
+              : <div className="note">Nobody playing above their usual in their last 5 right now.</div>}</Tile>)}
+          {h.reach && h.reach.length > 0 && <Tile span={12} title="🏁 Records within reach in this match" right="one good match away, either side">
+            <ul className="dots">{h.reach.map((r) => <li key={r.text}><T>{r.text}</T></li>)}</ul></Tile>}
           {me && <Tile span={12} title={h.aim?.kind === "multi" ? "🎯 First-innings totals that won, drew and lost" : "🎯 The score to aim for batting first"}>
             {h.aim ? (h.aim.none ? <div className="plain">{h.aim.none}</div> : (() => {
               const a = h.aim.venues[w];

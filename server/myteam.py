@@ -310,6 +310,13 @@ def section_block(career, team: str, section: str, notes: dict, sched: list) -> 
                    for r in rw.itertuples()])
     piece("milestones", milestones)
 
+    def reach():                                # records within reach (stage 5): one good match away
+        from ccstats import reach as R
+        w = kept(career, ("reach", section, team), lambda: R.within(career, section, [team]))
+        return [dict(player=r.player, needs=f"{r.needed:,} more {r.unit if r.needed != 1 else R.ONE[r.unit]}",
+                     record=r.record, holder=f"{r.holder}, {r.record_value:,}", now=f"{r.now:,}") for r in w.head(8).itertuples()]
+    piece("reach", reach)
+
     def how_you_win():
         bft, avg = TP.bat_first_table(career, ids_all)
         if team not in set(bft.team):

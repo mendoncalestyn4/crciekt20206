@@ -200,6 +200,11 @@ export function MyTeam() {
           <Tile span={6} title="Milestones and records in sight">{b.milestones?.length ? <table className="c"><tbody>{b.milestones.map((r) => (
             <tr key={r.player + r.chasing}><td><PName p={r.player} px={22} /></td><td><span className="why">{r.chasing}</span></td><td className="r"><span className="tn">{r.needs}</span></td></tr>))}</tbody></table>
             : <div className="note">Nobody close to a milestone or a record right now.</div>}</Tile>
+          {b.reach && b.reach.length > 0 && <Tile span={6} title="Records within reach" right="one good match away">
+            <table className="c"><tbody>{b.reach.map((r) => (
+              <tr key={r.player + r.record}><td><PName p={r.player} px={22} /></td>
+                <td><span className="why">needs {r.needs} to pass {r.record}</span><div className="how">record: {r.holder} · now {r.now}</div></td></tr>))}</tbody></table>
+          </Tile>}
           <Tile span={6} title="Rivals at a glance" right="most-played opponents here">
             {b.rivals?.rows.length ? <table className="c"><thead><tr><th>Opponent</th><th className="r">Played</th><th className="r">Record</th><th className="r">Win %</th></tr></thead>
               <tbody>{b.rivals.rows.map((r) => <tr key={r.opponent}><td><span className="cell"><Logo team={r.opponent} size={40} /><Name p={`${r.favourite ? "⭐ " : r.bogey ? "👻 " : ""}${r.opponent}`} px={21} /></span></td>

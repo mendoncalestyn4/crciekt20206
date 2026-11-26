@@ -182,6 +182,7 @@ export type SectionBlock = {
   squad: (SquadRow & { recent: boolean })[] | null;
   stars: { bat: { player: string; runs: number; average: number | null; form: string }[]; bowl: { player: string; wickets: number; economy: number | null }[] } | null;
   alerts: string[] | null; headlines: string[] | null; milestones: { player: string; chasing: string; needs: string }[] | null;
+  reach?: { player: string; needs: string; record: string; holder: string; now: string }[] | null;
   lines_runs?: Three | null; lines_wickets?: Three | null;
   how_you_win: { first: { pct: string; won: number; decided: number }; second: { word: string; pct: string; won: number; decided: number }; extra: string } | null;
   rivals: { rows: { opponent: string; played: number; record: string; win_pct: string; favourite: boolean; bogey: boolean }[];
@@ -413,6 +414,8 @@ export type PreviewPage = { choices: { section: string; matches: number }[]; sec
   tabs: string[]; tab: string; mine_note?: string; where_note?: string; mu?: boolean; cur?: boolean; htp?: string;
   head?: { missing: Record<string, string>; kpis: Fig[]; last5: string[]; caption: string; where_default: string;
     predicted?: Record<string, { line: string; steps: GridT; note: string }> | null; plan?: string[] | null;
+    form?: { team: string; rows: { player: string; what: string; last: string; line: string; lift: string }[] }[] | null;
+    reach?: { player: string; team: string; text: string }[] | null;
     aim?: { none: string; kind: string; note?: string; rests?: string; few?: string; sure?: string;
       venues: Record<string, { line: string; warn?: string; they?: string; meetings?: GridT | null; none?: string; games?: GridT | null }> } | null };
   body?: PreviewBody };
