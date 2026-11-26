@@ -160,6 +160,18 @@ class Site:
             self.store.save_settings(s)
         return r
 
+    def update_settings(self, change):
+        """Change the career's saved settings in one step (read fresh, `change(settings)`, saved), so two changes at
+        once never lose one another. Returns what `change` returns. The current site reads the same file."""
+        name = self.current()
+        if not name:
+            raise KeyError("no career")
+        with self._lock:
+            _, s = self.store.load_settings(name, fresh=True)
+            out = change(s)
+            self.store.save_settings(s)
+        return out
+
     def inbox_state(self, career: Career | None = None) -> dict:
         """Which inbox messages you have read and removed: {"read": set, "removed": set}."""
         career = career if career is not None else self.career()

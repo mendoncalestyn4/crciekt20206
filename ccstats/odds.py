@@ -192,7 +192,7 @@ class _Season:
 
 def season_odds(career, event: str, season: str, games: int | None = None, places: int | None = None,
                 sims: int = 4000, seed: int = 2026, before: pd.Timestamp | None = None, _s: _Season | None = None,
-                extra: int | None = None) -> dict:
+                extra: int | None = None, track: str | None = None) -> dict:
     """{table: one row per side (ODDS_COLUMNS, chances in %), knockouts, games, places, groups, state} for the
     league stage of one competition-season.  `before`: the odds as they stood before that date's games.
     state is "open" (odds worked out), "league over" (every league game played), or "none" (no league)."""
@@ -218,6 +218,7 @@ def season_odds(career, event: str, season: str, games: int | None = None, place
     idx = {t: i for i, t in enumerate(all_teams)}
     elo = np.array([rating.get(t, 1500.0) for t in all_teams])
     orders, rows, any_left = [], [], False
+    track_wins = None
     through = np.zeros((sims, len(all_teams)), dtype=bool)
     for label, tb in standing.groupby("group", sort=False):
         teams = list(tb.team)
@@ -257,6 +258,8 @@ def season_odds(career, event: str, season: str, games: int | None = None, place
                        np.take_along_axis(key, order_local, axis=1)))
         rank = np.empty_like(order_local)
         rank[np.arange(sims)[:, None], order_local] = np.arange(n)[None, :]
+        if track in loc:   # how many of its games left the tracked side won in each run (for "what it needs")
+            track_wins = wins[:, loc[track]] - float(tb.won.iloc[loc[track]])
         for i, t in enumerate(teams):
             through[:, idx[t]] = rank[:, i] < S.places
             rows.append(dict(group=label, team=t, played=int(played[t]), points=float(base_pts[i]),
@@ -274,7 +277,12 @@ def season_odds(career, event: str, season: str, games: int | None = None, place
         table["title"] = [counts[idx[t]] for t in table.team]
     elif not S.knockouts:
         table["title"] = table.top  # no knockouts: the top of the table are the champions
-    return dict(base, table=table, state="open" if any_left else "league over")
+    out = dict(base, table=table, state="open" if any_left else "league over")
+    if track_wins is not None and S.knockouts:
+        thr = through[:, idx[track]]
+        out["path"] = {int(k): float(thr[track_wins == k].mean() * 100) for k in np.unique(track_wins)}
+        out["path_runs"] = {int(k): int((track_wins == k).sum()) for k in np.unique(track_wins)}
+    return out
 
 
 def odds_with_change(career, event: str, season: str, games: int | None = None, places: int | None = None,

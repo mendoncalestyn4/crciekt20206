@@ -303,17 +303,23 @@ def predict(career, ids, mine: str, opp: str, venue: str = "neutral") -> dict:
     from . import teamplay as TP
     from .rankings import team_elo
     m = career.matches[career.matches.match_id.isin(ids)]
-    steps = []
     secs = m.section.unique()
     ra = rb = 1500.0
     if len(secs) == 1:
         table, _ = team_elo(career, secs[0])
         e = table.set_index("team").elo
         ra, rb = float(e.get(mine, 1500.0)), float(e.get(opp, 1500.0))
-    p = 1 / (1 + 10 ** ((rb - ra) / 400))
-    steps.append(("Ratings", f"Elo {ra:.0f} v {rb:.0f}", p * 100))
     from .records import by_played
     g = by_played(career, TP.games(career, ids))  # the last 5 played, not the last 5 dates
+    return _chance(career, ids, g, ra, rb, mine, opp, venue)
+
+
+def _chance(career, ids, g, ra: float, rb: float, mine: str, opp: str, venue: str) -> dict:
+    """The steps of `predict` from the two ratings and the games (in the order played) it's based on."""
+    from . import teamplay as TP
+    steps = []
+    p = 1 / (1 + 10 ** ((rb - ra) / 400))
+    steps.append(("Ratings", f"Elo {ra:.0f} v {rb:.0f}", p * 100))
     last = {t: g[g.team == t].tail(5) for t in (mine, opp)}
     wa, wb = int((last[mine].outcome == "W").sum()), int((last[opp].outcome == "W").sum())
     adj = float(np.clip((wa - wb) * 0.015, -0.06, 0.06))
@@ -335,6 +341,65 @@ def predict(career, ids, mine: str, opp: str, venue: str = "neutral") -> dict:
     multi = TP.is_multi(g)
     d = draw_rate(career, ids) if multi else 0.0
     return dict(win=p * (1 - d) * 100, draw=d * 100, lose=(1 - p) * (1 - d) * 100, steps=steps, multi=multi)
+
+
+def chances_before(career, team: str) -> pd.DataFrame:
+    """Every match the team has played, with the chance it had before the match started: worked out exactly as the
+    site's chance is (ratings, form, head to head, venue), from only the matches played before it in that
+    competition (the ratings as they stood then). One row per match: match_id, date, format, section, opponent,
+    venue, win, draw, lose, outcome."""
+    from . import teamplay as TP
+    from .keep import on_career
+    from .records import by_played
+    from .rankings import team_elo
+
+    def make():
+        m = career.matches
+        mine = m[((m.home == team) | (m.away == team)) & (m.result_type != "no result")]
+        rows = []
+        for sec, ms in mine.groupby("section", sort=False):
+            all_ids = m[m.section == sec].match_id
+            g_all = by_played(career, TP.games(career, all_ids)).reset_index(drop=True)
+            pos = {mid: i for i, mid in enumerate(dict.fromkeys(g_all.match_id))}
+            _, hist = team_elo(career, sec)
+            before = hist.set_index(["match_id", "team"]).before
+            for r in ms.itertuples():
+                if r.match_id not in pos:
+                    continue
+                k = pos[r.match_id]
+                earlier = [mid for mid, i in pos.items() if i < k]
+                g = g_all[g_all.match_id.isin(earlier)]
+                opp = r.away if r.home == team else r.home
+                ra = float(before.get((r.match_id, team), 1500.0))
+                rb = float(before.get((r.match_id, opp), 1500.0))
+                row = g_all[(g_all.match_id == r.match_id) & (g_all.team == team)]
+                venue = row.venue.iloc[0] if len(row) else "neutral"
+                outcome = row.outcome.iloc[0] if len(row) else ""
+                c = _chance(career, earlier, g, ra, rb, team, opp, venue)
+                rows.append(dict(match_id=r.match_id, date=r.date, format=r.format, section=sec, opponent=opp,
+                                 venue=venue, win=c["win"], draw=c["draw"], lose=c["lose"], outcome=outcome))
+        cols = ["match_id", "date", "format", "section", "opponent", "venue", "win", "draw", "lose", "outcome"]
+        return pd.DataFrame(rows, columns=cols).sort_values(["date", "match_id"]).reset_index(drop=True)
+    return on_career(career, ("chances_before", team), make)
+
+
+def prediction_record(career, team: str) -> dict:
+    """How good the chances are, from `chances_before`: in each format, how often the side the chance favoured won
+    (games with a winner only), and how that changes with how sure the chance was."""
+    c = chances_before(career, team)
+    c = c[c.outcome.isin(["W", "L"])]
+    if c.empty:
+        return dict(rows=[], total=dict(games=0, right=0))
+    c = c.assign(fav=np.where(c.win >= c.lose, "W", "L"), sure=np.maximum(c.win, c.lose) / (c.win + c.lose) * 100)
+    c = c.assign(right=c.fav == c.outcome)
+    rows = []
+    order = ["Test", "ODI", "T20I", "First-class", "List A", "T20", "The Hundred"]
+    for fmt in sorted(c.format.unique(), key=lambda f: order.index(f) if f in order else 99):
+        x = c[c.format == fmt]
+        rows.append(dict(format=fmt, games=len(x), right=int(x.right.sum()), pct=float(x.right.mean() * 100),
+                         sure=float(x[x.sure >= 65].right.mean() * 100) if (x.sure >= 65).any() else np.nan,
+                         sure_n=int((x.sure >= 65).sum()), upsets=int((~x.right).sum())))
+    return dict(rows=rows, total=dict(games=len(c), right=int(c.right.sum()), pct=float(c.right.mean() * 100)))
 
 
 def series_odds(p_win: float, p_draw: float, wins_a: int, wins_b: int, left: int) -> dict:

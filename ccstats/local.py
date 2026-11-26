@@ -86,6 +86,7 @@ class CareerSettings:
     teams_asked: bool = False  # the "which teams do you play as?" question was answered (or turned off)
     forecasts: dict = field(default_factory=dict)  # each series' chances before ball one (Fixtures), kept to check
     inbox: dict = field(default_factory=dict)  # the Inbox: {"read": [message ids], "removed": [message ids]}
+    fixture_changes: list = field(default_factory=list)  # Fixtures: the recent changes to the schedule, each undoable
 
 
 def write_atomic(path: Path, data: str | bytes) -> None:

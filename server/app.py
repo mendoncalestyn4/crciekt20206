@@ -33,7 +33,7 @@ from ccstats.colours import TEAM_COLOURS
 from ccstats.local import CareerStore
 from ccstats.competitions import ordered as in_order
 
-from . import analyticspage, comparepage, comppage, leaderteams, storiespage, insightspage, leaderspage, matchpage, myteam, plannerpage, playerpage, previewpage, reviewpage, rivalriespage, seasonpage, styleguide, teampage, tvtpage
+from . import analyticspage, comparepage, comppage, fixturespage, leaderteams, storiespage, insightspage, leaderspage, matchpage, myteam, plannerpage, playerpage, previewpage, reviewpage, rivalriespage, seasonpage, styleguide, teampage, tvtpage
 from .cache import _stamp as cache_stamp, kept, put as cache_put, save as save_kept
 from . import warmers
 from .site import Site
@@ -314,6 +314,45 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         if saved is None:
             return _error("No career is open yet.", 404)
         return _json({"note": saved, "saved": bool(saved)})
+
+    # ------------------------------------------------------------------ Fixtures (stage 4)
+    def _fixtures(c, q):
+        mine = site.my_teams(c, unplayed=True)
+        s = site.settings(c.name)
+        team = q.get("team", "") if q.get("team", "") in mine else (mine[0] if mine else "")
+        if team and s is not None:   # the forecasts for series still to start, kept once, before ball one
+            new = fixturespage.new_forecasts(c, s, team)
+            if new:
+                site.update_settings(lambda x: setattr(x, "forecasts", {**new, **dict(x.forecasts)}))
+                s = site.settings(c.name)
+        return fixturespage.page(c, dict(q), mine, s)
+
+    async def fixtures_(request: Request):
+        if request.method == "POST":
+            try:
+                body = await _body(request)
+            except ValueError as e:
+                return _error(str(e), 415)
+            action, team = str(body.get("action", "")), str(body.get("team", ""))
+
+            def go():
+                c = site.career()
+                if c is None:
+                    return None
+                if team not in site.my_teams(c, unplayed=True):
+                    raise fixturespage.Refused("Schedules are made for your own teams: pick that team in Settings first.")
+                return site.update_settings(lambda st: fixturespage.apply(c, st, team, action, body))
+            try:
+                got = await anyio.to_thread.run_sync(go)
+            except fixturespage.Refused as e:
+                return _error(str(e), 400)
+            if got is None:
+                return _error("No career is open yet.", 404)
+            data, msg = got
+            return _json({**data, "message": msg})
+        q = request.query_params
+        data = await _with_career(lambda c: _fixtures(c, q))()
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
 
     # ------------------------------------------------------------------ My team
     def _myteam(c, team: str, section: str):
@@ -955,6 +994,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/matches/best", best_),
         Route("/api/match/{mid}", match_),
         Route("/api/notes", note_, methods=["POST"]),
+        Route("/api/fixtures", fixtures_, methods=["GET", "POST"]),
         Route("/api/inbox", inbox_, methods=["GET", "POST"]),
         Route("/api/players", players_),
         Route("/api/names", names_),

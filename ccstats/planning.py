@@ -518,3 +518,50 @@ def tournaments_under_way(career, tracked: pd.DataFrame, team: str) -> list[dict
                         won=int((played.outcome == "W").sum()), lost=int((played.outcome == "L").sum()),
                         next_stage=stage, next_opponent=left.opponent.iloc[0] or ""))
     return out
+
+
+# --------------------------------------------------------------------------- stage 4 · the tournament path
+def tournament_path(career, team: str, event: str, season) -> dict | None:
+    """For a league with knockouts the team is in and hasn't finished: where it stands, the games left, its chance
+    of the knockouts and of the title, how many of its games left it needs to win to be fairly sure of a place
+    (through in 9 runs of 10 or more, from the same 4,000 runs of the rest of the league as the chances), and the
+    sides it's most likely to meet there."""
+    from . import odds as OD
+    od = OD.season_odds(career, event, season, track=team)
+    t = od["table"]
+    if od["state"] != "open" or t.empty or team not in set(t.team) or not od["knockouts"]:
+        return None
+    r = t[t.team == team].iloc[0]
+    grp = t[t.group == r.group].reset_index(drop=True)   # the table's own order (points, wins, run rate)
+    pos = int(grp.index[grp.team == team][0]) + 1
+    path = od.get("path", {})
+    runs = od.get("path_runs", {})
+    left = int(r.left)
+    need = next((k for k in sorted(path) if path[k] >= 90 and runs.get(k, 0) >= 20), None)
+    by_wins = [dict(wins=k, chance=float(path[k]), runs=int(runs.get(k, 0))) for k in sorted(path) if runs.get(k, 0) >= 20]
+    likely = t[(t.team != team)].sort_values("playoffs", ascending=False).head(3)
+    return dict(event=event, season=str(season), position=pos, of=len(grp), group=str(r.group) if od["groups"] > 1 else "",
+                points=float(r.points), left=left, places=int(od["places"]), playoffs=float(r.playoffs),
+                title=float(r.title) if np.isfinite(r.title) else np.nan, need=need, by_wins=by_wins,
+                likely=[dict(team=x.team, chance=float(x.playoffs)) for x in likely.itertuples()])
+
+
+# --------------------------------------------------------------------------- stage 4 · the last time v an opponent
+def last_meeting(career, team: str, opp: str, fmt: str) -> dict | None:
+    """The last match between the two in this format: when, the result, and that match's top scorer and best bowler
+    (either side)."""
+    m = career.matches
+    g = m[(m.format == fmt) & (((m.home == team) & (m.away == opp)) | ((m.home == opp) & (m.away == team)))]
+    if g.empty:
+        return None
+    r = g.sort_values(["date", "match_id"]).iloc[-1]
+    b = career.batting[(career.batting.match_id == r.match_id) & career.batting.did_bat]
+    w = career.bowling[career.bowling.match_id == r.match_id]
+    top = b.groupby(["player", "team"]).runs.sum().sort_values(ascending=False)
+    best = w.groupby(["player", "team"]).agg(wickets=("wickets", "sum"), runs=("runs", "sum"))
+    best = best.sort_values(["wickets", "runs"], ascending=[False, True])
+    from .fixtures import _outcome
+    return dict(match_id=r.match_id, date=r.date, result=r.result, outcome=_outcome(r, team),
+                top=dict(player=top.index[0][0], team=top.index[0][1], runs=int(top.iloc[0])) if len(top) else None,
+                best=dict(player=best.index[0][0], team=best.index[0][1], wickets=int(best.wickets.iloc[0]),
+                          runs=int(best.runs.iloc[0])) if len(best) and best.wickets.iloc[0] > 0 else None)

@@ -1281,6 +1281,9 @@ def goal_progress(career, tracked: pd.DataFrame, goal: dict) -> dict:
         done = min(won / target, 1.0) if target else 0.0
         return dict(done=done, text=f"{won} of {target} {fmt} wins" + (f" in {year}" if year else ""),
                     status="achieved" if done >= 1 else "under way")
+    from . import goals as GL   # the kinds added in stage 4 (team and player goals)
+    if kind in GL.KINDS:
+        return GL.progress(career, goal)
     return dict(done=0.0, text="", status="unknown")
 
 
@@ -1295,6 +1298,9 @@ def goal_label(goal: dict) -> str:
                 + (f" in {goal['year']}" if goal.get("year") else " in their career"))
     if k == "wins":
         return f"{goal.get('team')}: {goal.get('target')} {goal.get('format')} wins" + (f" in {goal['year']}" if goal.get("year") else "")
+    from . import goals as GL
+    if k in GL.KINDS:
+        return GL.label(goal)
     return "Goal"
 
 
