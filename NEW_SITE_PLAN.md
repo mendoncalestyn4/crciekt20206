@@ -1456,7 +1456,7 @@ first offered were already there, and are not built again: the opponent preview 
 your next match with form, the predicted result, a game plan, head to head and your best XI against them); batting
 under pressure (Player page · When they came in, with their rescue innings); big-match players (Player page · Big
 matches); batting pairs (Player stories · Pairs); risers (Insights · Breakout players). What's left, each asked about in
-full before it's built, with its checklist lines, tests and screenshots (stage 5 about 6–7 days):
+full before it's built, with its checklist lines, tests and screenshots (stage 5 about 8–9 days):
 1. **On the opponent preview, the missing pieces:** your in-form players and the records your players could break in
    that match (instead of a separate briefing page).
 2. **Who's fading:** beside Breakout players, your players whose numbers are clearly dropping season on season, each
@@ -1470,6 +1470,16 @@ full before it's built, with its checklist lines, tests and screenshots (stage 5
 6. **Stat by stat, two more filters:** against one chosen opponent, and by result (in wins, in defeats, chasing only).
 7. **A career years from now:** a made-up 20-season career (about 15,000 matches) joins the checks, so every page is
    shown correct and quick as your career grows.
+8. **Partnership breakers:** which bowlers end big stands (50 and more), from the fall of wickets: who to bring on when
+   a pair gets set.
+9. **Player form alerts:** a pop-up when one of your players is on a hot streak (three fifties in a row, say) or in a
+   slump (five low scores in a row), beside the team streak alerts.
+10. **Career arc:** how players usually develop over their 1st, 2nd, 3rd seasons and on, and each of your players
+    against that curve.
+11. **Your eras:** the stretches when your team was strongest by its ratings, named ("the 2029–31 era"), with that
+    era's key players and results.
+12. **On this day** (My team): what happened on this date, by the game's calendar, in earlier seasons of your career.
+Not picked: compare two careers.
 
 Not wanted (26 November): finding next year's game by itself, keyboard shortcuts, table downloads, Windows
 notifications, a second safety copy, self-repair, the window remembered; nor bowler workload watch, record book
