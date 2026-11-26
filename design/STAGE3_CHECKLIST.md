@@ -84,9 +84,9 @@ a page isn't finished while any of its lines is open (your safeguards of 13 Nove
 ## Stage end
 - [x] The full sweep on your 2,720 cards (every page and option), junk and load, every server's error log
 - [x] The stress test; the browser at every width, dark and light
-- [ ] The full test suite and the Windows run
+- [x] The full test suite and the Windows run — 1,463 passed here; Windows run 45559325055 (Python 3.14, pandas 3.1) passed on 25 November
 - [x] NEW_SITE_PLAN.md "Stage 3: what was built": a line for every promise above (built, where, how checked)
-- [ ] Screenshots of every page and tab, then your approval
+- [x] Screenshots of every page and tab, then your approval — 45 screenshots sent; approved by you on 25 November ("stage 3 is done")
 
 ## Nothing lost: every line of the old pages (from design/INVENTORY.md)
 Fielding lines are taken out by your answer of 19 November and are marked so when ticked.
