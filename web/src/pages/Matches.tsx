@@ -117,7 +117,9 @@ export function MatchView() {
                 (the totals, extras, overs, wickets, fall of wickets and the result).</div>
               : <div className="plain"><span className="chk bad">⚠</span> {d.checked.problems.length === 1 ? "One sum" : `${d.checked.problems.length} sums`} on
                 this scorecard didn't add up, so treat its numbers with care: {d.checked.problems.join("; ")}.</div>)}
-            {d.checked?.unclear?.length ? <div className="note">Bowlers who share a name: {d.checked.unclear.join("; ")}.</div> : null}</Tile>
+            {d.checked?.unclear?.length ? <div className="note">Bowlers who share a name: {d.checked.unclear.join("; ")}.</div> : null}
+            {d.guessed?.length ? <div className="note">✎ Figures put right by the site (the game's card didn't add up and couldn't say
+              how, so the closest fair answer is used): {d.guessed.join("; ")}.</div> : null}</Tile>
           {d.rain && <Tile span={12} title="🌧️ Rain"><div className="plain">{d.rain}</div></Tile>}
           {d.corrected?.length ? <Tile span={12} title="✎ Scorecard put right">
             <div className="plain">The game's scorecard didn't add up; the card itself shows what happened, so it's counted this way:</div>

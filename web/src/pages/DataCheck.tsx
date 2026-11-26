@@ -20,12 +20,11 @@ type Body = { explain?: string; none?: string; players?: string[];
   joined?: { keep: string; other: string; keep_matches: number; other_matches: number; team: string; why: string }[];
   left?: { match_id: string; text: string; result: string; reason: string }[]; conflicts?: { match_id: string; text: string }[];
   conflict_warn?: string; matches?: { v: string; label: string }[];
-  failed?: { file: string; why: string }[]; failed_line?: string; ok?: string; problems?: { file: string; what: string }[];
-  problems_line?: string; corrected?: { file: string; what: string }[]; corrected_line?: string;
+  failed?: { file: string; why: string }[]; failed_line?: string; ok?: string;
   copies?: { file: string; same_as: string; match_id: string }[];
   changes?: { kind: string; key: unknown; text: string }[] };
 type Page = { tabs: string[]; tab: string; intro: string;
-  summary: { todo: string[]; fine: string[]; counts: Record<string, number>; needs_you: number };
+  summary: { todo: string[]; fine: string[]; counts: Record<string, number>; labels?: Record<string, string>; needs_you: number };
   state: { busy: boolean; what: string; done: string; error: string }; body: Body };
 
 export function DataCheck() {
@@ -70,7 +69,7 @@ export function DataCheck() {
         {!busy && d.state.error && <Tile span={12}><div className="saidbad">{d.state.error}</div></Tile>}
         {said && !busy && !d.state.done && <Tile span={12}><div className={said.startsWith("⚠️") ? "saidbad" : "saidok"}>{said}</div></Tile>}
         <div className="itabs">{d.tabs.map((x) => (
-          <button key={x} className={x === d.tab ? "on" : ""} onClick={() => set(x)}>{x} · {sm.counts[x] ?? 0}</button>))}</div>
+          <button key={x} className={x === d.tab ? "on" : ""} onClick={() => set(x)}>{sm.labels?.[x] ?? `${x} · ${sm.counts[x] ?? 0}`}</button>))}</div>
         <Tile span={12} title={d.tab}>
           {b.explain && <div className="plain"><Md s={b.explain} /></div>}
           {d.tab === "Shared names" && <Shared b={b} run={run} busy={busy || act.isPending} />}
@@ -234,9 +233,5 @@ function Cards({ b }: { b: Body }) {
     {b.failed_line && <div className="saidbad">{b.failed_line}</div>}
     {(b.failed ?? []).length > 0 && <table className="c"><thead><tr><th>File</th><th>Why</th></tr></thead><tbody>{(b.failed ?? []).map((f) => <tr key={f.file}><td>{f.file}</td><td>{f.why}</td></tr>)}</tbody></table>}
     {b.ok && <div className="saidok">{b.ok}</div>}
-    {b.problems_line && <div className="saidbad">{b.problems_line}</div>}
-    {(b.problems ?? []).length > 0 && <table className="c"><thead><tr><th>File</th><th>What doesn't add up</th></tr></thead><tbody>{(b.problems ?? []).map((f, i) => <tr key={i}><td>{f.file}</td><td>{f.what}</td></tr>)}</tbody></table>}
-    {b.corrected_line && <div className="plain" style={{ marginTop: 10 }}>{b.corrected_line}</div>}
-    {(b.corrected ?? []).length > 0 && <table className="c"><thead><tr><th>File</th><th>Put right</th></tr></thead><tbody>{(b.corrected ?? []).map((f, i) => <tr key={i}><td>{f.file}</td><td>{f.what}</td></tr>)}</tbody></table>}
   </>;
 }

@@ -271,6 +271,7 @@ def page(career, match_id: str, mine: list[str], notes: dict) -> dict:
         checked=checked(career, match_id),
         corrected=list(career.corrections[career.corrections.match_id == match_id].correction)
         if hasattr(career, "corrections") else [],
+        guessed=list(career.guesses[career.guesses.match_id == match_id].guess) if hasattr(career, "guesses") else [],
         note=notes.get(row.source, ""), match=card, report=W.match_report(career, match_id, line), excitement=ex,
         win=_win_chance(career, row, line, kind), wickets=_wickets(career, match_id, row, inns), sides=sides,
         top_scores=[dict(player=r.player, team=r.team, score=f"{r.runs}{'' if r.out else '*'}", balls=int(r.balls))

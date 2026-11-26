@@ -83,17 +83,15 @@ def _body(career, tab: str) -> dict:
             matches=[dict(v=r.match_id, label=f"{r.date:%d %b %Y} · {r.home} v {r.away} · {r.event} · {r.result}") for r in mm.itertuples()])
     if tab == "Scorecards":
         failed = [dict(file=r.source, why=r.message) for r in getattr(career, "report", []) if r.status == "failed"]
-        prob = career.problems
         return dict(
             explain=("**Every scorecard is checked when it's read:** the batters' runs plus extras make the total, the "
-                     "bowlers' runs, overs and wickets match the innings, and the dismissals match the fall of wickets."),
-            failed=failed, failed_line=(f"{len(failed)} file(s) couldn't be read, so they aren't in any stat." if failed else ""),
-            ok=f"All {len(career.matches):,} scorecards add up." if prob.empty else "",
-            problems=[dict(file=r.source, what=r.problem) for r in prob.itertuples()],
-            problems_line="These scorecards have numbers that don't add up. They're still counted." if len(prob) else "",
-            corrected=[dict(file=r.source, what=r.correction) for r in career.corrections.itertuples()],
-            corrected_line=("Put right by the site, because the scorecard itself proves the answer (a batter printed "
-                            "retired hurt again, or no-balls not charged to any bowler):") if len(career.corrections) else "")
+                     "bowlers' runs, overs and wickets match the innings, and the dismissals match the fall of wickets. "
+                     "A mistake the game makes in its own scorecards is put right by the site (when the card proves the "
+                     "answer, or else by the closest fair guess, so every total adds up), with a note on that match's "
+                     "own page. Only a file that isn't a scorecard at all is listed here."),
+            failed=failed, failed_line=(f"{len(failed)} file(s) couldn't be read as a scorecard (empty or broken), so "
+                                        "they aren't in any stat." if failed else ""),
+            ok="" if failed else f"✓ All {len(career.matches):,} scorecards add up. Nothing needs you here.")
     if tab == "Copies":
         cp = DC.copies(career)
         return dict(explain=("**A match saved twice.** The same match (same teams, date and scores) saved under two file "

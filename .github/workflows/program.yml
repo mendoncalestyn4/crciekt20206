@@ -15,6 +15,8 @@ concurrency:
 
 jobs:
   build:
+    # (Windows minutes are limited: a push builds only when its message carries "[windows]"; by hand it always does)
+    if: github.event_name != 'push' || contains(github.event.head_commit.message, '[windows]')
     runs-on: windows-latest
     timeout-minutes: 60
     steps:

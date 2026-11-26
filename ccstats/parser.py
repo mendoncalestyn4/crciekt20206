@@ -131,6 +131,7 @@ class Match:
     read_back: list[str] = field(default_factory=list)
     # what was put right in a scorecard that didn't add up, each proven by the card itself (see _correct)
     corrections: list[str] = field(default_factory=list)
+    guesses: list[str] = field(default_factory=list)      # put right by the fair guess (fair_fix)
 
 
 class ScorecardError(ValueError):
@@ -747,6 +748,8 @@ def parse_scorecard(text: str, source: str = "") -> Match:
     _fix_follow_on(match)
     _check_margin(match)
     _correct(match)
+    if validate_match(match):   # still doesn't add up: the site's best fair guess, noted (your answers, 26 November)
+        match.guesses = fair_fix(match)
     return match
 
 
@@ -803,6 +806,97 @@ def _correct(match: Match) -> None:
                         f"conceded: exactly the innings' {kind} runs, which the game "
                         f"left off every bowler's figures. Recorded as {short} {kind} run{'s' if short != 1 else ''} "
                         f"not charged to any bowler; every bowler's figures stay as printed")
+
+
+def _share(gap: int, weights: list[int], floor: list[int] | None = None) -> list[int]:
+    """`gap` (more or fewer) shared out in proportion to `weights` (equal shares when they're all 0), whole numbers that
+    add up exactly (the largest remainders get the odd ones); with `floor`, no share takes a value below 0."""
+    n = len(weights)
+    if not n or not gap:
+        return [0] * n
+    w = [max(x, 0) for x in weights]
+    tot = sum(w) or n
+    w = w if sum(w) else [1] * n
+    raw = [gap * x / tot for x in w]
+    out = [int(r) for r in raw]                                  # toward 0
+    left = gap - sum(out)
+    step = 1 if left > 0 else -1
+    order = sorted(range(n), key=lambda i: -abs(raw[i] - out[i]))
+    for i in order[:abs(left)]:
+        out[i] += step
+    if floor is not None:                                        # never below 0: move what's left onto the others
+        for _ in range(n * 4):
+            under = [i for i in range(n) if floor[i] + out[i] < 0]
+            if not under:
+                break
+            for i in under:
+                extra = floor[i] + out[i]
+                out[i] -= extra
+                room = [j for j in range(n) if j != i and floor[j] + out[j] > 0]
+                if not room:
+                    break
+                out[max(room, key=lambda j: floor[j] + out[j])] += extra
+    return out
+
+
+def fair_fix(match: Match) -> list[str]:
+    """The site's best fair guess for a scorecard whose numbers don't add up and which the card itself can't settle
+    (your answers of 26 November: "if it can't be fixed just fix it somehow"). Each gap is closed the closest fair
+    way the card allows, so the totals always add up; each is noted (shown quietly on that match's page):
+
+    1. **Batting runs and extras short of (or over) the total:** the printed total stands (the fall of wickets and the
+       bowlers back it); the difference is put in the extras (never below 0).
+    2. **Bowlers' runs short of (or over) the total:** the runs no bowler is charged with are shared between that
+       innings' bowlers by the balls each bowled (an over-charge taken back the same way, never below 0).
+    3. **Bowlers' balls not making the innings' balls:** the difference shared the same way.
+    4. **Bowlers' wickets not matching the wickets that fell:** when the batting card's dismissals (with the run-outs)
+       make the wickets that fell, each bowler is given the wickets the batting card credits him with."""
+    notes: list[str] = []
+    for inn in match.innings:
+        where = f"{inn.team} innings {inn.team_innings}"
+        batted = [b for b in inn.batting if b.did_bat]
+        bat = sum(b.runs for b in batted)
+        parts = inn.byes + inn.leg_byes + inn.wides + inn.no_balls + inn.penalties
+        if bat + inn.extras != inn.total and inn.total - bat >= 0 and (not parts or parts == inn.total - bat):
+            was = inn.extras        # (an itemised breakdown that says otherwise: left as it is, and still noted)
+            inn.extras = inn.total - bat
+            notes.append(f"{where}: the batters' runs and the extras made {bat + was}, not the total of {inn.total}; "
+                         f"the extras put at {inn.extras} (were {was}) so they do")
+        if not inn.bowling:
+            continue
+        balls = [w.balls for w in inn.bowling]
+        gap = inn.total - (sum(w.runs for w in inn.bowling) + inn.byes + inn.leg_byes + inn.penalties + inn.uncharged)
+        if gap:
+            add = _share(gap, balls, [w.runs for w in inn.bowling])
+            for w, a in zip(inn.bowling, add):
+                w.runs += a
+            what = ", ".join(f"{w.player} {a:+d}" for w, a in zip(inn.bowling, add) if a)
+            notes.append(f"{where}: {abs(gap)} run{'s' if abs(gap) != 1 else ''} "
+                         f"{'no bowler was charged with' if gap > 0 else 'too many charged to the bowlers'}, shared "
+                         f"between the bowlers by balls bowled ({what})")
+        bgap = inn.balls - sum(balls)
+        if bgap and inn.balls:
+            add = _share(bgap, balls, balls)
+            for w, a in zip(inn.bowling, add):
+                w.balls += a
+            what = ", ".join(f"{w.player} {a:+d}" for w, a in zip(inn.bowling, add) if a)
+            notes.append(f"{where}: the bowlers' balls made {sum(balls)}, not the innings' {inn.balls}; the "
+                         f"difference shared by balls bowled ({what} ball{'s' if abs(bgap) != 1 else ''})")
+        run_outs = sum(b.how_out in RUN_OUTS for b in batted)
+        if sum(w.wickets for w in inn.bowling) + run_outs != inn.wickets:
+            credited: dict[str, int] = {}
+            for b in batted:
+                if not b.not_out and b.how_out in CREDITED and b.bowler:
+                    credited[b.bowler] = credited.get(b.bowler, 0) + 1
+            names = {w.player for w in inn.bowling}
+            if sum(credited.values()) + run_outs == inn.wickets and set(credited) <= names:
+                changed = [f"{w.player} {w.wickets}→{credited.get(w.player, 0)}" for w in inn.bowling
+                           if w.wickets != credited.get(w.player, 0)]
+                for w in inn.bowling:
+                    w.wickets = credited.get(w.player, 0)
+                notes.append(f"{where}: the bowlers' wickets didn't match the wickets that fell; each bowler given the "
+                             f"wickets the batting card credits him with ({', '.join(changed)})")
+    return notes
 
 
 def _check_margin(match: Match) -> None:

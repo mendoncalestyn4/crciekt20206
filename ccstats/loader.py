@@ -164,6 +164,7 @@ PACK_INFO = "career.json"
 PACK_SOURCES = "sources.json"  # stored file name -> the scorecard's own file name
 PACK_TIMES = "times.json"  # stored file name -> when the game saved it
 CORRECTION_COLUMNS = ["match_id", "source", "correction"]
+GUESS_COLUMNS = ["match_id", "source", "guess"]          # cards put right by the site's best fair guess (stage 5)
 AUTO_SPLIT_COLUMNS = ["player", "team", "new_name", "keep", "games", "where"]
 NM_JOIN_COLUMNS = ["other", "keep", "team", "why", "other_matches", "keep_matches", "other_runs", "keep_runs",
                    "other_wickets", "keep_wickets", "other_innings", "keep_innings", "sure"]   # as lookalike.JOIN_COLUMNS
@@ -189,6 +190,7 @@ class Career:
     leftovers: pd.DataFrame = field(default_factory=lambda: pd.DataFrame(columns=LEFTOVER_COLUMNS))
     # scorecards that didn't add up, put right where the card itself proves the answer (listed on the data check page)
     corrections: pd.DataFrame = field(default_factory=lambda: pd.DataFrame(columns=CORRECTION_COLUMNS))
+    guesses: pd.DataFrame = field(default_factory=lambda: pd.DataFrame(columns=GUESS_COLUMNS))
     # names split automatically: one printed name for two teams in one competition and season (two players)
     auto_splits: pd.DataFrame = field(default_factory=lambda: pd.DataFrame(columns=AUTO_SPLIT_COLUMNS))
     # two printed names joined by themselves, sure to be one player (your answer of 26 November; each can be undone)
@@ -610,7 +612,7 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
         fixes = dataclasses.replace(fixes, splits=list(fixes.splits) + [
             dict(player=x["player"], team=x["team"], new_name=x["new_name"]) for x in split])
 
-    M, I, B, W, F, FOW, P, C = [], [], [], [], [], [], [], []
+    M, I, B, W, F, FOW, P, C, G = [], [], [], [], [], [], [], [], []
     for i, (m, c) in enumerate(zip(parsed, cls)):
         multi = c.format in MULTI_DAY
         batted_first = m.innings[0].team if m.innings else ""
@@ -640,6 +642,8 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
             P.append(dict(match_id=m.match_id, source=m.source, problem=p))
         for x in m.corrections:
             C.append(dict(match_id=m.match_id, source=m.source, correction=x))
+        for x in getattr(m, "guesses", []):     # put right by the site's best fair guess when it was read (parser.fair_fix)
+            G.append(dict(match_id=m.match_id, source=m.source, guess=x))
         last_no = len(m.innings)
         for inn in m.innings:
             all_out = _all_out(inn)
@@ -696,6 +700,7 @@ def build_tables(parsed: list[Match], fixes: Fixes) -> dict[str, pd.DataFrame]:
         fow=pd.DataFrame(FOW, columns=["match_id", "innings_no", "team", "wicket", "score"]),
         problems=pd.DataFrame(P, columns=["match_id", "source", "problem"]),
         corrections=pd.DataFrame(C, columns=CORRECTION_COLUMNS),
+        guesses=pd.DataFrame(G, columns=GUESS_COLUMNS),
     )
     for name, types in TYPES.items():   # a career with no matches yet gets the same column types as a full one
         if frames[name].empty:

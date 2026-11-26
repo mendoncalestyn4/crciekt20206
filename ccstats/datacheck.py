@@ -49,7 +49,6 @@ def summary(career) -> dict:
     conflicts = checks.replay_conflicts(career)
     left = career.leftovers
     auto = career.auto_splits
-    bad = int(career.problems.match_id.nunique())
     failed = [r for r in getattr(career, "report", []) if r.status == "failed"]
     fx = career.fixes
     dups = copies(career)
@@ -64,9 +63,12 @@ def summary(career) -> dict:
         todo.append(f"**{len(shared)} names** are still used by two different players → the Shared names tab")
     if len(conflicts):
         todo.append(f"**{conflicts.match_id.nunique()} knockout games** look like leftovers from a replayed season → the Games left out tab")
-    if bad or failed:
-        todo.append(f"**{bad + len(failed)} scorecards** have a problem → the Scorecards tab")
-    if not bad and not failed:
+    # scorecards (your answers of 26 November): one the site put right isn't listed at all, nor one it closed by its
+    # best fair guess (that's a quiet note on the match's own page); only a file that isn't a scorecard is named
+    if failed:
+        todo.append(f"**{len(failed)} file{'s' if len(failed) != 1 else ''}** in the folder "
+                    f"{'aren' if len(failed) != 1 else 'isn'}'t a scorecard the site can read → the Scorecards tab")
+    else:
         fine.append(f"✅ All {len(career.matches):,} scorecards add up")
     if len(auto):
         fine.append(f"✅ {auto.player.nunique()} names shared by different players kept apart by themselves → the Shared names tab")
@@ -88,8 +90,9 @@ def summary(career) -> dict:
     counts = {"Shared names": int(auto.player.nunique()) + len(shared),
               "Player with two names": len(merges) + (len(joined) if joined is not None else 0),
               "Games left out": len(left) + int(conflicts.match_id.nunique()),
-              "Scorecards": bad + len(failed) + len(career.corrections), "Copies": len(dups), "Your changes": n_changes}
-    return dict(todo=todo, fine=fine, counts=counts, needs_you=len(todo))
+              "Scorecards": len(failed), "Copies": len(dups), "Your changes": n_changes}
+    labels = {} if failed else {"Scorecards": "Scorecards ✓"}     # nothing to see: the tab says so, with no count
+    return dict(todo=todo, fine=fine, counts=counts, labels=labels, needs_you=len(todo))
 
 
 # --------------------------------------------------------------------------- the changes (a new Fixes each time)

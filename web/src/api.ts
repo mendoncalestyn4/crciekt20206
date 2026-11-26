@@ -156,7 +156,7 @@ export type Wickets = { innings: { innings_no: number; team: string; total: stri
   is_: string; best: string; best_label: string };
 export type MatchPage = {
   id: string; kicker: string; name: string; series: string; date: string; section: string; event: string; stage: string;
-  home: string; away: string; home_score: string; away_score: string; result: string; player_of_match: string; rain: string; corrected?: string[];
+  home: string; away: string; home_score: string; away_score: string; result: string; player_of_match: string; rain: string; corrected?: string[]; guessed?: string[];
   /** the "checked ✓" mark: every sum on the scorecard checked against the others when it was read */
   checked?: { ok: boolean; problems: string[]; checks: string[]; unclear?: string[] };
   source: string; note: string; match: Match; report: string; excitement: Excitement | null; win: WinChance | null; wickets: Wickets;

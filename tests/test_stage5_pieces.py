@@ -480,3 +480,62 @@ def test_on_this_day_exact_dates_only(c):
     # a match on that very date this year isn't "an earlier year"
     r = m.iloc[0]
     assert r.match_id not in [x["id"] for x in OD.on_this_day(c, r.home, r.date)]
+
+
+# --------------------------------------------------------------------------- scorecards put right by the fair guess
+def test_share_adds_up_exactly_and_fairly():
+    from ccstats.parser import _share
+    assert _share(7, [24, 24, 24, 24, 24]) == [2, 2, 1, 1, 1]
+    assert sum(_share(13, [6, 18, 30, 0])) == 13 and _share(13, [6, 18, 30, 0])[3] == 0
+    assert _share(10, [0, 0]) == [5, 5]
+    got = _share(-9, [24, 24, 24], floor=[2, 30, 30])
+    assert sum(got) == -9 and all(f + g >= 0 for f, g in zip([2, 30, 30], got))
+    assert _share(0, [1, 2]) == [0, 0]
+
+
+def _broken(text: str, old: str, new: str) -> str:
+    assert text.count(old) == 1, old
+    return text.replace(old, new)
+
+
+def test_a_card_that_does_not_add_up_is_put_right_by_the_fair_guess():
+    """A bowler's runs printed 7 short: the 7 are shared between that innings' bowlers by balls bowled (all 24 each:
+    2, 2, 1, 1, 1), the card then adds up, and the note says what was done. A bowler given a wicket too many gets the
+    wickets the batting card credits him with. A total 2 above the batting and unitemised extras: extras put at 2,
+    and the bowlers share the 2 runs."""
+    from ccstats.parser import parse_scorecard, validate_match
+    f = [x for x in FIXTURES if x.name.startswith("10_jul_2026-wrc_v_glc")][0]
+    text = f.read_text()
+    t = _broken(text, "A Rao           4      6     53     2     13.25", "A Rao           4      6     46     2     11.50")
+    t = _broken(t, "M Taylor        4      10    37     2     9.25", "M Taylor        4      10    37     3     9.25")
+    m = parse_scorecard(t, f.name)
+    inn = m.innings[0]
+    assert [w.runs for w in inn.bowling] == [48, 30, 53, 42, 38]          # 46+2, 28+2, 52+1, 41+1, 37+1
+    assert [w.wickets for w in inn.bowling] == [2, 0, 0, 1, 2]
+    assert sum(w.runs for w in inn.bowling) == inn.total
+    assert not [p for p in validate_match(m) if "innings 1" in p and "Worcestershire" in p]
+    assert len(m.guesses) == 2 and "shared between the bowlers by balls bowled" in m.guesses[0]
+    assert "wickets the batting card credits him with" in m.guesses[1] and "M Taylor 3→2" in m.guesses[1]
+    clean = parse_scorecard(text, f.name)
+    assert clean.guesses == [] and not validate_match(clean)
+    # unitemised extras short of the total
+    t2 = _broken(text, "TOTAL: (9 wkts, 20 overs)                 164", "TOTAL: (9 wkts, 20 overs)                 166")
+    m2 = parse_scorecard(t2, f.name)
+    g = m2.innings[1]
+    assert g.extras == 2 and sum(w.runs for w in g.bowling) == 166
+    assert not [p for p in validate_match(m2) if "Gloucestershire innings 1" in p and "add up" in p]
+
+
+def test_data_check_names_only_files_that_are_not_scorecards(c):
+    """A career with cards put right (retired hurt reprinted, uncharged no-balls) lists none of them: the tab reads
+    "Scorecards ✓" with no count, and the summary says every card adds up."""
+    from ccstats import datacheck as DC
+    from server import datacheckpage as DCP
+    sm = DC.summary(c)
+    assert sm["counts"]["Scorecards"] == 0 and sm["labels"] == {"Scorecards": "Scorecards ✓"}
+    assert any("scorecards add up" in x for x in sm["fine"]) and not any("Scorecards tab" in x for x in sm["todo"])
+    body = DCP.page(c, dict(tab="Scorecards"), {})["body"]
+    assert set(body) == {"explain", "failed", "failed_line", "ok"} and body["failed"] == [] and body["ok"].startswith("✓")
+    bad = Career.build("t", [(f.name, f.read_bytes()) for f in FIXTURES[:3]] + [("empty.txt", b"")])
+    sm2 = DC.summary(bad)
+    assert sm2["counts"]["Scorecards"] == 1 and sm2["labels"] == {} and any("isn't a scorecard" in x for x in sm2["todo"])
