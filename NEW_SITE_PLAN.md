@@ -1449,33 +1449,22 @@ Stage 5 starts only when you say so ("I'll tell you when to start"); stage 4 sta
 10. **The icon:** your design ("Cricket Stats Pack": navy tile, faint charts, red ball and bat), redrawn sharp: the
     full design at the big sizes, the ball and bat alone at the small ones (shown 26 November; your yes still to come).
 
-## 21. Stage 5: more added (26 November, your choice: "everything into stage 5")
+## 21. Stage 5: more added (26 November)
 
-Stage 5 grows from about 3–4 days to about 6–8. Each piece is asked about in full (what it shows, where it lives, edge
-cases) before it's built, and gets its checklist lines, tests and screenshots like the rest. There is no stage 7.
-
-**On the site**
+Three new pieces on the site go into stage 5 (your choice: "everything into stage 5", then trimmed the same day to
+these three). Stage 5 grows from about 3–4 days to about 4–5. Each is asked about in full (what it shows, where it
+lives, edge cases) before it's built, and gets its checklist lines, tests and screenshots like the rest. There is no
+stage 7.
 1. **Next match briefing:** before each fixture, one page with the opponent's danger players and how your bowlers have
    done against them, your in-form players, the last meetings, your chance and the score to aim for.
 2. **Who's rising, who's fading:** each of your players season by season, the clear risers and decliners named, and a
    fading regular paired with a suggested replacement from the scouting list.
 3. **Then and now:** your team now against the same team 1, 3 or 5 seasons ago (batting, bowling, results, the players
    who've changed).
-4. **Keyboard shortcuts:** for example `/` to search, letters for the main pages, the arrow keys between tabs; `?` shows
-   the list.
-5. **Download any table:** a small button on every table saves it as a file Excel opens (CSV; no Excel library needed).
 
-**In the program**
-6. **Windows notifications while you play:** the alerts (goal reached, series won, milestones, records…) also pop up as
-   Windows notifications, even with the game in front.
-7. **A second safety copy:** when the PC has OneDrive (or another synced folder), your careers and backups are copied
-   there too, by themselves.
-8. **Self-repair:** a career file found damaged (say the power went while it was saving) is put back from the last good
-   backup by itself, and you're told.
-9. **Remembers its window:** the app window reopens at the same size and place, on the same screen.
-
-Not picked from the ideas: bowler workload watch, record book history, a printable season report, search everything.
-Also checked in stage 5 (your choice of 14 November): the site reopens where you left off.
+Not wanted (26 November): keyboard shortcuts, table downloads, Windows notifications, a second safety copy,
+self-repair, the window remembered; nor bowler workload watch, record book history, a printable season report,
+search everything. Also checked in stage 5 (your choice of 14 November): the site reopens where you left off.
 
 ## Appendix: technical outline
 
