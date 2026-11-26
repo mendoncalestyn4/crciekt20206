@@ -1451,8 +1451,8 @@ Stage 5 starts only when you say so ("I'll tell you when to start"); stage 4 sta
 
 ## 21. Stage 5: more added (26 November)
 
-Three new pieces on the site go into stage 5 (your choice: "everything into stage 5", then trimmed the same day to
-these three). Stage 5 grows from about 3–4 days to about 4–5. Each is asked about in full (what it shows, where it
+New pieces go into stage 5 (your choice: "everything into stage 5", then trimmed the same day to these). Stage 5
+grows from about 3–4 days to about 5–6. Each is asked about in full (what it shows, where it
 lives, edge cases) before it's built, and gets its checklist lines, tests and screenshots like the rest. There is no
 stage 7.
 1. **Next match briefing:** before each fixture, one page with the opponent's danger players and how your bowlers have
@@ -1461,6 +1461,16 @@ stage 7.
    fading regular paired with a suggested replacement from the scouting list.
 3. **Then and now:** your team now against the same team 1, 3 or 5 seasons ago (batting, bowling, results, the players
    who've changed).
+
+Also added (26 November, after checking what the site already shows; the splits against stronger or weaker teams, in
+wins and defeats, consistency, conversion and how they get out are on the Player page already):
+4. **Batting under pressure:** a new split on the Player page, "When they came in": the team in trouble, steady or
+   flying, from the score and wickets down when each batter walked in (worked out already, never shown until now).
+5. **Best batting pairs:** on the Teams page, which two named batters put on the most runs together over a career, on
+   average, and how often.
+6. **A career years from now:** a made-up 20-season career (about 15,000 matches) joins the checks, so every page is
+   shown correct and quick as your career grows.
+Not picked: finding next year's game (Cricket Captain 2027) by itself.
 
 **After stage 6 (your plan, 26 November):** you review the whole finished Stats Pack, and anything you find is fixed
 then, at the root, with the same checks as every stage.
