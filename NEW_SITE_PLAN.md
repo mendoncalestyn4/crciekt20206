@@ -1449,6 +1449,19 @@ Stage 5 starts only when you say so ("I'll tell you when to start"); stage 4 sta
 10. **The icon:** your design ("Cricket Stats Pack": navy tile, faint charts, red ball and bat), redrawn sharp: the
     full design at the big sizes, the ball and bat alone at the small ones (shown 26 November; your yes still to come).
 
+## 21. Stage 7: new features picked (26 November)
+
+Added after stages 5 and 6 (stages never overlap). Your picks from the ideas of 26 November; each is asked about in
+full (what it shows, where it lives, edge cases) before it's built, with its own checklist, tests and screenshots:
+1. **Next match briefing:** before each fixture, one page with the opponent's danger players and how your bowlers have
+   done against them, your in-form players, the last meetings, your chance and the score to aim for.
+2. **Who's rising, who's fading:** each of your players season by season, the clear risers and decliners named, and a
+   fading regular paired with a suggested replacement from the scouting list.
+3. **Then and now:** your team now against the same team 1, 3 or 5 seasons ago (batting, bowling, results, the players
+   who've changed).
+
+Not picked: bowler workload watch, record book history, a printable season report, search everything.
+
 ## Appendix: technical outline
 
 **Kept**
