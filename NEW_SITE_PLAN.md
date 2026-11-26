@@ -1479,10 +1479,6 @@ reopens where you left off.
 **After stage 6 (your plan, 26 November):** you review the whole finished Stats Pack, and anything you find is fixed
 then, at the root, with the same checks as every stage.
 
-Not wanted (26 November): keyboard shortcuts, table downloads, Windows notifications, a second safety copy,
-self-repair, the window remembered; nor bowler workload watch, record book history, a printable season report,
-search everything. Also checked in stage 5 (your choice of 14 November): the site reopens where you left off.
-
 ## Appendix: technical outline
 
 **Kept**
