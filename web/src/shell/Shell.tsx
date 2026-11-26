@@ -120,7 +120,7 @@ export function Shell({ children }: { children: ReactNode }) {
       else if (e.type === "matches") {
         toast("new", "New matches", `${e.added} new match${e.added > 1 ? "es" : ""} added to ${e.career}`);
         e.records.forEach((r) => toast("rec", "New record!", r));
-        (e.alerts ?? []).forEach((a) => toast(a.kind === "streak" && a.title.startsWith("A losing") ? "bad" : "good", a.title, a.text));
+        (e.alerts ?? []).forEach((a) => toast((a.kind === "streak" && a.title.startsWith("A losing")) || a.kind === "slump" ? "bad" : "good", a.title, a.text));
         void qc.invalidateQueries();
       } else if (e.type === "failed") {
         toast("bad", "Couldn't read", `${e.files.length} file${e.files.length > 1 ? "s" : ""} couldn't be read: ${e.files.map((f) => f.file).join(", ")}`);

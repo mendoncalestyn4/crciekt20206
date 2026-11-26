@@ -156,6 +156,9 @@ def check(career, added: list[str], my_teams: list[str], goals: list[dict], seen
                 if team in mine and p not in was and was:
                     say(f"top10|{sec}|{kind}|{p}|{len(m)}", "rank", "Into the top 10",
                         f"{p} is into the top 10 of the {sec} {kind} ratings ({ordinal(top.index(p) + 1)}).")
+    # ---------------------------------------------------------------- your players' form (stage 5, your answers of 26 November)
+    for a in form_alerts(career, new, mine):
+        say(*a)
     # ---------------------------------------------------------------- names joined by themselves (sure to be one player)
     joins = getattr(career, "auto_joins", None)
     fresh = [r for r in (joins.itertuples() if joins is not None else []) if f"join|{r.other}|{r.keep}" not in said]
@@ -182,3 +185,74 @@ def check(career, added: list[str], my_teams: list[str], goals: list[dict], seen
 def ordinal(n: int) -> str:
     from .stats import ordinal as o
     return o(n)
+
+
+# --------------------------------------------------------------------------- form alerts (stage 5)
+HOT_BAT = {"t20": 30, "one": 50, "multi": 50}          # 3 innings in a row of this many or more
+HOT_BOWL = {"t20": 2, "one": 3, "multi": 3}            # 3 matches in a row with this many wickets or more
+SLUMP_BAT = {"t20": 10, "one": 15, "multi": 15}        # 5 innings in a row under this
+HOT_RUN, SLUMP_RUN = 3, 5
+
+
+def _run_end(flags: list[bool]) -> int:
+    """How many in a row at the end are True."""
+    n = 0
+    for f in reversed(flags):
+        if not f:
+            break
+        n += 1
+    return n
+
+
+def form_alerts(career, new: pd.DataFrame, mine: list[str]) -> list[tuple]:
+    """Your players on a hot streak or in a slump, competition by competition, said once per run (the key is the run's
+    first innings, or first match for bowling, so a fourth fifty in a row doesn't say it again): (key, kind, title,
+    text) for each."""
+    from .stats import KIND
+    if new.empty or not mine:
+        return []
+    m = career.matches
+    order = m.sort_values(["date", "match_id"]).match_id
+    pos = {mid: i for i, mid in enumerate(order)}
+    bat, bowl = career.batting, career.bowling
+    out = []
+    for sec in new.section.unique():
+        ids = set(m[m.section == sec].match_id)
+        fmt = m[m.section == sec].format.iloc[0]
+        kind = KIND.get(fmt, "one")
+        now = set(new[new.section == sec].match_id)
+        ours = bat[bat.match_id.isin(now) & bat.team.isin(mine)].player.unique().tolist() + \
+            bowl[bowl.match_id.isin(now) & bowl.team.isin(mine)].player.unique().tolist()
+        for p in dict.fromkeys(ours):
+            b = bat[bat.match_id.isin(ids) & (bat.player == p) & bat.did_bat.astype(bool)]
+            b = b.assign(o=b.match_id.map(pos)).sort_values(["o", "innings_no"])
+            if len(b) and b.match_id.iloc[-1] in now:
+                runs = b.runs.astype(int).tolist()
+                hot = _run_end([r >= HOT_BAT[kind] for r in runs])
+                if hot >= HOT_RUN:
+                    first = f"{b.match_id.iloc[-hot]}:{int(b.innings_no.iloc[-hot])}"   # the run's first innings
+                    out.append((f"formbat|{p}|{sec}|{first}", "streak", "Hot streak",
+                                f"{p} has {hot} scores of {HOT_BAT[kind]}+ in a row in {sec} "
+                                f"({', '.join(str(r) for r in runs[-hot:])})."))
+                low = _run_end([r < SLUMP_BAT[kind] for r in runs])
+                if low >= SLUMP_RUN:
+                    first = f"{b.match_id.iloc[-low]}:{int(b.innings_no.iloc[-low])}"
+                    out.append((f"slumpbat|{p}|{sec}|{first}", "slump", "A lean spell",
+                                f"{p} has {low} innings in a row under {SLUMP_BAT[kind]} in {sec} "
+                                f"({', '.join(str(r) for r in runs[-low:])})."))
+            w = bowl[bowl.match_id.isin(ids) & (bowl.player == p)]
+            if len(w):
+                per = w.groupby("match_id").wickets.sum()
+                per = per.reindex(sorted(per.index, key=lambda x: pos[x]))
+                if per.index[-1] in now:
+                    wk = per.astype(int).tolist()
+                    hot = _run_end([x >= HOT_BOWL[kind] for x in wk])
+                    if hot >= HOT_RUN:
+                        out.append((f"formbowl|{p}|{sec}|{per.index[-hot]}", "streak", "Hot streak",
+                                    f"{p} has taken {HOT_BOWL[kind]}+ wickets in {hot} matches in a row in {sec} "
+                                    f"({', '.join(str(x) for x in wk[-hot:])})."))
+                    dry = _run_end([x == 0 for x in wk])
+                    if dry >= SLUMP_RUN:
+                        out.append((f"slumpbowl|{p}|{sec}|{per.index[-dry]}", "slump", "A lean spell",
+                                    f"{p} has gone {dry} matches in a row without a wicket in {sec}."))
+    return out
