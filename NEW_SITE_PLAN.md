@@ -1451,8 +1451,8 @@ Stage 5 starts only when you say so ("I'll tell you when to start"); stage 4 sta
 
 ## 21. Stage 5: more added (26 November)
 
-New pieces go into stage 5 (your choice: "everything into stage 5", then trimmed the same day to these). Stage 5
-grows from about 3–4 days to about 5–6. Each is asked about in full (what it shows, where it
+New pieces go into stage 5 (your choice: "everything into stage 5", then trimmed and added to the same day). Stage 5
+grows from about 3–4 days to about 7–8. Each is asked about in full (what it shows, where it
 lives, edge cases) before it's built, and gets its checklist lines, tests and screenshots like the rest. There is no
 stage 7.
 1. **Next match briefing:** before each fixture, one page with the opponent's danger players and how your bowlers have
@@ -1471,6 +1471,14 @@ wins and defeats, consistency, conversion and how they get out are on the Player
 6. **A career years from now:** a made-up 20-season career (about 15,000 matches) joins the checks, so every page is
    shown correct and quick as your career grows.
 Not picked: finding next year's game (Cricket Captain 2027) by itself.
+Also added (26 November, all four picked):
+7. **Selection review** (My team): every XI you picked, from your scorecards: who was dropped straight after a good
+   score, who kept their place through a poor run, and how often you change the side compared with other teams.
+8. **Big-match players:** each player's numbers in knockouts and finals against ordinary games: a new split on the
+   Player page and a "best in big matches" list.
+9. **Records within reach:** team and career records your players could break soon ("140 runs off England's Test
+   record"), on My team and in the next match briefing.
+10. **Stat by stat, two more filters:** against one chosen opponent, and by result (in wins, in defeats, chasing only).
 
 **After stage 6 (your plan, 26 November):** you review the whole finished Stats Pack, and anything you find is fixed
 then, at the root, with the same checks as every stage.
