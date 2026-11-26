@@ -103,6 +103,15 @@ export function MyTeam() {
           <div className="inbox">{news.slice(0, 3).map((m) => <Msg key={m.id} m={m} keep={keep} onOpen={() => box.read([m.id])} onRemove={() => box.remove([m.id])} />)}</div>
           {news.length > 3 && <div className="note">and {news.length - 3} more in the inbox.</div>}</Tile>}
 
+        {d.on_this_day && d.on_this_day.length > 0 && <Tile span={12} title={`📅 On this day · ${dayY(d.on_this_day[0]!.date).slice(0, -5)}`} right="earlier years, by the game's calendar">
+          <table className="c"><tbody>{d.on_this_day.map((x) => (
+            <tr key={x.id}><td><span className="tn dimn">{dayY(x.date).slice(-4)}</span><div className="how">{x.years} year{x.years === 1 ? "" : "s"} ago</div></td>
+              <td><span className={`why ${x.outcome === "won" ? "up" : x.outcome === "lost" ? "down" : ""}`}><T>{x.result || `${x.outcome} v ${x.opponent}`}</T></span>
+                <div className="how">{x.section} · v {x.opponent}{x.moments.length ? ` · ${x.moments.join(" · ")}` : ""}</div></td>
+              <td className="r"><Link to={`/matches/${x.id}${keep}`} className="why lk">Scorecard →</Link></td></tr>))}</tbody></table>
+          <div className="note">Your matches on this date in earlier years (a match spread over several days is under the day it began), with your hundreds and
+            five-wicket hauls (four in a T20) in them. Only shown on a day when something happened.</div></Tile>}
+
         {d.report ? <>
           <Tile span={8} title={`After the series · marks out of 10`} right={d.report.label}>
             <MarksTable r={d.report} keep={keep} />
@@ -160,6 +169,7 @@ export function MyTeam() {
           <Tile span={6} title={`${b.section} ${b.season} so far`}>
             {b.so_far ? <><div className="row2" style={{ gap: 12, marginBottom: 10 }}><span className="k3" style={{ margin: 0 }}>Last 5</span><Lamps seq={b.so_far.last5} /></div>
               {b.so_far.line && <div className="plain">{b.so_far.line}</div>}
+              {b.era && <div className="plain" style={{ marginTop: 6 }}><Link to={b.era.link} className="lk"><T>{b.era.text}</T></Link></div>}
               {b.so_far.card.length > 0 && <><Grades card={b.so_far.card} />
                 <div className="note">Grades against the average team in this competition this season: A well above, C about average, E well below.</div></>}</>
               : <Missing why={b.missing.so_far} />}

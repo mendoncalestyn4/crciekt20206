@@ -9,6 +9,8 @@ schedule that can't be read) comes back empty with the reason, and the rest of t
 
 from __future__ import annotations
 
+from urllib.parse import quote
+
 import numpy as np
 import pandas as pd
 
@@ -25,6 +27,7 @@ from ccstats import seasonal as SN
 from ccstats import teamplay as TP
 from ccstats import winprob as WP
 from ccstats.competitions import shown_name, with_stage
+from ccstats.stats import ordinal, poss
 from ccstats.competitions import ordered as in_order, section_rank
 
 from . import styleguide as SG
@@ -317,6 +320,20 @@ def section_block(career, team: str, section: str, notes: dict, sched: list) -> 
                      record=r.record, holder=f"{r.holder}, {r.record_value:,}", now=f"{r.now:,}") for r in w.head(8).itertuples()]
     piece("reach", reach)
 
+    def era():                                  # your current era (stage 5): only while it lasts, otherwise nothing
+        from ccstats import eras as ER
+        ranks = kept(career, ("era_ranks", section), lambda: ER.season_ranks(career, section))
+        found = ER.eras(career, section, team, ranks)
+        mine = ranks[ranks.team == team]
+        if not found or mine.empty or found[-1]["last"] != str(mine.season.max()):
+            return None
+        e = found[-1]
+        best = min(r["rank"] for r in e["ranks"])
+        return dict(text=(f"🏆 {poss(team)} {e['name'].removeprefix('the ')} in {section}: {len(e['seasons'])} seasons in a "
+                          f"row near the top of the team ratings (best {ordinal(best)}), won {e['won']} of {e['matches']}."),
+                    link=f"/teams/{quote(team)}?section={quote(section)}&tab=Eras")
+    piece("era", era)
+
     def how_you_win():
         bft, avg = TP.bat_first_table(career, ids_all)
         if team not in set(bft.team):
@@ -393,6 +410,9 @@ def page(career, team: str, section: str, mine: list[str], notes: dict, sched: l
         g = m[((m.home == team) | (m.away == team)) & m.source.isin(list(notes))].sort_values("date", ascending=False)
         return [dict(id=r.match_id, date=r.date, home=r.home, away=r.away, note=notes[r.source]) for r in g.head(10).itertuples()]
     piece("notes", my_notes)
+    # on this day (stage 5): earlier years' matches on today's date by the game's calendar; nothing when there are none
+    from ccstats import onthisday as OD
+    piece("on_this_day", lambda: OD.on_this_day(career, team) or None)
     piece("block", lambda: section_block(career, team, section, notes, sched))
     # squad depth in the competition picked below (who starts, the backups, who's waiting in domestic cricket)
     piece("depth", lambda: kept(career, ("depth", team, section), lambda: DP.squad_depth(career, team, section)))

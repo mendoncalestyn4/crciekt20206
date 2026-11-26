@@ -186,6 +186,7 @@ export type SectionBlock = {
   stars: { bat: { player: string; runs: number; average: number | null; form: string }[]; bowl: { player: string; wickets: number; economy: number | null }[] } | null;
   alerts: string[] | null; headlines: string[] | null; milestones: { player: string; chasing: string; needs: string }[] | null;
   reach?: { player: string; needs: string; record: string; holder: string; now: string }[] | null;
+  era?: { text: string; link: string } | null;
   lines_runs?: Three | null; lines_wickets?: Three | null;
   how_you_win: { first: { pct: string; won: number; decided: number }; second: { word: string; pct: string; won: number; decided: number }; extra: string } | null;
   rivals: { rows: { opponent: string; played: number; record: string; win_pct: string; favourite: boolean; bogey: boolean }[];
@@ -206,6 +207,7 @@ export type MyTeam = {
   history?: { season: string; section: string; played: number; won: number; lost: number; drawn: number; tied: number;
     no_result: number; win_pct: number | null; finish: string }[] | null;
   notes?: { id: string; date: string; home: string; away: string; note: string }[] | null;
+  on_this_day?: { id: string; date: string; years: number; section: string; opponent: string; outcome: string; result: string; moments: string[] }[] | null;
   block?: SectionBlock | null;
   depth?: Depth | null;
   career?: { matches: number; sections: number; seasons: number; players: number; runs: number; wickets: number; headlines: string[] } | null;
@@ -343,6 +345,8 @@ export type TeamHead = { none: string; elsewhere?: string[]; kpis?: { k: string;
 export type Contribution = { player: string; matches: number; runs: number; run_share: number; wickets: number; wicket_share: number };
 export type TeamBody = {
   missing: Record<string, string>;
+  then_now?: { note: string; blocks: { section: string; none: string; comps: ThenNow[] }[] } | null;
+  eras?: { note: string; blocks: { section: string; none: string; eras: Era[]; seasons: NGrid }[] } | null;
   vs_average?: ({ title: string; right: string; rows: SignedBar[] } & Explained) | null;
   strength?: ({ rows: Strength[]; lanes: string[] } & Explained) | null;
   venues?: (Venues & Explained) | null;
@@ -629,3 +633,14 @@ export type TeamLeadersPage = {
   teams?: string[]; picked?: string[]; all?: boolean; note?: string;
   blocks?: { team: string; yours: boolean; runs: TLRow[]; wickets: TLRow[]; team_runs: number; team_wickets: number; matches: number; no_wickets?: string }[];
 };
+
+/** Teams · Then and now (stage 5): the latest season beside one earlier season. */
+export type ThenNow = { ago: number; label: string; then: string; now: string;
+  rows: { what: string; then: string; now: string; better: "then" | "now" | null }[];
+  came_in: { player: string; games: number }[]; went_out: { player: string; games: number }[];
+  stayed: { player: string; then: number; now: number }[] };
+/** Teams · Eras (stage 5): a stretch of seasons near the top of the ratings. */
+export type Era = { name: string; first: string; last: string; seasons: string[];
+  ranks: { season: string; rank: number; teams: number; rating: number }[]; matches: number; won: number; lost: number; other: number;
+  win_pct: number | null; peak: number; peak_season: string; outside: string;
+  runs: { player: string; value: number }[]; wickets: { player: string; value: number }[] };

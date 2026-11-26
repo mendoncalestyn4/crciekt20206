@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import { get, type GridT, type NGrid, type Outcome, type TeamBody, type TeamPage, remember } from "../api";
+import { get, type Era, type GridT, type NGrid, type Outcome, type TeamBody, type TeamPage, type ThenNow, remember } from "../api";
 import { Explain, FormatTicks, Lamps, Logo, Missing, Num, Pick, three, Tile } from "../kit/base";
 import { LeaderBars, RingList, ShareRing } from "../kit/charts";
 import { SplitBars } from "../kit/player";
@@ -248,5 +248,65 @@ function Body({ tab, b, team, keep, race }: { tab: string; b: TeamBody; team: st
         <div className="note">{b.changes.note}</div></>}
     </Tile>
   </>;
+  if (tab === "Then and now") return <>
+    {!b.then_now ? <Tile span={12}><Missing why={m.then_now} /></Tile> : <>
+      {b.then_now.blocks.map((x) => <ThenNowTile key={x.section} section={x.section} none={x.none} comps={x.comps} team={team} />)}
+      <div className="note" style={{ gridColumn: "span 12" }}>{b.then_now.note}</div></>}
+  </>;
+  if (tab === "Eras") return <>
+    {!b.eras ? <Tile span={12}><Missing why={m.eras} /></Tile> : <>
+      {b.eras.blocks.map((x) => <div key={x.section} style={{ display: "contents" }}>
+        {x.none && <Tile span={12} title={`Eras · ${x.section}`}><div className="plain">{x.none}</div></Tile>}
+        {x.eras.map((e) => <EraTile key={e.name} e={e} section={x.section} team={team} />)}
+        <GridTile g={x.seasons} title={`Every season · ${x.section}`} sub="where they finished in the team ratings" span={12} keep={keep}
+          none="No finished games yet." /></div>)}
+      <div className="note" style={{ gridColumn: "span 12" }}>{b.eras.note}</div></>}
+  </>;
   return <GridTile g={b.results} title="Results" span={12} none="No games yet." keep={keep} missing={m.results} />;
 }
+
+/** Then and now: the latest season beside 1, 3 or 5 seasons ago (a button for each the career has), with ✓ on the
+ *  better figure, and the players who came in, went out and stayed. */
+function ThenNowTile({ section, none, comps, team }: { section: string; none: string; comps: ThenNow[]; team: string }) {
+  const [pick, setPick] = useState(0);
+  const c = comps[Math.min(pick, comps.length - 1)];
+  if (!c) return <Tile span={12} title={`Then and now · ${section}`}><div className="plain">{none}</div></Tile>;
+  const mark = (on: boolean) => (on ? <span className="up"> ✓</span> : null);
+  const names = (xs: { player: string; games: number }[]) => xs.length ? xs.map((x, i) => <span key={x.player}>{i ? ", " : ""}<T>{x.player}</T> <span className="dimn">({x.games})</span></span>) : <span className="dimn">nobody</span>;
+  return <>
+    <Tile span={12} title={`Then and now · ${team} in ${section}`} right={`${c.now} against ${c.then}`}>
+      {comps.length > 1 && <div className="itabs" style={{ marginBottom: 10 }}>{comps.map((x, i) => (
+        <button key={x.ago} className={i === pick ? "on" : ""} onClick={() => setPick(i)}>{x.label} ({x.then})</button>))}</div>}
+      <table className="c"><thead><tr><th /><th className="r">{c.then}</th><th className="r">{c.now}</th></tr></thead>
+        <tbody>{c.rows.map((r) => <tr key={r.what}><td><span className="why">{r.what}</span></td>
+          <td className="r"><span className="tn"><T>{r.then}</T></span>{mark(r.better === "then")}</td>
+          <td className="r"><span className="tn"><T>{r.now}</T></span>{mark(r.better === "now")}</td></tr>)}</tbody></table>
+    </Tile>
+    <Tile span={12} title="Who changed" right={`${c.came_in.length} in · ${c.went_out.length} out · ${c.stayed.length} stayed`}>
+      <div className="plain"><b>🟢 Came in ({c.came_in.length}):</b> {names(c.came_in)}</div>
+      <div className="plain" style={{ marginTop: 6 }}><b>🔴 Went out ({c.went_out.length}):</b> {names(c.went_out)}</div>
+      <div className="plain" style={{ marginTop: 6 }}><b>Stayed ({c.stayed.length}):</b> {c.stayed.length ? c.stayed.map((x, i) => <span key={x.player}>{i ? ", " : ""}<T>{x.player}</T></span>) : <span className="dimn">nobody</span>}</div>
+    </Tile>
+  </>;
+}
+
+/** One era: its name, the seasons with where they finished, the results, the peak rating and the key players. */
+function EraTile({ e, section, team }: { e: Era; section: string; team: string }) {
+  const list = (xs: { player: string; value: number }[], unit: string) => xs.length ? xs.map((x, i) => <span key={x.player}>{i ? ", " : ""}<T>{x.player}</T> <span className="tn dimn">{x.value.toLocaleString("en-GB")} {unit}</span></span>) : <span className="dimn">–</span>;
+  return (
+    <Tile span={12} title={`${team}: ${e.name}`} right={`${section} · ${e.seasons.length} seasons near the top`}>
+      <div className="kpis">
+        <div><span>Won–lost{e.other ? "–other" : ""}</span><Num v={`${e.won}–${e.lost}${e.other ? `–${e.other}` : ""}`} px={40} /></div>
+        <div><span>Win %</span><Num v={e.win_pct == null ? "–" : `${Math.round(e.win_pct)}%`} px={40} /></div>
+        <div><span>Peak rating ({e.peak_season})</span><Num v={String(e.peak)} px={40} /></div>
+      </div>
+      <div className="plain" style={{ marginTop: 8 }}>{e.ranks.map((r, i) => <span key={r.season}>{i ? " · " : ""}{r.season}: <b>{ordinal(r.rank)}</b> of {r.teams}</span>)}</div>
+      {e.outside && <div className="how" style={{ marginTop: 4 }}>Win % in this era against {e.outside}.</div>}
+      <div className="plain" style={{ marginTop: 8 }}><b>Most runs:</b> {list(e.runs, "runs")}</div>
+      <div className="plain" style={{ marginTop: 4 }}><b>Most wickets:</b> {list(e.wickets, "wkts")}</div>
+    </Tile>
+  );
+}
+
+const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
+

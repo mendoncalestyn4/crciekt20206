@@ -361,3 +361,122 @@ def test_career_arc_on_the_pages(demo):
         assert r["line"] in [x["text"] for x in pg["arc"]["lines"]]
     one = IP.insights_page(c, dict(tab="Career arc", section=sec), [])
     assert one["arc_mine"].get("none") and one["arc_top"]["rows"]
+
+
+# --------------------------------------------------------------------------- eras
+def test_era_rules_on_made_seasons():
+    """Runs of 2+ seasons near the top are eras, a single good season isn't, and the names read as years."""
+    import pandas as pd
+    from ccstats import eras as ER
+    assert ER.top_of(10) == 3 and ER.top_of(12) == 3 and ER.top_of(20) == 4 and ER.top_of(38) == 7
+    assert ER.name("2029", "2031") == "the 2029–31 era" and ER.name("1999", "2001") == "the 1999–2001 era"
+    assert ER.name("2026/27", "2027/28") == "the 2026/27–2027/28 era"
+
+    class Fake:      # a career with no matches: the eras come from the ranks alone, results all zero
+        matches = pd.DataFrame(columns=["section", "season", "home", "away", "result_type", "winner", "loser", "match_id"])
+        batting = pd.DataFrame(columns=["match_id", "team", "player", "runs"])
+        bowling = pd.DataFrame(columns=["match_id", "team", "player", "wickets"])
+    tops = [True, True, False, True, False, True, True, True]
+    ranks = pd.DataFrame(dict(season=[str(2020 + i) for i in range(8)], team="X", rating=1500.0,
+                              rank=[1 if t else 6 for t in tops], teams=10, top=tops))
+    found = ER.eras(Fake, "S", "X", ranks)
+    assert [(e["first"], e["last"]) for e in found] == [("2020", "2021"), ("2025", "2027")]
+
+
+def test_eras_ranked_from_the_ratings_and_recounted(demo):
+    """Each season's rank is the team's rating after its last match of that season, ranked among the teams that played;
+    each era's results and key players are recounted from the scorecards."""
+    from ccstats import eras as ER
+    from ccstats.rankings import team_elo
+    c = demo
+    sec = c.matches.section.iloc[0]
+    ranks = ER.season_ranks(c, sec)
+    _, hist = team_elo(c, sec)
+    m = c.matches.set_index("match_id")
+    for s, g in ranks.groupby("season"):
+        h = hist[hist.match_id.map(m.season) == s]
+        last = {t: x.sort_values(["date", "match_id"]).after.iloc[-1] for t, x in h.groupby("team")}
+        assert dict(zip(g.team, g.rating.round(6))) == {t: round(v, 6) for t, v in last.items()}
+        order = sorted(last, key=lambda t: -last[t])
+        assert g.set_index("team").loc[order[0], "rank"] == 1
+    any_era = False
+    for team in sorted(set(ranks.team)):
+        for e in ER.eras(c, sec, team, ranks):
+            any_era = True
+            g = c.matches[(c.matches.section == sec) & c.matches.season.astype(str).isin(e["seasons"])
+                          & ((c.matches.home == team) | (c.matches.away == team))]
+            assert e["matches"] == len(g) and e["won"] == int((g.winner == team).sum()) and e["lost"] == int((g.loser == team).sum())
+            bat = c.batting[c.batting.match_id.isin(g.match_id) & (c.batting.team == team)]
+            assert e["runs"][0]["value"] == int(bat.groupby("player").runs.sum().max())
+    assert any_era
+
+
+def test_then_and_now_recounted(demo):
+    from ccstats import thenandnow as TN
+    c = demo
+    sec = c.matches.section.iloc[0]
+    team = sorted(set(c.matches.home))[0]
+    assert [k for k, _, _ in TN.choices(c, sec, team)] == [1]          # two seasons: only 1 season ago
+    x = TN.compare(c, sec, team, 1)
+    for part, s in (("then", "2026"), ("now", "2027")):
+        g = c.matches[(c.matches.section == sec) & (c.matches.season.astype(str) == s) & ((c.matches.home == team) | (c.matches.away == team))]
+        assert x[part]["matches"] == len(g) and x[part]["won"] == int((g.winner == team).sum())
+        inn = c.innings[c.innings.match_id.isin(g.match_id) & (c.innings.team == team)]
+        assert abs(x[part]["bat_avg"] - inn.runs.sum() / inn.wickets.sum()) < 1e-9
+    who = lambda s: set(c.batting[c.batting.match_id.isin(c.matches[(c.matches.section == sec) & (c.matches.season.astype(str) == s)].match_id)  # noqa: E731
+                                  & (c.batting.team == team)].player)
+    assert {p for p, _ in x["came_in"]} == who("2027") - who("2026")
+    assert {p for p, _ in x["went_out"]} == who("2026") - who("2027")
+    assert TN.compare(c, sec, team, 3) is None
+
+
+def test_eras_and_then_and_now_on_the_pages(demo):
+    from ccstats import eras as ER
+    from server import myteam as MYT
+    from server import teampage as TPG
+    c = demo
+    sec = c.matches.section.iloc[0]
+    ranks = ER.season_ranks(c, sec)
+    with_era = [t for t in sorted(set(ranks.team)) if ER.eras(c, sec, t, ranks)]
+    without = [t for t in sorted(set(ranks.team)) if t not in with_era]
+    for team in with_era[:1] + without[:1]:
+        for tab, key in (("Eras", "eras"), ("Then and now", "then_now")):
+            b = TPG.page(c, sec, "", team, "all", tab)["body"]
+            assert b["missing"] == {} and b[key]["blocks"]
+        e = TPG.page(c, sec, "", team, "all", "Eras")["body"]["eras"]["blocks"][0]
+        assert bool(e["eras"]) == (team in with_era) and bool(e["none"]) == (team not in with_era)
+    # the My team line: only while the era lasts
+    for team in with_era + without[:2]:
+        found = ER.eras(c, sec, team, ranks)
+        lasts = bool(found) and found[-1]["last"] == str(ranks[ranks.team == team].season.max())
+        out = MYT.section_block(c, team, sec, {}, [])
+        assert bool(out.get("era")) == lasts, team
+
+
+# --------------------------------------------------------------------------- on this day
+def test_on_this_day_exact_dates_only(c):
+    """A year after any match, that match is listed for both its teams with its hundreds and hauls; the day before and
+    the day after list nothing from it; and today's date is the career's latest match."""
+    import pandas as pd
+    from ccstats import onthisday as OD
+    assert OD.today(c) == c.matches.date.max()
+    m = c.matches.dropna(subset=["date"])
+    for r in m.sample(8, random_state=3).itertuples():
+        later = r.date + pd.DateOffset(years=2)
+        for team in (r.home, r.away):
+            got = OD.on_this_day(c, team, later)
+            ids = [x["id"] for x in got]
+            assert r.match_id in ids
+            want = m[((m.home == team) | (m.away == team)) & (m.date.dt.month == later.month) & (m.date.dt.day == later.day)
+                     & (m.date.dt.year < later.year)]
+            assert set(ids) == set(want.match_id)
+            x = got[ids.index(r.match_id)]
+            bat = c.batting[(c.batting.match_id == r.match_id) & (c.batting.team == team)]
+            assert sum(1 for t in x["moments"] if "/" not in t) == int((bat.runs >= 100).sum())
+            assert x["years"] == 2 and x["outcome"] in ("won", "lost", "drew", "tied", "no result")
+            for shift in (-1, 1):
+                other = OD.on_this_day(c, team, later + pd.Timedelta(days=shift))
+                assert r.match_id not in [y["id"] for y in other]
+    # a match on that very date this year isn't "an earlier year"
+    r = m.iloc[0]
+    assert r.match_id not in [x["id"] for x in OD.on_this_day(c, r.home, r.date)]

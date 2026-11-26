@@ -23,7 +23,8 @@ from ccstats.competitions import ordered as in_order
 from . import styleguide as SG
 from .cache import kept
 
-TABS = ["Overview", "How they win", "Opponents and stages", "Season", "Series and Tests", "Squad", "Results"]
+TABS = ["Overview", "How they win", "Opponents and stages", "Season", "Series and Tests", "Squad", "Results", "Then and now",
+        "Eras"]
 BILATERAL = ("ODIs (bilateral series)", "T20Is (bilateral series)", "Tests (bilateral series)")
 WORD = dict(W="won", L="lost", D="drawn", T="tied", NR="no result")
 
@@ -974,8 +975,89 @@ def results_tab(career, section, season, team, venue) -> dict:
     return P.out
 
 
+# --------------------------------------------------------------------------- then and now, eras (stage 5)
+def _f(v, d=1) -> str:
+    return "–" if v is None or (isinstance(v, float) and not np.isfinite(v)) else f"{v:.{d}f}"
+
+
+def then_now_tab(career, section, season, team, venue) -> dict:
+    """Then and now (your answers of 26 November): the team's latest season in each ticked competition beside 1, 3 and
+    5 seasons earlier (those the career has), side by side. Every season of the competition, whatever is picked above."""
+    from ccstats import thenandnow as TN
+    P = _Parts()
+    blocks = []
+    for sec in secs_of(section):
+        comps = []
+        for k, _, _ in TN.choices(career, sec, team):
+            c = TN.compare(career, sec, team, k)
+            a, b = c["then"], c["now"]
+            rec = lambda x: f"{x['won']}–{x['lost']}" + (f"–{x['other']}" if x["other"] else "")   # noqa: E731
+            better = lambda x, y, low=False: (None if x is None or y is None or abs(x - y) < 1e-9   # noqa: E731
+                                              else ("now" if (y < x) == low else "then"))
+            rows = [("Matches", str(a["matches"]), str(b["matches"]), None),
+                    ("Won–lost" + ("–other" if a["other"] or b["other"] else ""), rec(a), rec(b), None),
+                    ("Win %", _f(a["win_pct"], 0), _f(b["win_pct"], 0), better(a["win_pct"], b["win_pct"])),
+                    ("Runs per wicket batting", _f(a["bat_avg"]), _f(b["bat_avg"]), better(a["bat_avg"], b["bat_avg"])),
+                    ("Run rate batting", _f(a["bat_rate"], 2), _f(b["bat_rate"], 2), better(a["bat_rate"], b["bat_rate"])),
+                    ("Highest total", _f(a["highest"], 0), _f(b["highest"], 0), None),
+                    ("Hundreds", str(a["hundreds"]), str(b["hundreds"]), None),
+                    ("Fifties", str(a["fifties"]), str(b["fifties"]), None),
+                    ("Runs per wicket bowling", _f(a["bowl_avg"]), _f(b["bowl_avg"]), better(a["bowl_avg"], b["bowl_avg"], low=True)),
+                    ("Run rate against", _f(a["bowl_rate"], 2), _f(b["bowl_rate"], 2), better(a["bowl_rate"], b["bowl_rate"], low=True)),
+                    ("Five-wicket hauls", str(a["five_fors"]), str(b["five_fors"]), None)]
+            top = lambda x, unit: ", ".join(f"{p} {v:,}" for p, v in x) or "–"   # noqa: E731
+            rows += [("Most runs", top(a["top_runs"], "runs"), top(b["top_runs"], "runs"), None),
+                     ("Most wickets", top(a["top_wkts"], "wkts"), top(b["top_wkts"], "wkts"), None)]
+            comps.append(dict(ago=k, label=f"{k} season{'s' if k != 1 else ''} ago", then=a["season"], now=b["season"],
+                              rows=[dict(what=w, then=x, now=y, better=bt) for w, x, y, bt in rows
+                                    if not (x == "–" and y == "–")],          # (no balls counted: no run rate)
+                              came_in=[dict(player=p, games=g) for p, g in c["came_in"]],
+                              went_out=[dict(player=p, games=g) for p, g in c["went_out"]],
+                              stayed=[dict(player=p, then=g1, now=g2) for p, g1, g2 in c["stayed"]]))
+        blocks.append(dict(section=sec, comps=comps,
+                           none="" if comps else f"{team} has only one season of {sec} so far: nothing to set beside it yet."))
+    P("then_now", lambda: dict(blocks=blocks, note=(
+        "Every season of the competition, whatever season is picked above. The latest season may still be under way, so its "
+        "counts can be lower. ✓ marks the better of the two on rates and percentages (for bowling, fewer runs is better). "
+        "Came in: played in the latest season but not the earlier one; went out: the other way round (games played).")))
+    return P.out
+
+
+def eras_tab(career, section, season, team, venue) -> dict:
+    """Your eras (your answers of 26 November): the team's stretches of 2+ seasons near the top of the ratings in each
+    ticked competition (ratings never mix formats), with their results and key players, and every season's finish."""
+    from ccstats import eras as ER
+    P = _Parts()
+    blocks = []
+    for sec in secs_of(section):
+        ranks = kept(career, ("era_ranks", sec), lambda: ER.season_ranks(career, sec))
+        mine = ranks[ranks.team == team]
+        found = ER.eras(career, sec, team, ranks)
+        m = career.matches
+        g = m[(m.section == sec) & ((m.home == team) | (m.away == team)) & (m.result_type != "no result")]
+        for e in found:
+            outside = g[~g.season.astype(str).isin(e["seasons"])]
+            e["outside"] = (f"{(outside.winner == team).mean() * 100:.0f}% in their other seasons here ({len(outside)} games)"
+                            if len(outside) else "")
+        top = ER.top_of(int(ranks.teams.max())) if len(ranks) else ER.TOP
+        blocks.append(dict(
+            section=sec, eras=found,
+            seasons=table(["Season", "Rating at the end", "Finished", "Near the top"],
+                          [[str(r.season), f"{r.rating:.0f}", f"{ordinal(int(r.rank))} of {int(r.teams)}", "✓" if r.top else ""]
+                           for r in mine.sort_values("season", ascending=False).itertuples()], num={1}),
+            none=("" if found else
+                  f"No era yet: {team} hasn't finished {ER.MIN_SEASONS} seasons in a row in the top {top} of the team "
+                  f"ratings in {sec}." if len(mine) else f"{team} hasn't played {sec} yet.")))
+    P("eras", lambda: dict(blocks=blocks, note=(
+        f"An era is {ER.MIN_SEASONS} or more of the team's seasons in a row finished near the top of the team ratings "
+        f"(the top {ER.TOP}, or the top sixth when more than 12 teams played that season), ranked by each team's rating at "
+        "the end of the season. A season the team didn't play here doesn't break an era. Key players: the most runs and "
+        "wickets for the team in those seasons. Every season of the competition, whatever season is picked above.")))
+    return P.out
+
+
 TAB_FN = {"Overview": overview, "How they win": how_they_win, "Opponents and stages": opponents, "Series and Tests": series_tab,
-          "Squad": squad_tab, "Results": results_tab}
+          "Squad": squad_tab, "Results": results_tab, "Then and now": then_now_tab, "Eras": eras_tab}
 
 
 def page(career, section: str, season: str, team: str, venue: str, tab: str, race: str = "") -> dict:
