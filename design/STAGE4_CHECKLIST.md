@@ -21,7 +21,7 @@ how it was checked; a page isn't finished while any of its lines is open (your s
 - [x] Every "are you sure?" on a delete; nothing changes until you confirm — ✓ Delete (Yes, delete it), Delete the whole schedule (tick box), Remove (Yes, remove it), Restore (Yes, restore), Delete everything (asked twice)
 - [x] Browser test: every tab, form and button, every width, dark and light, no errors, the fit check — ✓ tests/test_web.py: every new page and tab at every width, dark and light, the fit check: 254 passed
 - [x] A self-review with cricket sense on your scorecards before you see it — ✓ done on your career copy (the last meeting shown once per opponent, internationals' top scorer by calendar year, the format names, Mat for matches)
-- [ ] Screenshots
+- [x] Screenshots — ✓ 25 sent 26 November (every Fixtures, Settings and Data check tab, the My team line, the first start, and the names joined by themselves), taken again on the site as it stands
 
 ## Page by page: what the plan and your answers promise
 
@@ -96,9 +96,9 @@ how it was checked; a page isn't finished while any of its lines is open (your s
 - [x] The full sweep on your 2,720 cards (every page, tab and form), junk and load, every server's error log — ✓ every Fixtures tab and form, Data check and Settings on your career copy and 8 odd saves, junk input: 0 problems, 0 server errors
 - [x] The stress test: adding, changing and deleting under load, two pages at once, a folder vanishing, a restore — ✓ 20 adds and 24 reads at once (none lost), 25 undos at once (5 asked twice), a Data check change while browsing, career changes refused meanwhile, restore while reading, a folder that vanishes and comes back, the full reset: 0 problems, 0 server errors
       mid-update, a full reset on a copy
-- [ ] The full test suite and the Windows run
+- [x] The full test suite and the Windows run — ✓ 1,781 passed here; Windows run 66 passed (after two Windows-only fixes: the season-ahead chart's font, the folder window in a test)
 - [x] NEW_SITE_PLAN.md "Stage 4: what was built": a line for every promise above (built, where, how checked) — ✓ section 19
-- [ ] Screenshots of every page and tab, then your approval
+- [x] Screenshots of every page and tab — ✓ sent 26 November; your approval still to come
 
 ## Nothing lost: every line of the old pages (from design/INVENTORY.md)
 Fielding lines (Team catches) are taken out by your rule of 14 November and are marked so when ticked.

@@ -1421,7 +1421,12 @@ there with where it is. Built by me one piece at a time, as in stage 3 (your cho
 - **Checks at the end:** the browser checks on every new page and tab at every width, dark and light (254 passed); your
   career and the 8 odd saves through every new page and form (0 problems, 0 server errors); the stress test (20 adds
   and 24 reads at once with none lost, 25 undos at once, a Data check change while browsing, a restore while reading,
-  a folder that vanishes and comes back, the full reset on a copy: 0 problems); the full test suite and the Windows run.
+  a folder that vanishes and comes back, the full reset on a copy: 0 problems); the full test suite (1,781 passed) and
+  the Windows run (passed, 26 November, after two Windows-only fixes: the season-ahead chart's labels in the site's
+  own font, and a test that waited on the real folder window). The deep round of 26 November also found and fixed: a
+  series with no printed length stopped the alerts; a player menu that closed itself while a page filled in; two
+  tests that expected new scorecards in one batch. On a copy of your career, a Data check change and its undo left
+  all 101 pages checked identical, three times, and a restore gave back the same career.
 
 ## 20. Stage 5: your answers (26 November)
 
