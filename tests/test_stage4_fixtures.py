@@ -108,7 +108,7 @@ def test_add_change_delete_and_every_change_undoable(pc):
     # delete the ODIs, then undo each change from the list, newest first, back to nothing
     odi = next(r["series"] for r in now if r["format"] == "ODI")
     post(s, action="delete", team="England", series=odi)
-    hist = s.json("/api/fixtures?tab=Change%20or%20delete")["history"]
+    hist = s.json("/api/fixtures?tab=Change or delete")["history"]
     assert [h["what"].split(":")[0].split(" ")[0] for h in hist][:2] == ["Deleted", "Changed"]
     for h in hist:
         status, b = post(s, action="undo", team="England", id=h["id"])
@@ -123,7 +123,7 @@ def test_undo_of_an_older_change_keeps_the_later_ones(pc):
     s, store = pc
     post(s, action="add_series", team="England", opponent="India", format="Test", n=3, venue="away", month="2030-01")
     post(s, action="add_series", team="England", opponent="Australia", format="ODI", n=3, venue="home", month="2030-03")
-    hist = s.json("/api/fixtures?tab=Change%20or%20delete")["history"]
+    hist = s.json("/api/fixtures?tab=Change or delete")["history"]
     older = hist[-1]
     assert "India" in older["what"]
     post(s, action="undo", team="England", id=older["id"])

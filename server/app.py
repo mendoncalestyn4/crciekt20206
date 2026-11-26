@@ -26,6 +26,7 @@ from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
 from ccstats import depth as DP
+from ccstats import datacheck
 from ccstats import keep as KEEP
 from ccstats import logos as LG
 from ccstats import search as SR
@@ -33,7 +34,7 @@ from ccstats.colours import TEAM_COLOURS
 from ccstats.local import CareerStore
 from ccstats.competitions import ordered as in_order
 
-from . import analyticspage, comparepage, comppage, fixturespage, settingspage, leaderteams, storiespage, insightspage, leaderspage, matchpage, myteam, plannerpage, playerpage, previewpage, reviewpage, rivalriespage, seasonpage, styleguide, teampage, tvtpage
+from . import analyticspage, comparepage, comppage, fixturespage, settingspage, datacheckpage, leaderteams, storiespage, insightspage, leaderspage, matchpage, myteam, plannerpage, playerpage, previewpage, reviewpage, rivalriespage, seasonpage, styleguide, teampage, tvtpage
 from .cache import _stamp as cache_stamp, kept, put as cache_put, save as save_kept
 from . import warmers
 from .site import Site
@@ -476,6 +477,66 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             except OSError:
                 pass
 
+    # ------------------------------------------------------------------ Data check (stage 4)
+    DCSTATE = {"busy": False, "what": "", "done": "", "error": "", "at": 0.0}
+
+    def _apply_fixes(name: str, fixes, message: str) -> None:
+        """Every number worked out again with the new Data check choices (in the background, the site usable), after
+        a backup of the career; then every page made ready again."""
+        try:
+            made, why = site.store.checked_backup(name, note="before-data-check")
+            if why:
+                problems.add("server", "backups", why, career=name)
+            career, settings = site.store.load(name)
+            new = career.with_fixes(fixes)
+            site.store.save(new, settings)
+            site.forget(name)
+            DCSTATE.update(busy=False, done=message, error="", at=time.time())
+            hub.publish({"type": "datacheck", "career": name, "message": message})
+            asyncio.run_coroutine_threadsafe(_rewarm(), LOOP[0]) if LOOP[0] else None
+        except Exception as e:  # noqa: BLE001 - the change didn't happen: said so, nothing half-done
+            DCSTATE.update(busy=False, done="", error=f"Not changed: {type(e).__name__}: {e}", at=time.time())
+
+    async def _rewarm():
+        WARM["career"] = ""
+        asyncio.get_running_loop().run_in_executor(None, warm)
+
+    async def datacheck_(request: Request):
+        if request.method == "GET":
+            q = request.query_params
+            data = await _with_career(lambda c: datacheckpage.page(c, dict(q), DCSTATE))()
+            return _json(data) if data is not None else _error("No career is open yet.", 404)
+        try:
+            b = await _body(request)
+        except ValueError as e:
+            return _error(str(e), 415)
+        action = str(b.get("action", ""))
+
+        def go():
+            c = site.career()
+            if c is None:
+                return None
+            if b.get("preview"):
+                return dict(preview=datacheck.preview(c, action, b))
+            if DCSTATE["busy"]:
+                raise datacheck.Refused("Another change is still being made: wait a moment.")
+            fixes, message = datacheck.change(c, action, b)
+            ok, free, need = site.store.room_for_backup(c.name)
+            if not ok:
+                raise datacheck.Refused(f"Not enough room on the disk for the backup made before a change: {free / 1e6:,.0f} MB "
+                                        f"free, {need / 1e6:,.0f} MB needed. Free some space first.")
+            DCSTATE.update(busy=True, what=message.replace("Done: ", "").replace("Undone: ", ""), done="", error="", at=time.time())
+            import threading
+            threading.Thread(target=_apply_fixes, args=(c.name, fixes, message), daemon=True).start()
+            return dict(started=True, message="Updating every number with your change…")
+        try:
+            out = await anyio.to_thread.run_sync(go)
+        except datacheck.Refused as e:
+            return _error(str(e), 400)
+        if out is None:
+            return _error("No career is open yet.", 404)
+        return _json(out)
+
     # ------------------------------------------------------------------ Fixtures (stage 4)
     def _fixtures(c, q):
         mine = site.my_teams(c, unplayed=True)
@@ -536,7 +597,14 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         # warm-up's answer, comes at once
         sig = json.dumps([sorted(notes.items()), sched, mine], sort_keys=True, default=str)
         data = kept(c, ("myteam", team, section, sig), lambda: myteam.page(c, team, section, mine, notes, sched))
-        return {**data, "mine": team in mine, "asked": asked}
+        # Data check, only when something needs you (your answer 17): a small line on My team
+        try:
+            from ccstats import datacheck as DCK
+            sm = kept(c, ("dc-summary",), lambda: DCK.summary(c))
+            nudge = sm["todo"] if sm["needs_you"] else []
+        except Exception:  # noqa: BLE001 - the line is a pointer, never a reason for My team to break
+            nudge = []
+        return {**data, "mine": team in mine, "asked": asked, "datacheck": nudge}
 
     async def myteam_(request: Request):
         q = request.query_params
@@ -1105,8 +1173,11 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                 pass
             await asyncio.sleep(watch_every)
 
+    LOOP: list = [None]
+
     @contextlib.asynccontextmanager
     async def lifespan(app):
+        LOOP[0] = asyncio.get_running_loop()
         if watch_every:
             try:
                 await anyio.to_thread.run_sync(_before_update)
@@ -1165,6 +1236,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/notes", note_, methods=["POST"]),
         Route("/api/fixtures", fixtures_, methods=["GET", "POST"]),
         Route("/api/settings", settings_, methods=["GET", "POST"]),
+        Route("/api/datacheck", datacheck_, methods=["GET", "POST"]),
         Route("/api/upload", upload_, methods=["POST"]),
         Route("/api/careers/{name}/file", career_file),
         Route("/api/inbox", inbox_, methods=["GET", "POST"]),
