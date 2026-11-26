@@ -18,6 +18,12 @@ concurrency:
 
 jobs:
   windows:
+    # every test, split over three Windows machines at once (each runs every third test), so a run takes about a
+    # third of the time; together they are exactly every test, each once
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     runs-on: windows-latest
     timeout-minutes: 120
     steps:
@@ -33,5 +39,7 @@ jobs:
           python -m playwright install chromium
       - name: Show the versions
         run: python -c "import sys, pandas; print(sys.version); print('pandas', pandas.__version__)"
-      - name: Every test
+      - name: Every test (this machine's third)
+        env:
+          TEST_SHARD: ${{ matrix.shard }}/3
         run: python -m pytest -q -p no:cacheprovider

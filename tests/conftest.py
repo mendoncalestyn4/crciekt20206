@@ -28,3 +28,16 @@ def _no_helper_processes():
         os.environ.pop("STATS_PACK_HELPERS", None)
     else:
         os.environ["STATS_PACK_HELPERS"] = before
+
+
+def pytest_collection_modifyitems(config, items):
+    """TEST_SHARD="k/n" (the Windows run on GitHub, split over n machines at once): this machine runs every n-th test,
+    starting at the k-th, so the n parts together are exactly every test, each once."""
+    import os
+    shard = os.environ.get("TEST_SHARD", "")
+    if not shard:
+        return
+    k, n = (int(x) for x in shard.split("/"))
+    keep = [it for i, it in enumerate(items) if i % n == k - 1]
+    config.hook.pytest_deselected(items=[it for i, it in enumerate(items) if i % n != k - 1])
+    items[:] = keep
