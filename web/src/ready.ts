@@ -1,14 +1,17 @@
-// When a page has its numbers and every chart has finished drawing, it is fitted (nothing spills out of its tile) and
+// When a page has all its numbers (nothing still being fetched) and every chart has finished drawing, it is fitted (nothing spills out of its tile) and
 // marked ready: <body data-ready="1">. The browser tests wait for that.
 import { useEffect } from "react";
 import { refit } from "./fit";
+
+declare global { interface Window { fetchingNow?: () => number } }
 
 export function useReady(ok: boolean, key: unknown = null): void {
   useEffect(() => {
     delete document.body.dataset.ready;
     if (!ok) return;
     let stop = false, rounds = 0;
-    const idle = () => (window.chartsDrawing ?? 0) === 0;
+    // idle: no chart drawing and nothing still being fetched (a part arriving later would redraw its chart)
+    const idle = () => (window.chartsDrawing ?? 0) === 0 && (window.fetchingNow?.() ?? 0) === 0;
     const wait = () => {
       if (stop) return;
       if (!idle()) { window.setTimeout(wait, 50); return; }

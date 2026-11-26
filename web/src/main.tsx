@@ -40,6 +40,9 @@ document.addEventListener("mousedown", (e) => {
 
 const queries = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000, refetchOnWindowFocus: false } } });
 watchForProblems(queries);
+// a page counts as ready only when nothing it asked for is still on its way (ready.ts): a part of a page that arrives
+// later (the player page's tiles) redraws its chart, so "ready" before then was too early
+window.fetchingNow = () => queries.isFetching();
 
 // Charts measure their words before drawing them: the fonts are loaded first, or the measures would be the stand-in
 // font's and labels would touch (as the mock-ups did it).

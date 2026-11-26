@@ -247,13 +247,16 @@ def test_new_matches_reach_the_open_page(pc, web):
             for f in FIXTURES[20:23]:
                 shutil.copy(f, folder / f.name)
             (folder / "1 jan 2027-xxx v yyy (odi).txt").write_text("not a scorecard")
+            # scorecards are read as they appear, so the three can come in more than one batch (as from the game)
+            def added(seen):
+                return sum(e["added"] for e in seen if e["type"] == "matches")
             seen, deadline = [], time.time() + 30
-            while time.time() < deadline and not {"matches", "failed", "checked"} <= {e["type"] for e in seen}:
+            while time.time() < deadline and not ({"failed", "checked"} <= {e["type"] for e in seen} and added(seen) >= 3):
                 line = stream.readline().decode()
                 if line.startswith("data: "):
                     seen.append(json.loads(line[6:]))
-        news = next(e for e in seen if e["type"] == "matches")
-        assert news["career"] == "My career" and news["added"] == 3
+        news = [e for e in seen if e["type"] == "matches"]
+        assert news and all(e["career"] == "My career" for e in news) and added(seen) == 3
         failed = [e for e in seen if e["type"] == "failed"]
         assert failed and failed[0]["files"][0]["file"].endswith("(odi).txt")
         assert any(e["type"] == "checked" and e["folders"] == 1 for e in seen)
