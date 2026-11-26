@@ -502,6 +502,7 @@ export type StatByStat = {
   choices: { section: string; matches: number }[]; ticked: string[]; section: string; seasons: string[]; picked_seasons: string[];
   discs: string[]; disc: string; events: string[]; picked_events: string[]; teams: string[]; picked_teams: string[];
   venues: string[]; picked_venues: string[]; groups: string[]; picked_groups: string[];
+  picked_opps?: string[]; results?: { id: string; label: string }[]; result?: string;
   single: boolean; picked_single: number[]; view: "Best" | "Worst"; tops: string[]; top: string;
   stats?: { id: string; label: string }[]; stat?: string; measures?: { id: string; label: string }[]; measure?: string;
   minimum?: { options: { v: number; label: string }[]; value: number }; names?: string[]; find?: string; only?: string[];

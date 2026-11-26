@@ -41,6 +41,8 @@ class Scope:
     teams: list[str] = field(default_factory=list)  # only rows for these teams (empty = any)
     venues: list[str] = field(default_factory=list)  # home / away / neutral, from the player's own team (empty = any)
     how_out: list[str] = field(default_factory=list)  # batting only: innings ending this way ("not out" included)
+    opponents: list[str] = field(default_factory=list)  # only rows against these teams (empty = any) (stage 5)
+    result: str = ""  # only rows in matches the player's side "won", "lost", or was "chasing" in (stage 5)
     only: tuple = ()  # only these matches (empty = any): an April-to-March year of one competition, when formats are ticked together
 
     def match_ids(self, matches: pd.DataFrame) -> pd.Index:
@@ -94,6 +96,22 @@ def venue_of(rows: pd.DataFrame, matches: pd.DataFrame) -> pd.Series:
     home = rows.match_id.map(info.home)
     neutral = rows.match_id.map(info.neutral).fillna(False).astype(bool)
     return pd.Series(np.where(neutral, "neutral", np.where(rows.team == home, "home", "away")), index=rows.index)
+
+
+def _own_rows(df: pd.DataFrame, scope: "Scope", matches: pd.DataFrame) -> pd.DataFrame:
+    """The players' own rows kept by the stage 5 row filters (against chosen opponents; in wins, defeats or chases).
+    Like the team filter, these leave the average player as the whole selection's."""
+    if scope.opponents and len(df):
+        df = df[df.opposition.isin(scope.opponents)]
+    if scope.result and len(df):
+        mm = matches.set_index("match_id")
+        if scope.result == "won":
+            df = df[df.match_id.map(mm.winner) == df.team]
+        elif scope.result == "lost":
+            df = df[df.match_id.map(mm.loser) == df.team]
+        elif scope.result == "chasing":   # the player's side batted second
+            df = df[(df.match_id.map(mm.batted_first) != df.team) & df.match_id.map(mm.batted_first).astype(bool)]
+    return df
 
 
 def _rows(df: pd.DataFrame, scope: "Scope", matches: pd.DataFrame) -> pd.DataFrame:
@@ -180,6 +198,7 @@ def player_tables(career, scope: Scope | None = None, by_team: bool = False) -> 
         bat_scope = bat_scope[bat_scope.team == scope.team]
     if scope.teams:
         bat_scope = bat_scope[bat_scope.team.isin(scope.teams)]
+    bat_scope = _own_rows(bat_scope, scope, matches)
     batted = bat_scope[bat_scope.did_bat]
 
     # ---------------- batting
@@ -221,6 +240,7 @@ def player_tables(career, scope: Scope | None = None, by_team: bool = False) -> 
         bowl = bowl[bowl.team == scope.team]
     if scope.teams:
         bowl = bowl[bowl.team.isin(scope.teams)]
+    bowl = _own_rows(bowl, scope, matches)
     tb_runs, tb_balls, tb_wkts = all_bowl.runs.sum(), all_bowl.balls.sum(), all_bowl.wickets.sum()
     base_econ = _safe(tb_runs, tb_balls) * 6
     base_bsr = _safe(tb_balls, tb_wkts)

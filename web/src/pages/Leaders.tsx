@@ -39,7 +39,8 @@ export function LeadersHead({ on, crumb }: { on: number; crumb: ReactNode }) {
   return <Head title="Leaders" crumb={crumb} chips={LEADER_PAGES.map((p) => p.label)} on={on} onChip={(i) => go(`${LEADER_PAGES[i]!.to}${keep}`)} />;
 }
 
-const KEYS = ["section", "seasons", "disc", "events", "teams", "venues", "pos", "single", "posn", "view", "top", "min", "find", "only", "stat", "measure"];
+const KEYS = ["section", "seasons", "disc", "events", "teams", "venues", "pos", "single", "posn", "view", "top", "min", "find", "only", "stat", "measure",
+  "opps", "result"];
 
 export function StatByStat() {
   const { career, noCareer, nation } = useShell();
@@ -81,6 +82,9 @@ export function StatByStat() {
             {d.events.length > 1 && <Drop label="Competitions inside" all={d.events} on={d.picked_events} set={(v) => set({ events: join(v) })} none="All of them" />}
             <Drop label="Teams" all={d.teams} on={d.picked_teams} set={(v) => set({ teams: join(v) })} none="All teams" />
             <Drop label="Venue" all={d.venues} on={d.picked_venues} set={(v) => set({ venues: join(v) })} none="Anywhere" />
+            <Drop label="Against" all={d.teams} on={d.picked_opps ?? []} set={(v) => set({ opps: join(v) })} none="Every opponent" />
+            {d.results && <Drop label="Result" all={d.results.map((r) => r.id || "all")} on={[d.result || "all"]} multi={false} keepOne
+              say={(x) => d.results!.find((r) => (r.id || "all") === x)?.label ?? x} set={(v) => set({ result: v[0] === "all" ? "" : v[0]! })} />}
             {d.disc === "Batting" && <>
               <Drop label="Batting positions" all={[...d.groups, ...Array.from({ length: 11 }, (_, i) => `No. ${i + 1}`)]}
                 on={d.single ? d.picked_single.map((n) => `No. ${n}`) : d.picked_groups} none="Every position"

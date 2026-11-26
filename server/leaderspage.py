@@ -21,6 +21,7 @@ from .cache import kept
 from .teampage import choices, fmt, secs_of, table
 
 TOPS = {"10": 10, "20": 20, "50": 50, "all": 10_000}
+RESULTS = {"": "Every match", "won": "In wins", "lost": "In defeats", "chasing": "Chasing (batting second)"}
 
 
 def _list(q: dict, key: str) -> list[str]:
@@ -49,6 +50,8 @@ def stat_by_stat(career, q: dict, mine: list[str]) -> dict:
     teams = sorted(set(in_events.home) | set(in_events.away))
     picked_teams = [t for t in teams if t in set(_list(q, "teams"))]
     picked_venues = [v for v in L.VENUES if v in set(_list(q, "venues"))]
+    picked_opps = [t for t in teams if t in set(_list(q, "opps"))]                     # stage 5: against these teams
+    result = q.get("result", "") if q.get("result", "") in RESULTS else ""            # stage 5: wins, defeats, chases
     single = q.get("single") == "1" and disc == "Batting"
     picked_groups = [g for g in L.GROUPS if g in set(_list(q, "pos"))] if disc == "Batting" and not single else []
     picked_single = sorted({int(x) for x in _list(q, "posn") if x.isdigit() and 1 <= int(x) <= 11}) if single else []
@@ -61,14 +64,15 @@ def stat_by_stat(career, q: dict, mine: list[str]) -> dict:
     only = tuple(sorted(set(_list(q, "only"))))
     scope = Scope(sections=ticked, seasons=picked_seasons, events=picked_events,
                   positions=L.positions_of(picked_groups, picked_single),
-                  venues=[L.VENUES[v] for v in picked_venues], teams=picked_teams)
+                  venues=[L.VENUES[v] for v in picked_venues], teams=picked_teams, opponents=picked_opps, result=result)
     key = ("statbystat", repr(scope), disc, q.get("stat", ""), view, top, minimum, only, q.get("measure", ""),
            q.get("find", ""), tuple(mine))
     picks = dict(choices=[dict(section=c["section"], matches=c["matches"]) for c in ch], ticked=ticked,
                  section="|".join(ticked), seasons=seasons, picked_seasons=picked_seasons, discs=list(L.DISCS), disc=disc,
                  events=events, picked_events=picked_events, teams=teams, picked_teams=picked_teams,
                  venues=list(L.VENUES), picked_venues=picked_venues, groups=L.GROUPS if disc == "Batting" else [], picked_groups=picked_groups,
-                 single=single, picked_single=picked_single, view=view, tops=list(TOPS), top=top)
+                 single=single, picked_single=picked_single, view=view, tops=list(TOPS), top=top,
+                 picked_opps=picked_opps, results=[dict(id=k, label=v) for k, v in RESULTS.items()], result=result)
     body = kept(career, key, lambda: _board(career, scope, disc, q, view, top, minimum, only, mine, ticked,
                                             picked_events, picked_seasons, picked_teams, picked_venues,
                                             picked_groups, picked_single))
@@ -88,6 +92,16 @@ def _where(groups, single, venues) -> str:
     return where
 
 
+def _against(scope) -> str:
+    """", against Australia / England, in wins": the stage 5 filters as the page says them."""
+    out = ""
+    if scope.opponents:
+        out += ", against " + " / ".join(scope.opponents)
+    if scope.result:
+        out += {"won": ", in wins", "lost": ", in defeats", "chasing": ", batting second"}[scope.result]
+    return out
+
+
 def _board(career, scope, disc, q, view, top, minimum, only, mine, ticked, events, seasons, teams, venues,
            groups, single) -> dict:
     best = view == "Best"
@@ -102,7 +116,7 @@ def _board(career, scope, disc, q, view, top, minimum, only, mine, ticked, event
                      minimum=dict(options=[dict(v=v, label="Anyone" if v == 0 else f"{v}+ {unit}") for v in b.options],
                                   value=b.minimum),
                      names=names, find=find, only=[p for p in only if p in set(names)])
-    where = _where(groups, single, venues)
+    where = _where(groups, single, venues) + _against(scope)
     title = " + ".join(ticked) + (" (each against its own average)" if len(ticked) > 1 else "")
     if events:
         title += " · " + ", ".join(events)

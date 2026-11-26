@@ -262,3 +262,29 @@ def test_selection_changes_counted_by_hand(demo):
     ids = c.matches[c.matches.section == sec].match_id
     by_hand = sum(len(b[2] - a[2]) for a, b in zip(xis, xis[1:])) / (len(xis) - 1)
     assert abs(SEL.changes(c, ids, team) - by_hand) < 1e-9
+
+
+# --------------------------------------------------------------------------- Stat by stat: against, and by result
+def test_stat_by_stat_against_opponents_and_by_result_counted_by_hand(c):
+    from ccstats.stats import player_tables
+    m = c.matches
+    sec = "ODIs" if "ODIs" in set(m.section) else m.section.iloc[0]
+    ids = m[m.section == sec].match_id
+    here = m[m.match_id.isin(ids)].set_index("match_id")
+    bat = c.batting[c.batting.match_id.isin(ids) & c.batting.did_bat.astype(bool)]
+    bowl = c.bowling[c.bowling.match_id.isin(ids)]
+    opps = sorted(set(bat.opposition))[:2]
+    b, w, _, base_all = player_tables(c, Scope(sections=[sec], opponents=opps))
+    _, _, _, base = player_tables(c, Scope(sections=[sec]))
+    assert base_all.runs_per_innings == base.runs_per_innings          # the average player stays the competition's
+    by_hand = bat[bat.opposition.isin(opps)].groupby("player").runs.sum()
+    assert dict(zip(b[b.innings > 0].player, b[b.innings > 0].runs)) == {k: int(v) for k, v in by_hand.items()}
+    by_hand_w = bowl[bowl.opposition.isin(opps)].groupby("player").wickets.sum()
+    got_w = dict(zip(w.player, w.wickets))
+    assert all(got_w[k] == int(v) for k, v in by_hand_w.items())
+    for result, keep in (("won", lambda r: here.winner[r.match_id] == r.team),
+                         ("lost", lambda r: here.loser[r.match_id] == r.team),
+                         ("chasing", lambda r: bool(here.batted_first[r.match_id]) and here.batted_first[r.match_id] != r.team)):
+        b, _, _, _ = player_tables(c, Scope(sections=[sec], result=result))
+        want = bat[[keep(r) for r in bat.itertuples()]].groupby("player").runs.sum()
+        assert dict(zip(b[b.innings > 0].player, b[b.innings > 0].runs)) == {k: int(v) for k, v in want.items()}, result
