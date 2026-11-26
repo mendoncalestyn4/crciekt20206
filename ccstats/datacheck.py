@@ -70,7 +70,7 @@ def summary(career) -> dict:
         fine.append(f"✅ All {len(career.matches):,} scorecards add up")
     if len(auto):
         fine.append(f"✅ {auto.player.nunique()} names shared by different players kept apart by themselves → the Shared names tab")
-    if not len(merges):
+    if not len(merges) and (joined is None or not len(joined)):   # (a joined pair has its own line above)
         fine.append("✅ No player appears under two names")
     if len(left):
         fine.append(f"ℹ️ {len(left)} game{'s' if len(left) > 1 else ''} left out on purpose (from an earlier playthrough"

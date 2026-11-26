@@ -156,6 +156,7 @@ def test_not_straight_after_is_only_listed():
 def test_summary_counts_and_the_old_site_columns(twice):
     s = DC.summary(twice)
     assert any("joined by themselves" in x for x in s["fine"]) and s["counts"]["Player with two names"] >= 1
+    assert not any("No player appears under two names" in x for x in s["fine"])   # never both at once
     assert s["counts"]["Your changes"] >= 1
     mg = checks.merge_suggestions(twice)
     for col in ("keep", "other", "keep_matches", "other_matches", "teams", "why"):
