@@ -1349,6 +1349,14 @@ Asked before building, as questions with the answers written out (your choice); 
 17. A small "Worth a minute of your time → Data check" line on My team when something needs you.
 18. While a Data check change re-works every number: the message and the progress bar, the site usable.
 19. New alerts (your yes): Goal reached!, Series won, Milestone reached.
+20. More picked (new, your yes, 26 November): **the weekly full recheck** built now (while the site is idle, every
+    number worked out again from scratch once a week and compared; anything off put right and listed on Problems);
+    **a fix preview** on Data check (before a split or join, how it changes each player's runs, wickets and matches);
+    **goals suggested each season** (at the start of each season, from your schedule and squad, across every goal
+    kind, one click to add); **a daily summary** (the first time you open the site each day: what happened since last
+    time, matches, records, milestones, goals). Not picked: the rest and rotation planner, the clash warning, next
+    season's schedule suggested, the season-over alert, looking inside a backup, comparing two careers, career at a
+    glance, new since your last visit.
 
 ## Appendix: technical outline
 

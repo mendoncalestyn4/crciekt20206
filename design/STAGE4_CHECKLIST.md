@@ -73,6 +73,13 @@ how it was checked; a page isn't finished while any of its lines is open (your s
 - [ ] New matches, New record!, files that couldn't be read (as now)
 - [ ] New: Goal reached!, Series won, Milestone reached (answer 19)
 
+**Also picked (answer 20)**
+- [ ] The weekly full recheck: while idle, every number worked out again from scratch and compared; anything off put
+      right and listed on Settings → Problems
+- [ ] Fix preview on Data check: before a split or join, each side's runs, wickets and matches before and after
+- [ ] Goals suggested each season, across every goal kind, one click to add
+- [ ] Daily summary: the first open each day, what happened since last time (matches, records, milestones, goals)
+
 ## Stage end
 - [ ] The full sweep on your 2,720 cards (every page, tab and form), junk and load, every server's error log
 - [ ] The stress test: adding, changing and deleting under load, two pages at once, a folder vanishing, a restore
