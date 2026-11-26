@@ -1486,11 +1486,14 @@ starts (ready-written answers to pick from); the program built on GitHub's Windo
 in the waits; during building only each piece's own tests, with a full run here and on Windows after each group and
 before anything is called finished; quiet while working. The stage 5 checklist and the questions are prepared while
 stage 4 is with you. About 6–7 days.
-14. **Data check · Scorecards, your answers (26 November):** a scorecard the site has already put right (the game's
-    own printing mistakes) isn't listed once it's old news: a newly fixed one is shown while it's new, then folds away;
-    the tab reads "Scorecards ✓ 5 fixed" (a warning count only for a card the site couldn't put right). The no-ball card
-    (runs the game left off every bowler) gets a button to share those runs out between that innings' bowlers by overs
-    bowled (a fair guess, so only by your click, with the numbers before and after first, and undoable).
+14. **Data check · Scorecards, your answers (26 November: "if the issue is fixed don't show; if it can't be fixed just
+    fix it somehow"):** a scorecard the site has put right isn't listed on Data check at all (the tab reads
+    "Scorecards ✓", with no count). One the card itself can't settle is put right by the site's best fair guess, by
+    itself: runs the game left off every bowler (uncharged no-balls or wides) are shared between that innings' bowlers by
+    overs bowled; any other gap is closed the same way, the closest fair answer the card allows, and the totals always
+    add up. A quiet note stays on that match's scorecard page ("figures put right by the site") so any number can be
+    traced. Only a file that isn't a scorecard at all (empty or broken) is still named, since there's nothing in it to
+    count.
 Not picked: compare two careers, the colour-blind check. Stage 5's list is locked here (your choice, 26 November); more
 ideas wait for your review after stage 6.
 
