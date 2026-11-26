@@ -52,6 +52,12 @@ def tables(career, scope: Scope, disc: str) -> tuple[pd.DataFrame, Baseline]:
     is each competition's own, added up."""
     bat, bowl, _, base = player_tables(career, scope)
     table = bat if disc == "Batting" else bowl
+    if disc == "Bowling" and len(table):    # stands of 50+ broken (stage 5: partnership breakers), in the same matches
+        from . import breakers as BR
+        b = BR.broken(career, scope.match_ids(career.matches))
+        if scope.teams:
+            b = b[b.team.isin(scope.teams)]
+        table = table.assign(stands_broken=table.player.map(b.bowler.value_counts()).fillna(0).astype(int))
     if len(scope.sections) > 1 and len(table):
         col = AGAINST[disc]
         fair, _ = D.fair_index(career, scope, disc, col, "section")
@@ -59,8 +65,19 @@ def tables(career, scope: Scope, disc: str) -> tuple[pd.DataFrame, Baseline]:
     return table, base
 
 
-def stats_for(base: Baseline, disc: str) -> list[Stat]:
-    return stat_definitions(base)["bat" if disc == "Batting" else "bowl"]
+def stats_for(base: Baseline, disc: str, table: pd.DataFrame | None = None) -> list[Stat]:
+    out = stat_definitions(base)["bat" if disc == "Batting" else "bowl"]
+    if disc == "Bowling":
+        from .stats import DotChart
+        rate = float(table.stands_broken.sum() / table.innings.sum()) if table is not None and len(table) and \
+            "stands_broken" in table and table.innings.sum() else 0.0
+        out = out + [Stat("stands_broken", "Stands broken (50+)", "stands_broken", "high", 0,
+                          "Partnerships of 50 or more ended by the bowler: the wicket that broke the stand (a run out "
+                          "counts for no one). Only innings where the scorecard shows who batted together.",
+                          DotChart("innings", "stands_broken", "Innings bowled", "Stands of 50+ broken", "slope", rate,
+                                   "the average rate", "Breaks big stands more often than the average bowler.",
+                                   "Breaks big stands less often than average.", "Has bowled more."))]
+    return out
 
 
 def measures_for(scope: Scope, career) -> list[str]:
@@ -79,14 +96,14 @@ def measures_for(scope: Scope, career) -> list[str]:
 def board(career, scope: Scope, disc: str, stat_id: str, best: bool = True, minimum: int | None = None,
           only: tuple = (), measure: str = "all") -> Board:
     table, base = tables(career, scope, disc)
-    defs = stats_for(base, disc)
+    defs = stats_for(base, disc, table)
     raw = next((s for s in defs if s.id == stat_id), defs[0])
     options = MINS[disc][base.kind]
     # the current site's default: the stricter end of the list, as long as at least 12 players still qualify
     default_min = next((v for v in reversed(options[:3]) if (table["balls"] >= v).sum() >= 12), options[0])
     if minimum not in options:
         minimum = default_min
-    measures = measures_for(scope, career)
+    measures = measures_for(scope, career) if raw.id != "stands_broken" else ["all"]   # a count: no fair form
     if measure not in measures:
         measure = "all"
     stat = raw

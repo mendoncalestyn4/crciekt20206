@@ -46,7 +46,7 @@ def test_fifteen_tabs_in_order(career):
     d = page(career)
     assert d["tabs"] == ["Form guide", "Milestones and records", "Win when they fire", "Heroes in defeat", "Carried the team",
                          "Quirks", "After a hundred", "Pairs", "Player of the Series", "Upsets", "Fastest to", "Match impact",
-                         "Badges", "Batter v bowler", "Clutch"]
+                         "Badges", "Batter v bowler", "Clutch", "Partnership breakers"]
     order = [x["section"] for x in choices(career)]
     assert d["ticked"] == [order[0]]
     # only Batter v bowler adds competitions up

@@ -252,6 +252,7 @@ export type Bowling = {
   form: FormT; seasons: Split; how_wickets: Split | null;
   match_pattern: { none?: string; first: string; second: string; both: string; best: string; shows?: string; for_?: string } | null;
   with_without: { rows: { label: string; spells: number; wickets: number; economy: string; maidens: string; parts?: Parts }[]; shows?: string; for_?: string };
+  breakers?: { text: string; for_: string };
   season_table: RecordTableT; quality: Split | null; bunnies: Split | null; streaks: { streak: string; longest: number; current: number }[];
   splits: { overall: number | null; rows: Split[] };
   each?: Partial<{ [K in "match_pattern" | "with_without" | "streaks"]: Each<NonNullable<Bowling[K]>>[] }>;
@@ -582,6 +583,7 @@ export type StoriesPage = {
   one?: NGrid; share?: { rows: SignedBar[] } & Three; share_none?: string;
   nineties?: NGrid; pairs?: NGrid; not_outs?: NGrid; after?: NGrid; after_none?: string;
   chem?: NGrid; chem_none?: string; pressure?: NGrid; pressure_none?: string;
+  breakers?: NGrid; breakers_none?: string; breakers_note?: string; biggest?: NGrid; is_?: string; best?: string; for_?: string; best_label?: string;
   series?: NGrid; series_none?: string; upsets?: NGrid; upsets_none?: string;
   fast?: { title: string; right: string; table: NGrid }[]; fast_none?: string; fast_note?: string;
   top?: NGrid; per?: { rows: SignedBar[] } & Three; impact_none?: string;

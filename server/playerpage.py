@@ -1025,6 +1025,14 @@ def _bowling(career, player, section, season, ids, spells, bowl_t, kind, season_
                                           maidens=fmt(b["maidens_per_10"], 1) if test else "–",
                                           parts=dict(bruns=b["runs"], bballs=b["balls"], wkts=0, binns=b["spells"]))],
                                shows=shows, for_=for_)
+    from ccstats import breakers as BR          # partnership breaker (stage 5): big stands they ended here
+    pb = BR.of_player(career, ids, player)
+    out["breakers"] = dict(text=(f"Broke {pb['broken']} stand{'s' if pb['broken'] != 1 else ''} of {BR.MIN_STAND}+ here, "
+                                 f"the biggest {pb['biggest']} (getting {pb['biggest_batter']}); the stands they broke "
+                                 f"averaged {pb['average']:.1f}.") if pb["broken"] else
+                           f"Hasn't broken a stand of {BR.MIN_STAND} or more here yet.",
+                           for_="Shows who ends big partnerships, not just who takes the tail: the bowler to bring on "
+                                "when a pair gets set. A run out counts for no one.")
     out["season_table"] = table(A.bowling_record(career, ids, player, by="season", season_of=season_of)
                                 .sort_values("season", ascending=False), "season", True)
     q = A.wicket_quality(career, ids, player)

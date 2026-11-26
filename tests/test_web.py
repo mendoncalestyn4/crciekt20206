@@ -49,6 +49,7 @@ PAGES = ["/", "/inbox", "/style-guide", "/settings", "/players", "/players/J Bet
          "/players/stories?tab=Player of the Series&section=ODIs", "/players/stories?tab=Upsets", "/players/stories?tab=Fastest to&section=ODIs",
          "/players/stories?tab=Match impact&section=ODIs", "/players/stories?tab=Badges&section=ODIs",
          "/players/stories?tab=Batter v bowler&section=ODIs|T20Is&batter=S Gill", "/players/stories?tab=Clutch&section=Indian Premier League",
+         "/players/stories?tab=Partnership breakers&section=Ranji Trophy", "/leaders?disc=Bowling&stat=stands_broken",
          "/players/compare", "/players/compare?section=Indian Premier League&disc=Bowling", "/players/compare?section=ODIs|T20Is", "/teams/leaders", "/teams/leaders?section=ODIs&teams=all", "/teams/leaders?section=Indian Premier League&season=2026&teams=all",
          "/no-such-page"]
 

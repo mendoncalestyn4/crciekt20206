@@ -97,7 +97,7 @@ def _board(career, scope, disc, q, view, top, minimum, only, mine, ticked, event
     n_top = TOPS[top]
     names = sorted(b.table.player.unique()) if len(b.table) else []
     find = q.get("find", "") if q.get("find", "") in set(names) else ""
-    out: dict = dict(stats=[dict(id=s.id, label=s.label) for s in L.stats_for(b.base, disc)], stat=raw.id,
+    out: dict = dict(stats=[dict(id=s.id, label=s.label) for s in L.stats_for(b.base, disc, b.table)], stat=raw.id,
                      measures=[dict(id=k, label=L.MEASURES[k]) for k in b.measures], measure=b.measure,
                      minimum=dict(options=[dict(v=v, label="Anyone" if v == 0 else f"{v}+ {unit}") for v in b.options],
                                   value=b.minimum),

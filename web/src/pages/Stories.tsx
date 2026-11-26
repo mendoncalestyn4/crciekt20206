@@ -145,6 +145,13 @@ export function Stories() {
           {d.meetings && <Noted t={d.meetings} />}
         </Tile>}
 
+        {tab === T_[15] && <>
+          {d.breakers_note && <div className="note" style={{ gridColumn: "span 12" }}>{d.breakers_note}</div>}
+          <Tile span={12} title="Partnership breakers" right="bowlers who ended the most stands of 50 and more">
+            {d.breakers ? <><Grid t={d.breakers} /><Explain {...three(d)} /></> : none(d.breakers_none)}</Tile>
+          {d.biggest && <Tile span={12} title="The biggest stands broken" right="and who broke them"><Grid t={d.biggest} /></Tile>}
+        </>}
+
         {tab === T_[14] && <>
           {d.clutch_note && <div className="note" style={{ gridColumn: "span 12" }}>{d.clutch_note}</div>}
           <Tile span={12} title="Batters in big games" right="average then against average otherwise (top-7 batters)">{d.bat ? <Grid t={d.bat} /> : none(d.bat_none)}</Tile>

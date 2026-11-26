@@ -10,6 +10,8 @@ teamdeep.py); this only turns them into what the page shows."""
 
 from __future__ import annotations
 
+from ccstats.partnerships import suffix
+
 import pandas as pd
 
 from ccstats import playerdeep as PD
@@ -23,7 +25,7 @@ from .teampage import _n, choices, fmt, pct, secs_of, signed, table
 
 TABS = ["Form guide", "Milestones and records", "Win when they fire", "Heroes in defeat", "Carried the team", "Quirks",
         "After a hundred", "Pairs", "Player of the Series", "Upsets", "Fastest to", "Match impact", "Badges",
-        "Batter v bowler", "Clutch"]
+        "Batter v bowler", "Clutch", "Partnership breakers"]
 
 
 def _pct_s(v) -> str:
@@ -65,7 +67,7 @@ def _tab(career, tab, ticked, season, mine, *extra) -> dict:
           TABS[8]: lambda: _series(career, ids), TABS[9]: lambda: _upsets(career, sec),
           TABS[10]: lambda: _fastest(career, all_ids, sec, hi), TABS[11]: lambda: _impact(career, ids, sec, season, hi),
           TABS[12]: lambda: _badges(career, ids, sec, mine, hi), TABS[13]: lambda: _bvb(career, ids, ticked, *extra),
-          TABS[14]: lambda: _clutch(career, ids, hi)}
+          TABS[14]: lambda: _clutch(career, ids, hi), TABS[15]: lambda: _breakers(career, ids, hi)}
     return fn[tab]()
 
 
@@ -415,4 +417,34 @@ def _clutch(career, ids, hi) -> dict:
                             [[r.player, r.team, int(r.clutch_innings), f"{r.clutch_wpi:.2f}", f"{r.other_wpi:.2f}",
                               fmt(r.clutch_avg, 1) if multi else fmt(r.clutch_econ, 2), _pct_s(r.lift)] for r in x.itertuples()],
                             num=[2, 3, 4, 5, 6], hi=hi(x.team))
+    return out
+
+
+# --------------------------------------------------------------------------- partnership breakers (stage 5)
+def _breakers(career, ids, hi) -> dict:
+    """Bowlers ranked by the stands of 50 and more they ended (ccstats/breakers.py), and the biggest stands broken."""
+    from ccstats import breakers as BR
+    t = BR.table(career, ids)
+    out: dict = dict(breakers_note=f"A stand of {BR.MIN_STAND}+ is broken by the bowler who took the wicket that ended it "
+                     "(a run out counts for no one). Only innings where the scorecard shows who batted together.")
+    if t.empty:
+        out["breakers_none"] = f"No stand of {BR.MIN_STAND} or more has been broken by a bowler here yet."
+        return out
+    x = t.head(20)
+    out["breakers"] = table(["Bowler", "Team", "Stands broken", "Biggest", "Avg stand", "Mat"],
+                            [[r.bowler, r.team, int(r.broken), int(r.biggest), f"{r.average:.1f}", int(r.matches)]
+                             for r in x.itertuples()], num=[2, 3, 4, 5], hi=hi(x.team))
+    b = BR.broken(career, ids)
+    m = career.matches.set_index("match_id")
+    big = b.sort_values(["runs", "wicket"], ascending=[False, True]).head(10)
+    out["biggest"] = table(["Stand", "Wicket", "Broken by", "Batter out", "Against", "Date"],
+                           [[int(r.runs), f"{int(r.wicket)}{suffix(int(r.wicket))}", r.bowler, r.batter,
+                             m.home[r.match_id] if m.away[r.match_id] == r.team else m.away[r.match_id],
+                             SG.clean(m.date[r.match_id])] for r in big.itertuples()],
+                           num=[0], hi=hi(big.team))
+    top = x.iloc[0]
+    out.update(SG.lines("Bowlers ranked by the stands of 50 and more they ended.",
+                        f"{top.bowler} ({top.team}), {int(top.broken)} stand{'s' if top.broken != 1 else ''} broken",
+                        "Shows who to bring on when a pair gets set: the bowlers who end big partnerships, not just "
+                        "the ones who take the tail.", best_label="Most broken"))
     return out

@@ -280,6 +280,7 @@ export function PlayerView() {
           <Box span={12} title={`Every season in ${d.section}`} right="the same columns as the table at the top"><RecordTable t={w.season_table} /></Box>
           {per(d.each?.bowl_innings, d.bowl_innings, (x, sfx) => <InningsTile x={x} sfx={sfx} />)}
           <Box title="Quality of wickets" right="where their victims bat">{w.quality ? <Sp s={w.quality} dec={0} /> : <div className="note">No wickets yet.</div>}</Box>
+          {w.breakers && <Box title="Partnership breaker" right={`stands of 50+ ended`}><div className="plain">{w.breakers.text}</div><Explain shows="" for_={w.breakers.for_} /></Box>}
           <Box title="Bunnies" right="batters they have got out most">{w.bunnies ? <Sp s={w.bunnies} dec={0} /> : <div className="note">No wickets yet.</div>}</Box>
           {per(w.each?.streaks, w.streaks, (x, sfx) => <Box span={12} title={`Streaks${sfx}`} right="innings bowled in a row"><StreakTable rows={x} /></Box>)}
           {w.splits.rows.map((s) => <Box key={s.title} title={`${s.title} · economy`}><Sp s={s} overall={w.splits.overall} dec={2} low /></Box>)}
