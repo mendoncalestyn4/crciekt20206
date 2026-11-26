@@ -1423,6 +1423,24 @@ there with where it is. Built by me one piece at a time, as in stage 3 (your cho
   and 24 reads at once with none lost, 25 undos at once, a Data check change while browsing, a restore while reading,
   a folder that vanishes and comes back, the full reset on a copy: 0 problems); the full test suite and the Windows run.
 
+## 20. Stage 5: your answers (26 November)
+
+Stage 5 starts only when you say so ("I'll tell you when to start"); stage 4 stays open until then.
+
+1. **Updates** come from a second, public GitHub repository that holds only the finished program (no code, no data),
+   created under your account; your repository stays private.
+2. **The program** is a folder with `Stats Pack.exe` and its parts inside (unzip once, double-click; opens in about 2
+   seconds), not one single file.
+3. **Closing:** the program stops by itself a minute after the last Stats Pack tab is closed (no icon by the clock; no
+   watching for new matches while it's closed; new matches are read when it opens).
+4. **An update** is offered with a button when the program opens ("Update ready: what's new"); one click backs up
+   your careers, updates and reopens on the same page.
+5. **The install list:** Streamlit and Plotly off (as agreed), Pillow listed by name (the new site draws the logos with
+   it; until now it only came with Streamlit), openpyxl off (only the old site used it).
+6. **The icon:** you'll send it.
+7. **Speed:** stage 5 times every page and the first start on your biggest save and reports the seconds; the speed work
+   stays in stage 6 as agreed.
+
 ## Appendix: technical outline
 
 **Kept**
