@@ -1430,6 +1430,8 @@ there with where it is. Built by me one piece at a time, as in stage 3 (your cho
 
 ## 20. Stage 5: your answers (26 November)
 
+**Stage 4 signed off and stage 5 started (26 November, the owner: "Start stage 5").**
+
 Stage 5 starts only when you say so ("I'll tell you when to start"); stage 4 stays open until then.
 
 1. **Updates** come from a second, public GitHub repository that holds only the finished program (no code, no data),
