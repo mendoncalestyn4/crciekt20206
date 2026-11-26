@@ -221,8 +221,16 @@ def test_no_careers_first_start(tmp_path):
     try:
         d = s.json("/api/settings")
         assert d["first"] and d["careers"] == [] and "Autosave scorecards" in d["scorecards_help"]
-        status, b = post(s, action="browse")
-        assert status == 200 and (b["folder"] or b["unavailable"])
+        # Browse opens the real Windows folder window, which waits for a person to pick a folder: in a test it is
+        # answered for them (on a PC without a folder window it says so instead)
+        import server.settingspage as SPM
+        real = SPM.choose_folder
+        SPM.choose_folder = lambda start="": "C:/Games/Scorecards"
+        try:
+            status, b = post(s, action="browse")
+        finally:
+            SPM.choose_folder = real
+        assert status == 200 and b["folder"] == "C:/Games/Scorecards"
     finally:
         s.stop()
 

@@ -244,11 +244,13 @@ function Outlook({ o }: { o: NonNullable<Schedule["outlook"]> }) {
     return {
       grid: { left: 6, right: 60, top: 6, bottom: 24, containLabel: true },
       xAxis: { type: "value", max: 100, name: "Chance of winning (%)", nameLocation: "middle", nameGap: 26,
-        nameTextStyle: { color: t.dim, fontSize: ts(15) }, axisLabel: { color: t.dim, fontSize: ts(14) }, splitLine: { lineStyle: { color: t.edge } } },
-      yAxis: { type: "category", inverse: true, data: o.bars.map((x) => x.label), axisLabel: { color: t.ink, fontSize: ts(14) }, axisTick: { show: false } },
+        nameTextStyle: { color: t.dim, fontFamily: "Inter", fontSize: ts(15) }, axisLabel: { color: t.dim, fontFamily: "Inter", fontSize: ts(14) },
+        splitLine: { lineStyle: { color: t.edge } } },
+      // every label in the site's own font, as on every other chart: measured and drawn in the same font on any PC
+      yAxis: { type: "category", inverse: true, data: o.bars.map((x) => x.label), axisLabel: { color: t.ink, fontFamily: "Inter", fontSize: ts(14) }, axisTick: { show: false } },
       tooltip: { ...L.TT, formatter: (p: { dataIndex: number }) => `${o.bars[p.dataIndex]?.label}<br>${o.bars[p.dataIndex]?.tip}` },
       series: [{ type: "bar", barWidth: "60%", data: o.bars.map((x) => ({ value: x.value, itemStyle: { color: col[x.level] } })),
-        label: { show: true, position: "right", color: t.soft, fontSize: ts(14), formatter: (p: { value: number }) => `${Math.round(p.value)}%` } }],
+        label: { show: true, position: "right", color: t.soft, fontFamily: "Inter", fontSize: ts(14), formatter: (p: { value: number }) => `${Math.round(p.value)}%` } }],
     };
   }, [t, o.bars]);
   return (
