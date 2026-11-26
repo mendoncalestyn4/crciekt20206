@@ -15,6 +15,7 @@ import { FormCard, MatchWinners, ScoreRows, Streaks, VenueRecord } from "../kit/
 import { dayY, f0, f1, f2, fmtOf, ord, rnd } from "../format";
 import { useReady } from "../ready";
 import { FirstStartPage } from "./Settings";
+import { Md } from "../kit/teams";
 import { Head, useShell } from "../shell/Shell";
 import { T } from "../shell/names";
 
@@ -61,7 +62,10 @@ export function MyTeam() {
         {asked}
         {scouting ? <Scouting sc={sc.data} error={sc.error} team={d.team} keep={keep} /> : <>
         {!d.mine && <Tile span={12} title="Pick your team"><div className="plain">You haven't said which teams you play as, so this shows the team
-          with the most matches. Pick yours on the current site (My team) for now; the question comes to the new site in stage 4.</div></Tile>}
+          with the most matches. Pick yours in <Link to={`/settings?tab=Your%20teams${nation ? `&nation=${encodeURIComponent(nation)}` : ""}`}>Settings → Your teams</Link>.</div></Tile>}
+        {(d.datacheck ?? []).length > 0 && <Tile span={12} title="Worth a minute of your time"
+          right={<Link className="btn sm" to={`/settings/data-check${keep}`}>Open Data check →</Link>}>
+          {(d.datacheck ?? []).map((t) => <div key={t} className="plain">👉 <Md s={t} /></div>)}</Tile>}
         {d.ticker?.length ? <Ticker results={d.ticker} team={d.team} /> : null}
 
         <Tile span={4} rows={2} title="Season">

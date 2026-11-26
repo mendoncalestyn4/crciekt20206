@@ -25,6 +25,7 @@ import { Compare } from "./pages/Compare";
 import { TeamLeaders } from "./pages/TeamLeaders";
 import { NotFound, PLANS, Section } from "./pages/Sections";
 import { Fixtures } from "./pages/Fixtures";
+import { DataCheck } from "./pages/DataCheck";
 import { Settings } from "./pages/Settings";
 import { StyleGuide } from "./pages/StyleGuide";
 import { Shell } from "./shell/Shell";
@@ -84,6 +85,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/matches" element={<MatchesHome />} />
             <Route path="/matches/:pick" element={<MatchView />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/settings/data-check" element={<DataCheck />} />
             <Route path="/style-guide" element={<StyleGuide />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

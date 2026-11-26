@@ -40,7 +40,7 @@ def _body(career, tab: str) -> dict:
                       where=", ".join(r.where)) for r in shared.itertuples()]
         return dict(
             explain=("**Two different players with the same name.** The game prints only an initial and surname, so two "
-                     "players can end up with the same name, like *R Patel* at Leicestershire and *R Patel* at Surrey. A "
+                     "players can end up with the same name, like R Patel at Leicestershire and R Patel at Surrey. A "
                      "player can't play for two teams in the same season of a competition, so the site keeps each such "
                      "name apart by itself: the name stays with the team it played most games for, and the player at the "
                      "other team gets the team added to their name. A name that only changed team between seasons (a "

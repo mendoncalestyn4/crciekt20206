@@ -189,7 +189,7 @@ export type SectionBlock = {
   records: { what: string; detail: string }[] | null;
 };
 export type MyTeam = {
-  teams: string[]; team: string; mine: boolean; asked?: string; missing: Record<string, string>; sections?: string[]; section?: string;
+  teams: string[]; team: string; mine: boolean; asked?: string; datacheck?: string[]; missing: Record<string, string>; sections?: string[]; section?: string;
   banner?: { tiles: BannerTile[]; caption: string; lines?: Three } | null; ticker?: Result[] | null;
   latest?: { result: Result; kicker: string; name: string; report: string } | null;
   after?: { opponent: string; date: string; lines: { k: string; text: string; up: boolean | null }[]; news: string[];

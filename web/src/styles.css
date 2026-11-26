@@ -843,3 +843,4 @@ a.btn { display: inline-block; text-decoration: none; }
   border: 1px solid var(--edge); border-radius: 16px; padding: 22px 26px; box-shadow: 0 20px 60px rgba(0, 0, 0, .35); }
 .modalbox .tt { font: 400 34px 'Bebas Neue'; letter-spacing: .06em; color: var(--ink); margin-bottom: 8px; }
 .field label.filebtn { font: 600 16px Inter; letter-spacing: 0; color: var(--ink); cursor: pointer; }
+table.dct td { font: 400 15px/1.4 Inter; color: var(--soft); vertical-align: top; } table.dct small { color: var(--dim); }

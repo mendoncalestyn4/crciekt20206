@@ -537,6 +537,11 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             return _error("No career is open yet.", 404)
         return _json(out)
 
+    async def datacheck_teams(request: Request):
+        p = request.query_params.get("player", "")
+        data = await _with_career(lambda c: {"teams": datacheck.teams_of(c, p)})()
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
     # ------------------------------------------------------------------ Fixtures (stage 4)
     def _fixtures(c, q):
         mine = site.my_teams(c, unplayed=True)
@@ -1237,6 +1242,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/fixtures", fixtures_, methods=["GET", "POST"]),
         Route("/api/settings", settings_, methods=["GET", "POST"]),
         Route("/api/datacheck", datacheck_, methods=["GET", "POST"]),
+        Route("/api/datacheck/teams", datacheck_teams),
         Route("/api/upload", upload_, methods=["POST"]),
         Route("/api/careers/{name}/file", career_file),
         Route("/api/inbox", inbox_, methods=["GET", "POST"]),

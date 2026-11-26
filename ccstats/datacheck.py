@@ -55,24 +55,24 @@ def summary(career) -> dict:
     dups = copies(career)
     todo, fine = [], []
     if len(merges):
-        todo.append(f"**{len(merges)} players** may appear under two names → *Player with two names*")
+        todo.append(f"**{len(merges)} players** may appear under two names → the Player with two names tab")
     if len(shared):
-        todo.append(f"**{len(shared)} names** are still used by two different players → *Shared names*")
+        todo.append(f"**{len(shared)} names** are still used by two different players → the Shared names tab")
     if len(conflicts):
-        todo.append(f"**{conflicts.match_id.nunique()} knockout games** look like leftovers from a replayed season → *Games left out*")
+        todo.append(f"**{conflicts.match_id.nunique()} knockout games** look like leftovers from a replayed season → the Games left out tab")
     if bad or failed:
-        todo.append(f"**{bad + len(failed)} scorecards** have a problem → *Scorecards*")
+        todo.append(f"**{bad + len(failed)} scorecards** have a problem → the Scorecards tab")
     if not bad and not failed:
         fine.append(f"✅ All {len(career.matches):,} scorecards add up")
     if len(auto):
-        fine.append(f"✅ {auto.player.nunique()} names shared by different players kept apart by themselves → *Shared names*")
+        fine.append(f"✅ {auto.player.nunique()} names shared by different players kept apart by themselves → the Shared names tab")
     if not len(merges):
         fine.append("✅ No player appears under two names")
     if len(left):
         fine.append(f"ℹ️ {len(left)} game{'s' if len(left) > 1 else ''} left out on purpose (from an earlier playthrough"
-                    f"{' or by you' if (~left.auto.astype(bool)).any() else ''}) → *Games left out*")
+                    f"{' or by you' if (~left.auto.astype(bool)).any() else ''}) → the Games left out tab")
     if dups:
-        fine.append(f"ℹ️ {len(dups)} scorecard{'s' if len(dups) > 1 else ''} saved twice, counted once → *Copies*")
+        fine.append(f"ℹ️ {len(dups)} scorecard{'s' if len(dups) > 1 else ''} saved twice, counted once → the Copies tab")
     unknown = career.matches[~career.matches.recognised.astype(bool)] if "recognised" in career.matches else career.matches[:0]
     if len(unknown):
         names_ = sorted(unknown.competition.unique())
