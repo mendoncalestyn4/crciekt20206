@@ -23,7 +23,7 @@ from ccstats.local import CareerSettings, default_scorecards_folder
 DEMO_NAME = "Demo IPL (made-up results)"
 TABS = ["Careers", "Your teams", "Backups", "Logos", "Colours", "Problems"]
 SCORECARDS_HELP = ("In Cricket Captain 2026, turn on **Autosave scorecards** in Options. The folder is normally "
-                   "`AppData\\Roaming\\Childish Things\\Cricket Captain 2026\\Scorecards`")
+                   "AppData\\Roaming\\Childish Things\\Cricket Captain 2026\\Scorecards")
 
 
 class Refused(ValueError):

@@ -40,7 +40,7 @@ export function Competitions() {
   };
   const head = <Head title="Seasons" crumb="Competitions · tables, brackets and series" chips={SEASON_PAGES.map((p) => p.label)} on={0}
     onChip={(i) => go(`${SEASON_PAGES[i]!.to}${keep}`)} />;
-  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career on the current site for now.</div></Tile></div></>;
+  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career in Settings first.</div></Tile></div></>;
   if (q.error) return <>{head}<div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
   if (!q.data) return <>{head}<div className="empty">Working out the tables…</div></>;
   const d = q.data, m = d.missing ?? {}, ch = d.choices.find((c) => c.event === d.event);

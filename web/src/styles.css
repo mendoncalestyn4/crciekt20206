@@ -823,3 +823,23 @@ table.fxedit td { padding: 5px 4px; }
 .review { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--edge); }
 .kpis b.kv { font: 600 30px 'Space Grotesk'; color: var(--ink); }
 .howto { white-space: pre-line; }
+
+/* Settings (stage 4) */
+.itabs .itablink { margin-left: auto; font: 600 17px Inter; color: var(--led); text-decoration: none; }
+.itabs .cnt { margin-left: 8px; background: var(--loss); color: #fff; border-radius: 999px; padding: 1px 8px; font-size: 13px; }
+td.nowrap { white-space: nowrap; } td.nowrap .btn + .btn, td.nowrap .tag + .btn { margin-left: 6px; }
+a.btn { display: inline-block; text-decoration: none; }
+.report { margin-top: 10px; } .report details { margin-top: 6px; font: 400 15px Inter; color: var(--soft); }
+.chipsel { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.pickedchip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 6px 5px 12px; border-radius: 999px; background: var(--led);
+  color: var(--led-ink); font: 600 15px Inter; }
+.pickedchip button { cursor: pointer; border: 0; background: transparent; color: inherit; font-size: 13px; }
+.found { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; max-height: 220px; overflow: auto; }
+.found button { cursor: pointer; border-radius: 999px; padding: 5px 12px; border: 1px solid var(--edge); background: var(--tile2);
+  color: var(--ink); font: 500 14.5px Inter; }
+.found button.on { background: var(--led); color: var(--led-ink); border-color: var(--led); }
+.modal { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); display: grid; place-items: center; z-index: 60; }
+.modalbox { width: min(760px, calc(100vw - 80px)); max-height: calc(100vh - 80px); overflow: auto; background: var(--tile);
+  border: 1px solid var(--edge); border-radius: 16px; padding: 22px 26px; box-shadow: 0 20px 60px rgba(0, 0, 0, .35); }
+.modalbox .tt { font: 400 34px 'Bebas Neue'; letter-spacing: .06em; color: var(--ink); margin-bottom: 8px; }
+.field label.filebtn { font: 600 16px Inter; letter-spacing: 0; color: var(--ink); cursor: pointer; }

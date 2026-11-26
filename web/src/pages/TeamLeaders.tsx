@@ -45,7 +45,7 @@ export function TeamLeaders() {
   };
   const head = <Head title="Teams" crumb="Team leaders · who makes the runs and takes the wickets" chips={TEAM_PAGES.map((p) => p.label)} on={5}
     onChip={(i) => go(`${TEAM_PAGES[i]!.to}${keep}`)} />;
-  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career on the current site for now.</div></Tile></div></>;
+  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career in Settings first.</div></Tile></div></>;
   if (q.error) return <>{head}<div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
   if (!q.data) return <>{head}<div className="empty">Finding each team's leaders…</div></>;
   const d = q.data;

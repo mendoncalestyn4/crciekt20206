@@ -47,7 +47,7 @@ export function Stories() {
     go(`/players/stories?${new URLSearchParams(Object.entries(next).filter(([, v]) => v)).toString()}`);
   };
   const head = <PlayersHead on={1} crumb="Player stories · the stories behind the numbers" />;
-  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career on the current site for now.</div></Tile></div></>;
+  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career in Settings first.</div></Tile></div></>;
   if (q.error) return <>{head}<div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
   if (!q.data) return <>{head}<div className="empty">Finding the stories…</div></>;
   const d = q.data;

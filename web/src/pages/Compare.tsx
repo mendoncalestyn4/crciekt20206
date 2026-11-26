@@ -34,7 +34,7 @@ export function Compare() {
     go(`/players/compare?${new URLSearchParams(Object.entries(next).filter(([, v]) => v)).toString()}`);
   };
   const head = <PlayersHead on={2} crumb="Compare players · side by side" />;
-  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career on the current site for now.</div></Tile></div></>;
+  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career in Settings first.</div></Tile></div></>;
   if (q.error) return <>{head}<div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
   if (!q.data) return <>{head}<div className="empty">Lining them up…</div></>;
   const d = q.data;

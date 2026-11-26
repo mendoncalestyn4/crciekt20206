@@ -48,7 +48,7 @@ export type Theme = {
 export type Careers = { careers: string[]; current: string | null; folders: string[] };
 export type CareerInfo = {
   name: string; matches: number; sections: string[]; seasons: string[]; my_teams: string[]; my_teams_picked: string[];
-  folder: string; checked_at: number | null; latest: string | null;
+  folder: string; checked_at: number | null; latest: string | null; teams_asked?: boolean;
 };
 export type SearchItem = { kind: "player" | "team" | "section" | "match"; value: string; label: string; sub: string };
 

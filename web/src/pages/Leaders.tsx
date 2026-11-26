@@ -60,7 +60,7 @@ export function StatByStat() {
     go(`/leaders?${new URLSearchParams(Object.entries(next).filter(([, v]) => v)).toString()}`);
   };
   const head = <LeadersHead on={0} crumb="Stat by stat · who's best, who's worst" />;
-  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career on the current site for now.</div></Tile></div></>;
+  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career in Settings first.</div></Tile></div></>;
   if (q.error) return <>{head}<div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
   if (!q.data) return <>{head}<div className="empty">Ranking everyone…</div></>;
   const d = q.data;
@@ -157,7 +157,7 @@ export function Records() {
     go(`/leaders/records?${new URLSearchParams(Object.entries(next).filter(([, v]) => v)).toString()}`);
   };
   const head = <LeadersHead on={1} crumb="Records · the record books" />;
-  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career on the current site for now.</div></Tile></div></>;
+  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career in Settings first.</div></Tile></div></>;
   if (q.error) return <>{head}<div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
   if (!q.data) return <>{head}<div className="empty">Opening the record books…</div></>;
   const d = q.data;
@@ -255,7 +255,7 @@ export function Rankings() {
     go(`/leaders/rankings?${new URLSearchParams(Object.entries(next).filter(([, v]) => v)).toString()}`);
   };
   const head = <LeadersHead on={3} crumb="Rankings · who's on top right now" />;
-  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career on the current site for now.</div></Tile></div></>;
+  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career in Settings first.</div></Tile></div></>;
   if (q.error) return <>{head}<div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
   if (!q.data) return <>{head}<div className="empty">Ranking everyone…</div></>;
   const d = q.data;
@@ -368,7 +368,7 @@ export function HallOfFame() {
     go(`/leaders/hall?${new URLSearchParams(Object.entries(next).filter(([, v]) => v)).toString()}`);
   };
   const head = <LeadersHead on={2} crumb="Hall of fame · the big performers" />;
-  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career on the current site for now.</div></Tile></div></>;
+  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career in Settings first.</div></Tile></div></>;
   if (q.error) return <>{head}<div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
   if (!q.data) return <>{head}<div className="empty">Opening the Hall of fame…</div></>;
   const d = q.data;

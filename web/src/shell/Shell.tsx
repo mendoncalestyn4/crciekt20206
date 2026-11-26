@@ -1,5 +1,6 @@
 // The frame of every page: the rail with the nine sections, the live news of new matches, the search box (Ctrl K),
 // and your team's colours.
+import { TeamsAsk } from "../pages/Settings";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useSearchParams } from "react-router";
@@ -155,6 +156,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <main className="main"><Broken at={loc.pathname + loc.search}>{children}</Broken></main>
         {finder && <Finder close={() => setFinder(false)} keep={keep} />}
         <PlayerMenu keep={keep} />
+        <TeamsAsk />
         {toasts.length > 0 && <div className="toasts">{toasts.map((x) => (
           <div key={x.id} className={`toast ${x.kind}`}><div><b>{x.title}</b>{x.text}</div>
             <button onClick={() => setToasts((ts) => ts.filter((y) => y.id !== x.id))} aria-label="Close">✕</button></div>))}</div>}

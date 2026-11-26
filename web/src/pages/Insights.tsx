@@ -62,7 +62,7 @@ export function Insights() {
     go(`/insights?${new URLSearchParams(Object.entries(next).filter(([, v]) => v)).toString()}`);
   };
   const head = <InsightsHead on={0} crumb="The bigger picture · what wins games here" />;
-  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career on the current site for now.</div></Tile></div></>;
+  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career in Settings first.</div></Tile></div></>;
   if (q.error) return <>{head}<div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
   if (!q.data) return <>{head}<div className="empty">Working it out…</div></>;
   const d = q.data;
@@ -207,7 +207,7 @@ export function Analytics() {
     go(`/insights/analytics?${new URLSearchParams(Object.entries(next).filter(([, v]) => v)).toString()}`);
   };
   const head = <InsightsHead on={1} crumb="Under the bonnet · the deeper numbers" />;
-  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career on the current site for now.</div></Tile></div></>;
+  if (noCareer) return <>{head}<div className="grid"><Tile span={12} title="No career yet"><div className="plain">Add a career in Settings first.</div></Tile></div></>;
   if (q.error) return <>{head}<div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
   if (!q.data) return <>{head}<div className="empty">Working it out…</div></>;
   const d = q.data;

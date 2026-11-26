@@ -175,6 +175,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                 "sections": in_order(m, m.section.unique()),   # the agreed order (Tests, ODIs, T20Is, ...)
                 "seasons": sorted(map(str, m.season.unique()), reverse=True),
                 "my_teams": site.my_teams(c), "my_teams_picked": site.my_teams(c, unplayed=True),
+                "teams_asked": bool(s.teams_asked) if s else True,
                 "folder": s.folder if s else "", "checked_at": site.checked_at or None,
                 "latest": order.date.iloc[-1].strftime("%Y-%m-%d") if len(order) else None}
 

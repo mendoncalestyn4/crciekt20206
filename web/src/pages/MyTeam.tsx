@@ -14,6 +14,7 @@ import { useInbox } from "./Inbox";
 import { FormCard, MatchWinners, ScoreRows, Streaks, VenueRecord } from "../kit/season";
 import { dayY, f0, f1, f2, fmtOf, ord, rnd } from "../format";
 import { useReady } from "../ready";
+import { FirstStartPage } from "./Settings";
 import { Head, useShell } from "../shell/Shell";
 import { T } from "../shell/names";
 
@@ -35,8 +36,7 @@ export function MyTeam() {
     queryFn: () => get<ScoutingPage>(`/api/scouting?team=${encodeURIComponent(scTeam)}`) });
   useReady(Boolean(q.data || q.error || noCareer) && (!scouting || !scTeam || Boolean(sc.data || sc.error)), `${team}|${section}|${scouting}`);
   const set = (k: string, v: string) => { const p = new URLSearchParams(params); if (v) p.set(k, v); else p.delete(k); if (k === "team") p.delete("section"); setParams(p); };
-  if (noCareer) return <><Head title={greeting()} crumb="No career open yet" /><div className="grid"><Tile span={12} title="No career yet">
-    <div className="plain">Add a career on the current site for now (<b>Start Stats Pack.bat</b>): the new site sees it straight away. Adding careers here comes in stage 4.</div></Tile></div></>;
+  if (noCareer) return <><Head title={greeting()} crumb="No career open yet" /><FirstStartPage /></>;
   if (q.error) return <><Head title={greeting()} crumb="My team" /><div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
   if (!q.data) return <><Head title={greeting()} crumb="Working out your season…" /><div className="empty">Working out your season…</div></>;
   const d = q.data, miss = d.missing;
