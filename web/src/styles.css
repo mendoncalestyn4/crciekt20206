@@ -781,3 +781,45 @@ tr.gone .why, tr.gone .tn { text-decoration: line-through; opacity: .7; }
 .tlname { display: inline-flex; align-items: center; gap: 8px; }
 .t.mine { border-color: var(--led); }
 table.tleads td .why { white-space: nowrap; }
+
+/* Fixtures (stage 4) */
+.saidok { font: 600 17px Inter; color: var(--win); }
+.saidbad { font: 600 16px/1.45 Inter; color: var(--loss); margin-top: 6px; }
+.hist { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 8px 0; border-top: 1px solid var(--edge);
+  font: 400 17px/1.45 Inter; color: var(--soft); }
+.hist:first-of-type { border-top: 0; }
+.hist small { color: var(--dim); font-size: 15px; }
+.hist > span:last-child { flex: 0 0 auto; }
+.tablewrap { overflow-x: auto; }
+table.fxt td { font: 400 15.5px/1.4 Inter; color: var(--soft); }
+table.fxt tr.hi td { background: color-mix(in srgb, var(--led) 10%, transparent); }
+table.fxt .lv.easy { color: var(--win); } table.fxt .lv.hard { color: var(--loss); } table.fxt .lv.even { color: var(--soft); }
+table.fxt td img { vertical-align: middle; margin-right: 6px; }
+.confirm { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 6px 0 10px; padding: 10px 14px; border-radius: 10px;
+  border: 1px solid var(--loss); font: 400 16px/1.45 Inter; color: var(--soft); }
+.editbox { margin: 8px 0 14px; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--edge); background: var(--tile2); }
+.fxitem + .fxitem { margin-top: 2px; }
+.dates { display: flex; flex-wrap: wrap; gap: 12px 18px; margin-top: 10px; }
+.dates label { display: grid; gap: 4px; font: 400 18px 'Bebas Neue'; letter-spacing: .08em; color: var(--dim); }
+pre.ex { font: 400 15px/1.5 ui-monospace, Consolas, monospace; background: var(--page); border: 1px solid var(--edge); border-radius: 10px;
+  padding: 10px 14px; color: var(--soft); margin: 8px 0; }
+textarea.typed { width: 100%; font: 400 16px/1.5 Inter; background: var(--page); color: var(--ink); border: 1px solid var(--edge);
+  border-radius: 10px; padding: 10px 12px; margin-top: 10px; resize: vertical; box-sizing: border-box; }
+select.typed { font: 400 15px Inter; background: var(--page); color: var(--ink); border: 1px solid var(--edge); border-radius: 8px; padding: 6px 8px; }
+input.typed.wide { flex: 1 1 360px; min-width: 240px; }
+table.fxedit input.typed { width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 15px; }
+table.fxedit input.typed.num { width: 70px; }
+table.fxedit td { padding: 5px 4px; }
+.openbox { border: 1px solid var(--edge); border-radius: 12px; margin-top: 10px; overflow: hidden; }
+.openhead { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px; cursor: pointer; padding: 10px 14px;
+  background: var(--tile2); border: 0; color: var(--ink); font: 600 16.5px Inter; text-align: left; }
+.openbody { padding: 10px 14px 14px; }
+.extras { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--edge); }
+.wins { display: grid; gap: 6px; margin: 10px 0; max-width: 560px; }
+.winb { display: grid; grid-template-columns: 90px 1fr 56px; align-items: center; gap: 10px; font: 400 15.5px Inter; color: var(--soft); }
+.winb .bar { margin-top: 0; height: 10px; } .winb b { text-align: right; color: var(--ink); }
+.goal { padding: 6px 0 12px; border-top: 1px solid var(--edge); } .goal:first-of-type { border-top: 0; }
+.goal .hist { border-top: 0; padding-bottom: 2px; }
+.review { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--edge); }
+.kpis b.kv { font: 600 30px 'Space Grotesk'; color: var(--ink); }
+.howto { white-space: pre-line; }

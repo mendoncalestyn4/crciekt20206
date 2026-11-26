@@ -5,8 +5,6 @@ import { useReady } from "../ready";
 import { Head, SECTIONS } from "../shell/Shell";
 
 export const PLANS: Record<string, { stage: string; crumb: string; items: string[]; from: string; title?: string }> = {
-  "/fixtures": { stage: "Stage 4", crumb: "Your schedule",
-    items: ["Schedule, add matches, change or delete (with undo), series, calendar", "WTC race, milestones, goals"], from: "Fixtures" },
 };
 
 const PICKED: Record<string, string> = {};

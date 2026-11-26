@@ -790,7 +790,8 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                                        "/api/rankings", "/api/rankings?what=bowling", "/api/rankings?what=all-round",
                                        "/api/hall", "/api/hall?tab=Firsts", "/api/insights",
                                        "/api/insights?tab=Score%20to%20aim%20for", "/api/analytics",
-                                       "/api/stories", "/api/compare", "/api/compare?disc=Bowling", "/api/teamleaders")]
+                                       "/api/stories", "/api/compare", "/api/compare?disc=Bowling", "/api/teamleaders",
+                                       "/api/fixtures", "/api/fixtures?tab=Series", "/api/fixtures?tab=Goals")]
         steps += [("ratings", sec) for sec in sorted(c.matches.section.unique())]
         # every competition, and each of its seasons: the parts every player's page there shares, worked out through
         # its top run-scorer's page there, so the first player you open in any competition or season is quick too

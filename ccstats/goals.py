@@ -95,6 +95,8 @@ def label(goal: dict) -> str:
     p = goal.get("player", "")
     if k == "topscorer":
         what = "run-scorer" if goal.get("what") == "runs" else "wicket-taker"
+        if goal.get("section") in ("Tests", "ODIs", "T20Is"):   # international cricket goes by the calendar year
+            return f"{p}: top {what} in {goal.get('section')} in {sea}"
         return f"{p}: top {what} in the {goal.get('section')} {sea}"
     if k == "average":
         bat = goal.get("what") == "batting"

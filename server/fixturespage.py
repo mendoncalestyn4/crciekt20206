@@ -178,8 +178,13 @@ def page(career, q: dict, mine: list[str], settings) -> dict:
             "WTC race": lambda: _wtc(career, team, tracked),
             "Milestones": lambda: _milestones(career, team, tracked, mine_rows),
             "Goals": lambda: _goals(career, team, tracked, goals, ctx)}[tab]
+    import json
+    # the tab is kept with the career and your schedule, goals, notes and forecasts as they are: a second look, or
+    # the background getting-ready's answer, comes at once; any change to them is a new key, so never out of date
+    sig = json.dumps([sched, goals, sorted(notes.items()), saved_fc, out["history"], q.get("season", "")],
+                     sort_keys=True, default=str)
     try:
-        out["body"] = body()
+        out["body"] = body() if tab in ("Add matches",) else kept(career, ("fixtures", team, tab, sig), body)
     except Exception as e:  # noqa: BLE001 - a part that can't be shown never breaks the rest of the page
         out["body"] = dict(missing=f"Couldn't be worked out ({type(e).__name__}: {e}).")
     return SG.clean(out)
@@ -241,6 +246,7 @@ def _schedule(career, team, tracked, mine_rows, sched, notes, scheduled_any, ctx
     ch = PLN.chances(career, tracked, team)
     chance_of = {(r.series, int(r.no)): r for r in ch.itertuples()}
     form_of: dict = {}
+    last_shown: set = set()
     rows = []
     for _, r in mine_rows.iterrows():
         stage = _stage(r)
@@ -280,7 +286,10 @@ def _schedule(career, team, tracked, mine_rows, sched, notes, scheduled_any, ctx
                                                  tip=f"{'Bogey team' if rv['kind'] == 'bogey' else 'Favourite opponent'}: "
                                                      f"{team} are {rv['text']} against them") if rv else None),
                                    last=_last(career, team, x.opponent, x.format))
-            row.update(form_of[fk])
+            row.update({k: v for k, v in form_of[fk].items() if k != "last"})
+            if fk not in last_shown:     # the last meeting once, by the first game against them
+                last_shown.add(fk)
+                row["last"] = form_of[fk]["last"]
         rows.append(row)
     out["rows"] = rows
     out["caption"] = SCHEDULE_CAPTION
@@ -823,6 +832,12 @@ def apply(career, settings, team: str, action: str, b: dict) -> tuple[dict, str]
         settings.fixtures = new
         record(f"Added {rows[0]['series']}", [rows[0]["series"]], [])
         msg = f"Added {rows[0]['series']}"
+    elif action == "preview":   # what the form would add, named as it will be saved (nothing saved)
+        try:
+            rows = _tournament_rows(team, b) if b.get("kind") == "tournament" else _series_rows(team, b)
+        except Refused as e:
+            return dict(series="", n=0, given=0, wrong=str(e)), ""
+        return dict(series=rows[0]["series"], n=len(rows), given=sum(bool(r["date"]) for r in rows), wrong=""), ""
     elif action == "read_lines":
         txt = str(b.get("text", ""))
         if not txt.strip():

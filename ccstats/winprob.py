@@ -360,15 +360,19 @@ def chances_before(career, team: str) -> pd.DataFrame:
         for sec, ms in mine.groupby("section", sort=False):
             all_ids = m[m.section == sec].match_id
             g_all = by_played(career, TP.games(career, all_ids)).reset_index(drop=True)
-            pos = {mid: i for i, mid in enumerate(dict.fromkeys(g_all.match_id))}
+            order = list(dict.fromkeys(g_all.match_id))
+            pos = {mid: i for i, mid in enumerate(order)}
+            start: dict = {}
+            for i, mid in enumerate(g_all.match_id):
+                start.setdefault(mid, i)
             _, hist = team_elo(career, sec)
             before = hist.set_index(["match_id", "team"]).before
             for r in ms.itertuples():
                 if r.match_id not in pos:
                     continue
                 k = pos[r.match_id]
-                earlier = [mid for mid, i in pos.items() if i < k]
-                g = g_all[g_all.match_id.isin(earlier)]
+                earlier = order[:k]                      # every match played before it, in the order played
+                g = g_all.iloc[:start[r.match_id]]       # their rows (the rows are in that order, a match's together)
                 opp = r.away if r.home == team else r.home
                 ra = float(before.get((r.match_id, team), 1500.0))
                 rb = float(before.get((r.match_id, opp), 1500.0))

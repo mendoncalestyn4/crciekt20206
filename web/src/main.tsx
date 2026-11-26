@@ -24,6 +24,7 @@ import { Stories } from "./pages/Stories";
 import { Compare } from "./pages/Compare";
 import { TeamLeaders } from "./pages/TeamLeaders";
 import { NotFound, PLANS, Section } from "./pages/Sections";
+import { Fixtures } from "./pages/Fixtures";
 import { Settings } from "./pages/Settings";
 import { StyleGuide } from "./pages/StyleGuide";
 import { Shell } from "./shell/Shell";
@@ -75,6 +76,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/seasons/review" element={<Review />} />
             <Route path="/seasons/honours" element={<Honours />} />
             <Route path="/inbox" element={<Inbox />} />
+            <Route path="/fixtures" element={<Fixtures />} />
             <Route path="/players" element={<PlayersHome />} />
             <Route path="/players/stories" element={<Stories />} />
             <Route path="/players/compare" element={<Compare />} />
