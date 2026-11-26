@@ -1481,6 +1481,11 @@ full before it's built, with its checklist lines, tests and screenshots (stage 5
 12. **On this day** (My team): what happened on this date, by the game's calendar, in earlier seasons of your career.
 13. **A short guided tour on first start:** the first time the program opens, about five pop-up tips point out the main
     sections (My team, Players, Fixtures, Data check, the search bar); "Show me around again" in Settings.
+**To go faster (your yes, 26 November):** every question for every new piece asked in one sitting before building
+starts (ready-written answers to pick from); the program built on GitHub's Windows machines while the pages are built
+in the waits; during building only each piece's own tests, with a full run here and on Windows after each group and
+before anything is called finished; quiet while working. The stage 5 checklist and the questions are prepared while
+stage 4 is with you. About 6–7 days.
 Not picked: compare two careers, the colour-blind check. Stage 5's list is locked here (your choice, 26 November); more
 ideas wait for your review after stage 6.
 
