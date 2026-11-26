@@ -1500,6 +1500,18 @@ stage 4 is with you. About 6–7 days.
     and competition in it, every new piece, Data check, Fixtures, the program itself (opening, updates, the tour), the
     numbers counted again by hand and against the current site, with every problem found fixed at the root and
     tested again until none is left. Only then stage 5's final checks, screenshots and your sign-off.
+    **Also in that deep test (your "all", 26 November), all on the new scorecards:** (1) a second, separately written
+    reader recounts 30 random matches of every kind, and both must agree on every run, ball and wicket; (2) the same
+    number everywhere (each player's runs and wickets equal on every page that shows them); (3) every number against the
+    old site, so the old site is deleted only after this test; (4) the career built up one scorecard at a time ends
+    exactly equal to reading it all at once; (5) a season replayed live through the watched folder (every match arrives,
+    each alert once, nothing lost or counted twice); (6) a restart and a restore leave every page identical; (7) every
+    kind of Data check change and its undo leave every page identical; (8) messy files mixed in (half-written,
+    duplicate, renamed, empty) break and double-count nothing; (9) an update from today's version keeps every career
+    intact; (10) a run of several hours with matches arriving (no slowdown, no memory creeping up); (11) every page at
+    every width, dark and light, in every team colour in the save; (12) a read-through with cricket sense for anything
+    misleading; (13) the program installed fresh on GitHub's Windows machine, every page opened there. About 2 days, up
+    to 3 if it finds many problems.
 Not picked: compare two careers, the colour-blind check. Stage 5's list is locked here (your choice, 26 November); more
 ideas wait for your review after stage 6.
 
