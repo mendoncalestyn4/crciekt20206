@@ -13,6 +13,7 @@ import { Broken } from "./Broken";
 import { Finder } from "./Finder";
 import { NamesProvider } from "./names";
 import { PlayerMenu } from "./PlayerMenu";
+import { Tour, UpdateBar, useProgram } from "./Program";
 
 const I = (d: ReactNode) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">{d}</svg>;
 export const SECTIONS: { to: string; label: string; icon: ReactNode }[] = [
@@ -49,7 +50,7 @@ export function Head({ title, crumb, chips, on = 0, onChip }: {
         ? <button key={c} className={i === on ? "on" : ""} onClick={() => onChip(i)}>{c}</button>
         : <span key={c} className={i === on ? "on" : ""}>{c}</span>)}</div>}
       {career?.latest && <span className="clock" title="The date of the latest match in this career">{team ? `${ab(team)} · ` : ""}{dayY(career.latest).toUpperCase()}</span>}
-      <button className="pill" onClick={openFinder} title="Search for a player, team, competition or match">🔍 Search anything <kbd>Ctrl K</kbd></button>
+      <button className="pill" data-tour="search" onClick={openFinder} title="Search for a player, team, competition or match">🔍 Search anything <kbd>Ctrl K</kbd></button>
     </div>
   );
 }
@@ -57,6 +58,7 @@ export function Head({ title, crumb, chips, on = 0, onChip }: {
 export function Shell({ children }: { children: ReactNode }) {
   const [params] = useSearchParams();
   const nation = params.get("nation") ?? "";
+  const program = useProgram();
   const qc = useQueryClient();
   const loc = useLocation();
   const theme = useQuery({ queryKey: ["theme", nation], queryFn: () => get<Theme>(`/api/theme${nation ? `?nation=${encodeURIComponent(nation)}` : ""}`) });
@@ -113,6 +115,7 @@ export function Shell({ children }: { children: ReactNode }) {
     };
     es.onmessage = (m) => {
       const e = JSON.parse(m.data) as Live;
+      if ((e as { type: string }).type === "focus") { window.focus(); return; }   // the program opened again: this window comes forward
       if (e.type === "checked") setWatch({ at: e.at, folders: e.folders });
       else if (e.type === "matches") {
         toast("new", "New matches", `${e.added} new match${e.added > 1 ? "es" : ""} added to ${e.career}`);
@@ -144,21 +147,23 @@ export function Shell({ children }: { children: ReactNode }) {
         <nav className="rail"><div className="rail-in">
           <Link className="mark" to={`/${keep}`} title="Stats Pack">SP</Link>
           {SECTIONS.map((s) => (
-            <NavLink key={s.to} to={`${s.to}${keep}`} end={s.to === "/"}
+            <NavLink key={s.to} to={`${s.to}${keep}`} end={s.to === "/"} data-tour={s.label.toLowerCase().replace(/ /g, "-")}
               className={({ isActive }) => `nav ${isActive || (s.to === "/settings" && loc.pathname === "/style-guide") ? "on" : ""}`}>
               {s.icon}{s.label}{s.to === "/inbox" && (inbox.data?.unread ?? 0) > 0 && <b className="badge">{inbox.data!.unread > 99 ? "99+" : inbox.data!.unread}</b>}
-              {s.to === "/settings" && (problems.data?.count ?? 0) > 0 && <b className="badge bad" title="Problems the site noticed: see Settings → Problems">{problems.data!.count > 99 ? "99+" : problems.data!.count}</b>}</NavLink>))}
+              {s.to === "/settings" && (problems.data?.count ?? 0) > 0 && <b className="badge bad" title="Problems the site noticed: see Settings → Problems">{problems.data!.count > 99 ? "99+" : problems.data!.count}</b>}
+              {s.to === "/settings" && !(problems.data?.count) && program.data?.updated && <b className="badge new" title="Updated: see Settings → What's new">new</b>}</NavLink>))}
           {ready.data?.busy && ready.data.total > 0 && <div className="ready" title="Getting every page ready, your team and players first: the site can be used meanwhile, and a page not ready yet works itself out when you open it">
             Getting ready<span className="bar"><i style={{ width: `${Math.round((ready.data.done / ready.data.total) * 100)}%` }} /></span>
             {Math.round((ready.data.done / ready.data.total) * 100)}%</div>}
           {watch && watch.folders > 0 && <div className="watch" title={`Watching ${watch.folders} Scorecards folder${watch.folders > 1 ? "s" : ""}; new matches are added by themselves`}>
             <i />Watching<br />{new Date(watch.at * 1000).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</div>}
         </div></nav>
-        <main className="main"><Broken at={loc.pathname + loc.search}>{children}</Broken></main>
+        <main className="main"><UpdateBar /><Broken at={loc.pathname + loc.search}>{children}</Broken></main>
         {finder && <Finder close={() => setFinder(false)} keep={keep} />}
         <PlayerMenu keep={keep} />
         <TeamsAsk />
         <Daily />
+        <Tour />
         {toasts.length > 0 && <div className="toasts">{toasts.map((x) => (
           <div key={x.id} className={`toast ${x.kind}`}><div><b>{x.title}</b>{x.text}</div>
             <button onClick={() => setToasts((ts) => ts.filter((y) => y.id !== x.id))} aria-label="Close">✕</button></div>))}</div>}

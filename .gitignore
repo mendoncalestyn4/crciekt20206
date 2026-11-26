@@ -3,3 +3,9 @@ __pycache__/
 .pytest_cache/
 .venv/
 *.stats-pack.zip
+
+# the program build (stage 5)
+/dist/
+/build/
+/desktop/build.json
+*.spec

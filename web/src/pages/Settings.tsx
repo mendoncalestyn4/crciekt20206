@@ -1,6 +1,7 @@
 // Settings (stage 4): the tabs Careers, Your teams, Backups, Logos, Colours and Problems (your answer of 26 November),
 // the first start with no careers yet, and the "Which teams do you play as?" question. Every change is made by the
 // server in the same files the current site reads (server/settingspage.py).
+import { useProgram, WhatsNew } from "../shell/Program";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
@@ -47,21 +48,24 @@ export function Settings() {
   const problems = useQuery({ queryKey: ["problems"], queryFn: () => get<ProblemsPage>("/api/problems"), retry: false });
   const nations = useQuery({ queryKey: ["nations"], queryFn: () => get<{ nations: string[] }>("/api/nations") });
   const tab = params.get("tab") ?? "";
+  const program = useProgram();
   useReady(Boolean((q.data || q.error) && nations.data && (problems.data || problems.error)), tab);
   const head = <Head title="Settings" crumb="Careers, your teams, backups, logos, colours and problems" />;
   if (q.error) return <>{head}<div className="grid"><Tile span={12}><div className="saidbad">{String(q.error)}</div></Tile></div></>;
   const d = q.data;
   if (!d) return <>{head}<div className="empty">Reading your settings…</div></>;
   if (d.first) return <>{head}<div className="grid"><FirstStart d={d} /></div></>;
-  const on = d.tabs.includes(tab) ? tab : (problems.data?.count ?? 0) > 0 && !tab ? "Problems" : d.tabs[0]!;
+  const tabs = program.data?.program ? [...d.tabs, "What's new"] : d.tabs;   // What's new: only in the program
+  const on = tabs.includes(tab) ? tab : (problems.data?.count ?? 0) > 0 && !tab ? "Problems" : d.tabs[0]!;
   const set = (t: string) => go(`/settings?${new URLSearchParams({ ...(t !== d.tabs[0] ? { tab: t } : {}), ...(nation ? { nation } : {}) }).toString()}`);
   return (
     <>
       {head}
       <div className="grid">
-        <div className="itabs">{d.tabs.map((x) => (
+        <div className="itabs">{tabs.map((x) => (
           <button key={x} className={x === on ? "on" : ""} onClick={() => set(x)}>{x}
-            {x === "Problems" && (problems.data?.count ?? 0) > 0 && <b className="cnt">{problems.data!.count}</b>}</button>))}
+            {x === "Problems" && (problems.data?.count ?? 0) > 0 && <b className="cnt">{problems.data!.count}</b>}
+            {x === "What's new" && program.data?.updated && <b className="cnt">new</b>}</button>))}
           <Link className="itablink" to={`/settings/data-check${nation ? `?nation=${encodeURIComponent(nation)}` : ""}`}>Data check →</Link></div>
         {on === "Careers" && <CareersTab d={d} />}
         {on === "Your teams" && <TeamsTab d={d} />}
@@ -76,6 +80,7 @@ export function Settings() {
           <div className="plain" style={{ marginTop: 14 }}><Link to={`/style-guide${nation ? `?nation=${encodeURIComponent(nation)}` : ""}`}>The style guide</Link> shows every piece in these colours.</div>
         </Tile>}
         {on === "Problems" && problems.data && <Problems data={problems.data} />}
+        {on === "What's new" && program.data && <WhatsNew p={program.data} />}
       </div>
     </>
   );

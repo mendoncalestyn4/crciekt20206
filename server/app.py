@@ -11,6 +11,7 @@ import asyncio
 import contextlib
 import hashlib
 import json
+import threading
 import time
 from collections import deque
 from pathlib import Path
@@ -137,7 +138,8 @@ async def _body(request: Request) -> dict:
     return data
 
 
-def create_app(store: CareerStore | None = None, web: Path | None = None, watch_every: float = 2.0) -> Starlette:
+def create_app(store: CareerStore | None = None, web: Path | None = None, watch_every: float = 2.0,
+               program=None) -> Starlette:
     """The server. `watch_every` seconds between checks of the watched folders (0: never, for tests): every 2 seconds,
     so a new scorecard is on the site within a second or two of the game saving it (your decision, 14 November)."""
     site = Site(store)
@@ -1044,6 +1046,60 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         return StreamingResponse(stream(), media_type="text/event-stream",
                                  headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
 
+    # ------------------------------------------------------------------ the program (stage 5): version, updates, tour
+    TOUR_STEPS = [
+        ("my-team", "My team", "Your home page: the last match, what's next, your season, your stars and the news."),
+        ("inbox", "Inbox", "Messages about your career: new records, milestones, alerts and anything to check."),
+        ("players", "Players", "Every player: their full record, form, ratings, their story and how they compare."),
+        ("matches", "Matches", "Every match: scorecards, match reports, partnerships and how the wickets fell."),
+        ("teams", "Teams", "Every team: their record, how they win, opponents, eras, then and now, and previews."),
+        ("seasons", "Seasons", "Points tables, title races, brackets, series, the World Test Championship and reviews."),
+        ("fixtures", "Fixtures", "Your schedule, series chances, the calendar, milestones to come and your goals."),
+        ("leaders", "Leaders", "Stat by stat, records, the hall of fame and the rankings."),
+        ("insights", "Insights", "Is this total enough, the score to aim for, breakouts, career arcs and more."),
+        ("settings", "Settings", "Your careers and teams, backups, logos, colours, Data check and What's new."),
+        ("search", "Search", "Find any player, team, match or page from anywhere: press Ctrl K."),
+    ]
+
+    async def program_(request: Request):
+        prefs = site.store.preferences()
+        if request.method == "GET":
+            if program is None:
+                return _json({"program": False, "tour": None})
+            hist = list(program.info.get("history") or [])
+            offer = program.offer
+            return _json({"program": True, "version": program.version, "date": program.info.get("date", ""),
+                          "update": dict(version=offer["version"], date=offer.get("date", ""), notes=offer.get("notes", []))
+                          if offer else None,
+                          "state": program.state, "whats_new": hist,
+                          "updated": bool(hist) and prefs.get("whats_new_seen") != program.version,
+                          "tour": [dict(key=k, title=t, text=x) for k, t, x in TOUR_STEPS]
+                          if not prefs.get("tour_done") else None})
+        try:
+            b = await _body(request)
+        except ValueError as e:
+            return _error(str(e), 415)
+        action = str(b.get("action", ""))
+        if action == "focus":      # the program opened again while it runs: the open window comes forward
+            hub.publish({"type": "focus"})
+            return _json({"windows": len(hub._queues)})
+        if action == "seen":
+            site.store.save_preference("whats_new_seen", program.version if program else "")
+        elif action == "tour_done":
+            site.store.save_preference("tour_done", True)
+        elif action == "tour_again":
+            site.store.save_preference("tour_done", False)
+        elif action == "update":
+            if program is None or not program.offer:
+                return _error("There's no update to install.", 400)
+            reopen = str(b.get("page", "/"))
+            reopen = reopen if reopen.startswith("/") else "/"
+            threading.Thread(target=program.apply_update, args=(site.store, reopen), daemon=True).start()
+            return _json({"started": True, "message": "Backing up your careers, then updating…"})
+        else:
+            return _error(f"Unknown action {action!r}.", 400)
+        return _json({"ok": True})
+
     # ------------------------------------------------------------------ getting every page ready (the speed work)
     WARM = {"done": 0, "total": 0, "busy": False, "gen": 0, "career": ""}
 
@@ -1345,6 +1401,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/events", events),
         Route("/api/problems", problems_, methods=["GET", "POST"]),
         Route("/api/remember", remember_, methods=["POST"]),
+        Route("/api/program", program_, methods=["GET", "POST"]),
         Route("/api/warmup", warmup_),
     ]
     if (web / "assets").is_dir():   # the website's files, named after their contents: kept by the browser for good
@@ -1354,4 +1411,5 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                     middleware=[Middleware(TrustedHostMiddleware, allowed_hosts=HOSTS), Middleware(Squeeze),
                                 Middleware(Watch, problems=problems, site=site)])
     app.state.site, app.state.hub = site, hub
+    app.state.windows = lambda: len(hub._queues)     # open Stats Pack windows (each keeps one event stream)
     return app

@@ -845,3 +845,16 @@ a.btn { display: inline-block; text-decoration: none; }
 .field label.filebtn { font: 600 16px Inter; letter-spacing: 0; color: var(--ink); cursor: pointer; }
 table.dct td { font: 400 15px/1.4 Inter; color: var(--soft); vertical-align: top; } table.dct small { color: var(--dim); }
 .toast.good { border-left-color: var(--win); }
+
+/* the program (stage 5): the update bar, the "new" mark, What's new, the tour */
+.updatebar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 0 0 12px; padding: 10px 16px;
+  border-radius: 12px; background: var(--tile); border: 1px solid var(--edge); color: var(--ink); font-size: 15px; }
+.updatebar.bad { border-color: var(--loss); }
+.badge.new { background: var(--win); color: #fff; font-size: 10px; text-transform: uppercase; }
+ul.notes { margin: 6px 0 0 18px; padding: 0; line-height: 1.5; }
+.tour { position: fixed; inset: 0; z-index: 90; background: rgba(0, 0, 0, .28); }
+.tourtip { position: fixed; width: 340px; padding: 16px 18px; border-radius: 14px; background: var(--page); color: var(--ink);
+  border: 1px solid var(--edge); box-shadow: 0 10px 30px rgba(0, 0, 0, .3); display: flex; flex-direction: column; gap: 8px;
+  font-size: 15px; line-height: 1.45; }
+.tourtip b { font-size: 18px; }
+.tourstep { color: var(--dim); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }

@@ -32,14 +32,31 @@ def version() -> str:
     """A fingerprint of the site's own code (the engine and the server): any change to either is a new version."""
     global _version
     if _version is None:
-        root = Path(__file__).resolve().parent.parent
-        h = hashlib.sha1()
-        for part in ("ccstats", "server"):
-            for f in sorted((root / part).glob("*.py")):
-                h.update(f.name.encode())
-                h.update(f.read_bytes())
-        _version = h.hexdigest()[:12]
+        _version = code_fingerprint(Path(__file__).resolve().parent.parent) or _built_fingerprint() or "unknown"
     return _version
+
+
+def code_fingerprint(root: Path) -> str:
+    """The fingerprint of the engine's and the server's code files under `root` ("" when they aren't there)."""
+    h = hashlib.sha1()
+    n = 0
+    for part in ("ccstats", "server"):
+        for f in sorted((root / part).glob("*.py")):
+            h.update(f.name.encode())
+            h.update(f.read_bytes())
+            n += 1
+    return h.hexdigest()[:12] if n else ""
+
+
+def _built_fingerprint() -> str:
+    """In the program (stage 5) the code files are packed away, so the fingerprint is the one worked out from them when
+    the program was built (desktop/build.json): a new version is still always a new fingerprint."""
+    import json
+    f = Path(__file__).resolve().parent.parent / "desktop" / "build.json"
+    try:
+        return str(json.loads(f.read_text(encoding="utf-8")).get("code", ""))
+    except (OSError, ValueError):
+        return ""
 
 
 def _file(kind: str) -> Path | None:
