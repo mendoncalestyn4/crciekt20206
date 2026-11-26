@@ -37,7 +37,7 @@ PAGES = ["/", "/inbox", "/style-guide", "/settings", "/players", "/players/J Bet
          "/insights", "/insights?tab=Score to aim for&section=ODIs", "/insights?tab=Score to aim for&section=Tests",
          "/insights?tab=Chase calculator&section=Tests", "/insights?tab=Home advantage",
          "/insights?tab=Season by season&section=Indian Premier League", "/insights?tab=Breakout players&section=T20 Blast",
-         "/insights?tab=Innings by innings", "/insights/analytics?section=Indian Premier League",
+         "/insights?tab=Innings by innings", "/insights?tab=Career arc&section=Ranji Trophy", "/insights/analytics?section=Indian Premier League",
          "/insights/analytics?tab=Fair averages&section=Indian Premier League", "/insights/analytics?tab=What wins games",
          "/insights/analytics?tab=Luck", "/insights/analytics?tab=Match-winners&section=ODIs",
          "/insights/analytics?tab=Style maps&section=Indian Premier League", "/insights/analytics?tab=Boom or bust&section=Indian Premier League",

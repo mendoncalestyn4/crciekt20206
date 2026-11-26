@@ -14,18 +14,18 @@ from __future__ import annotations
 import numpy as np
 
 from ccstats import aim as AIM
+from ccstats import arc as ARC
 from ccstats import insights as I
 from ccstats import teamplay as TP
 from ccstats import winprob as WP
 from ccstats.stats import kind_of, ordinal, poss
-
 from . import styleguide as SG
 from .cache import aim_fits, kept
 from .leaderspage import _strength_of
 from .teampage import _n, choices, fmt, pct, secs_of, table
 
 TABS = ["Is this total enough?", "Score to aim for", "Chase calculator", "Home advantage", "Season by season",
-        "Breakout players", "Innings by innings"]
+        "Breakout players", "Innings by innings", "Career arc"]
 EVERY = "Every team"
 CHASE_DEFAULTS = {"t20": (181, 60), "one": (281, 120), "multi": (250, 80)}   # the current site's starting target and score
 MINS = [3, 5, 8, 10]                                                          # breakouts: innings needed in both
@@ -73,6 +73,8 @@ def insights_page(career, q: dict, mine: list[str]) -> dict:
     elif tab == TABS[5]:
         season, least = str(q.get("season", "")), _int(q, "min", 0, 99)
         body = kept(career, ("insights_breakouts", sec, season, least, mine_t), lambda: _breakouts(career, sec, season, least, mine))
+    elif tab == "Career arc":
+        body = kept(career, ("insights_arc", sec, mine_t), lambda: _arc(career, sec, mine))
     else:
         body = kept(career, ("insights_innings", sec), lambda: _innings(career, sec))
     return SG.clean({**head, **body})
@@ -386,7 +388,7 @@ def _fading(career, sec, season, bat, bowl, mine, least) -> dict:
     out = dict(title="Who's fading", sub=f"your players clearly below their own earlier seasons, {season}")
     if not rows:
         out["none"] = (f"None of your players is clearly down on their earlier seasons here (a drop of "
-                       f"{FADE['bat'][kind]:.0f}+ runs a innings batting, {FADE['bowl'][kind]:.0f}+ bowling, with "
+                       f"{FADE['bat'][kind]:.0f}+ runs an innings batting, {FADE['bowl'][kind]:.0f}+ bowling, with "
                        f"{least}+ innings both ways).")
     else:
         out["rows"] = rows
@@ -480,4 +482,77 @@ def _innings(career, sec) -> dict:
                               num=[1, 3])
         out["follow"]["note"] = ("A follow-on is spotted when the side batting second batted again straight away. "
                                  "Won-drawn-lost is from the point of view of the side in that row.")
+    return out
+
+
+# --------------------------------------------------------------------------- career arc (stage 5)
+def arc_verdicts(career, sec):
+    """Every player's arc here against the usual curve (kept: the Player page asks for it too)."""
+    return kept(career, ("arc_verdicts", sec), lambda: ARC.verdicts(career, sec, arc_seasons(career, sec)))
+
+
+def arc_seasons(career, sec):
+    return kept(career, ("arc_seasons", sec), lambda: ARC.seasons(career, sec))
+
+
+def _arc(career, sec, mine) -> dict:
+    per = arc_seasons(career, sec)
+    m = career.matches[career.matches.section == sec]
+    n_seasons = m.season.nunique()
+    out: dict = dict(arc_charts=[])
+    if n_seasons < 2:
+        out["arc_none"] = (f"Only one season of {sec} so far. The usual curve needs players' change from one season to "
+                           "the next, so come back after the next season.")
+        return out
+    for job, title, unit in (("bat", "Batting", "runs above average an innings"), ("bowl", "Bowling", "runs saved an innings")):
+        lines = []
+        for fs, name in ((False, "New players"), (True, "Already playing when the career began")):
+            c = ARC.curve(per, job, fs)
+            if len(c) >= 2:
+                lines.append(dict(name=name, points=[dict(n=int(r.n), label=f"{ARC.ordinal(int(r.n))} season", v=round(float(r.change), 2),
+                                                          text=f"{r.change:+.1f}", players=int(r.players)) for r in c.itertuples()]))
+        chart = dict(id=job, title=f"{title}: the usual curve", sub="change since the 1st season", lines=lines)
+        if not lines:
+            chart["none"] = (f"Not enough players with {ARC.LEAST}+ innings in two seasons in a row yet "
+                             f"({ARC.MIN_PLAYERS} needed for each step).")
+        else:
+            big = max(((ln["name"], p) for ln in lines for p in ln["points"][1:]), key=lambda x: abs(x[1]["v"]))
+            chart.update(**SG.lines(
+                f"How {title.lower()} usually changes over a career in {sec}: the average change from each season to the "
+                f"next, added up from the 1st season ({unit}).",
+                f"{big[0]}: {big[1]['text']} by the {big[1]['label']}",
+                "Tells you whether a young player's dip is normal, whether your stars are at the age they usually peak, "
+                "and who is beating the usual curve.", best_label="Biggest change"))
+        out["arc_charts"].append(chart)
+    v = arc_verdicts(career, sec)
+    # still playing: in their team's side in that team's latest season here, however few innings (a team may sit a
+    # season out, and a season under way counts)
+    team_last = {t: m[(m.home == t) | (m.away == t)].season.max() for t in set(m.home) | set(m.away)}
+    side_now = {p: set(str(t).split(" / ")) for p, t in
+                per[[team_last.get(t.split(" / ")[-1]) == s for t, s in zip(per.teams.astype(str), per.season)]]
+                .groupby("player").teams.last().items()}
+    now = v[v.player.isin(side_now)] if len(v) else v
+    now = now.assign(teams=now.player.map(lambda p: " / ".join(sorted(side_now[p])))) if len(now) else now
+    mine_s = set(mine)
+
+    def row(r):
+        team = next((t for t in str(r.teams).split(" / ") if t in mine_s), str(r.teams).split(" / ")[0])
+        return dict(player=r.player, team=team, what="batting" if r.job == "bat" else "bowling", seasons=int(r.seasons),
+                    own=f"{r.own:+.1f}", usual=f"{r.usual:+.1f}", diff=f"{r.diff:+.1f}", verdict=r.verdict,
+                    line=ARC.sentence(r, sec))
+    ours = [row(r) for r in now.itertuples() if set(str(r.teams).split(" / ")) & mine_s]
+    out["arc_mine"] = dict(title="Your players against the usual curve", sub="still in the side", rows=ours)
+    if not ours:
+        out["arc_mine"]["none"] = (f"None of your players still in the side has two seasons here with {ARC.LEAST}+ "
+                                   "innings yet, so there's no arc to compare.")
+    top = [row(r) for r in now[now.verdict == "ahead"].head(10).itertuples()]
+    out["arc_top"] = dict(title="Furthest ahead of the usual curve", sub="everyone still playing here", rows=top)
+    if not top:
+        out["arc_top"]["none"] = "Nobody playing now is clearly ahead of the usual curve."
+    k = kind_of(m)
+    out["arc_note"] = (f"A season counts with {ARC.LEAST}+ innings. Ahead or behind means at least "
+                       f"{ARC.MARGIN['bat'][k]:g} runs an innings batting ({ARC.MARGIN['bowl'][k]:g} bowling) better or "
+                       "worse than the usual change over the same seasons. Players already playing when the career began "
+                       "may have played for years before it, so they're measured against others like them, by seasons "
+                       "since then.")
     return out

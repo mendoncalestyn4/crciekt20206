@@ -858,3 +858,9 @@ ul.notes { margin: 6px 0 0 18px; padding: 0; line-height: 1.5; }
   font-size: 15px; line-height: 1.45; }
 .tourtip b { font-size: 18px; }
 .tourstep { color: var(--dim); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+
+/* career arc (stage 5): ahead of, on or behind the usual curve */
+.arcv { font: 600 14px 'Inter'; white-space: nowrap; }
+.arcv.ahead { color: var(--win); }
+.arcv.behind { color: var(--loss); }
+.arcv.on { color: var(--dim); }

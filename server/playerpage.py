@@ -273,6 +273,7 @@ def page(career, player: str, section: str = "", season: str = "") -> dict:
     piece("winners", lambda: _winners(career, player, my_matches, team_of))
     piece("marks", lambda: _marks(career, player))
     piece("journey", lambda: SG.rows(E.journey(career, player), ["first", "last", "team", "section", "season", "matches", "runs", "wickets"]))
+    piece("arc", lambda: _arc(career, player, secs))
     if several:
         _several(career, player, out, piece, secs, season, season_of, bat_all, bowl_all, my_matches)
         return out
@@ -303,6 +304,24 @@ def page(career, player: str, section: str = "", season: str = "") -> dict:
     piece("big", lambda: _big(career, player, section, sec_ids))
     piece("countries", lambda: _countries(career, player, section, sec_ids))
     piece("bounce", lambda: _bounce(career, player, section, sec_ids))
+    return out
+
+
+def _arc(career, player: str, secs: list[str]) -> dict:
+    """Career arc (stage 5): in each ticked competition, the player against the usual curve of players' careers there
+    (ahead of it, on it or behind it), from Insights · Career arc."""
+    from ccstats import arc as ARC
+    from .insightspage import arc_verdicts
+    lines = []
+    for sec in secs:
+        v = arc_verdicts(career, sec)
+        for r in v[v.player == player].sort_values("job").itertuples():
+            lines.append(dict(section=sec, verdict=r.verdict, text=ARC.sentence(r, sec)))
+    out = dict(lines=lines, for_="Shows whether they are getting better faster or slower than players usually do over "
+                                 "a career here, so you can tell a normal dip from a real decline.")
+    if not lines:
+        out["none"] = (f"Needs two seasons here with {ARC.LEAST}+ innings (and enough other players to draw the usual "
+                       "curve) before their arc can be compared.")
     return out
 
 

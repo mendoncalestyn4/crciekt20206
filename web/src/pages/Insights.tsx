@@ -5,10 +5,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { get, type AnalyticsPage, type InsightsPage, type NGrid, type Quad, remember } from "../api";
+import { get, type AnalyticsPage, type ArcTable, type InsightsPage, type NGrid, type Quad, remember } from "../api";
 import { Explain, Missing, Num, Pick, Tile, three } from "../kit/base";
 import { PName } from "../kit/base";
-import { HomeBars, Quadrant, SeasonLine } from "../kit/insights";
+import { ArcLines, HomeBars, Quadrant, SeasonLine } from "../kit/insights";
 import { BatFirstSides, MatchWinners, StrengthPanel } from "../kit/season";
 import { Grid, SignedBars } from "../kit/teams";
 import { T } from "../shell/names";
@@ -181,8 +181,35 @@ export function Insights() {
             {d.follow_none ? <div className="plain">{d.follow_none}</div> : d.follow && <><Grid t={d.follow} />{d.follow.note && <div className="note">{d.follow.note}</div>}</>}
           </Tile>
         </>)}
+
+        {tab === "Career arc" && <>
+          <Tile span={12} className="pickbar"><div className="drops">{comp}</div></Tile>
+          {d.arc_none ? <Tile span={12}><div className="plain">{d.arc_none}</div></Tile> : <>
+            {d.arc_charts?.map((c) => <Tile key={c.id} span={6} title={c.title} right={c.sub}>
+              {c.none ? <div className="plain">{c.none}</div> : <><ArcLines c={c} /><Explain {...three(c)} /></>}</Tile>)}
+            {d.arc_mine && <ArcTiles t={d.arc_mine} />}
+            {d.arc_top && <ArcTiles t={d.arc_top} />}
+            {d.arc_note && <div className="note" style={{ gridColumn: "span 12" }}>{d.arc_note}</div>}
+          </>}
+        </>}
       </div>
     </>
+  );
+}
+
+/** A table of players against the usual career curve: what they did, the usual change over the same seasons, and the
+ *  verdict (ahead in the win colour, behind in the loss colour). */
+function ArcTiles({ t }: { t: ArcTable }) {
+  return (
+    <Tile span={12} title={t.title} right={t.sub}>
+      {t.none ? <div className="plain">{t.none}</div> : <table className="c"><thead><tr><th>Player</th><th>Team</th><th>In</th>
+        <th className="r">Seasons</th><th className="r">Their change</th><th className="r">Usual</th><th>Against the curve</th></tr></thead>
+        <tbody>{t.rows.map((r) => (
+          <tr key={r.player + r.what}><td><PName p={r.player} px={21} /><div className="how">{r.line}</div></td><td><span className="why">{r.team}</span></td>
+            <td><span className="why">{r.what}</span></td><td className="r"><span className="tn dimn">{r.seasons}</span></td>
+            <td className="r"><span className="tn">{r.own}</span></td><td className="r"><span className="tn dimn">{r.usual}</span></td>
+            <td><span className={`arcv ${r.verdict}`}>{r.verdict === "on" ? "on it" : r.verdict}</span></td></tr>))}</tbody></table>}
+    </Tile>
   );
 }
 

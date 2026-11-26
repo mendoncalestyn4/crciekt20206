@@ -1,6 +1,6 @@
 // Insights (stage 3): home wins against away wins in every competition, and one measure of scoring season by season.
 import { useMemo } from "react";
-import type { CompareChart, HomeRow, Quad, QuadPoint, SeasonChart } from "../api";
+import type { ArcChart, CompareChart, HomeRow, Quad, QuadPoint, SeasonChart } from "../api";
 import { useTheme } from "../theme";
 import { EChart, type Option } from "./EChart";
 import { look, ts } from "./look";
@@ -145,4 +145,34 @@ export function CareerCurves({ series, what, order }: { series: { player: string
   }, [t, series, what, order]);
   if (!series.some((s) => s.points.length)) return <div className="empty">No innings yet.</div>;
   return <EChart option={option} height={380} label={`Total ${what} after each innings`} />;
+}
+
+/** Career arc (stage 5): the usual change since a player's 1st season here, one line for new players and one for those
+ *  already playing when the career began; a dashed line at 0 (no change), each point labelled; hover for how many
+ *  players stand behind that step. */
+export function ArcLines({ c }: { c: ArcChart }) {
+  const t = useTheme();
+  const option = useMemo<Option>(() => {
+    const L = look(t);
+    const most = Math.max(...c.lines.map((l) => l.points.length));
+    const labels = Array.from({ length: most }, (_, i) => c.lines.flatMap((l) => l.points).find((p) => p.n === i + 1)?.label ?? `${i + 1}`);
+    const colours = [t.blue, t.grey];
+    return {
+      legend: { top: 0, left: 0, textStyle: { color: t.ink, fontFamily: "Inter", fontSize: ts(11) } },
+      grid: { left: 52, right: 24, top: 40, bottom: 40 },
+      xAxis: { type: "category", data: labels, name: "Season of their career here", nameLocation: "middle", nameGap: 28, ...L.AX,
+        nameTextStyle: { color: t.dim, fontFamily: "Inter", fontSize: ts(11) } },
+      yAxis: { type: "value", boundaryGap: ["18%", "18%"], ...L.AX },
+      tooltip: { ...L.TT, trigger: "item", formatter: (p: { seriesIndex: number; dataIndex: number }) => {
+        const ln = c.lines[p.seriesIndex], x = ln?.points[p.dataIndex];
+        return x && ln ? `<b>${ln.name}</b><br/>${x.label}: ${x.text}<br/>${x.n === 1 ? `${x.players} players` : `${x.players} players' change from the season before`}` : ""; } },
+      series: c.lines.map((ln, i) => ({
+        name: ln.name, type: "line", symbol: "circle", symbolSize: 8, labelLayout: { hideOverlap: true }, lineStyle: { width: 2.5, color: colours[i % 2] }, itemStyle: { color: colours[i % 2] },
+        data: ln.points.map((p) => p.v),
+        label: { show: true, position: i ? "bottom" : "top", ...L.VAL(11), color: t.ink, formatter: (p: { dataIndex: number }) => ln.points[p.dataIndex]?.text ?? "" },
+        ...(i === 0 ? { markLine: { silent: true, symbol: "none", label: { show: false }, lineStyle: { type: "dashed", color: t.dim, width: 1 }, data: [{ yAxis: 0 }] } } : {}),
+      })),
+    };
+  }, [t, c]);
+  return <EChart option={option} height={270} label={c.title} />;
 }

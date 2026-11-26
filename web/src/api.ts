@@ -299,6 +299,7 @@ export type PlayerPage = {
   tabs: string[]; open: string; batting: Batting | null; bowling: Bowling | null;
   bat_innings?: ByInnings | null; bowl_innings?: ByInnings | null;
   story: Story | null;
+  arc?: { lines: { section: string; verdict: "ahead" | "on" | "behind"; text: string }[]; none?: string; for_: string } | null;
   profile?: ({ attributes: Attributes; report: ScoutReport; show: ("bat" | "bowl")[]; other: string } & Lines) | null;
 };
 
@@ -564,7 +565,13 @@ export type InsightsPage = {
   mins?: number[]; min?: number; earlier?: boolean; first?: string;
   parts?: ({ title: string; sub: string; none?: string; rows?: SignedBar[] } & Partial<Three>)[]; note?: string;
   innings?: { rows: SignedBar[] } & Three; innings_none?: string; lead?: NGrid; lead_none?: string; follow?: NGrid; follow_none?: string;
+  arc_none?: string; arc_charts?: ArcChart[]; arc_mine?: ArcTable; arc_top?: ArcTable; arc_note?: string;
 };
+export type ArcPoint = { n: number; label: string; v: number; text: string; players: number };
+export type ArcChart = { id: string; title: string; sub: string; none?: string; lines: { name: string; points: ArcPoint[] }[] } & Partial<Three>;
+export type ArcRow = { player: string; team: string; what: string; seasons: number; own: string; usual: string; diff: string;
+  verdict: "ahead" | "on" | "behind"; line: string };
+export type ArcTable = { title: string; sub: string; none?: string; rows: ArcRow[] };
 
 /** Analytics (stage 3, server/analyticspage.py): one competition and season; each tab fills only its own part. */
 export type QuadPoint = { player: string; team: string; x: number; y: number; style: string };

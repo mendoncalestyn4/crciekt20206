@@ -288,3 +288,76 @@ def test_stat_by_stat_against_opponents_and_by_result_counted_by_hand(c):
         b, _, _, _ = player_tables(c, Scope(sections=[sec], result=result))
         want = bat[[keep(r) for r in bat.itertuples()]].groupby("player").runs.sum()
         assert dict(zip(b[b.innings > 0].player, b[b.innings > 0].runs)) == {k: int(v) for k, v in want.items()}, result
+
+
+# --------------------------------------------------------------------------- career arc
+def test_career_arc_curve_worked_by_hand():
+    """Three new players' changes from season 1 to 2 (+2, +4, +6 with equal innings) average +4; only two make it to a
+    3rd season, too few for a step, so the curve stops at the 2nd. Players there from the start are kept apart."""
+    import pandas as pd
+    from ccstats import arc as ARC
+    rows = []
+    for p, v1, v2 in (("A", 0, 2), ("B", 1, 5), ("C", -3, 3)):
+        rows += [(p, "bat", "2027", 1, 10, v1, False, "X"), (p, "bat", "2028", 2, 10, v2, False, "X")]
+    rows += [("A", "bat", "2029", 3, 10, 9, False, "X"), ("B", "bat", "2029", 3, 10, 9, False, "X")]
+    rows += [("D", "bat", "2026", 1, 10, 50, True, "X"), ("D", "bat", "2027", 2, 10, -50, True, "X")]
+    rows += [("E", "bat", "2027", 1, 2, 0, False, "X"), ("E", "bat", "2028", 2, 2, 100, False, "X")]   # too few innings
+    per = pd.DataFrame(rows, columns=["player", "job", "season", "n", "innings", "value", "from_start", "teams"])
+    c = ARC.curve(per, "bat", False)
+    assert list(c.n) == [1, 2] and c.change.tolist() == [0.0, 4.0] and c.players.tolist()[1] == 3
+    # unequal innings weigh the change by both seasons' innings
+    per2 = per.copy()
+    per2.loc[(per2.player == "C"), "innings"] = 30
+    w = 2 / (1 / 30 + 1 / 30)
+    want = (2 * 10 + 4 * 10 + 6 * w) / (10 + 10 + w)
+    assert abs(ARC.curve(per2, "bat", False).change.iloc[1] - want) < 1e-9
+    assert ARC.curve(per, "bat", True).players.iloc[0] == 1 and len(ARC.curve(per, "bat", True)) == 1   # one player: no step
+
+
+def test_career_arc_each_player_recounted_from_season_tables(demo):
+    """Every verdict's own change equals the player's measure in their latest and first counted seasons, worked again
+    from each season's own table; the usual change is the curve's over the same seasons; the verdict follows the
+    margin."""
+    from ccstats import arc as ARC
+    from ccstats.stats import KIND, player_tables
+    c = demo
+    sec = c.matches.section.iloc[0]
+    kind = KIND.get(c.matches[c.matches.section == sec].format.iloc[0], "one")
+    per = ARC.seasons(c, sec)
+    v = ARC.verdicts(c, sec, per)
+    assert len(v)
+    seasons = sorted(c.matches[c.matches.section == sec].season.unique())
+    tabs = {s: player_tables(c, Scope(sections=[sec], seasons=[s])) for s in seasons}
+    for r in v.sample(min(25, len(v)), random_state=1).itertuples():
+        t_i, col = (0, "runs_above_average") if r.job == "bat" else (1, "runs_saved")
+        vals = []
+        for s in seasons:
+            t = tabs[s][t_i]
+            t = t[(t.player == r.player) & (t.innings >= ARC.LEAST)]
+            if len(t):
+                vals.append(float(t[col].iloc[0] / t.innings.iloc[0]))
+        assert len(vals) == r.seasons >= 2
+        assert abs(r.own - (vals[-1] - vals[0])) < 1e-9 or r.last_n < len(seasons)
+        cv = ARC.curve(per, r.job, r.from_start).set_index("n").change
+        assert abs(r.usual - (cv[r.last_n] - cv[r.first_n])) < 1e-9
+        cut = ARC.MARGIN[r.job][kind]
+        assert r.verdict == ("ahead" if r.diff >= cut else "behind" if r.diff <= -cut else "on")
+
+
+def test_career_arc_on_the_pages(demo):
+    """The Insights tab draws both curves and lists the players; each listed player's Player page says the same."""
+    from server import insightspage as IP
+    from server import playerpage as PP
+    c = demo
+    sec = c.matches.section.iloc[0]
+    team = sorted(set(c.matches.home))[0]
+    out = IP.insights_page(c, dict(tab="Career arc", section=sec), [team])
+    assert [ch["id"] for ch in out["arc_charts"]] == ["bat", "bowl"]
+    assert all(ch.get("lines") and ch.get("is_") and ch.get("for_") for ch in out["arc_charts"])
+    rows = out["arc_mine"]["rows"]
+    assert rows and all(r["team"] == team for r in rows)
+    for r in rows[:4]:
+        pg = PP.page(c, r["player"], sec)
+        assert r["line"] in [x["text"] for x in pg["arc"]["lines"]]
+    one = IP.insights_page(c, dict(tab="Career arc", section=sec), [])
+    assert one["arc_mine"].get("none") and one["arc_top"]["rows"]

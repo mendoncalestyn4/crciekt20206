@@ -291,6 +291,9 @@ export function PlayerView() {
             : <div className="note">No matches yet.</div>}</Box>
           {per(st.each?.rank, st.rank, (rk, sfx) => <Box title={`Rank over time${sfx}`} right={`where they finished in ${sfx ? sfx.slice(3) : fmtOf(d.section)}`}>{!rk.empty ? <><RankLines rows={rk.rows} /><Explain {...lines(rk)} /></>
             : <div className="note">No seasons yet.</div>}</Box>, <Box title="Rank over time" right={`where they finished in ${fmtOf(d.section)}`}><div className="note">No seasons yet.</div></Box>)}
+          {d.arc && <Box title="Career arc" right="against the usual curve">{d.arc.lines.length ? d.arc.lines.map((x) => (
+            <div className="plain" key={x.section + x.text}><span className={`arcv ${x.verdict}`}>{x.verdict === "on" ? "On the curve" : x.verdict === "ahead" ? "Ahead" : "Behind"}</span> · <T>{x.text}</T></div>))
+            : <div className="note">{d.arc.none}</div>}<Explain shows="" for_={d.arc.for_} /></Box>}
           {per(st.each?.milestones, st.milestones, (ms, sfx) => <Box title={`Milestones${sfx}`} right={`how many ${ms.unit} it took`}>{ms.rows.length ? <table className="c"><thead><tr><th>Milestone</th><th className="r">Took</th><th className="r">Fastest</th><th>Reached</th></tr></thead>
             <tbody>{ms.rows.map((r) => <tr key={r.milestone}><td><Name p={r.milestone} px={19} /></td><td className="r"><span className="tn">{r.took}</span></td><td className="r"><span className="tn dimn">{r.fastest}</span></td><td><span className="tn dimn">{dayY(r.date)}</span></td></tr>)}</tbody></table>
             : <div className="note">No milestone reached here yet.</div>}<div className="note">The rank is among everyone here who got there.</div></Box>)}
