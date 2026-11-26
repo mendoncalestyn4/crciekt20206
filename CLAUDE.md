@@ -37,7 +37,8 @@ Read these at the start of every session. They come from the owner and hold unti
   2. **Checks that block calling a page finished:** a page isn't finished while any of its nothing-lost lines is
      unticked, while a chart or piece the plan puts on it is missing, or without its parity test (its numbers equal
      to the old site's). The owner said not to build the automatic tests for this yet (13 November): until told, do
-     these three checks by hand, every time, before saying a page or stage is finished.
+     these three checks by hand, every time, before saying a page or stage is finished. **26 November: the owner said
+     yes to the automatic nothing-lost crawl (built in stage 5, run weekly so normal test runs stay as fast as now).**
   3. **Each stage's "what was built" section in the plan has a line for every promise:** built, where, and how it was
      checked.
 - **No input from the owner** (14 November: "I don't do any input, only you do it"): suggest only things that run by

@@ -1512,6 +1512,16 @@ stage 4 is with you. About 6–7 days.
     every width, dark and light, in every team colour in the save; (12) a read-through with cricket sense for anything
     misleading; (13) the program installed fresh on GitHub's Windows machine, every page opened there. About 2 days, up
     to 3 if it finds many problems.
+16. **Accuracy checks kept for good (your "add everything", 26 November), run by themselves on every change:** a
+    frozen copy of every number on every page of the test careers (any number that moves fails, unless meant and said
+    why); the second, separately written scorecard reader on every test scorecard; the same number on every page,
+    the new ones included; a career built one match at a time equal to reading it all at once; test scorecards with
+    deliberate mistakes put in, every one of which the site's checks must catch; the nothing-lost crawl, automatic
+    (your yes, replacing the hand check of 13 November); and a weekly full run on GitHub even with no change, to catch a
+    new library version breaking something before an update reaches you. **Without slowing anything (your condition):**
+    none of it runs inside the program, so the site is no slower; the quick checks join the usual run on small test
+    careers, and the heavy ones (the nothing-lost crawl, the frozen copy on the big careers) go in the weekly run, so a
+    normal test run takes no longer than now (timed before and after, and said).
 Not picked: compare two careers, the colour-blind check. Stage 5's list is locked here (your choice, 26 November); more
 ideas wait for your review after stage 6.
 
