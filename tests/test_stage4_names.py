@@ -181,3 +181,20 @@ def test_lasting_alerts_are_never_forgotten(twice):
     assert not [a for a in out if a["kind"] == "names"]
     assert "join|B Duckett|BM Duckett" in after["said"] and len([k for k in after["said"] if k.startswith("mile|")]) == 3000
     assert after["said"][-1] == "mile|03499|x"                     # the oldest of the rest go first
+
+
+def test_a_batter_who_never_bowled_and_a_wicket_taker_are_never_joined_by_themselves():
+    """Found by the 20-season test career: D Fenwick (98 games, no wicket) retired and DL Fenwick (42 games, 112
+    wickets) came straight in at the same county. Listed for your click, never joined by itself."""
+    import pandas as pd
+    from ccstats import lookalike as LK
+    rows = []
+    for i in range(98):
+        rows.append(("D Fenwick", "Lowmoor", f"a{i}", pd.Timestamp("2026-01-01") + pd.Timedelta(days=i), "FC", 30, 1, 0))
+    for i in range(42):
+        rows.append(("DL Fenwick", "Lowmoor", f"b{i}", pd.Timestamp("2026-05-01") + pd.Timedelta(days=i), "FC", 5, 1, 3))
+    appear = pd.DataFrame(rows, columns=LK.APPEAR_COLUMNS)
+    p = LK.pairs(appear)
+    assert len(p) == 1 and not p.sure.iloc[0] and "never took a wicket" in p.why.iloc[0]
+    appear.loc[appear.player == "DL Fenwick", "wickets"] = 0          # two batters: still beyond doubt
+    assert LK.pairs(appear).sure.iloc[0]

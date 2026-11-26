@@ -30,10 +30,22 @@ def _no_helper_processes():
         os.environ["STATS_PACK_HELPERS"] = before
 
 
+def pytest_configure(config):
+    config.addinivalue_line("markers", "weekly: a heavy accuracy check run by the weekly run on GitHub (WEEKLY=1), so a "
+                                       "normal test run takes no longer than before")
+
+
 def pytest_collection_modifyitems(config, items):
-    """TEST_SHARD="k/n" (the Windows run on GitHub, split over n machines at once): this machine runs every n-th test,
+    """The heavy accuracy checks (marked weekly) run only when WEEKLY=1 (the weekly run on GitHub, or by hand).
+
+    TEST_SHARD="k/n" (the Windows run on GitHub, split over n machines at once): this machine runs every n-th test,
     starting at the k-th, so the n parts together are exactly every test, each once."""
     import os
+    if os.environ.get("WEEKLY") != "1":
+        heavy = [it for it in items if it.get_closest_marker("weekly")]
+        if heavy:
+            config.hook.pytest_deselected(items=heavy)
+            items[:] = [it for it in items if not it.get_closest_marker("weekly")]
     shard = os.environ.get("TEST_SHARD", "")
     if not shard:
         return

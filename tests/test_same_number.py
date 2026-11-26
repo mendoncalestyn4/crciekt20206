@@ -126,3 +126,76 @@ def test_a_matchs_top_scores_are_its_scorecards(career):
             assert (r["player"], int(str(r["score"]).rstrip("*"))) in card, (mid, r)
         best = max((b["runs"] for c in d["match"]["cards"] for b in c["bat"] if b["did_bat"]), default=0)
         assert not d["top_scores"] or int(str(d["top_scores"][0]["score"]).rstrip("*")) == best, mid
+
+
+# --------------------------------------------------------------------------- stage 5's pieces (the new ones included)
+def test_stands_broken_are_the_same_on_player_stories_stat_by_stat_and_the_player_page(career):
+    """A bowler's big stands broken: Player stories (each team's row added up), Stat by stat's new stat and the line on
+    their Player page."""
+    import re
+    from ccstats import leaders as L
+    from ccstats.stats import Scope
+    from server import storiespage as SP
+    checked = 0
+    for sec in sorted(set(career.matches.section)):
+        page = SP.stories_page(career, dict(tab="Partnership breakers", section=sec), [])
+        rows = (page.get("breakers") or {}).get("rows", [])
+        if not rows:
+            continue
+        stories: dict[str, int] = {}
+        for r in rows:
+            stories[r[0]] = stories.get(r[0], 0) + int(r[2])
+        table, _ = L.tables(career, Scope(sections=[sec]), "Bowling")
+        sbs = dict(zip(table.player, table.stands_broken))
+        for i, (who, n) in enumerate(stories.items()):
+            assert sbs.get(who) == n, (sec, who)
+            if i >= 2:          # (the Player page for the top two of each competition: it's the slow one)
+                continue
+            d = PP.page(career, who, sec)
+            said = re.match(r"Broke (\d+) stand", d["bowling"]["breakers"]["text"])
+            assert said and int(said.group(1)) == n, (sec, who)
+            checked += 1
+    assert checked >= 3
+
+
+def test_a_record_within_reach_starts_from_the_players_own_figures(career):
+    """Records within reach: the player's figure "now" is their runs or wickets on the competition's own tables."""
+    from ccstats import reach as R
+    from ccstats.stats import Scope, player_tables
+    checked = 0
+    for sec in sorted(set(career.matches.section)):
+        teams = sorted(set(career.matches[career.matches.section == sec].home))
+        w = R.within(career, sec, teams)
+        if w.empty:
+            continue
+        bat, bowl, _, _ = player_tables(career, Scope(sections=[sec]))
+        runs, wkts = dict(zip(bat.player, bat.runs)), dict(zip(bowl.player, bowl.wickets))
+        for r in w[w.whose == ""].itertuples():
+            if r.unit == "runs":
+                assert runs[r.player] == r.now, (sec, r.player)
+                checked += 1
+            elif r.unit == "wickets":
+                assert wkts[r.player] == r.now, (sec, r.player)
+                checked += 1
+    assert checked >= 1
+
+
+def test_then_and_now_and_eras_agree_with_the_teams_own_results(career):
+    """Then and now's latest season (matches, won, lost) and each era's results are the team's own results, counted
+    from the Results tab's list."""
+    from ccstats import eras as ER
+    from ccstats import thenandnow as TN
+    checked = 0
+    for sec in sorted(set(career.matches.section)):
+        m = career.matches[career.matches.section == sec]
+        for team in sorted(set(m.home) | set(m.away)):
+            g = m[(m.home == team) | (m.away == team)]
+            for s in sorted(g.season.unique()):
+                x = TN.season(career, sec, team, s)
+                gs = g[g.season == s]
+                assert (x["matches"], x["won"], x["lost"]) == (len(gs), int((gs.winner == team).sum()), int((gs.loser == team).sum()))
+                checked += 1
+            for e in ER.eras(career, sec, team):
+                ge = g[g.season.astype(str).isin(e["seasons"])]
+                assert (e["won"], e["lost"]) == (int((ge.winner == team).sum()), int((ge.loser == team).sum()))
+    assert checked >= 20

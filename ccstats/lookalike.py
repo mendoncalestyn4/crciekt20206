@@ -4,7 +4,8 @@ its vowels (Smith / Smyth, Mohammed / Muhammad); and a move between teams (one n
 the very same surname, never between two national sides. Two names that played in the same match are never one player.
 
 Every pair says why it was listed. Only pairs beyond doubt are joined by themselves (`sure`): the same team, never in
-the same match, one name's last game for the team followed straight away by the other's first (at most `GAP` of the
+the same match, the same kind of player (not a batter who never bowled and a wicket-taker), one name's last game for
+the team followed straight away by the other's first (at most `GAP` of the
 team's games of that format between), and neither name has any other candidate. Each automatic join is listed and can
 be undone (kept apart for good); anything less sure waits for your click.
 
@@ -21,6 +22,7 @@ import pandas as pd
 
 from .fixtures import NATIONS
 
+JOB_GAMES = 20                   # games without a wicket that make a name "never bowls" (see _same_job)
 GAP = 2                         # at most this many of the team's games (of a format) between the old name and the new
 JOIN_COLUMNS = ["other", "keep", "team", "why", "other_matches", "keep_matches", "other_runs", "keep_runs",
                 "other_wickets", "keep_wickets", "other_innings", "keep_innings", "sure"]
@@ -182,6 +184,9 @@ def pairs(appear: pd.DataFrame, keep_apart: list | None = None) -> pd.DataFrame:
         if not shared:
             w += "; moved team (one name's games all before the other's)"
         sure = bool(shared and apart_in_time and count[a] == 1 and count[b] == 1 and _straight_after(appear, a, b, shared))
+        if sure and not _same_job(tot, a, b):        # a batter who never bowled isn't suddenly a strike bowler
+            sure = False
+            w += "; not joined by itself: one never took a wicket, the other took plenty"
         rows.append(dict(other=other, keep=keep, team=", ".join(sorted(shared)) if shared else
                          f"{', '.join(sorted(teams_of[other]))} → {', '.join(sorted(teams_of[keep]))}", why=w,
                          other_matches=int(tot.matches[other]), keep_matches=int(tot.matches[keep]),
@@ -190,6 +195,18 @@ def pairs(appear: pd.DataFrame, keep_apart: list | None = None) -> pd.DataFrame:
                          other_innings=int(tot.innings[other]), keep_innings=int(tot.innings[keep]), sure=sure))
     out = _typed(pd.DataFrame(rows, columns=JOIN_COLUMNS))
     return out.sort_values(["sure", "keep_matches"], ascending=[False, False]).reset_index(drop=True)
+
+
+def _same_job(tot: pd.DataFrame, a: str, b: str) -> bool:
+    """Whether two names play the same kind of cricket: not when one has played `JOB_GAMES`+ matches without a
+    wicket while the other averages a wicket a match or more (found by the 20-season test career: a batter who retired
+    and a new bowler with a near-same name at the same county)."""
+    def never(x):
+        return int(tot.matches[x]) >= JOB_GAMES and int(tot.wickets[x]) == 0
+
+    def bowler(x):
+        return int(tot.wickets[x]) >= max(JOB_GAMES // 2, int(tot.matches[x]))
+    return not ((never(a) and bowler(b)) or (never(b) and bowler(a)))
 
 
 def _typed(df: pd.DataFrame) -> pd.DataFrame:
