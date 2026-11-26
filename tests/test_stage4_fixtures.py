@@ -346,3 +346,36 @@ def test_every_tab_on_the_demo_league_and_odd_input(league, tmp_path):
         assert json.dumps(d) and "missing" not in d.get("body", {}), (tab, d.get("body"))
     for q in (dict(tab="x"), dict(team="Nobody"), dict(season="junk", tab="Calendar")):
         assert json.dumps(FP.page(c, q, [team], S()))
+
+
+# --------------------------------------------------------------------------- parity with the current site
+def test_parity_with_the_current_sites_fixtures_page(career):
+    """The new page's numbers are the current site's: the same engine calls views/fixtures.py makes, compared."""
+    team = "England"
+    sched = FX.make_series(team, "India", "Test", 3, "home", "2031-01") + FX.make_series(team, "Australia", "ODI", 3, "away", "2031-03")
+
+    class S:
+        fixtures, goals, notes, forecasts, fixture_changes = sched, [], {}, {}, []
+    tracked = FX.track(career, sched, auto=(team,))
+    d = FP.page(career, dict(tab="Schedule", team=team), [team], S())["body"]
+    sm = FX.summary(tracked, team)
+    assert d["kpis"][0][1] == f"{sm['played']} of {sm['total']}" and d["kpis"][2][1] == str(sm["to_come"])
+    assert len(d["rows"]) == len(tracked[tracked.team == team])
+    ch = PLN.chances(career, tracked, team)
+    got = {(r["series"], r["no"].split(" ")[0]): r["chance"]["win"] for r in d["rows"] if r.get("chance")}
+    for r in ch.itertuples():
+        assert got[(r.series.replace(FX.AUTO, ""), str(int(r.no)))] == round(r.win)
+    s = FP.page(career, dict(tab="Series", team=team), [team], S())["body"]
+    for c in s["coming"]:
+        g = next(x for x in FX.series_groups(tracked, team) if x["series"] == c["series"])
+        o = FX.series_outlook(career, team, g)
+        assert c["odds"]["A"] == round(o["odds"]["A"]) and c["odds"]["B"] == round(o["odds"]["B"])
+    w = FP.page(career, dict(tab="WTC race", team=team), [team], S())["body"]
+    race = FX.wtc_race(career, tracked, team)
+    if race is not None:
+        assert [r[1] for r in w["table"]["rows"]] == list(race["table"].team)
+    mi = FP.page(career, dict(tab="Milestones", team=team), [team], S())["body"]
+    mc = FX.milestone_countdown(career, tracked, team)
+    assert (mi.get("table") is None) == mc.empty
+    if not mc.empty:
+        assert [r[0] for r in mi["table"]["rows"]] == list(mc.head(25).player)

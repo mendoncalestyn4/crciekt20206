@@ -337,6 +337,8 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
 
         def go():
             st = site.store
+            if DCSTATE["busy"] and action in ("restore", "rename", "remove", "reset", "add_folder", "demo"):
+                raise settingspage.Refused("A Data check change is still being made: wait a moment, then try again.")
             if action == "browse":
                 return dict(folder=settingspage.choose_folder(str(b.get("start", ""))) or "",
                             unavailable="" if settingspage._can_browse() else

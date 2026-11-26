@@ -225,3 +225,27 @@ def test_no_careers_first_start(tmp_path):
         assert status == 200 and (b["folder"] or b["unavailable"])
     finally:
         s.stop()
+
+
+def test_a_folder_that_vanishes_and_comes_back(tmp_path):
+    import time
+    from serverkit import by_date
+    files = sorted(FIXTURES, key=by_date)
+    store, folder, game = make_pc(tmp_path, files=files[:10])
+    s = Live(create_app(store, web=tmp_path / "nothing", watch_every=0.2))
+    try:
+        gone = folder.with_name("Scorecards-moved")
+        folder.rename(gone)
+        time.sleep(1.5)
+        assert s.json("/api/health")["ok"] and s.json("/api/fixtures")["teams"] == ["England"]
+        assert len(store.load("My career")[0].matches) == 10        # nothing lost while it was away
+        gone.rename(folder)
+        for f in files[10:13]:
+            shutil.copy(f, folder / f.name)
+        for _ in range(100):
+            if len(store.load("My career")[0].matches) == 13:
+                break
+            time.sleep(0.1)
+        assert len(store.load("My career")[0].matches) == 13
+    finally:
+        s.stop()

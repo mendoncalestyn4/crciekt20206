@@ -24,7 +24,11 @@ CHROME = chrome()
 PAGES = ["/", "/inbox", "/style-guide", "/settings", "/players", "/players/J Bethell", "/players/J Bethell?view=overview",
          "/players/J Bethell?view=bowling", "/players/J Bethell?view=story", "/players/K Rabada", "/matches", "/teams", "/teams?tab=How they win", "/teams?tab=Season",
          "/teams?tab=Squad&venue=home", "/teams/England", "/teams/vs",
-         "/teams/vs?which=any", "/teams/preview", "/teams/preview?tab=About them", "/teams/preview?tab=Your best XI v them", "/teams/planner", "/teams/planner?tab=Batting order", "/teams/planner?tab=Partnerships", "/teams/rivalries", "/seasons", "/seasons?event=Indian Premier League&season=2026", "/seasons?event=T20 Blast&season=2026", "/seasons/season", "/seasons/season?view=month", "/seasons/season?team=All teams", "/seasons/season?tab=Series tracker", "/seasons/season?tab=Season progress", "/seasons/review", "/seasons/review?points=ipl", "/seasons/honours", "/seasons/honours?tab=Trophy cabinets", "/fixtures", "/leaders", "/leaders?disc=Bowling&section=ODIs|T20Is&stat=runs_saved",
+         "/teams/vs?which=any", "/teams/preview", "/teams/preview?tab=About them", "/teams/preview?tab=Your best XI v them", "/teams/planner", "/teams/planner?tab=Batting order", "/teams/planner?tab=Partnerships", "/teams/rivalries", "/seasons", "/seasons?event=Indian Premier League&season=2026", "/seasons?event=T20 Blast&season=2026", "/seasons/season", "/seasons/season?view=month", "/seasons/season?team=All teams", "/seasons/season?tab=Series tracker", "/seasons/season?tab=Season progress", "/seasons/review", "/seasons/review?points=ipl", "/seasons/honours", "/seasons/honours?tab=Trophy cabinets", "/fixtures", "/fixtures?tab=Add matches", "/fixtures?tab=Change or delete",
+         "/fixtures?tab=Series", "/fixtures?tab=Calendar", "/fixtures?tab=WTC race", "/fixtures?tab=Milestones", "/fixtures?tab=Goals",
+         "/settings?tab=Your teams", "/settings?tab=Backups", "/settings?tab=Logos", "/settings?tab=Colours", "/settings?tab=Problems",
+         "/settings/data-check", "/settings/data-check?tab=Player with two names", "/settings/data-check?tab=Games left out",
+         "/settings/data-check?tab=Scorecards", "/settings/data-check?tab=Copies", "/settings/data-check?tab=Your changes", "/leaders", "/leaders?disc=Bowling&section=ODIs|T20Is&stat=runs_saved",
          "/leaders?pos=Openers (1-2)&view=Worst&measure=season", "/leaders/records",
          "/leaders/records?section=ODIs|T20Is&season=2026&top=5", "/leaders/rankings", "/leaders/rankings?tab=Rankings history",
          "/leaders/rankings?tab=Team ratings&section=ODIs", "/leaders/rankings?tab=Teams by runs and wickets&section=ODIs|T20Is",
@@ -353,12 +357,12 @@ def test_new_matches_show_up_on_an_open_page(browser, site):
 
 
 def test_a_page_opened_by_its_address_and_the_colours_preview(browser, site):
-    pg, said = open_page(browser, site, "/settings?nation=England")
+    pg, said = open_page(browser, site, "/settings?tab=Colours&nation=England")
     try:
         assert pg.evaluate("getComputedStyle(document.documentElement).getPropertyValue('--page').trim()") == "#eff3f9"
         pg.locator(".drop", has_text="Preview").locator(".dropbtn").click()   # the dropdown (your choice of 24 November)
         pg.locator(".dropmenu .droprow button", has_text="New Zealand").click()
-        pg.wait_for_url("**/settings?nation=New%20Zealand")
+        pg.wait_for_url("**/settings?tab=Colours&nation=New%20Zealand")
         pg.wait_for_function("getComputedStyle(document.documentElement).getPropertyValue('--page').trim() === '#f1f1f2'")
         pg.click("nav.rail a.nav >> text=Players")   # the preview follows you round the site
         pg.wait_for_url("**/players?nation=New%20Zealand")

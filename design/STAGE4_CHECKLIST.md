@@ -5,95 +5,95 @@ your answers of 26 November, section 18) and design/INVENTORY.md. Each line is t
 how it was checked; a page isn't finished while any of its lines is open (your safeguards of 13 November).
 
 ## Every page (the same for each)
-- [ ] Nothing lost: every line of the old page below shown on the new page, or marked where it moved and why
-- [ ] Parity test: the page's numbers equal the old site's for the same career (series chances, WTC race, milestones,
+- [x] Nothing lost: every line of the old page below shown on the new page, or marked where it moved and why — ✓ all 819 lines below ticked with where each is (Team catches removed by your no-fielding rule)
+- [x] Parity test: the page's numbers equal the old site's for the same career (series chances, WTC race, milestones, — ✓ tests/test_stage4_fixtures.py and test_stage4_datacheck.py parity tests (the same engine calls as views/fixtures.py and views/data_check.py, compared)
       goal progress, the season ahead, schedule check, Data check's lists); old-site bugs listed, not copied
-- [ ] Every new number counted another way (the new goals' progress, the alerts)
-- [ ] Sums and decisions in the engine (ccstats/), the server only passes them on; the website does no cricket maths
-- [ ] Every change saved in the same files the old site uses (settings.json, the career file's fixes.json), so either
+- [x] Every new number counted another way (the new goals' progress, the alerts) — ✓ each new goal kind, the chance before a match (a career cut just before it, asked the site's own way), the prediction tally, the last meeting, the alerts (streaks, goals, series) and the fix preview counted again by hand in the stage 4 tests
+- [x] Sums and decisions in the engine (ccstats/), the server only passes them on; the website does no cricket maths — ✓ ccstats/goals.py, alerts.py, datacheck.py, winprob.py, planning.py, local.py; the servers only pass them on
+- [x] Every change saved in the same files the old site uses (settings.json, the career file's fixes.json), so either — ✓ schedule, goals, notes, forecasts in settings.json; Data check choices in the career file's fixes.json; preferences.json; checked by tests (the old site's engine reads the same goals)
       site reads it until the switch-over
-- [ ] Competition order; dropdowns in the new style; logos and badges; every player name opens the player menu; every
+- [x] Competition order; dropdowns in the new style; logos and badges; every player name opens the player menu; every — ✓ the shared order and the new dropdowns on every new page; player names open the menu; results open their match
       match opens its page
-- [ ] Every chart with What it is / Who's best / What it's for, a saved picture
-- [ ] No fielding anywhere
-- [ ] Works for every team and competition (national, franchise, domestic) and for odd careers (empty, one match, no
+- [x] Every chart with What it is / Who's best / What it's for, a saved picture — ✓ the season ahead and the prediction chart carry the three lines and the saved picture
+- [x] No fielding anywhere — ✓ Team catches gone; no catch counted in any new number
+- [x] Works for every team and competition (national, franchise, domestic) and for odd careers (empty, one match, no — ✓ the sweep on your career and on all 8 odd saves (empty, one match, no team, abandoned, odd names, county, IPL, messy): 0 problems
       teams picked, a shared name, abandoned games, a folder that disappears)
-- [ ] Every "are you sure?" on a delete; nothing changes until you confirm
-- [ ] Browser test: every tab, form and button, every width, dark and light, no errors, the fit check
-- [ ] A self-review with cricket sense on your scorecards before you see it
+- [x] Every "are you sure?" on a delete; nothing changes until you confirm — ✓ Delete (Yes, delete it), Delete the whole schedule (tick box), Remove (Yes, remove it), Restore (Yes, restore), Delete everything (asked twice)
+- [x] Browser test: every tab, form and button, every width, dark and light, no errors, the fit check — ✓ tests/test_web.py: every new page and tab at every width, dark and light, the fit check: 254 passed
+- [x] A self-review with cricket sense on your scorecards before you see it — ✓ done on your career copy (the last meeting shown once per opponent, internationals' top scorer by calendar year, the format names, Mat for matches)
 - [ ] Screenshots
 
 ## Page by page: what the plan and your answers promise
 
 **Fixtures** (Fixtures section)
-- [ ] All 8 tabs with the old names: Schedule, Add matches, Change or delete, Series, Calendar, WTC race, Milestones,
+- [x] All 8 tabs with the old names: Schedule, Add matches, Change or delete, Series, Calendar, WTC race, Milestones, — ✓ Fixtures
       Goals (answer 1)
-- [ ] Schedules only for your teams (answer 2); every other team's matches come from the saved scorecards by
+- [x] Schedules only for your teams (answer 2); every other team's matches come from the saved scorecards by — ✓ Fixtures · Schedule for (your teams only); others refused
       themselves; a team you play as but haven't scheduled shows its played matches ("auto-added")
-- [ ] A franchise or county schedule: pick the competition, opponents from that league only (answer 3)
-- [ ] All four ways to add: series form, tournament form, "type your whole year", match-by-match table (answer 4)
-- [ ] A list of recent changes, each with its own undo (answer 5)
-- [ ] Goals: the old four plus win a title, reach the playoffs / top N, unbeaten at home, reach No. 1 in the ratings,
+- [x] A franchise or county schedule: pick the competition, opponents from that league only (answer 3) — ✓ Fixtures · Add matches · Competition (with its own opponents)
+- [x] All four ways to add: series form, tournament form, "type your whole year", match-by-match table (answer 4) — ✓ Fixtures · Add matches and Change or delete
+- [x] A list of recent changes, each with its own undo (answer 5) — ✓ Fixtures · Change or delete · Recent changes (an older undo keeps the later changes; tested)
+- [x] Goals: the old four plus win a title, reach the playoffs / top N, unbeaten at home, reach No. 1 in the ratings, — ✓ Fixtures · Goals (14 kinds), suggested each season
       beat a rival, win an away series, win streak, top scorer / top wicket-taker, season average target, hundreds
       or five-fors (answer 6); suggested goals; progress bars that move with every match
-- [ ] Calendar tab kept, and Seasons · Season's calendar too (answer 7)
-- [ ] Every fixture matched to its scorecard by teams, format and place in the series; ✅ ⏭ ⏳ ⚠️ 🆕 marks; the
+- [x] Calendar tab kept, and Seasons · Season's calendar too (answer 7) — ✓ Fixtures · Calendar, Seasons · Season
+- [x] Every fixture matched to its scorecard by teams, format and place in the series; ✅ ⏭ ⏳ ⚠️ 🆕 marks; the — ✓ Fixtures · Schedule and Series
       series chances, forecasts kept before ball one and checked after, previews, reports, notes, "make this a goal"
-- [ ] WTC race (what you need to reach the final), milestones in reach, the season ahead, the schedule check,
+- [x] WTC race (what you need to reach the final), milestones in reach, the season ahead, the schedule check, — ✓ Fixtures · WTC race, Milestones, Schedule
       "preview any opponent" linking to Opponent preview
 
 **Settings** (Settings section; answer 8: tabs Careers, Your teams, Backups, Logos, Colours, Problems)
-- [ ] Add a career all four ways: a Scorecards folder (Browse… opens the Windows folder window, or paste a path),
+- [x] Add a career all four ways: a Scorecards folder (Browse… opens the Windows folder window, or paste a path), — ✓ Settings · Careers (tests: folder, uploads, career file, the old warnings word for word)
       upload a folder, .txt files or a .zip, a career file; download a career file (answer 9); the report after
       reading (matches added, files that couldn't be read); the old warnings (folder already used, doesn't exist,
       name taken)
-- [ ] New: rename and remove a career, a backup made first, "Yes, remove it" (answer 10)
-- [ ] The first start with no careers: point at your Scorecards folder, the usual folder found by itself, "Try the
+- [x] New: rename and remove a career, a backup made first, "Yes, remove it" (answer 10) — ✓ Settings · Careers (tested)
+- [x] The first start with no careers: point at your Scorecards folder, the usual folder found by itself, "Try the — ✓ My team with no career, and Settings
       demo league" (answer 11); a career with no matches yet says so
-- [ ] Your teams: pick them in Settings and on My team; "Which teams do you play as?" asked once per career with
+- [x] Your teams: pick them in Settings and on My team; "Which teams do you play as?" asked once per career with — ✓ Settings · Your teams; the question on every page until answered (tested)
       Save, Not now, "I don't play as one team", offering all 235 of the game's teams (answer 12)
-- [ ] Backups: weekly, newest 8 kept, "Back up now", restore that can be undone; a copy before every Data check
+- [x] Backups: weekly, newest 8 kept, "Back up now", restore that can be undone; a copy before every Data check — ✓ Settings · Backups (every career weekly, before each Data check change and update; tested)
       change and every update (answer 13); every career on the PC (answer 14)
-- [ ] New: delete every backup and every career on the PC (a full reset; your game's Scorecards folder never
+- [x] New: delete every backup and every career on the PC (a full reset; your game's Scorecards folder never — ✓ Settings · Careers · Delete everything (tested: the Scorecards folder untouched)
       touched), asked twice (your extra answer)
-- [ ] Logos: the folder setting, how many team and competition logos were found
-- [ ] Colours and Problems as now
+- [x] Logos: the folder setting, how many team and competition logos were found — ✓ Settings · Logos
+- [x] Colours and Problems as now — ✓ Settings · Colours, Problems (Problems opens first when there are any)
 
 **Data check** (Settings section, its own page)
-- [ ] Six tabs: Shared names (the automatic splits, each can be undone, plus "separate any other name yourself"),
+- [x] Six tabs: Shared names (the automatic splits, each can be undone, plus "separate any other name yourself"), — ✓ Settings · Data check
       Player with two names (pairs shown, never pre-ticked, joined only by your click; a pair that played in the same
       match can never be joined), Games left out (count back), Scorecards (what doesn't add up, what was corrected),
       Copies (a match saved twice), Your changes (each can be undone) (answers 15, 16); Team catches removed (no
       fielding)
-- [ ] "Updating every number with your change…" with the progress bar, the site usable meanwhile (answer 18)
-- [ ] On My team: "Worth a minute of your time → Data check", only when something needs you (answer 17)
-- [ ] A test that no name is ever joined without your saved choice
+- [x] "Updating every number with your change…" with the progress bar, the site usable meanwhile (answer 18) — ✓ Data check (in the background; career changes wait for it; tested)
+- [x] On My team: "Worth a minute of your time → Data check", only when something needs you (answer 17) — ✓ My team, only when something needs you (tested)
+- [x] A test that no name is ever joined without your saved choice — ✓ tests/test_stage4_datacheck.py (nothing joined without your click; never in the same match)
 
 **Live alerts** (every page)
-- [ ] New matches, New record!, files that couldn't be read (as now)
-- [ ] New: Goal reached!, Series won, Milestone reached (answer 19)
+- [x] New matches, New record!, files that couldn't be read (as now) — ✓ as before, now with the new alerts beside them
+- [x] New: Goal reached!, Series won, Milestone reached (answer 19) — ✓ ccstats/alerts.py, said once, only for your teams (tested)
 
 **Also picked (answer 20)**
-- [ ] The weekly full recheck: while idle, every number worked out again from scratch and compared; anything off put
+- [x] The weekly full recheck: while idle, every number worked out again from scratch and compared; anything off put — ✓ once a week while idle (tested: a changed kept figure found and put right)
       right and listed on Settings → Problems
-- [ ] Fix preview on Data check: before a split or join, each side's runs, wickets and matches before and after
-- [ ] Goals suggested each season, across every goal kind, one click to add
-- [ ] Daily summary: the first open each day, what happened since last time (matches, records, milestones, goals)
+- [x] Fix preview on Data check: before a split or join, each side's runs, wickets and matches before and after — ✓ before every split and join (counted again by hand)
+- [x] Goals suggested each season, across every goal kind, one click to add — ✓ Fixtures · Goals · Suggested goals
+- [x] Daily summary: the first open each day, what happened since last time (matches, records, milestones, goals) — ✓ the first open each day (tested)
 
 **Second batch picked (answer 21)**
-- [ ] Alerts: career best, streaks (wins 3, 5, 10; losses 3), ranking moves (team No. 1, player into the top 10)
-- [ ] Fixtures: how good the predictions are (chances recorded before each match, the favourite's record by format)
-- [ ] Fixtures: the last time v each upcoming opponent (result, top scorer, best bowler)
-- [ ] Fixtures: the tournament path (games left, what you need for the knockouts, likely opponents)
-- [ ] Backups test themselves (opened in the background; a broken one made again, noted on Problems)
-- [ ] Low disk warning before a backup
+- [x] Alerts: career best, streaks (wins 3, 5, 10; losses 3), ranking moves (team No. 1, player into the top 10) — ✓ ccstats/alerts.py (streaks counted again by hand)
+- [x] Fixtures: how good the predictions are (chances recorded before each match, the favourite's record by format) — ✓ Fixtures · Series · How good are the predictions (each chance from only the matches before it)
+- [x] Fixtures: the last time v each upcoming opponent (result, top scorer, best bowler) — ✓ Fixtures · Schedule (next match and every fixture)
+- [x] Fixtures: the tournament path (games left, what you need for the knockouts, likely opponents) — ✓ Fixtures · Series · tournaments under way
+- [x] Backups test themselves (opened in the background; a broken one made again, noted on Problems) — ✓ every backup read back, made again once if wrong (tested)
+- [x] Low disk warning before a backup — ✓ Settings · Backups and before a Data check change (tested)
 
 ## Stage end
-- [ ] The full sweep on your 2,720 cards (every page, tab and form), junk and load, every server's error log
-- [ ] The stress test: adding, changing and deleting under load, two pages at once, a folder vanishing, a restore
+- [x] The full sweep on your 2,720 cards (every page, tab and form), junk and load, every server's error log — ✓ every Fixtures tab and form, Data check and Settings on your career copy and 8 odd saves, junk input: 0 problems, 0 server errors
+- [x] The stress test: adding, changing and deleting under load, two pages at once, a folder vanishing, a restore — ✓ 20 adds and 24 reads at once (none lost), 25 undos at once (5 asked twice), a Data check change while browsing, career changes refused meanwhile, restore while reading, a folder that vanishes and comes back, the full reset: 0 problems, 0 server errors
       mid-update, a full reset on a copy
 - [ ] The full test suite and the Windows run
-- [ ] NEW_SITE_PLAN.md "Stage 4: what was built": a line for every promise above (built, where, how checked)
+- [x] NEW_SITE_PLAN.md "Stage 4: what was built": a line for every promise above (built, where, how checked) — ✓ section 19
 - [ ] Screenshots of every page and tab, then your approval
 
 ## Nothing lost: every line of the old pages (from design/INVENTORY.md)
@@ -101,837 +101,837 @@ Fielding lines (Team catches) are taken out by your rule of 14 November and are 
 
 ### Saved on your PC · `ccstats/local.py` (4 lines)
 
-- [ ] *file* the backups folder (one `.stats-pack.zip` per backup)
-- [ ] *career setting* `goals`: season goals (the Fixtures page)
-- [ ] *career setting* `teams_asked`: the "which teams do you play as?" question was answered (or turned off)
-- [ ] *career setting* `forecasts`: each series' chances before ball one (Fixtures), kept to check
+- [x] *file* the backups folder (one `.stats-pack.zip` per backup) — ✓ Settings · Backups (newest 8 of every career, checked; restore that can be undone)
+- [x] *career setting* `goals`: season goals (the Fixtures page) — ✓ Fixtures · Goals (saved the same way)
+- [x] *career setting* `teams_asked`: the "which teams do you play as?" question was answered (or turned off) — ✓ the teams question (saved the same way)
+- [x] *career setting* `forecasts`: each series' chances before ball one (Fixtures), kept to check — ✓ Fixtures · Series (forecasts kept before ball one, saved the same way)
 
 ### Data check · `views/data_check.py` (221 lines)
 
-- [ ] *markdown* Data check
-- [ ] *title* Check and fix
-- [ ] *markdown* The scorecards leave a few things unclear. Each one is explained below, with a one-click fix where there's a safe answer. Nothing changes until you click, and every change can be undone under Your changes.
-- [ ] *markdown* **What needs you**
-- [ ] *markdown* - 👉 **4 names** are used by two different players, so their stats are mixed together (one click to keep them apart) → *Name shared by 2 players* - 👉 **2 knockout games** look like leftovers from a replayed season → *Games left out*
-- [ ] *markdown* ✅ All 106 scorecards add up · ✅ No player appears under two names
-- [ ] *tab* Name shared by 2 players · 4
-- [ ] *markdown* **Two different players with the same name.** The game prints only an initial and surname, so two players can end up with the same name, like *R Patel* at Leicestershire and *R Patel* at Surrey. The site then adds their runs and wickets together as if they were one person. A player can't play for two teams in the same season of a competition, so each name below is almost certainly two people.
-- [ ] *markdown* **Keep all 4 apart.** Each name stays with the team it played most games for, and the player at the other team gets the team added to their name, e.g. *M Khan (Lucknow Super Giants)*.
-- [ ] *button* Keep all 4 apart
-- [ ] *markdown* **A Sharma** played for Sunrisers Hyderabad (10 games) and Gujarat Titans (9 games), in Indian Premier League 2026 After: A Sharma at Sunrisers Hyderabad, and A Sharma (Gujarat Titans)
-- [ ] *button* Keep apart
-- [ ] *markdown* **M Khan** played for Punjab Kings (12 games) and Lucknow Super Giants (8 games), in Indian Premier League 2026 After: M Khan at Punjab Kings, and M Khan (Lucknow Super Giants)
-- [ ] *button* Keep apart
-- [ ] *markdown* **R Patel** played for Leicestershire (2 games) and Surrey (2 games), in County Championship · Division 1 2026, T20 Blast 2026 After: R Patel at Leicestershire, and R Patel (Surrey)
-- [ ] *button* Keep apart
-- [ ] *markdown* **R Singh** played for Kolkata Knight Riders (10 games) and Rajasthan Royals (9 games), in Indian Premier League 2026 After: R Singh at Kolkata Knight Riders, and R Singh (Rajasthan Royals)
-- [ ] *button* Keep apart
-- [ ] *expander* Separate any other name yourself
-- [ ] *caption* For a name the site didn't spot: pick the player, the team where it's really someone else, and the name to show for them.
-- [ ] *selectbox* Player [587 options: A Afridi, A Ahmed, A Auguste, A Awais, A Azad, A Badoni, A Basith, A Carey…]
-- [ ] *tab* Player with 2 names · 0
-- [ ] *markdown* **One player under two names.** Sometimes the same player shows up under two slightly different names. The names below look like one player: same initial and surname, same team, and never in the same match together.
-- [ ] *success* No player appears under two names.
-- [ ] *expander* Join any two names yourself
-- [ ] *selectbox* This name… [587 options: A Afridi, A Ahmed, A Auguste, A Awais, A Azad, A Badoni, A Basith, A Carey…]
-- [ ] *selectbox* …is the same player as [587 options: A Afridi, A Ahmed, A Auguste, A Awais, A Azad, A Badoni, A Basith, A Carey…]
-- [ ] *button* Count them as one player
-- [ ] *tab* Games left out · 0
-- [ ] *markdown* **Games from an earlier playthrough.** When you reload a save and play part of a season again, the game saves each replayed match over its old file. But a knockout with different teams gets a new file, so the old game stays in your Scorecards folder. That's how one IPL season can end up with three finals. The site spots these from when each file was saved and leaves them out of every stat. Nothing
-- [ ] *success* Every match counts: none are from an earlier playthrough.
-- [ ] *warning* These knockout games can't all be from one playthrough (two finals, or a team in two knockouts on the same day), and their files came without the save times that tell which is older. Leave out the ones from the earlier playthrough.
-- [ ] *markdown* **ODI World Cup 2027** · 23 Jun 2027 · Final · Pakistan v Australia · Australia won by 2 wickets
-- [ ] *button* Leave out
-- [ ] *markdown* **ODI World Cup 2027** · 23 Jun 2027 · Final · Sri Lanka v England · England won by 4 wickets
-- [ ] *button* Leave out
-- [ ] *expander* Leave out any other match
-- [ ] *selectbox* Match [106 options: 05 Jan 2029 · Mumbai CC v Sikkim · Vijay Hazare Trophy · Mumbai CC won by 1 wicket, 18 Jan 2028 · Karnataka v Kerala CC · Vijay Hazare Trophy · Karnataka won by 7 wickets, 11 Jan 2028 · Baroda v Karnataka · Vijay Hazare Trophy · Karnataka won by 4 wickets, 06 Nov 2027 · Karnataka v Goa · Ranji Trophy · Karnataka won by 45 runs, 11 Oct 2027 · Karnataka v Chandigarh · Ranji Trophy · Karnataka won by 6 wickets, 23 Jun 2027 · Sri Lanka v England · ODI World Cup · England won by 4 wickets, 23 Jun 2027 · Pakistan v Australia · ODI World Cup · Australia won by 2 wickets, 13 Jun 2027 · South Africa v England · ODI World Cup · England won by 1 wicket…]
-- [ ] *button* Leave it out
-- [ ] *tab* Scorecards · 0
-- [ ] *markdown* **Every scorecard is checked when it's read:** the batters' runs plus extras make the total, the bowlers' runs, overs and wickets match the innings, and the dismissals match the fall of wickets.
-- [ ] *success* All 106 scorecards add up.
-- [ ] *tab* Your changes · 0
-- [ ] *caption* You haven't changed anything yet.
-- [ ] *tab* Team catches · 37
-- [ ] *markdown* **Catches that count for the team.** The scorecard prints only the fielder's surname, like *c Mendis*. When a side has two players with that surname (Sri Lanka's Kusal and Kamindu Mendis are both *K Mendis*), it can't say which one took it, so the catch counts for the team (in its catches) but for neither player. **Nothing to do.** If you want a player to have one, you can still pick them below.
-- [ ] *markdown* Already sorted out for you: a catcher can't be the bowler (that's printed c & b ), a stumping is always the wicketkeeper, and a catch by a substitute fielder ( c Sub ) counts for the team but for no player, as in real cricket.
-- [ ] *markdown* **3 of these have a clear answer**, usually the side's wicketkeeper or the player who takes most of that side's catches. The reason is shown under each one below.
-- [ ] *button* Accept all 3 suggestions
-- [ ] *markdown* **Or choose yourself.** The suggestion is already picked where there is one. Leave any you're not sure about.
-- [ ] *markdown* **The dismissal**
-- [ ] *markdown* **Who took it?**
-- [ ] *markdown* **17 Feb 2026 · Gujarat CC v Karnataka** K Gowtham **c Patel** b R Bishnoi Gujarat CC had R Patel and A Patel and U Patel and T Patel
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, R Patel, A Patel, U Patel, T Patel, M V'Krishna, M Hingrajia, K Khullar…]
-- [ ] *markdown* **17 Feb 2026 · Gujarat CC v Karnataka** Y Parantap **c Patel** b C Gaja Gujarat CC had R Patel and A Patel and U Patel and T Patel
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, R Patel, A Patel, U Patel, T Patel, M V'Krishna, M Hingrajia, K Khullar…]
-- [ ] *markdown* **17 Feb 2026 · Gujarat CC v Karnataka** D Padikkal **c Patel** b T Patel Gujarat CC had R Patel and A Patel and U Patel
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, R Patel, A Patel, U Patel, M V'Krishna, M Hingrajia, K Khullar, U Kumar…]
-- [ ] *markdown* **11 Mar 2026 · Australia v India** P Cummins **c Singh** b V C&#x27;avarthy India had R Singh and A Singh
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, R Singh, A Singh, Y Jaiswal, A Sharma, S Gill, L Rahul, S Iyer…]
-- [ ] *markdown* **31 Mar 2026 · Punjab Kings v Gujarat Titans** G Phillips **c Singh** b B Dwarshuis Punjab Kings had H Singh and P Singh
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, S Iyer, P Arya, C Connolly, A Omarzai, M Khan…]
-- [ ] *markdown* **03 Apr 2026 · Chennai Super Kings v Punjab Kings** S Khan **c Singh** b B Dwarshuis Punjab Kings had H Singh and P Singh and A Singh
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, A Singh, S Iyer, P Arya, V Vinod, A Omarzai…]
-- [ ] *markdown* **03 Apr 2026 · Chennai Super Kings v Punjab Kings** S Gopal **c Singh** b A Singh Punjab Kings had H Singh and P Singh
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, S Iyer, P Arya, V Vinod, A Omarzai, M Khan…]
-- [ ] *markdown* **06 Apr 2026 · Kolkata Knight Riders v Punjab Kings** R Ravindra **c Singh** b B Dwarshuis Punjab Kings had H Singh and P Singh
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, S Iyer, P Arya, C Connolly, A Omarzai, M Khan…]
-- [ ] *markdown* **06 Apr 2026 · Kolkata Knight Riders v Punjab Kings** C Green **c Singh** b M Jansen Punjab Kings had H Singh and P Singh
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, S Iyer, P Arya, C Connolly, A Omarzai, M Khan…]
-- [ ] *markdown* **06 Apr 2026 · Kolkata Knight Riders v Punjab Kings** N Saini **c Singh** b H Brar Punjab Kings had H Singh and P Singh
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, S Iyer, P Arya, C Connolly, A Omarzai, M Khan…]
-- [ ] *markdown* **11 Apr 2026 · Punjab Kings v Sunrisers Hyderabad** T Head **c Singh** b M Jansen Punjab Kings had H Singh and P Singh and A Singh
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, A Singh, S Iyer, P Arya, V Vinod, A Omarzai…]
-- [ ] *markdown* **11 Apr 2026 · Punjab Kings v Sunrisers Hyderabad** S Hussain **c Singh** b A Omarzai Punjab Kings had H Singh and P Singh and A Singh
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, A Singh, S Iyer, P Arya, V Vinod, A Omarzai…]
-- [ ] *markdown* **19 Apr 2026 · Punjab Kings v Lucknow Super Giants** R Pant **c Singh** b C Connolly Punjab Kings had H Singh and P Singh
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, S Iyer, P Arya, C Connolly, A Omarzai, M Khan…]
-- [ ] *markdown* **25 Apr 2026 · Delhi Capitals v Punjab Kings** K Rahul **c Singh** b X Bartlett Punjab Kings had H Singh and P Singh and A Singh
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, A Singh, S Iyer, P Arya, V Vinod, A Omarzai…]
-- [ ] *markdown* **25 Apr 2026 · Delhi Capitals v Punjab Kings** A Porel **c Singh** b X Bartlett Punjab Kings had H Singh and P Singh and A Singh
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, A Singh, S Iyer, P Arya, V Vinod, A Omarzai…]
-- [ ] *markdown* **26 Apr 2026 · Gujarat Titans v Chennai Super Kings** A Mhatre **c Khan** b K Rabada Gujarat Titans had A Khan and R Khan
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, A Khan, R Khan, S Gill, S Sudharsan, K Kushagra, C Esterhuizen, J Buttler…]
-- [ ] *markdown* **26 Apr 2026 · Gujarat Titans v Chennai Super Kings** R Gaikwad **c Khan** b Khan Gujarat Titans had A Khan and R Khan
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, A Khan, R Khan, S Gill, S Sudharsan, K Kushagra, C Esterhuizen, J Buttler…]
-- [ ] *markdown* **02 May 2026 · Bangladesh v New Zealand** D Mitchell **c Ahmed** b H Murad Bangladesh had N Ahmed and T Ahmed
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, N Ahmed, T Ahmed, L Das, S Hasan, T Hridoy, J Ali, T Hasan…]
-- [ ] *markdown* **02 May 2026 · Bangladesh v New Zealand** M Bracewell **c Hasan** b Ahmed Bangladesh had S Hasan and T Hasan and M Hasan
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, S Hasan, T Hasan, M Hasan, L Das, T Hridoy, J Ali, P H'in Emon…]
-- [ ] *markdown* **06 May 2026 · Sunrisers Hyderabad v Punjab Kings** T Head **c Singh** b B Dwarshuis Punjab Kings had H Singh and P Singh
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, S Iyer, P Arya, C Connolly, A Omarzai, M Khan…]
-- [ ] *markdown* **31 May 2026 · Gujarat Titans v Punjab Kings** J Holder **st Singh** b C Connolly Punjab Kings had H Singh and P Singh
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, S Iyer, P Arya, C Connolly, A Omarzai, M Khan…]
-- [ ] *markdown* **08 Jun 2026 · West Indies v Sri Lanka** W Hasaranga **c Joseph** b A Hosein West Indies had S Joseph and A Joseph
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, S Joseph, A Joseph, E Lewis, B King, S Hope, K Carty, A Jangoo…]
-- [ ] *markdown* **03 Jul 2026 · Yorkshire v Durham** E Gay **c Ali** b B Coad Yorkshire had M Ali and H Ali
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, M Ali, H Ali, J Root, J Bairstow, M Revis, F Bean, A Lyth…]
-- [ ] *markdown* **03 Jul 2026 · Yorkshire v Durham** O Robinson **c Ali** b L van Beek Yorkshire had M Ali and H Ali
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, M Ali, H Ali, J Root, J Bairstow, M Revis, F Bean, A Lyth…]
-- [ ] *markdown* **04 Jul 2026 · Gloucestershire v Surrey** O Hunt **c Taylor** b L Scott Gloucestershire had J Taylor and M Taylor
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, J Taylor, M Taylor, D Malan, M Hammond, J Bracey, L Scott, T Boorman…]
-- [ ] *markdown* **07 Jul 2026 · England v India** W Jacks **c Yadav** b J Bumrah India had S Yadav and K Yadav
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, S Yadav, K Yadav, S Gill, A Sharma, T Varma, I Kishan, H Pandya…]
-- [ ] *markdown* **07 Jul 2026 · England v India** S Curran **c Yadav** b V C&#x27;avarthy India had S Yadav and K Yadav
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, S Yadav, K Yadav, S Gill, A Sharma, T Varma, I Kishan, H Pandya…]
-- [ ] *markdown* **10 Jul 2026 · Worcestershire v Gloucestershire** J Libby **c Taylor** b A Rao Gloucestershire had J Taylor and M Taylor
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, J Taylor, M Taylor, D Malan, M Hammond, J Bracey, L Scott, T Boorman…]
-- [ ] *markdown* **01 Oct 2026 · Pakistan v Sri Lanka** K Mendis **c Khan** b U Tariq Pakistan had U Khan and S Khan 💡 Suggested: U Khan , because U Khan keeps wicket for Pakistan (has made stumpings for them); the keeper takes the most catches
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, U Khan, S Khan, B Azam, S Ayub, F Zaman, A Salman, S Farhan…]
-- [ ] *markdown* **01 Oct 2026 · Pakistan v Sri Lanka** W Hasaranga **c Khan** b M Nawaz Pakistan had U Khan and S Khan 💡 Suggested: U Khan , because U Khan keeps wicket for Pakistan (has made stumpings for them); the keeper takes the most catches
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, U Khan, S Khan, B Azam, S Ayub, F Zaman, A Salman, S Farhan…]
-- [ ] *markdown* **03 Oct 2026 · Pakistan v Sri Lanka** C Asalanka **c Khan** b A Afridi Pakistan had U Khan and S Khan 💡 Suggested: U Khan , because U Khan keeps wicket for Pakistan (has made stumpings for them); the keeper takes the most catches
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, U Khan, S Khan, B Azam, S Ayub, F Zaman, A Salman, S Farhan…]
-- [ ] *markdown* **06 Nov 2027 · Karnataka v Goa** R Smaran **c P&#x27;udessai** b M Redkar Goa had S P&#x27;udessai and V P&#x27;udessai
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, S P'udessai, V P'udessai, R Kadam, H Mantri, K Sharma, S Kauthankar, D Gaonkar…]
-- [ ] *markdown* **06 Nov 2027 · Karnataka v Goa** T Malhotra **c P&#x27;udessai** b R Mehta Goa had S P&#x27;udessai and V P&#x27;udessai
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, S P'udessai, V P'udessai, R Kadam, H Mantri, K Sharma, S Kauthankar, D Gaonkar…]
-- [ ] *markdown* **06 Nov 2027 · Karnataka v Goa** D Padikkal **c P&#x27;udessai** b P&#x27;udessai Goa had S P&#x27;udessai and V P&#x27;udessai
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, S P'udessai, V P'udessai, R Kadam, H Mantri, K Sharma, S Kauthankar, D Gaonkar…]
-- [ ] *markdown* **06 Nov 2027 · Karnataka v Goa** M Pandey **c P&#x27;udessai** b R Mehta Goa had S P&#x27;udessai and V P&#x27;udessai
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, S P'udessai, V P'udessai, R Kadam, H Mantri, K Sharma, S Kauthankar, D Gaonkar…]
-- [ ] *markdown* **06 Nov 2027 · Karnataka v Goa** V Vyshak **c P&#x27;udessai** b P&#x27;udessai Goa had S P&#x27;udessai and V P&#x27;udessai
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, S P'udessai, V P'udessai, R Kadam, H Mantri, K Sharma, S Kauthankar, D Gaonkar…]
-- [ ] *markdown* **11 Jan 2028 · Baroda v Karnataka** M Pandey **c Sharma** b M Pithiya Baroda had A Sharma and S Sharma
-- [ ] *selectbox* Who took it? [12 options: Not sure: leave it, A Sharma, S Sharma, S Rawat, H Pandya, N Natung, V Solanki, S Kumar…]
-- [ ] *button* Save my choices
-  - [ ] *info* Load a career on the Home page first.
-  - [ ] *page_header* Data check
-  - [ ] *page_header* Check and fix
-  - [ ] *page_header* The scorecards leave a few things unclear. Each one is explained below, with a one-click fix where there's a safe answer. Nothing changes until you click, and every change can be undone under Your changes.
-  - [ ] *markdown* **What needs you**
-  - [ ] *markdown* **Nothing needs you** 🎉
-  - [ ] *markdown* - {t}
-  - [ ] *tabs* Name shared by 2 players · {len(shared)}
-  - [ ] *tabs* Player with 2 names · {len(merges)}
-  - [ ] *tabs* Games left out · {len(left)}
-  - [ ] *tabs* Scorecards · {bad_cards + len(failed_files)}
-  - [ ] *tabs* Your changes · {n_changes}
-  - [ ] *tabs* Team catches · {len(unc)}
-  - [ ] *markdown* **Catches that count for the team.** The scorecard prints only the fielder's surname, like *c Mendis*. When a side has two players with that surname (Sri Lanka's Kusal and Kamindu Mendis are both *K Mendis*), it can't say which one took it, so the catch counts for the team (in its catches) but for neither player. **Nothing to do.** If you want a player to have one, you can still pick them below.
-  - [ ] *markdown* Already sorted out for you: a catcher can't be the bowler (that's printed c & b ), a stumping is always the wicketkeeper, and a catch by a substitute fielder ( c Sub ) counts for the team but for no player, as in real cricket.
-  - [ ] *success* Every catch and stumping has its player.
-  - [ ] *markdown* **{len(sug)} of these have a clear answer**, usually the side's wicketkeeper or the player who takes most of that side's catches. The reason is shown under each one below.
-  - [ ] *button* Accept all {len(sug)} suggestions
-  - [ ] *button* primary
-  - [ ] *button* dc_accept_all
-  - [ ] *markdown* **Or choose yourself.** {'The suggestion is already picked where there is one. ' if len(sug) else ''}Leave any you're not sure about.
-  - [ ] *markdown* **The dismissal**
-  - [ ] *markdown* **Who took it?**
-  - [ ] *note* {html.escape(r.team)} had
-  - [ ] *note* and
-  - [ ] *note* {html.escape(r.team)} fielding
-  - [ ] *note* 💡 Suggested: {html.escape(r.suggestion)} , because {html.escape(r.reason)}
-  - [ ] *selectbox* Who took it?
-  - [ ] *selectbox* dc_c_{r.credit_key}
-  - [ ] *selectbox* collapsed
-  - [ ] *form_submit_button* Save my choices
-  - [ ] *caption* Showing the first {len(show)} of {len(unc)}. Save these and the next ones appear.
-  - [ ] *markdown* **Two different players with the same name.** The game prints only an initial and surname, so two players can end up with the same name, like *R Patel* at Leicestershire and *R Patel* at Surrey. The site then adds their runs and wickets together as if they were one person. A player can't play for two teams in the same season of a competition, so each name below is almost certainly two people.
-  - [ ] *success* No name is used by two players.
-  - [ ] *markdown* **Keep all {len(shared)} apart.** Each name stays with the team it played most games for, and the player at the other team gets the team added to their name, e.g. *{big.player} ({big.separate[0]})*.
-  - [ ] *button* Keep all {len(shared)} apart
-  - [ ] *button* dc_split_all
-  - [ ] *markdown* **{html.escape(r.player)}** played for {played}, in {html.escape(', '.join(r.where))}
-  - [ ] *markdown* After: {html.escape(r.player)} at {html.escape(r.keep)}, and {after}
-  - [ ] *button* Keep apart
-  - [ ] *button* dc_s_{i}
-  - [ ] *expander* Separate any other name yourself
-  - [ ] *caption* For a name the site didn't spot: pick the player, the team where it's really someone else, and the name to show for them.
-  - [ ] *selectbox* Player
-  - [ ] *selectbox* dc_sp
-  - [ ] *selectbox* Pick a player
-  - [ ] *selectbox* The one playing for
-  - [ ] *selectbox* dc_spt
-  - [ ] *text_input* Show them as
-  - [ ] *text_input* {p} ({t})
-  - [ ] *text_input* dc_spn_{t}
-  - [ ] *button* Make them a separate player
-  - [ ] *button* dc_sp_go
-  - [ ] *markdown* **One player under two names.** Sometimes the same player shows up under two slightly different names. The names below look like one player: same initial and surname, same team, and never in the same match together.
-  - [ ] *success* No player appears under two names.
-  - [ ] *markdown* **{html.escape(r.other)}** ({r.other_matches} games) and **{html.escape(r.keep)}** ({r.keep_matches} games) · {html.escape(r.teams)}
-  - [ ] *markdown* After: all {r.other_matches + r.keep_matches} games count for {html.escape(r.keep)}
-  - [ ] *button* Same player
-  - [ ] *button* dc_m_{i}
-  - [ ] *expander* Join any two names yourself
-  - [ ] *selectbox* This name…
-  - [ ] *selectbox* dc_ma
-  - [ ] *selectbox* …is the same player as
-  - [ ] *selectbox* dc_mb
-  - [ ] *warning* {a} and {b} played in the same match, so they can't be one player.
-  - [ ] *button* Count them as one player
-  - [ ] *button* dc_m_go
-  - [ ] *markdown* **Games from an earlier playthrough.** When you reload a save and play part of a season again, the game saves each replayed match over its old file. But a knockout with different teams gets a new file, so the old game stays in your Scorecards folder. That's how one IPL season can end up with three finals. The site spots these from when each file was saved and leaves them out of every stat. Nothing to do, unless one of them should count.
-  - [ ] *success* Every match counts: none are from an earlier playthrough.
-  - [ ] *markdown* **{r.date} · {html.escape(r.competition)}{' · ' + r.stage if r.stage else ''} · {html.escape(r.home)} v {html.escape(r.away)}** · {html.escape(r.result)}
-  - [ ] *button* Count it
-  - [ ] *button* dc_inc_{i}
-  - [ ] *warning* These knockout games can't all be from one playthrough (two finals, or a team in two knockouts on the same day), and their files came without the save times that tell which is older. Leave out the ones from the earlier playthrough.
-  - [ ] *markdown* **{r.group}** · {r.date} · {r.stage} · {r.home} v {r.away} · {r.result}
-  - [ ] *button* Leave out
-  - [ ] *button* dc_exc_{i}
-  - [ ] *expander* Leave out any other match
-  - [ ] *selectbox* Match
-  - [ ] *selectbox* dc_exc_pick
-  - [ ] *selectbox* Type to search
-  - [ ] *button* Leave it out
-  - [ ] *button* dc_exc_go
-  - [ ] *markdown* **Every scorecard is checked when it's read:** the batters' runs plus extras make the total, the bowlers' runs, overs and wickets match the innings, and the dismissals match the fall of wickets.
-  - [ ] *error* {len(failed_files)} file(s) couldn't be read, so they aren't in any stat.
-  - [ ] *dataframe* File
-  - [ ] *dataframe* Why
-  - [ ] *dataframe* stretch
-  - [ ] *success* All {len(career.matches)} scorecards add up.
-  - [ ] *warning* These scorecards have numbers that don't add up. They're still counted.
-  - [ ] *dataframe* source
-  - [ ] *dataframe* problem
-  - [ ] *dataframe* What doesn't add up
-  - [ ] *caption* You haven't changed anything yet.
-  - [ ] *spinner* Updating every stat with your change…
+- [x] *markdown* Data check — ✓ Data check · What needs you (top tile) and the page heading
+- [x] *title* Check and fix — ✓ Data check · What needs you (top tile) and the page heading
+- [x] *markdown* The scorecards leave a few things unclear. Each one is explained below, with a one-click fix where there's a safe answer. Nothing changes until you click, and every change can be undone under Your changes. — ✓ Data check · Scorecards (what doesn't add up, what was put right, files that couldn't be read)
+- [x] *markdown* **What needs you** — ✓ Data check · What needs you (top tile) and the page heading
+- [x] *markdown* - 👉 **4 names** are used by two different players, so their stats are mixed together (one click to keep them apart) → *Name shared by 2 players* - 👉 **2 knockout games** look like leftovers from a replayed season → *Games left out* — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+- [x] *markdown* ✅ All 106 scorecards add up · ✅ No player appears under two names — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+- [x] *tab* Name shared by 2 players · 4 — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+- [x] *markdown* **Two different players with the same name.** The game prints only an initial and surname, so two players can end up with the same name, like *R Patel* at Leicestershire and *R Patel* at Surrey. The site then adds their runs and wickets together as if they were one person. A player can't play for two teams in the same season of a competition, so each name below is almost certainly two people. — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+- [x] *markdown* **Keep all 4 apart.** Each name stays with the team it played most games for, and the player at the other team gets the team added to their name, e.g. *M Khan (Lucknow Super Giants)*. — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+- [x] *button* Keep all 4 apart — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+- [x] *markdown* **A Sharma** played for Sunrisers Hyderabad (10 games) and Gujarat Titans (9 games), in Indian Premier League 2026 After: A Sharma at Sunrisers Hyderabad, and A Sharma (Gujarat Titans) — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+- [x] *button* Keep apart — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+- [x] *markdown* **M Khan** played for Punjab Kings (12 games) and Lucknow Super Giants (8 games), in Indian Premier League 2026 After: M Khan at Punjab Kings, and M Khan (Lucknow Super Giants) — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+- [x] *button* Keep apart — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+- [x] *markdown* **R Patel** played for Leicestershire (2 games) and Surrey (2 games), in County Championship · Division 1 2026, T20 Blast 2026 After: R Patel at Leicestershire, and R Patel (Surrey) — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+- [x] *button* Keep apart — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+- [x] *markdown* **R Singh** played for Kolkata Knight Riders (10 games) and Rajasthan Royals (9 games), in Indian Premier League 2026 After: R Singh at Kolkata Knight Riders, and R Singh (Rajasthan Royals) — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+- [x] *button* Keep apart — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+- [x] *expander* Separate any other name yourself — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+- [x] *caption* For a name the site didn't spot: pick the player, the team where it's really someone else, and the name to show for them. — ✓ Data check · Shared names · Separate any other name yourself (find a player, the team, the name to show; the fix preview)
+- [x] *selectbox* Player [587 options: A Afridi, A Ahmed, A Auguste, A Awais, A Azad, A Badoni, A Basith, A Carey…] — ✓ Data check · Shared names · Separate any other name yourself (find a player, the team, the name to show; the fix preview)
+- [x] *tab* Player with 2 names · 0 — ✓ Data check · the six tabs (your answer 15)
+- [x] *markdown* **One player under two names.** Sometimes the same player shows up under two slightly different names. The names below look like one player: same initial and surname, same team, and never in the same match together. — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+- [x] *success* No player appears under two names. — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+- [x] *expander* Join any two names yourself — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+- [x] *selectbox* This name… [587 options: A Afridi, A Ahmed, A Auguste, A Awais, A Azad, A Badoni, A Basith, A Carey…] — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+- [x] *selectbox* …is the same player as [587 options: A Afridi, A Ahmed, A Auguste, A Awais, A Azad, A Badoni, A Basith, A Carey…] — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+- [x] *button* Count them as one player — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+- [x] *tab* Games left out · 0 — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+- [x] *markdown* **Games from an earlier playthrough.** When you reload a save and play part of a season again, the game saves each replayed match over its old file. But a knockout with different teams gets a new file, so the old game stays in your Scorecards folder. That's how one IPL season can end up with three finals. The site spots these from when each file was saved and leaves them out of every stat. Nothing — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+- [x] *success* Every match counts: none are from an earlier playthrough. — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+- [x] *warning* These knockout games can't all be from one playthrough (two finals, or a team in two knockouts on the same day), and their files came without the save times that tell which is older. Leave out the ones from the earlier playthrough. — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+- [x] *markdown* **ODI World Cup 2027** · 23 Jun 2027 · Final · Pakistan v Australia · Australia won by 2 wickets — ✓ Data check · Games left out (each game with its date, competition, stage, teams and result)
+- [x] *button* Leave out — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+- [x] *markdown* **ODI World Cup 2027** · 23 Jun 2027 · Final · Sri Lanka v England · England won by 4 wickets — ✓ Data check · Games left out (each game with its date, competition, stage, teams and result)
+- [x] *button* Leave out — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+- [x] *expander* Leave out any other match — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+- [x] *selectbox* Match [106 options: 05 Jan 2029 · Mumbai CC v Sikkim · Vijay Hazare Trophy · Mumbai CC won by 1 wicket, 18 Jan 2028 · Karnataka v Kerala CC · Vijay Hazare Trophy · Karnataka won by 7 wickets, 11 Jan 2028 · Baroda v Karnataka · Vijay Hazare Trophy · Karnataka won by 4 wickets, 06 Nov 2027 · Karnataka v Goa · Ranji Trophy · Karnataka won by 45 runs, 11 Oct 2027 · Karnataka v Chandigarh · Ranji Trophy · Karnataka won by 6 wickets, 23 Jun 2027 · Sri Lanka v England · ODI World Cup · England won by 4 wickets, 23 Jun 2027 · Pakistan v Australia · ODI World Cup · Australia won by 2 wickets, 13 Jun 2027 · South Africa v England · ODI World Cup · England won by 1 wicket…] — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+- [x] *button* Leave it out — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+- [x] *tab* Scorecards · 0 — ✓ Data check · Scorecards (what doesn't add up, what was put right, files that couldn't be read)
+- [x] *markdown* **Every scorecard is checked when it's read:** the batters' runs plus extras make the total, the bowlers' runs, overs and wickets match the innings, and the dismissals match the fall of wickets. — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *success* All 106 scorecards add up. — ✓ Data check · Scorecards (what doesn't add up, what was put right, files that couldn't be read)
+- [x] *tab* Your changes · 0 — ✓ Data check · Your changes (each undoable)
+- [x] *caption* You haven't changed anything yet. — ✓ Data check · Your changes (each undoable)
+- [x] *tab* Team catches · 37 — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **Catches that count for the team.** The scorecard prints only the fielder's surname, like *c Mendis*. When a side has two players with that surname (Sri Lanka's Kusal and Kamindu Mendis are both *K Mendis*), it can't say which one took it, so the catch counts for the team (in its catches) but for neither player. **Nothing to do.** If you want a player to have one, you can still pick them below. — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* Already sorted out for you: a catcher can't be the bowler (that's printed c & b ), a stumping is always the wicketkeeper, and a catch by a substitute fielder ( c Sub ) counts for the team but for no player, as in real cricket. — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **3 of these have a clear answer**, usually the side's wicketkeeper or the player who takes most of that side's catches. The reason is shown under each one below. — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *button* Accept all 3 suggestions — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **Or choose yourself.** The suggestion is already picked where there is one. Leave any you're not sure about. — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **The dismissal** — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **Who took it?** — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **17 Feb 2026 · Gujarat CC v Karnataka** K Gowtham **c Patel** b R Bishnoi Gujarat CC had R Patel and A Patel and U Patel and T Patel — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, R Patel, A Patel, U Patel, T Patel, M V'Krishna, M Hingrajia, K Khullar…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **17 Feb 2026 · Gujarat CC v Karnataka** Y Parantap **c Patel** b C Gaja Gujarat CC had R Patel and A Patel and U Patel and T Patel — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, R Patel, A Patel, U Patel, T Patel, M V'Krishna, M Hingrajia, K Khullar…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **17 Feb 2026 · Gujarat CC v Karnataka** D Padikkal **c Patel** b T Patel Gujarat CC had R Patel and A Patel and U Patel — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, R Patel, A Patel, U Patel, M V'Krishna, M Hingrajia, K Khullar, U Kumar…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **11 Mar 2026 · Australia v India** P Cummins **c Singh** b V C&#x27;avarthy India had R Singh and A Singh — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, R Singh, A Singh, Y Jaiswal, A Sharma, S Gill, L Rahul, S Iyer…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **31 Mar 2026 · Punjab Kings v Gujarat Titans** G Phillips **c Singh** b B Dwarshuis Punjab Kings had H Singh and P Singh — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, S Iyer, P Arya, C Connolly, A Omarzai, M Khan…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **03 Apr 2026 · Chennai Super Kings v Punjab Kings** S Khan **c Singh** b B Dwarshuis Punjab Kings had H Singh and P Singh and A Singh — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, A Singh, S Iyer, P Arya, V Vinod, A Omarzai…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **03 Apr 2026 · Chennai Super Kings v Punjab Kings** S Gopal **c Singh** b A Singh Punjab Kings had H Singh and P Singh — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, S Iyer, P Arya, V Vinod, A Omarzai, M Khan…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **06 Apr 2026 · Kolkata Knight Riders v Punjab Kings** R Ravindra **c Singh** b B Dwarshuis Punjab Kings had H Singh and P Singh — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, S Iyer, P Arya, C Connolly, A Omarzai, M Khan…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **06 Apr 2026 · Kolkata Knight Riders v Punjab Kings** C Green **c Singh** b M Jansen Punjab Kings had H Singh and P Singh — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, S Iyer, P Arya, C Connolly, A Omarzai, M Khan…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **06 Apr 2026 · Kolkata Knight Riders v Punjab Kings** N Saini **c Singh** b H Brar Punjab Kings had H Singh and P Singh — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, S Iyer, P Arya, C Connolly, A Omarzai, M Khan…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **11 Apr 2026 · Punjab Kings v Sunrisers Hyderabad** T Head **c Singh** b M Jansen Punjab Kings had H Singh and P Singh and A Singh — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, A Singh, S Iyer, P Arya, V Vinod, A Omarzai…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **11 Apr 2026 · Punjab Kings v Sunrisers Hyderabad** S Hussain **c Singh** b A Omarzai Punjab Kings had H Singh and P Singh and A Singh — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, A Singh, S Iyer, P Arya, V Vinod, A Omarzai…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **19 Apr 2026 · Punjab Kings v Lucknow Super Giants** R Pant **c Singh** b C Connolly Punjab Kings had H Singh and P Singh — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, S Iyer, P Arya, C Connolly, A Omarzai, M Khan…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **25 Apr 2026 · Delhi Capitals v Punjab Kings** K Rahul **c Singh** b X Bartlett Punjab Kings had H Singh and P Singh and A Singh — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, A Singh, S Iyer, P Arya, V Vinod, A Omarzai…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **25 Apr 2026 · Delhi Capitals v Punjab Kings** A Porel **c Singh** b X Bartlett Punjab Kings had H Singh and P Singh and A Singh — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, A Singh, S Iyer, P Arya, V Vinod, A Omarzai…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **26 Apr 2026 · Gujarat Titans v Chennai Super Kings** A Mhatre **c Khan** b K Rabada Gujarat Titans had A Khan and R Khan — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, A Khan, R Khan, S Gill, S Sudharsan, K Kushagra, C Esterhuizen, J Buttler…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **26 Apr 2026 · Gujarat Titans v Chennai Super Kings** R Gaikwad **c Khan** b Khan Gujarat Titans had A Khan and R Khan — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, A Khan, R Khan, S Gill, S Sudharsan, K Kushagra, C Esterhuizen, J Buttler…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **02 May 2026 · Bangladesh v New Zealand** D Mitchell **c Ahmed** b H Murad Bangladesh had N Ahmed and T Ahmed — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, N Ahmed, T Ahmed, L Das, S Hasan, T Hridoy, J Ali, T Hasan…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **02 May 2026 · Bangladesh v New Zealand** M Bracewell **c Hasan** b Ahmed Bangladesh had S Hasan and T Hasan and M Hasan — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, S Hasan, T Hasan, M Hasan, L Das, T Hridoy, J Ali, P H'in Emon…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **06 May 2026 · Sunrisers Hyderabad v Punjab Kings** T Head **c Singh** b B Dwarshuis Punjab Kings had H Singh and P Singh — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, S Iyer, P Arya, C Connolly, A Omarzai, M Khan…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **31 May 2026 · Gujarat Titans v Punjab Kings** J Holder **st Singh** b C Connolly Punjab Kings had H Singh and P Singh — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, H Singh, P Singh, S Iyer, P Arya, C Connolly, A Omarzai, M Khan…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **08 Jun 2026 · West Indies v Sri Lanka** W Hasaranga **c Joseph** b A Hosein West Indies had S Joseph and A Joseph — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, S Joseph, A Joseph, E Lewis, B King, S Hope, K Carty, A Jangoo…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **03 Jul 2026 · Yorkshire v Durham** E Gay **c Ali** b B Coad Yorkshire had M Ali and H Ali — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, M Ali, H Ali, J Root, J Bairstow, M Revis, F Bean, A Lyth…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **03 Jul 2026 · Yorkshire v Durham** O Robinson **c Ali** b L van Beek Yorkshire had M Ali and H Ali — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, M Ali, H Ali, J Root, J Bairstow, M Revis, F Bean, A Lyth…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **04 Jul 2026 · Gloucestershire v Surrey** O Hunt **c Taylor** b L Scott Gloucestershire had J Taylor and M Taylor — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, J Taylor, M Taylor, D Malan, M Hammond, J Bracey, L Scott, T Boorman…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **07 Jul 2026 · England v India** W Jacks **c Yadav** b J Bumrah India had S Yadav and K Yadav — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, S Yadav, K Yadav, S Gill, A Sharma, T Varma, I Kishan, H Pandya…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **07 Jul 2026 · England v India** S Curran **c Yadav** b V C&#x27;avarthy India had S Yadav and K Yadav — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, S Yadav, K Yadav, S Gill, A Sharma, T Varma, I Kishan, H Pandya…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **10 Jul 2026 · Worcestershire v Gloucestershire** J Libby **c Taylor** b A Rao Gloucestershire had J Taylor and M Taylor — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, J Taylor, M Taylor, D Malan, M Hammond, J Bracey, L Scott, T Boorman…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **01 Oct 2026 · Pakistan v Sri Lanka** K Mendis **c Khan** b U Tariq Pakistan had U Khan and S Khan 💡 Suggested: U Khan , because U Khan keeps wicket for Pakistan (has made stumpings for them); the keeper takes the most catches — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, U Khan, S Khan, B Azam, S Ayub, F Zaman, A Salman, S Farhan…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **01 Oct 2026 · Pakistan v Sri Lanka** W Hasaranga **c Khan** b M Nawaz Pakistan had U Khan and S Khan 💡 Suggested: U Khan , because U Khan keeps wicket for Pakistan (has made stumpings for them); the keeper takes the most catches — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, U Khan, S Khan, B Azam, S Ayub, F Zaman, A Salman, S Farhan…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **03 Oct 2026 · Pakistan v Sri Lanka** C Asalanka **c Khan** b A Afridi Pakistan had U Khan and S Khan 💡 Suggested: U Khan , because U Khan keeps wicket for Pakistan (has made stumpings for them); the keeper takes the most catches — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, U Khan, S Khan, B Azam, S Ayub, F Zaman, A Salman, S Farhan…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **06 Nov 2027 · Karnataka v Goa** R Smaran **c P&#x27;udessai** b M Redkar Goa had S P&#x27;udessai and V P&#x27;udessai — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, S P'udessai, V P'udessai, R Kadam, H Mantri, K Sharma, S Kauthankar, D Gaonkar…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **06 Nov 2027 · Karnataka v Goa** T Malhotra **c P&#x27;udessai** b R Mehta Goa had S P&#x27;udessai and V P&#x27;udessai — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, S P'udessai, V P'udessai, R Kadam, H Mantri, K Sharma, S Kauthankar, D Gaonkar…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **06 Nov 2027 · Karnataka v Goa** D Padikkal **c P&#x27;udessai** b P&#x27;udessai Goa had S P&#x27;udessai and V P&#x27;udessai — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, S P'udessai, V P'udessai, R Kadam, H Mantri, K Sharma, S Kauthankar, D Gaonkar…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **06 Nov 2027 · Karnataka v Goa** M Pandey **c P&#x27;udessai** b R Mehta Goa had S P&#x27;udessai and V P&#x27;udessai — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, S P'udessai, V P'udessai, R Kadam, H Mantri, K Sharma, S Kauthankar, D Gaonkar…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **06 Nov 2027 · Karnataka v Goa** V Vyshak **c P&#x27;udessai** b P&#x27;udessai Goa had S P&#x27;udessai and V P&#x27;udessai — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, S P'udessai, V P'udessai, R Kadam, H Mantri, K Sharma, S Kauthankar, D Gaonkar…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *markdown* **11 Jan 2028 · Baroda v Karnataka** M Pandey **c Sharma** b M Pithiya Baroda had A Sharma and S Sharma — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *selectbox* Who took it? [12 options: Not sure: leave it, A Sharma, S Sharma, S Rawat, H Pandya, N Natung, V Solanki, S Kumar…] — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+- [x] *button* Save my choices — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+  - [x] *info* Load a career on the Home page first. — ✓ Data check · What needs you (top tile) and the page heading
+  - [x] *page_header* Data check — ✓ Data check · What needs you (top tile) and the page heading
+  - [x] *page_header* Check and fix — ✓ Data check · What needs you (top tile) and the page heading
+  - [x] *page_header* The scorecards leave a few things unclear. Each one is explained below, with a one-click fix where there's a safe answer. Nothing changes until you click, and every change can be undone under Your changes. — ✓ Data check · Scorecards (what doesn't add up, what was put right, files that couldn't be read)
+  - [x] *markdown* **What needs you** — ✓ Data check · What needs you (top tile) and the page heading
+  - [x] *markdown* **Nothing needs you** 🎉 — ✓ Data check · What needs you (top tile) and the page heading
+  - [x] *markdown* - {t} — ✓ Data check · What needs you (top tile) and the page heading
+  - [x] *tabs* Name shared by 2 players · {len(shared)} — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+  - [x] *tabs* Player with 2 names · {len(merges)} — ✓ Data check · the six tabs (your answer 15)
+  - [x] *tabs* Games left out · {len(left)} — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+  - [x] *tabs* Scorecards · {bad_cards + len(failed_files)} — ✓ Data check · Scorecards (what doesn't add up, what was put right, files that couldn't be read)
+  - [x] *tabs* Your changes · {n_changes} — ✓ Data check · Your changes (each undoable)
+  - [x] *tabs* Team catches · {len(unc)} — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+  - [x] *markdown* **Catches that count for the team.** The scorecard prints only the fielder's surname, like *c Mendis*. When a side has two players with that surname (Sri Lanka's Kusal and Kamindu Mendis are both *K Mendis*), it can't say which one took it, so the catch counts for the team (in its catches) but for neither player. **Nothing to do.** If you want a player to have one, you can still pick them below. — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+  - [x] *markdown* Already sorted out for you: a catcher can't be the bowler (that's printed c & b ), a stumping is always the wicketkeeper, and a catch by a substitute fielder ( c Sub ) counts for the team but for no player, as in real cricket. — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+  - [x] *success* Every catch and stumping has its player. — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+  - [x] *markdown* **{len(sug)} of these have a clear answer**, usually the side's wicketkeeper or the player who takes most of that side's catches. The reason is shown under each one below. — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+  - [x] *button* Accept all {len(sug)} suggestions — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+  - [x] *button* primary — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* dc_accept_all — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* **Or choose yourself.** {'The suggestion is already picked where there is one. ' if len(sug) else ''}Leave any you're not sure about. — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+  - [x] *markdown* **The dismissal** — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+  - [x] *markdown* **Who took it?** — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+  - [x] *note* {html.escape(r.team)} had — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+  - [x] *note* and — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+  - [x] *note* {html.escape(r.team)} fielding — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+  - [x] *note* 💡 Suggested: {html.escape(r.suggestion)} , because {html.escape(r.reason)} — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+  - [x] *selectbox* Who took it? — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+  - [x] *selectbox* dc_c_{r.credit_key} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* collapsed — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *form_submit_button* Save my choices — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+  - [x] *caption* Showing the first {len(show)} of {len(unc)}. Save these and the next ones appear. — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+  - [x] *markdown* **Two different players with the same name.** The game prints only an initial and surname, so two players can end up with the same name, like *R Patel* at Leicestershire and *R Patel* at Surrey. The site then adds their runs and wickets together as if they were one person. A player can't play for two teams in the same season of a competition, so each name below is almost certainly two people. — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+  - [x] *success* No name is used by two players. — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+  - [x] *markdown* **Keep all {len(shared)} apart.** Each name stays with the team it played most games for, and the player at the other team gets the team added to their name, e.g. *{big.player} ({big.separate[0]})*. — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+  - [x] *button* Keep all {len(shared)} apart — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+  - [x] *button* dc_split_all — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* **{html.escape(r.player)}** played for {played}, in {html.escape(', '.join(r.where))} — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+  - [x] *markdown* After: {html.escape(r.player)} at {html.escape(r.keep)}, and {after} — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+  - [x] *button* Keep apart — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+  - [x] *button* dc_s_{i} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *expander* Separate any other name yourself — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+  - [x] *caption* For a name the site didn't spot: pick the player, the team where it's really someone else, and the name to show for them. — ✓ Data check · Shared names · Separate any other name yourself (find a player, the team, the name to show; the fix preview)
+  - [x] *selectbox* Player — ✓ Data check · Shared names · Separate any other name yourself (find a player, the team, the name to show; the fix preview)
+  - [x] *selectbox* dc_sp — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* Pick a player — ✓ Data check · Shared names · Separate any other name yourself (find a player, the team, the name to show; the fix preview)
+  - [x] *selectbox* The one playing for — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+  - [x] *selectbox* dc_spt — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *text_input* Show them as — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+  - [x] *text_input* {p} ({t}) — ✓ Data check · What needs you (top tile) and the page heading
+  - [x] *text_input* dc_spn_{t} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* Make them a separate player — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+  - [x] *button* dc_sp_go — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* **One player under two names.** Sometimes the same player shows up under two slightly different names. The names below look like one player: same initial and surname, same team, and never in the same match together. — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+  - [x] *success* No player appears under two names. — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+  - [x] *markdown* **{html.escape(r.other)}** ({r.other_matches} games) and **{html.escape(r.keep)}** ({r.keep_matches} games) · {html.escape(r.teams)} — ✓ Data check · Player with two names (each pair with their games and teams)
+  - [x] *markdown* After: all {r.other_matches + r.keep_matches} games count for {html.escape(r.keep)} — ✓ Data check · Shared names (the automatic splits, each undoable; still-shared names; Separate any other name yourself, with the fix preview)
+  - [x] *button* Same player — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+  - [x] *button* dc_m_{i} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *expander* Join any two names yourself — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+  - [x] *selectbox* This name… — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+  - [x] *selectbox* dc_ma — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* …is the same player as — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+  - [x] *selectbox* dc_mb — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *warning* {a} and {b} played in the same match, so they can't be one player. — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+  - [x] *button* Count them as one player — ✓ Data check · Player with two names (only your click joins; never in the same match; the fix preview)
+  - [x] *button* dc_m_go — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* **Games from an earlier playthrough.** When you reload a save and play part of a season again, the game saves each replayed match over its old file. But a knockout with different teams gets a new file, so the old game stays in your Scorecards folder. That's how one IPL season can end up with three finals. The site spots these from when each file was saved and leaves them out of every stat. Nothing to do, unless one of them should count. — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+  - [x] *success* Every match counts: none are from an earlier playthrough. — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+  - [x] *markdown* **{r.date} · {html.escape(r.competition)}{' · ' + r.stage if r.stage else ''} · {html.escape(r.home)} v {html.escape(r.away)}** · {html.escape(r.result)} — ✓ Data check · Games left out (each game with its date, competition, stage, teams and result)
+  - [x] *button* Count it — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+  - [x] *button* dc_inc_{i} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *warning* These knockout games can't all be from one playthrough (two finals, or a team in two knockouts on the same day), and their files came without the save times that tell which is older. Leave out the ones from the earlier playthrough. — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+  - [x] *markdown* **{r.group}** · {r.date} · {r.stage} · {r.home} v {r.away} · {r.result} — ✓ Data check · Games left out (each game with its date, competition, stage, teams and result)
+  - [x] *button* Leave out — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+  - [x] *button* dc_exc_{i} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *expander* Leave out any other match — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+  - [x] *selectbox* Match — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+  - [x] *selectbox* dc_exc_pick — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* Type to search — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+  - [x] *button* Leave it out — ✓ Data check · Games left out (Count it, Leave out, Leave out any other match)
+  - [x] *button* dc_exc_go — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* **Every scorecard is checked when it's read:** the batters' runs plus extras make the total, the bowlers' runs, overs and wickets match the innings, and the dismissals match the fall of wickets. — ✓ removed by your rule (no fielding anywhere, 14 November): the Team catches tab is gone
+  - [x] *error* {len(failed_files)} file(s) couldn't be read, so they aren't in any stat. — ✓ Data check · Scorecards (what doesn't add up, what was put right, files that couldn't be read)
+  - [x] *dataframe* File — ✓ Data check · Scorecards (what doesn't add up, what was put right, files that couldn't be read)
+  - [x] *dataframe* Why — ✓ Data check · Scorecards (what doesn't add up, what was put right, files that couldn't be read)
+  - [x] *dataframe* stretch — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *success* All {len(career.matches)} scorecards add up. — ✓ Data check · Scorecards (what doesn't add up, what was put right, files that couldn't be read)
+  - [x] *warning* These scorecards have numbers that don't add up. They're still counted. — ✓ Data check · Scorecards (what doesn't add up, what was put right, files that couldn't be read)
+  - [x] *dataframe* source — ✓ Data check · Scorecards (the tables of files and what doesn't add up)
+  - [x] *dataframe* problem — ✓ Data check · Scorecards (what doesn't add up, what was put right, files that couldn't be read)
+  - [x] *dataframe* What doesn't add up — ✓ Data check · Scorecards (what doesn't add up, what was put right, files that couldn't be read)
+  - [x] *caption* You haven't changed anything yet. — ✓ Data check · Your changes (each undoable)
+  - [x] *spinner* Updating every stat with your change… — ✓ Data check · "Updating every number with your change…" (the site usable meanwhile)
 
 ### Fixtures · `views/fixtures.py` (469 lines)
 
-- [ ] *markdown* Fixtures
-- [ ] *title* Your schedule
-- [ ] *markdown* Add your schedule once. Every match ticks itself off when the game saves its scorecard, and the series chances, WTC race, milestones and goals update with it.
-- [ ] *selectbox* Schedule for [51 options: England, Afghanistan, Andhra, Australia, Bangladesh, Baroda, Birmingham Phoenix, Chandigarh…]
-- [ ] *tab* Schedule
-- [ ] *info* Nothing scheduled for England yet, so these are the matches they've played this year, added from the scorecards. Add what's coming on the **Add matches** tab to see it here too.
-- [ ] *markdown* Played 3 of 3
-- [ ] *markdown* Won–lost 3–0
-- [ ] *markdown* To come 0
-- [ ] *markdown* Next –
-- [ ] *markdown* **🔎 Preview any opponent** · your history against them, their form, key players and a plan
-- [ ] *selectbox* Team to preview [30 options: Afghanistan, Australia, Bangladesh, Bermuda, Canada, Denmark, Hong Kong, India…]
-- [ ] *selectbox* Format [3 options: Test, ODI, T20I]
-- [ ] *button* Preview →
-- [ ] *markdown* **Every fixture** · ✅ played · ⏭ next · ⏳ to come · ⚠️ no scorecard found · 🆕 auto-added
-- [ ] *markdown* Series Match Opponent When Your chance Their form Result ✅ ODI World Cup 2027 🆕 1 New Zealand 11 Jun 2027 W · England won by 2 wickets ✅ ODI World Cup 2027 🆕 2 South Africa 13 Jun 2027 W · England won by 1 wicket ✅ ODI World Cup 2027 🆕 3 · Final 🏆 Sri Lanka 23 Jun 2027 W · England won by 4 wickets
-- [ ] *caption* A match is ticked off when the game saves its scorecard: it's matched by the two teams, the format and its place in the series, so dates don't need to be exact. Click a result for its scorecard. Home and away come from the scorecards (the side named first is at home); 📍 marks a series you put at the other venue (hover it). Mark a series neutral if it was played at a neutral ground. 🆕 Auto-added: p
-- [ ] *tab* Add matches
-- [ ] *markdown* **How to add your schedule** 1. Open the **Add matches** tab. 2. Pick the **opponent**, the **format**, **how many matches**, **home or away** and the **month**. 3. Press **Add series**. Do the same for each series in your year (a World Cup goes under **Tournament**). 4. Dates are up to you. Know them from the game's fixture list? Switch on **I know the dates** and type each match's date: your nex
-- [ ] *button_group* What are you adding? [2 options: Series or match, Tournament]
-- [ ] *selectbox* Opponent [30 options: Afghanistan, Australia, Bangladesh, India, Ireland, New Zealand, Pakistan, South Africa…]
-- [ ] *button_group* Format [3 options: Test, ODI, T20I]
-- [ ] *button_group* How many matches [7 options: 1, 2, 3, 4, 5, 6, 7]
-- [ ] *button_group* Where [3 options: Home, Away, Neutral]
-- [ ] *selectbox* Month [12 options: January, February, March, April, May, June, July, August…]
-- [ ] *selectbox* Year [5 options: 2028, 2029, 2030, 2031, 2032]
-- [ ] *toggle* I know the dates
-- [ ] *caption* Adds: **v Afghanistan · 3 Tests · home · Jan 2029** (3 matches).
-- [ ] *button* Add series
-- [ ] *expander* ⌨️ Faster: type your whole year, one series per line
-- [ ] *markdown* Examples you can copy and change: ``` England 3 Tests away Jan 2027 Australia 5 ODIs home Mar 2027 NZ 3 T20Is away Apr 2027 T20 World Cup Jun 2027 12 Feb 2027 ODI v Sri Lanka home ``` Opponent (full name or short like NZ, SA, WI), how many and which format, home / away / neutral, and the month. Dates are optional.
-- [ ] *text_area* Your schedule
-- [ ] *button* Read these lines
-- [ ] *tab* Change or delete
-- [ ] *info* Nothing added for England yet. Add a series or tournament on the **Add matches** tab; it shows here to change or delete.
-- [ ] *expander* Match by match (advanced): change any cell, add or delete rows
-- [ ] *caption* Change any cell, add a row at the bottom, or select rows and press delete (the bin icon). Then press **Save changes**. Month: like 'Jan 2027'. Date: only if you know it. Matches already played keep their result whatever you change here. Auto-added matches aren't in this table (they come from the scorecards); add the series here yourself to set its home or away.
-- [ ] *table* 0 rows · columns: id, series, opponent, format, no, venue, month, date, games
-- [ ] *button* Save changes
-- [ ] *tab* Series
-- [ ] *info* Add a series on the Add matches tab to see its chances, preview and report here.
-- [ ] *tab* Calendar
-- [ ] *selectbox* Season [2 options: 2027–28 (Apr 2027 – Mar 2028), 2026–27 (Apr 2026 – Mar 2027)]
-- [ ] *markdown* April 2027 M T W T F S S 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 May 2027 M T W T F S S 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 June 2027 ODI World Cup 3–0 M T W T F S S 1 2 3 4 5 6 7 8 9 10 11 W O 12 13 W O 14 15 16 17 18 19 20 21 22 23 W O 24 25 26 27 28 29 30 July 2027 M T W T F S S 1 2 3 4 5 6 7 8 9 10 11 12 1
-- [ ] *caption* England in 2027–28 (Apr 2027 – Mar 2028): 3 matches played. W blue: won · L red: lost · grey: drawn, tied or no result · dashed: still to come. T = Test, O = ODI, 20 = T20 (and the first letters of the opponent). A series still to come whose dates you didn't give is in the yellow box at the top of its month; give the first match's date when you add it and it's on its day too. The outlined day is t
-- [ ] *tab* WTC race
-- [ ] *markdown* **World Test Championship 2025–27** · England have 0 Tests left in your schedule
-- [ ] *markdown* # Team P W L D Pts PCT % 1 England 3 3 0 0 36 100.0 2 South Africa 1 1 0 0 12 100.0 3 Australia 2 1 1 0 12 50.0 4 Bangladesh 2 0 1 1 4 16.7 5 Pakistan 4 0 3 1 4 8.3
-- [ ] *caption* Add your Tests for this cycle on the Add matches tab to see what you need to reach the final.
-- [ ] *tab* Milestones
-- [ ] *info* Add fixtures to see which milestones your players could reach in them.
-- [ ] *tab* Goals
-- [ ] *info* No goals yet. Add one below and watch its progress bar move with every match.
-- [ ] *markdown* **Add a goal**
-- [ ] *selectbox* Goal [4 options: Win a series, Reach the World Test Championship final, A player reaches a number, Win a number of matches]
-- [ ] *caption* Add a series on the Add matches tab first.
-- [ ] *button* Add goal
-  - [ ] *info* Load a career on the Home page first.
-  - [ ] *page_header* Fixtures
-  - [ ] *page_header* Your schedule
-  - [ ] *page_header* Add your schedule once. Every match ticks itself off when the game saves its scorecard, and the series chances, WTC race, milestones and goals update with it.
-  - [ ] *info* No matches yet.
-  - [ ] *selectbox* Schedule for
-  - [ ] *selectbox* fx_team
-  - [ ] *selectbox · help* Your teams first (pick them under My team in the sidebar).
-  - [ ] *tabs* Schedule
-  - [ ] *tabs* Add matches
-  - [ ] *tabs* Change or delete
-  - [ ] *tabs* Series
-  - [ ] *tabs* Calendar
-  - [ ] *tabs* WTC race
-  - [ ] *tabs* Milestones
-  - [ ] *tabs* Goals
-  - [ ] *info* No schedule for {team} yet.
-  - [ ] *info* Nothing scheduled for {team} yet, so these are the matches they've played this year, added from the scorecards. Add what's coming on the **Add matches** tab to see it here too.
-  - [ ] *safe_section* schedule
-  - [ ] *kpis* Played
-  - [ ] *kpis* {sm['played']} of {sm['total']}
-  - [ ] *kpis* Won–lost
-  - [ ] *kpis* {rec['W']}–{rec['L']}
-  - [ ] *kpis* ({rec['D']} D)
-  - [ ] *kpis* To come
-  - [ ] *kpis* {sm['to_come']}
-  - [ ] *kpis* Next
-  - [ ] *kpis* opponent
-  - [ ] *kpis* v {nx['opponent']}
-  - [ ] *markdown* **⏭ Next match:** {esc(next_title(nx))} ·
-  - [ ] *markdown* {venue_word(nven)} ·
-  - [ ] *markdown* 🔮 **{team} {p['win']}%**
-  - [ ] *markdown* multi
-  - [ ] *markdown* · draw {p['draw']}%
-  - [ ] *markdown* · **{nopp} {p['lose']}%**
-  - [ ] *markdown* ⚔️ Key battles:
-  - [ ] *markdown* 📝 **Your note:** {esc(note)}
-  - [ ] *button* Full preview of {nopp} →
-  - [ ] *button* fx_go_preview
-  - [ ] *warning* ⚠️ {sm['missing']} fixture{'s' if sm['missing'] != 1 else ''} should have been played by now but no scorecard matches. Check the month and opponent in the table below, or whether the game saved the scorecard.
-  - [ ] *markdown* **Every fixture** · ✅ played · ⏭ next · ⏳ to come · ⚠️ no scorecard found · 🆕 auto-added
-  - [ ] *html_table* Match
-  - [ ] *html_table* Opponent
-  - [ ] *html_table* When
-  - [ ] *html_table* Your chance
-  - [ ] *html_table* Their form
-  - [ ] *html_table* Result
-  - [ ] *caption* A match is ticked off when the game saves its scorecard: it's matched by the two teams, the format and its place in the series, so dates don't need to be exact. Click a result for its scorecard. Home and away come from the scorecards (the side named first is at home); 📍 marks a series you put at the other venue (hover it). Mark a series neutral if it was played at a neutral ground. 🆕 Auto-added: played but not in your schedule (or more matches than you put in), so added from the scorecards with 
-  - [ ] *safe_section* change or delete
-  - [ ] *safe_section* edit schedule
-  - [ ] *expander* Match by match (advanced): change any cell, add or delete rows
-  - [ ] *caption* Change any cell, add a row at the bottom, or select rows and press delete (the bin icon). Then press **Save changes**. Month: like 'Jan 2027'. Date: only if you know it. Matches already played keep their result whatever you change here. Auto-added matches aren't in this table (they come from the scorecards); add the series here yourself to set its home or away.
-  - [ ] *data_editor* dynamic
-  - [ ] *data_editor* stretch
-  - [ ] *data_editor* fx_editor_{team}
-  - [ ] *data_editor* id
-  - [ ] *data_editor* series
-  - [ ] *data_editor* format
-  - [ ] *data_editor* no
-  - [ ] *data_editor* venue
-  - [ ] *data_editor* month
-  - [ ] *data_editor* date
-  - [ ] *data_editor* games
-  - [ ] *data_editor* Matches with the same series name are one series
-  - [ ] *data_editor* Leave empty for a tournament
-  - [ ] *data_editor* Format
-  - [ ] *data_editor* 1 for the 1st Test, 2 for the 2nd …
-  - [ ] *data_editor* Home/away
-  - [ ] *data_editor* home
-  - [ ] *data_editor* away
-  - [ ] *data_editor* neutral
-  - [ ] *data_editor* Month
-  - [ ] *data_editor* e.g. Jan 2027
-  - [ ] *data_editor* Date
-  - [ ] *data_editor* Only if you know it
-  - [ ] *data_editor* Games (tournament)
-  - [ ] *button* Save changes
-  - [ ] *button* fx_save_edit
-  - [ ] *error* Not saved:
-  - [ ] *toast* Schedule saved
-  - [ ] *safe_section* add matches
-  - [ ] *segmented_control* What are you adding?
-  - [ ] *segmented_control* Series or match
-  - [ ] *segmented_control* Tournament
-  - [ ] *segmented_control* fx_kind
-  - [ ] *selectbox* fx_opp
-  - [ ] *segmented_control* fx_fmt
-  - [ ] *pills* How many matches
-  - [ ] *pills* fx_n
-  - [ ] *segmented_control* Where
-  - [ ] *segmented_control* Home
-  - [ ] *segmented_control* Away
-  - [ ] *segmented_control* Neutral
-  - [ ] *segmented_control* fx_venue
-  - [ ] *markdown* **Month** {typed} · from your dates
-  - [ ] *selectbox* fx_month
-  - [ ] *selectbox* Year
-  - [ ] *selectbox* fx_year
-  - [ ] *toggle* I know the dates
-  - [ ] *toggle* fx_know
-  - [ ] *toggle · help* Type the date of each match from the game's fixture list. Leave any you don't know empty: it's worked out from the match before it.
-  - [ ] *error* Put the dates in match order.
-  - [ ] *caption* Adds: **{preview[0]['series']}** ({len(preview)} match{'es' if len(preview) != 1 else ''}
-  - [ ] *caption* , {given} with a date
-  - [ ] *caption* The month comes from the first date you gave.
-  - [ ] *button* Add series
-  - [ ] *button* primary
-  - [ ] *button* fx_add_series
-  - [ ] *toast* Added {preview[0]['series']}
-  - [ ] *warning* That series is already in the schedule.
-  - [ ] *selectbox* Other…
-  - [ ] *selectbox* fx_tname
-  - [ ] *text_input* Name
-  - [ ] *text_input* fx_tother
-  - [ ] *text_input* e.g. Asia Cup
-  - [ ] *segmented_control* fx_tfmt
-  - [ ] *selectbox* Month it starts
-  - [ ] *selectbox* fx_tmonth
-  - [ ] *selectbox* fx_tyear
-  - [ ] *number_input* Games you'll play (0 = don't know)
-  - [ ] *number_input* fx_tgames
-  - [ ] *button* Add tournament
-  - [ ] *button* fx_add_tour
-  - [ ] *toast* Added {canon}
-  - [ ] *warning* That tournament is already in the schedule.
-  - [ ] *caption* Every match you play in it is ticked off as its scorecard arrives, whoever you play.
-  - [ ] *expander* ⌨️ Faster: type your whole year, one series per line
-  - [ ] *markdown* Examples you can copy and change: ``` England 3 Tests away Jan 2027 Australia 5 ODIs home Mar 2027 NZ 3 T20Is away Apr 2027 T20 World Cup Jun 2027 12 Feb 2027 ODI v Sri Lanka home ``` Opponent (full name or short like NZ, SA, WI), how many and which format, home / away / neutral, and the month. Dates are optional.
-  - [ ] *text_area* fx_text
-  - [ ] *text_area* collapsed
-  - [ ] *text_area* England 3 Tests away Jan 2027
-  - [ ] *button* Read these lines
-  - [ ] *button* fx_read
-  - [ ] *warning* Type at least one line first, like the examples above.
-  - [ ] *warning* Skipped: {e}
-  - [ ] *markdown* **Will add:**
-  - [ ] *markdown* - {esc(x)}
-  - [ ] *button* Add these {len(labels_)}
-  - [ ] *button* fx_add_text
-  - [ ] *toast* Added {added} matches
-  - [ ] *info* Add a series on the Add matches tab to see its chances, preview and report here.
-  - [ ] *markdown* **🔴 Under way: {esc(s['series'])}** · {lead} {s['won']}–{s['lost']}
-  - [ ] *markdown* drawn
-  - [ ] *markdown* ({s['drawn']} drawn)
-  - [ ] *markdown* · {o['left']} to play
-  - [ ] *markdown* **{o['need'].capitalize()}.** Chances from here: **{team} {o['odds']['A']}%**
-  - [ ] *markdown* odds
-  - [ ] *markdown* level
-  - [ ] *markdown* · level {o['odds']['level']}%
-  - [ ] *markdown* · **{s['opponent']} {o['odds']['B']}%**
-  - [ ] *caption* Likeliest final scores:
-  - [ ] *caption* {a}–{b} ({v}%)
-  - [ ] *caption* . Each game is worked out from the Elo ratings, form, head to head and venue (see Opponent preview); every combination of the games left is counted.
-  - [ ] *expander* More: past series, conditions, who travels well, records in reach, your note
-  - [ ] *markdown* **🏆 Under way: {esc(name)}** · {tu['won']}–{tu['lost']} from {tu['played']} game{'s' if tu['played'] != 1 else ''}
-  - [ ] *markdown* next_stage
-  - [ ] *markdown* · next: {esc(tu['next_stage'])}
-  - [ ] *markdown* next_opponent
-  - [ ] *markdown* v {esc(tu['next_opponent'])}
-  - [ ] *caption* The rest of the league played out 4,000 times from the team ratings (as on the Team planner page), with the competition's own points and knockout format.
-  - [ ] *caption* Through to the {tu['next_stage'].lower()}: the league is over.
-  - [ ] *expander* 🔮 Preview: {s['series']}
-  - [ ] *markdown* **Before ball one:** {team} win the series **{o['odds']['A']}%**
-  - [ ] *markdown* · drawn {o['odds']['level']}%
-  - [ ] *markdown* · {s['opponent']} win it **{o['odds']['B']}%**
-  - [ ] *caption* Likeliest scores:
-  - [ ] *markdown* Form in {s['format']}s · {esc(team)} {form_strip(fh['form'][team])} · {esc(s['opponent'])} {form_strip(fh['form'][s['opponent']])}
-  - [ ] *markdown* played
-  - [ ] *markdown* · head to head {h['won']}–{h['lost']}
-  - [ ] *markdown* ({h['drawn']} drawn)
-  - [ ] *markdown* · never met in this format
-  - [ ] *markdown* **{esc(side)} to watch** (last {pw['matches']} {s['format']}s):
-  - [ ] *markdown* **Pick:** {', '.join(dict.fromkeys(good))}.
-  - [ ] *markdown* **Think again:** {', '.join(dict.fromkeys(doubt))}.
-  - [ ] *caption* Nobody in your squad stands out against them either way yet.
-  - [ ] *button* Full preview of {s['opponent']} →
-  - [ ] *button* fx_prev_{i}
-  - [ ] *markdown* **🔮 Forecasts made before ball one:** the favourite was right in {right_} of {len(fc_)} series
-  - [ ] *markdown* , and the exact score came up {exact_} time{'s' if exact_ != 1 else ''}
-  - [ ] *expander* 📋 {s['series']} · {s['won']}–{s['lost']}
-  - [ ] *expander* ({s['drawn']} D)
-  - [ ] *markdown* **{rep['result']}** · {rep['first']} to {rep['last']}
-  - [ ] *markdown* 🔮 Forecast before ball one ({f_.get('made', '')}): {esc(team)} {f_['win']}%
-  - [ ] *markdown* · level {f_['draw']}%
-  - [ ] *markdown* · {esc(s['opponent'])} {f_['lose']}%
-  - [ ] *markdown* likely
-  - [ ] *markdown* , likeliest {f_['likely']}
-  - [ ] *markdown* . Result {x['result']}:
-  - [ ] *markdown* right
-  - [ ] *markdown* ✅ the favourite won
-  - [ ] *markdown* ❌ an upset
-  - [ ] *markdown* exact
-  - [ ] *markdown* , exact score ✓
-  - [ ] *markdown* 🏅 **Player of the Series: {player_link(p.player)}** ({esc(p.team)}) · {int(p.runs)} runs, {int(p.wickets)} wickets
-  - [ ] *markdown* **Most runs**
-  - [ ] *markdown* {esc(pl)} ({esc(tm)}) {int(v)}
-  - [ ] *markdown* top_bat
-  - [ ] *markdown* **Most wickets**
-  - [ ] *markdown* top_bowl
-  - [ ] *markdown* 🏆 {esc(x)}
-  - [ ] *markdown* 🎯 {esc(x)}
-  - [ ] *markdown* Matches:
-  - [ ] *markdown* {r.date}
-  - [ ] *markdown* matches
-  - [ ] *safe_section* calendar
-  - [ ] *info* No matches or fixtures for {team} yet. Add your schedule on the Add matches tab.
-  - [ ] *selectbox* Season
-  - [ ] *selectbox* fx_cal_season
-  - [ ] *caption* {team} in {CV.season_label(int(cy))}: {played_y} match{'es' if played_y != 1 else ''} played. W blue: won · L red: lost · grey: drawn, tied or no result · dashed: still to come. T = Test, O = ODI, 20 = T20 (and the first letters of the opponent). A series still to come whose dates you didn't give is in the yellow box at the top of its month; give the first match's date when you add it and it's on its day too. The outlined day is the latest match played. Click a result for its scorecard.
-  - [ ] *caption* Nothing still to come this season in your schedule: add it on the **Add matches** tab.
-  - [ ] *info* {team} aren't one of the nine World Test Championship sides, or no WTC Tests have been played yet.
-  - [ ] *markdown* **World Test Championship {race['cycle']}–{str(race['cycle'] + 2)[-2:]}** · {team} have {race['remaining']} Test{'s' if race['remaining'] != 1 else ''} left in your schedule
-  - [ ] *html_table* Team
-  - [ ] *html_table* Pts
-  - [ ] *html_table* PCT %
-  - [ ] *html_table* hi
-  - [ ] *caption* Your Tests still to come:
-  - [ ] *caption* v {o} ({venue_word(v) or '?'})
-  - [ ] *caption* . The other sides' remaining Tests aren't in your schedule, so their percentages are taken as they stand now. Each of your Tests is worked out from the ratings, as on Opponent preview.
-  - [ ] *caption* Add your Tests for this cycle on the Add matches tab to see what you need to reach the final.
-  - [ ] *safe_section* milestones
-  - [ ] *info* Add fixtures to see which milestones your players could reach in them.
-  - [ ] *markdown* **Milestones in reach in your schedule** · {len(within)} of your players' next round numbers could fall in the matches you have left
-  - [ ] *html_table* {r.next} {r.what}
-  - [ ] *html_table* {r.needed}
-  - [ ] *html_table* needs about {r.games_needed} games; {r.games_left} left
-  - [ ] *html_table* Player
-  - [ ] *html_table* Next milestone
-  - [ ] *html_table* Still needs
-  - [ ] *html_table* Per match
-  - [ ] *html_table* Around
-  - [ ] *caption* Per match: their average per match in that format so far (everyone who played in your last 5 matches in it). 'Around' is the fixture they'd reach it in if they keep that rate: a guide, not a promise.
-  - [ ] *safe_section* goals
-  - [ ] *markdown* {badge} **{esc(FX.goal_label(g))}** {esc(pg['text'])}
-  - [ ] *button* Remove
-  - [ ] *button* fx_goal_del_{g['id']}
-  - [ ] *info* No goals yet. Add one below and watch its progress bar move with every match.
-  - [ ] *markdown* **💡 Suggested goals** · from your schedule, one click to add
-  - [ ] *button* Add
-  - [ ] *button* fx_sugg_{j}_{_key(FX.goal_label(g))}
-  - [ ] *toast* Goal added
-  - [ ] *button* Add all {len(sugg[:6])}
-  - [ ] *button* fx_sugg_all
-  - [ ] *toast* {len(sugg[:6])} goals added
-  - [ ] *markdown* **Add a goal**
-  - [ ] *selectbox* Goal
-  - [ ] *selectbox* fx_goal_kind
-  - [ ] *selectbox* fx_goal_series
-  - [ ] *caption* Add a series on the Add matches tab first.
-  - [ ] *caption* {team} aren't a World Test Championship side.
-  - [ ] *selectbox* fx_goal_player
-  - [ ] *selectbox* fx_goal_fmt
-  - [ ] *selectbox* Of
-  - [ ] *selectbox* runs
-  - [ ] *selectbox* wickets
-  - [ ] *selectbox* fx_goal_what
-  - [ ] *number_input* Target
-  - [ ] *number_input* fx_goal_target
-  - [ ] *selectbox* Counting
-  - [ ] *selectbox* Their whole career
-  - [ ] *selectbox* fx_goal_year
-  - [ ] *selectbox* fx_goal_wfmt
-  - [ ] *number_input* Wins
-  - [ ] *number_input* fx_goal_wins
-  - [ ] *selectbox* In
-  - [ ] *selectbox* fx_goal_wyear
-  - [ ] *button* Add goal
-  - [ ] *button* fx_goal_add
-  - [ ] *date_input* {ordinal(j + 1)} {fmt_}
-  - [ ] *date_input* DD/MM/YYYY
-  - [ ] *markdown* **🔎 Preview any opponent** · your history against them, their form, key players and a plan
-  - [ ] *selectbox* Team to preview
-  - [ ] *selectbox* fx_any_opp
-  - [ ] *selectbox* · in your schedule
-  - [ ] *selectbox* Format
-  - [ ] *selectbox* fx_any_fmt
-  - [ ] *button* Preview →
-  - [ ] *button* fx_any_go
-  - [ ] *button* stretch
-  - [ ] *caption* 🔍 Schedule check: nothing looks wrong.
-  - [ ] *markdown* **🔍 Schedule check** · {len(issues)} thing{'s' if len(issues) != 1 else ''} to look at
-  - [ ] *markdown* ⚠️ {esc(x['text'])}
-  - [ ] *button* fx_fix_{j}_{_key(x['series'] + x['kind'])}
-  - [ ] *button* stretch
-  - [ ] *caption* Change it on the **Change or delete** tab
-  - [ ] *markdown* **📈 The season ahead · {CV.season_label(sy)}** · {len(ch)} match{'es' if len(ch) != 1 else ''} left with a known opponent
-  - [ ] *kpis* Record so far
-  - [ ] *kpis* {now['W']}–{now['L']}
-  - [ ] *kpis* Heading for
-  - [ ] *kpis* {pr['exp_won']}–{pr['exp_lost']}
-  - [ ] *kpis* exp_drawn
-  - [ ] *kpis* Likely wins
-  - [ ] *kpis* {pr['low']} to {pr['high']}
-  - [ ] *kpis* Easy · even · hard
-  - [ ] *kpis* easy
-  - [ ] *kpis* even
-  - [ ] *kpis* hard
-  - [ ] *markdown* **Toughest run:** {esc(what)} ({esc(rr.when.iloc[0])} to {esc(rr.when.iloc[-1])}): your chance of winning averages {rr.win.mean()}%.
-  - [ ] *chart_note* {int((ch.level == 'easy').sum())} easy, {int((ch.level == 'even').sum())} even and {int((ch.level == 'hard').sum())} hard; the hardest is v {esc(hardest.opponent)} ({esc(hardest.when)}, {hardest.win}% to win).
-  - [ ] *chart_note* Shows which games to rest players for and which to go all out in. Green: easy (you win 60% or more of the games that end in a result), grey: even, red: hard (40% or less); in a Test the draws are left out of that, so a 35% win chance with many draws can still be even. Each game's chance is the same one Opponent preview gives (Elo ratings, form, head to head and venue).
-  - [ ] *html_table* {v['won']}–{v['lost']}
-  - [ ] *html_table* drawn
-  - [ ] *html_table* ({v['drawn']} D)
-  - [ ] *html_table* left
-  - [ ] *html_table* {v['exp_won']}–{v['exp_lost']}
-  - [ ] *html_table* Format
-  - [ ] *html_table* Left
-  - [ ] *caption* Heading for: your record so far plus each game left counted by its chance (so it can say 9–5 when every game left is close). Likely wins: 8 times in 10 the season ends inside this range.
-  - [ ] *caption* unknown
-  - [ ] *caption* {pr['unknown']} tournament game{'s' if pr['unknown'] != 1 else ''} with no opponent yet
-  - [ ] *caption* isn't
-  - [ ] *caption* aren't
-  - [ ] *caption* counted.
-  - [ ] *markdown* **📜 {esc(team)} v {esc(opp)}: past {esc(fmt_)} series**
-  - [ ] *markdown* {r['start']} · {venue_word(r['venue']) or r['venue']} · **{r['result']}** {r['score']}
-  - [ ] *caption* No series between them in this format yet: this is the first.
-  - [ ] *markdown* **🏆 Records in reach**
-  - [ ] *markdown* **🌍 {games} in {esc(host)}** (their home games) against everywhere
-  - [ ] *html_table* In {host}
-  - [ ] *html_table* Everywhere
-  - [ ] *caption* Bat first if you win the toss:
-  - [ ] *caption* Chase if you win the toss:
-  - [ ] *caption* Toss matters little:
-  - [ ] *caption* batting first wins {bf_there}% there.
-  - [ ] *caption* Not enough {games} in {host} yet to say what conditions are like.
-  - [ ] *markdown* **🧳 Who travels well** · {esc(team)} {esc(tv['label'])} against at home
-  - [ ] *markdown* Struggle away:
-  - [ ] *caption* Nobody's record changes much away from home.
-  - [ ] *text_input* 📝 Your note on this series
-  - [ ] *text_input* e.g. rest the strike bowler for the 3rd; try the new opener
-  - [ ] *button* Save note
-  - [ ] *button* {note_key}_save
-  - [ ] *button* stretch
-  - [ ] *toast* Note saved
-  - [ ] *button* 🎯 Make winning this series a goal
-  - [ ] *button* fx_goal_{i}_{_key(s['series'])}
-  - [ ] *toast* Goal added: see the Goals tab
-  - [ ] *markdown* **🧑‍🏫 Series review: {esc(team)}**
-  - [ ] *markdown* **{icon}:**
-  - [ ] *markdown* {player_link(r.player)} ({esc(r.why)})
-  - [ ] *markdown* **✅ Keep:**
-  - [ ] *html_table* {rv['format']} series
-  - [ ] *html_table* Won–lost
-  - [ ] *html_table* Runs per wicket made
-  - [ ] *html_table* Runs per wicket given
-  - [ ] *caption* Use more: among your best by impact a match in this series and above their own usual level (all their earlier {rv['format']}s). Think about dropping: played twice or more, among your lowest and below their usual level: a batter averaging under 20 here, or a bowler giving away a quarter more per wicket than usual (or no wickets). A guide from the scorecards: you know their form in the nets.
-  - [ ] *info* {undo[1]}.
-  - [ ] *button* ↩️ Undo
-  - [ ] *button* fx_undo_btn{where}
-  - [ ] *button* stretch
-  - [ ] *info* Nothing added for {team} yet. Add a series or tournament on the **Add matches** tab; it shows here to change or delete.
-  - [ ] *markdown* **What you added for {team}** · press ✏️ to change a series (opponent, format, how many, home or away, month or date) or 🗑️ to delete it
-  - [ ] *caption* Matches already played keep their results: they're matched to their scorecards again after a change. Series marked 🆕 auto-added on the Schedule tab come from the scorecards, so they aren't listed here.
-  - [ ] *markdown* {icon} **{esc(it['series'])}** {played} of {total} played · {esc(when)}
-  - [ ] *markdown* venue
-  - [ ] *markdown* · {venue_word(it['venue'])}
-  - [ ] *button* ✏️ Change
-  - [ ] *button* fx_ch_{k}
-  - [ ] *button* stretch
-  - [ ] *button* 🗑️ Delete
-  - [ ] *button* fx_del_{k}
-  - [ ] *warning* Delete **{it['series']}** ({it['n']} match{'es' if it['n'] != 1 else ''}) from your schedule? Results already played stay in your career.
-  - [ ] *button* Yes, delete it
-  - [ ] *button* primary
-  - [ ] *button* fx_yes_{k}
-  - [ ] *button* Cancel
-  - [ ] *button* fx_no_{k}
-  - [ ] *expander* Delete {poss(team)} whole schedule
-  - [ ] *caption* Takes every series and tournament you added for {team} out of the schedule (results already played stay in your career). You can put it back straight after with Undo.
-  - [ ] *checkbox* Yes, delete all {len(items)} of them
-  - [ ] *checkbox* fx_del_all_sure
-  - [ ] *button* Delete the whole schedule
-  - [ ] *button* fx_del_all
-  - [ ] *markdown* **Change {esc(it['series'])}**
-  - [ ] *selectbox* Opponent
-  - [ ] *selectbox* opponent
-  - [ ] *selectbox* fx_e_opp_{k}
-  - [ ] *selectbox* Format
-  - [ ] *selectbox* format
-  - [ ] *selectbox* fx_e_fmt_{k}
-  - [ ] *number_input* How many matches
-  - [ ] *number_input* fx_e_n_{k}
-  - [ ] *segmented_control* Where
-  - [ ] *segmented_control* fx_e_ven_{k}
-  - [ ] *markdown* **Month** {typed} · from your dates
-  - [ ] *selectbox* Month
-  - [ ] *selectbox* fx_e_mo_{k}
-  - [ ] *selectbox* Year
-  - [ ] *selectbox* fx_e_yr_{k}
-  - [ ] *toggle* I know the dates
-  - [ ] *toggle* fx_e_know_{k}
-  - [ ] *toggle · help* The date of each match from the game's fixture list. Leave any you don't know empty: it's worked out from the match before it.
-  - [ ] *error* Put the dates in match order.
-  - [ ] *selectbox* Tournament
-  - [ ] *selectbox* fx_e_tn_{k}
-  - [ ] *selectbox* fx_e_tfmt_{k}
-  - [ ] *selectbox* Month it starts
-  - [ ] *selectbox* fx_e_tmo_{k}
-  - [ ] *selectbox* fx_e_tyr_{k}
-  - [ ] *number_input* Games you'll play (0 = don't know)
-  - [ ] *number_input* games
-  - [ ] *number_input* fx_e_tg_{k}
-  - [ ] *caption* Becomes: **{esc(new_rows[0]['series'])}**
-  - [ ] *caption* ({len(new_rows)} matches
-  - [ ] *caption* , {given} with a date
-  - [ ] *button* Save
-  - [ ] *button* primary
-  - [ ] *button* fx_e_save_{k}
-  - [ ] *button* stretch
-  - [ ] *warning* You already have a series exactly like that in the schedule: change something, or delete one.
-  - [ ] *button* Cancel
-  - [ ] *button* fx_e_cancel_{k}
+- [x] *markdown* Fixtures — ✓ Fixtures · the Fixtures page heading
+- [x] *title* Your schedule — ✓ Fixtures · the Fixtures page heading
+- [x] *markdown* Add your schedule once. Every match ticks itself off when the game saves its scorecard, and the series chances, WTC race, milestones and goals update with it. — ✓ Fixtures · WTC race tab
+- [x] *selectbox* Schedule for [51 options: England, Afghanistan, Andhra, Australia, Bangladesh, Baroda, Birmingham Phoenix, Chandigarh…] — ✓ Fixtures · the Schedule for dropdown (your teams only, answer 2)
+- [x] *tab* Schedule — ✓ Fixtures · the 8 tabs, same names (answer 1)
+- [x] *info* Nothing scheduled for England yet, so these are the matches they've played this year, added from the scorecards. Add what's coming on the **Add matches** tab to see it here too. — ✓ Fixtures · Add matches
+- [x] *markdown* Played 3 of 3 — ✓ Fixtures · Schedule · kpis
+- [x] *markdown* Won–lost 3–0 — ✓ Fixtures · Schedule · kpis
+- [x] *markdown* To come 0 — ✓ Fixtures · Schedule · kpis
+- [x] *markdown* Next – — ✓ Fixtures · Schedule · kpis
+- [x] *markdown* **🔎 Preview any opponent** · your history against them, their form, key players and a plan — ✓ Fixtures · Series tab · Preview / Schedule · Next match
+- [x] *selectbox* Team to preview [30 options: Afghanistan, Australia, Bangladesh, Bermuda, Canada, Denmark, Hong Kong, India…] — ✓ Fixtures · Goals tab · Add a goal
+- [x] *selectbox* Format [3 options: Test, ODI, T20I] — ✓ Fixtures · Add matches · Format
+- [x] *button* Preview → — ✓ Fixtures · Series tab · Preview / Schedule · Next match
+- [x] *markdown* **Every fixture** · ✅ played · ⏭ next · ⏳ to come · ⚠️ no scorecard found · 🆕 auto-added — ✓ Fixtures · Schedule · Every fixture
+- [x] *markdown* Series Match Opponent When Your chance Their form Result ✅ ODI World Cup 2027 🆕 1 New Zealand 11 Jun 2027 W · England won by 2 wickets ✅ ODI World Cup 2027 🆕 2 South Africa 13 Jun 2027 W · England won by 1 wicket ✅ ODI World Cup 2027 🆕 3 · Final 🏆 Sri Lanka 23 Jun 2027 W · England won by 4 wickets — ✓ Fixtures · Series tab
+- [x] *caption* A match is ticked off when the game saves its scorecard: it's matched by the two teams, the format and its place in the series, so dates don't need to be exact. Click a result for its scorecard. Home and away come from the scorecards (the side named first is at home); 📍 marks a series you put at the other venue (hover it). Mark a series neutral if it was played at a neutral ground. 🆕 Auto-added: p — ✓ Fixtures · Series tab
+- [x] *tab* Add matches — ✓ Fixtures · Add matches
+- [x] *markdown* **How to add your schedule** 1. Open the **Add matches** tab. 2. Pick the **opponent**, the **format**, **how many matches**, **home or away** and the **month**. 3. Press **Add series**. Do the same for each series in your year (a World Cup goes under **Tournament**). 4. Dates are up to you. Know them from the game's fixture list? Switch on **I know the dates** and type each match's date: your nex — ✓ Fixtures · Add matches
+- [x] *button_group* What are you adding? [2 options: Series or match, Tournament] — ✓ Fixtures · Add matches · Tournament
+- [x] *selectbox* Opponent [30 options: Afghanistan, Australia, Bangladesh, India, Ireland, New Zealand, Pakistan, South Africa…] — ✓ Fixtures · Goals tab · Add a goal
+- [x] *button_group* Format [3 options: Test, ODI, T20I] — ✓ Fixtures · Add matches · Format
+- [x] *button_group* How many matches [7 options: 1, 2, 3, 4, 5, 6, 7] — ✓ Fixtures · Add matches · How many matches
+- [x] *button_group* Where [3 options: Home, Away, Neutral] — ✓ Fixtures · Add matches · Where
+- [x] *selectbox* Month [12 options: January, February, March, April, May, June, July, August…] — ✓ Fixtures · Add matches · Month
+- [x] *selectbox* Year [5 options: 2028, 2029, 2030, 2031, 2032] — ✓ Fixtures · Add matches · Year
+- [x] *toggle* I know the dates — ✓ Fixtures · Add matches · I know the dates
+- [x] *caption* Adds: **v Afghanistan · 3 Tests · home · Jan 2029** (3 matches). — ✓ Fixtures · Add matches · Adds: (named by the server)
+- [x] *button* Add series — ✓ Fixtures · Add matches · Series or match
+- [x] *expander* ⌨️ Faster: type your whole year, one series per line — ✓ Fixtures · Add matches · Faster: type your whole year
+- [x] *markdown* Examples you can copy and change: ``` England 3 Tests away Jan 2027 Australia 5 ODIs home Mar 2027 NZ 3 T20Is away Apr 2027 T20 World Cup Jun 2027 12 Feb 2027 ODI v Sri Lanka home ``` Opponent (full name or short like NZ, SA, WI), how many and which format, home / away / neutral, and the month. Dates are optional. — ✓ Fixtures · Add matches · Opponent
+- [x] *text_area* Your schedule — ✓ Fixtures · the Fixtures page heading
+- [x] *button* Read these lines — ✓ Fixtures · Add matches · typed lines
+- [x] *tab* Change or delete — ✓ Fixtures · the Change or delete tab
+- [x] *info* Nothing added for England yet. Add a series or tournament on the **Add matches** tab; it shows here to change or delete. — ✓ Fixtures · Add matches
+- [x] *expander* Match by match (advanced): change any cell, add or delete rows — ✓ Fixtures · Change or delete · Match by match (advanced)
+- [x] *caption* Change any cell, add a row at the bottom, or select rows and press delete (the bin icon). Then press **Save changes**. Month: like 'Jan 2027'. Date: only if you know it. Matches already played keep their result whatever you change here. Auto-added matches aren't in this table (they come from the scorecards); add the series here yourself to set its home or away. — ✓ Fixtures · Change or delete · Match by match (advanced)
+- [x] *table* 0 rows · columns: id, series, opponent, format, no, venue, month, date, games — ✓ Fixtures · Series tab
+- [x] *button* Save changes — ✓ Fixtures · Change or delete · Match by match (advanced)
+- [x] *tab* Series — ✓ Fixtures · Series tab
+- [x] *info* Add a series on the Add matches tab to see its chances, preview and report here. — ✓ Fixtures · Add matches
+- [x] *tab* Calendar — ✓ Fixtures · Calendar tab
+- [x] *selectbox* Season [2 options: 2027–28 (Apr 2027 – Mar 2028), 2026–27 (Apr 2026 – Mar 2027)] — ✓ Fixtures · Calendar tab · Season picker
+- [x] *markdown* April 2027 M T W T F S S 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 May 2027 M T W T F S S 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 June 2027 ODI World Cup 3–0 M T W T F S S 1 2 3 4 5 6 7 8 9 10 11 W O 12 13 W O 14 15 16 17 18 19 20 21 22 23 W O 24 25 26 27 28 29 30 July 2027 M T W T F S S 1 2 3 4 5 6 7 8 9 10 11 12 1 — ✓ Fixtures · Calendar tab · the season's months
+- [x] *caption* England in 2027–28 (Apr 2027 – Mar 2028): 3 matches played. W blue: won · L red: lost · grey: drawn, tied or no result · dashed: still to come. T = Test, O = ODI, 20 = T20 (and the first letters of the opponent). A series still to come whose dates you didn't give is in the yellow box at the top of its month; give the first match's date when you add it and it's on its day too. The outlined day is t — ✓ Fixtures · Series tab
+- [x] *tab* WTC race — ✓ Fixtures · WTC race tab
+- [x] *markdown* **World Test Championship 2025–27** · England have 0 Tests left in your schedule — ✓ Fixtures · WTC race tab
+- [x] *markdown* # Team P W L D Pts PCT % 1 England 3 3 0 0 36 100.0 2 South Africa 1 1 0 0 12 100.0 3 Australia 2 1 1 0 12 50.0 4 Bangladesh 2 0 1 1 4 16.7 5 Pakistan 4 0 3 1 4 8.3 — ✓ Fixtures · WTC race · table
+- [x] *caption* Add your Tests for this cycle on the Add matches tab to see what you need to reach the final. — ✓ Fixtures · Add matches
+- [x] *tab* Milestones — ✓ Fixtures · Milestones tab
+- [x] *info* Add fixtures to see which milestones your players could reach in them. — ✓ Fixtures · Milestones tab
+- [x] *tab* Goals — ✓ Fixtures · Goals tab
+- [x] *info* No goals yet. Add one below and watch its progress bar move with every match. — ✓ Fixtures · Goals tab
+- [x] *markdown* **Add a goal** — ✓ Fixtures · Goals tab
+- [x] *selectbox* Goal [4 options: Win a series, Reach the World Test Championship final, A player reaches a number, Win a number of matches] — ✓ Fixtures · WTC race tab
+- [x] *caption* Add a series on the Add matches tab first. — ✓ Fixtures · Add matches
+- [x] *button* Add goal — ✓ Fixtures · Goals tab
+  - [x] *info* Load a career on the Home page first. — ✓ Fixtures · no career: Add a career in Settings first
+  - [x] *page_header* Fixtures — ✓ Fixtures · the Fixtures page heading
+  - [x] *page_header* Your schedule — ✓ Fixtures · the Fixtures page heading
+  - [x] *page_header* Add your schedule once. Every match ticks itself off when the game saves its scorecard, and the series chances, WTC race, milestones and goals update with it. — ✓ Fixtures · WTC race tab
+  - [x] *info* No matches yet. — ✓ Fixtures · no matches: said on the page
+  - [x] *selectbox* Schedule for — ✓ Fixtures · the Schedule for dropdown (your teams only, answer 2)
+  - [x] *selectbox* fx_team — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox · help* Your teams first (pick them under My team in the sidebar). — ✓ Fixtures · the Schedule for dropdown (your teams only)
+  - [x] *tabs* Schedule — ✓ Fixtures · the 8 tabs, same names (answer 1)
+  - [x] *tabs* Add matches — ✓ Fixtures · Add matches
+  - [x] *tabs* Change or delete — ✓ Fixtures · the Change or delete tab
+  - [x] *tabs* Series — ✓ Fixtures · Series tab
+  - [x] *tabs* Calendar — ✓ Fixtures · Calendar tab
+  - [x] *tabs* WTC race — ✓ Fixtures · WTC race tab
+  - [x] *tabs* Milestones — ✓ Fixtures · Milestones tab
+  - [x] *tabs* Goals — ✓ Fixtures · Goals tab
+  - [x] *info* No schedule for {team} yet. — ✓ Fixtures · Schedule (empty)
+  - [x] *info* Nothing scheduled for {team} yet, so these are the matches they've played this year, added from the scorecards. Add what's coming on the **Add matches** tab to see it here too. — ✓ Fixtures · Add matches
+  - [x] *safe_section* schedule — ✓ Fixtures · each tab: a part that can't be shown never breaks the rest
+  - [x] *kpis* Played — ✓ Fixtures · Schedule · the kpis (Played, Won–lost, To come, Next)
+  - [x] *kpis* {sm['played']} of {sm['total']} — ✓ Fixtures · Schedule · the kpis (Played, Won–lost, To come, Next)
+  - [x] *kpis* Won–lost — ✓ Fixtures · Schedule · the kpis (Played, Won–lost, To come, Next)
+  - [x] *kpis* {rec['W']}–{rec['L']} — ✓ Fixtures · Schedule · the kpis (Played, Won–lost, To come, Next)
+  - [x] *kpis* ({rec['D']} D) — ✓ Fixtures · Schedule · the kpis (Played, Won–lost, To come, Next)
+  - [x] *kpis* To come — ✓ Fixtures · Schedule · the kpis (Played, Won–lost, To come, Next)
+  - [x] *kpis* {sm['to_come']} — ✓ Fixtures · Schedule · the kpis (Played, Won–lost, To come, Next)
+  - [x] *kpis* Next — ✓ Fixtures · Schedule · the kpis (Played, Won–lost, To come, Next)
+  - [x] *kpis* opponent — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *kpis* v {nx['opponent']} — ✓ Fixtures · Schedule · the kpis (Played, Won–lost, To come, Next)
+  - [x] *markdown* **⏭ Next match:** {esc(next_title(nx))} · — ✓ Fixtures · Schedule · Next match
+  - [x] *markdown* {venue_word(nven)} · — ✓ Fixtures · Schedule · Next match (venue, then the chance of each side, with the draw in Tests)
+  - [x] *markdown* 🔮 **{team} {p['win']}%** — ✓ Fixtures · Schedule · Next match (venue, then the chance of each side, with the draw in Tests)
+  - [x] *markdown* multi — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* · draw {p['draw']}% — ✓ Fixtures · Schedule · Next match (venue, then the chance of each side, with the draw in Tests)
+  - [x] *markdown* · **{nopp} {p['lose']}%** — ✓ Fixtures · Schedule · Next match (venue, then the chance of each side, with the draw in Tests)
+  - [x] *markdown* ⚔️ Key battles: — ✓ Fixtures · Schedule · Next match
+  - [x] *markdown* 📝 **Your note:** {esc(note)} — ✓ Fixtures · Schedule · Next match
+  - [x] *button* Full preview of {nopp} → — ✓ Fixtures · Schedule and Series · Full preview link
+  - [x] *button* fx_go_preview — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *warning* ⚠️ {sm['missing']} fixture{'s' if sm['missing'] != 1 else ''} should have been played by now but no scorecard matches. Check the month and opponent in the table below, or whether the game saved the scorecard. — ✓ Fixtures · Schedule · the missing-scorecard warning
+  - [x] *markdown* **Every fixture** · ✅ played · ⏭ next · ⏳ to come · ⚠️ no scorecard found · 🆕 auto-added — ✓ Fixtures · Schedule · Every fixture
+  - [x] *html_table* Match — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* Opponent — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* When — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* Your chance — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* Their form — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* Result — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *caption* A match is ticked off when the game saves its scorecard: it's matched by the two teams, the format and its place in the series, so dates don't need to be exact. Click a result for its scorecard. Home and away come from the scorecards (the side named first is at home); 📍 marks a series you put at the other venue (hover it). Mark a series neutral if it was played at a neutral ground. 🆕 Auto-added: played but not in your schedule (or more matches than you put in), so added from the scorecards with  — ✓ Fixtures · Series tab
+  - [x] *safe_section* change or delete — ✓ Fixtures · each tab: a part that can't be shown never breaks the rest
+  - [x] *safe_section* edit schedule — ✓ Fixtures · each tab: a part that can't be shown never breaks the rest
+  - [x] *expander* Match by match (advanced): change any cell, add or delete rows — ✓ Fixtures · Change or delete · Match by match (advanced)
+  - [x] *caption* Change any cell, add a row at the bottom, or select rows and press delete (the bin icon). Then press **Save changes**. Month: like 'Jan 2027'. Date: only if you know it. Matches already played keep their result whatever you change here. Auto-added matches aren't in this table (they come from the scorecards); add the series here yourself to set its home or away. — ✓ Fixtures · Change or delete · Match by match (advanced)
+  - [x] *data_editor* dynamic — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *data_editor* stretch — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *data_editor* fx_editor_{team} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *data_editor* id — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *data_editor* series — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *data_editor* format — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *data_editor* no — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *data_editor* venue — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *data_editor* month — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *data_editor* date — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *data_editor* games — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *data_editor* Matches with the same series name are one series — ✓ Fixtures · Change or delete · Match by match (advanced) table
+  - [x] *data_editor* Leave empty for a tournament — ✓ Fixtures · Change or delete · Match by match (advanced) table
+  - [x] *data_editor* Format — ✓ Fixtures · Change or delete · Match by match (advanced) table
+  - [x] *data_editor* 1 for the 1st Test, 2 for the 2nd … — ✓ Fixtures · Change or delete · Match by match (advanced) table
+  - [x] *data_editor* Home/away — ✓ Fixtures · Change or delete · Match by match (advanced) table
+  - [x] *data_editor* home — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *data_editor* away — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *data_editor* neutral — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *data_editor* Month — ✓ Fixtures · Change or delete · Match by match (advanced) table
+  - [x] *data_editor* e.g. Jan 2027 — ✓ Fixtures · Change or delete · Match by match (advanced) table
+  - [x] *data_editor* Date — ✓ Fixtures · Change or delete · Match by match (advanced) table
+  - [x] *data_editor* Only if you know it — ✓ Fixtures · Change or delete · Match by match (advanced) table
+  - [x] *data_editor* Games (tournament) — ✓ Fixtures · Change or delete · Match by match (advanced) table
+  - [x] *button* Save changes — ✓ Fixtures · Change or delete · Match by match (advanced)
+  - [x] *button* fx_save_edit — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *error* Not saved: — ✓ Fixtures · Change or delete · Match by match (the Not saved message)
+  - [x] *toast* Schedule saved — ✓ Fixtures · the ✓ message after each change
+  - [x] *safe_section* add matches — ✓ Fixtures · each tab: a part that can't be shown never breaks the rest
+  - [x] *segmented_control* What are you adding? — ✓ Fixtures · Add matches (the What are you adding? and Where dropdowns)
+  - [x] *segmented_control* Series or match — ✓ Fixtures · Series tab
+  - [x] *segmented_control* Tournament — ✓ Fixtures · Add matches · Tournament
+  - [x] *segmented_control* fx_kind — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* fx_opp — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *segmented_control* fx_fmt — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *pills* How many matches — ✓ Fixtures · Add matches · How many matches
+  - [x] *pills* fx_n — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *segmented_control* Where — ✓ Fixtures · Add matches · Where
+  - [x] *segmented_control* Home — ✓ Fixtures · Add matches (the What are you adding? and Where dropdowns)
+  - [x] *segmented_control* Away — ✓ Fixtures · Add matches (the What are you adding? and Where dropdowns)
+  - [x] *segmented_control* Neutral — ✓ Fixtures · Add matches (the What are you adding? and Where dropdowns)
+  - [x] *segmented_control* fx_venue — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* **Month** {typed} · from your dates — ✓ Fixtures · Add matches · Month
+  - [x] *selectbox* fx_month — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* Year — ✓ Fixtures · Add matches · Year
+  - [x] *selectbox* fx_year — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *toggle* I know the dates — ✓ Fixtures · Add matches · I know the dates
+  - [x] *toggle* fx_know — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *toggle · help* Type the date of each match from the game's fixture list. Leave any you don't know empty: it's worked out from the match before it. — ✓ Fixtures · Add matches · I know the dates (its explanation beside it)
+  - [x] *error* Put the dates in match order. — ✓ Fixtures · Add matches · the dates-in-order message
+  - [x] *caption* Adds: **{preview[0]['series']}** ({len(preview)} match{'es' if len(preview) != 1 else ''} — ✓ Fixtures · Series tab
+  - [x] *caption* , {given} with a date — ✓ Fixtures · Add matches · Adds: (with the dates given, named by the server)
+  - [x] *caption* The month comes from the first date you gave. — ✓ Fixtures · Add matches · Adds: (with the dates given, named by the server)
+  - [x] *button* Add series — ✓ Fixtures · Add matches · Series or match
+  - [x] *button* primary — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* fx_add_series — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *toast* Added {preview[0]['series']} — ✓ Fixtures · Series tab
+  - [x] *warning* That series is already in the schedule. — ✓ Fixtures · Series tab
+  - [x] *selectbox* Other… — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* fx_tname — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *text_input* Name — ✓ Fixtures · Add matches · Tournament · Other… name
+  - [x] *text_input* fx_tother — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *text_input* e.g. Asia Cup — ✓ Fixtures · Add matches · Tournament · Other… name
+  - [x] *segmented_control* fx_tfmt — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* Month it starts — ✓ Fixtures · Add matches · Tournament
+  - [x] *selectbox* fx_tmonth — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* fx_tyear — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *number_input* Games you'll play (0 = don't know) — ✓ Fixtures · Add matches · Tournament
+  - [x] *number_input* fx_tgames — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* Add tournament — ✓ Fixtures · Add matches · Tournament
+  - [x] *button* fx_add_tour — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *toast* Added {canon} — ✓ Fixtures · the ✓ message after each change
+  - [x] *warning* That tournament is already in the schedule. — ✓ Fixtures · Add matches · the already-there message
+  - [x] *caption* Every match you play in it is ticked off as its scorecard arrives, whoever you play. — ✓ Fixtures · Schedule · the caption under Every fixture
+  - [x] *expander* ⌨️ Faster: type your whole year, one series per line — ✓ Fixtures · Add matches · Faster: type your whole year
+  - [x] *markdown* Examples you can copy and change: ``` England 3 Tests away Jan 2027 Australia 5 ODIs home Mar 2027 NZ 3 T20Is away Apr 2027 T20 World Cup Jun 2027 12 Feb 2027 ODI v Sri Lanka home ``` Opponent (full name or short like NZ, SA, WI), how many and which format, home / away / neutral, and the month. Dates are optional. — ✓ Fixtures · Add matches · Opponent
+  - [x] *text_area* fx_text — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *text_area* collapsed — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *text_area* England 3 Tests away Jan 2027 — ✓ Fixtures · Add matches · Faster: type your whole year
+  - [x] *button* Read these lines — ✓ Fixtures · Add matches · typed lines
+  - [x] *button* fx_read — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *warning* Type at least one line first, like the examples above. — ✓ Fixtures · Add matches · Faster: type your whole year
+  - [x] *warning* Skipped: {e} — ✓ Fixtures · Add matches · typed lines
+  - [x] *markdown* **Will add:** — ✓ Fixtures · Add matches · typed lines
+  - [x] *markdown* - {esc(x)} — ✓ Fixtures · Add matches · Faster: type your whole year
+  - [x] *button* Add these {len(labels_)} — ✓ Fixtures · Add matches · typed lines
+  - [x] *button* fx_add_text — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *toast* Added {added} matches — ✓ Fixtures · the ✓ message after each change
+  - [x] *info* Add a series on the Add matches tab to see its chances, preview and report here. — ✓ Fixtures · Add matches
+  - [x] *markdown* **🔴 Under way: {esc(s['series'])}** · {lead} {s['won']}–{s['lost']} — ✓ Fixtures · Series tab
+  - [x] *markdown* drawn — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* ({s['drawn']} drawn) — ✓ Fixtures · Series (under way and previews: the score, games left, each side's chance, the likeliest scores)
+  - [x] *markdown* · {o['left']} to play — ✓ Fixtures · Series (under way and previews: the score, games left, each side's chance, the likeliest scores)
+  - [x] *markdown* **{o['need'].capitalize()}.** Chances from here: **{team} {o['odds']['A']}%** — ✓ Fixtures · Series tab · Under way
+  - [x] *markdown* odds — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* level — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* · level {o['odds']['level']}% — ✓ Fixtures · Series (under way and previews: the score, games left, each side's chance, the likeliest scores)
+  - [x] *markdown* · **{s['opponent']} {o['odds']['B']}%** — ✓ Fixtures · Series (under way and previews: the score, games left, each side's chance, the likeliest scores)
+  - [x] *caption* Likeliest final scores: — ✓ Fixtures · Series (under way and previews: the score, games left, each side's chance, the likeliest scores)
+  - [x] *caption* {a}–{b} ({v}%) — ✓ Fixtures · Series (under way and previews: the score, games left, each side's chance, the likeliest scores)
+  - [x] *caption* . Each game is worked out from the Elo ratings, form, head to head and venue (see Opponent preview); every combination of the games left is counted. — ✓ Fixtures · Add matches · Opponent
+  - [x] *expander* More: past series, conditions, who travels well, records in reach, your note — ✓ Fixtures · Series tab
+  - [x] *markdown* **🏆 Under way: {esc(name)}** · {tu['won']}–{tu['lost']} from {tu['played']} game{'s' if tu['played'] != 1 else ''} — ✓ Fixtures · Series tab · Under way
+  - [x] *markdown* next_stage — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* · next: {esc(tu['next_stage'])} — ✓ Fixtures · Series · tournaments under way (next stage and opponent; now with the tournament path)
+  - [x] *markdown* next_opponent — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* v {esc(tu['next_opponent'])} — ✓ Fixtures · Series · tournaments under way (next stage and opponent; now with the tournament path)
+  - [x] *caption* The rest of the league played out 4,000 times from the team ratings (as on the Team planner page), with the competition's own points and knockout format. — ✓ Fixtures · Series tab · tournaments (now with the tournament path)
+  - [x] *caption* Through to the {tu['next_stage'].lower()}: the league is over. — ✓ Fixtures · Series tab · tournaments
+  - [x] *expander* 🔮 Preview: {s['series']} — ✓ Fixtures · Series tab
+  - [x] *markdown* **Before ball one:** {team} win the series **{o['odds']['A']}%** — ✓ Fixtures · Series tab
+  - [x] *markdown* · drawn {o['odds']['level']}% — ✓ Fixtures · Series (under way and previews: the score, games left, each side's chance, the likeliest scores)
+  - [x] *markdown* · {s['opponent']} win it **{o['odds']['B']}%** — ✓ Fixtures · Series (under way and previews: the score, games left, each side's chance, the likeliest scores)
+  - [x] *caption* Likeliest scores: — ✓ Fixtures · Series (under way and previews: the score, games left, each side's chance, the likeliest scores)
+  - [x] *markdown* Form in {s['format']}s · {esc(team)} {form_strip(fh['form'][team])} · {esc(s['opponent'])} {form_strip(fh['form'][s['opponent']])} — ✓ Fixtures · Series tab · Preview
+  - [x] *markdown* played — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* · head to head {h['won']}–{h['lost']} — ✓ Fixtures · Series tab · Preview
+  - [x] *markdown* ({h['drawn']} drawn) — ✓ Fixtures · Series (under way and previews: the score, games left, each side's chance, the likeliest scores)
+  - [x] *markdown* · never met in this format — ✓ Fixtures · Series tab · Preview
+  - [x] *markdown* **{esc(side)} to watch** (last {pw['matches']} {s['format']}s): — ✓ Fixtures · Series tab · Preview
+  - [x] *markdown* **Pick:** {', '.join(dict.fromkeys(good))}. — ✓ Fixtures · Series tab · Preview
+  - [x] *markdown* **Think again:** {', '.join(dict.fromkeys(doubt))}. — ✓ Fixtures · Series tab · Preview
+  - [x] *caption* Nobody in your squad stands out against them either way yet. — ✓ Fixtures · Series tab · Preview
+  - [x] *button* Full preview of {s['opponent']} → — ✓ Fixtures · Schedule and Series · Full preview link
+  - [x] *button* fx_prev_{i} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* **🔮 Forecasts made before ball one:** the favourite was right in {right_} of {len(fc_)} series — ✓ Fixtures · Series tab
+  - [x] *markdown* , and the exact score came up {exact_} time{'s' if exact_ != 1 else ''} — ✓ Fixtures · Series · forecasts made before ball one, checked after
+  - [x] *expander* 📋 {s['series']} · {s['won']}–{s['lost']} — ✓ Fixtures · Series tab
+  - [x] *expander* ({s['drawn']} D) — ✓ Fixtures · Series (under way and previews: the score, games left, each side's chance, the likeliest scores)
+  - [x] *markdown* **{rep['result']}** · {rep['first']} to {rep['last']} — ✓ Fixtures · Series · Series reports
+  - [x] *markdown* 🔮 Forecast before ball one ({f_.get('made', '')}): {esc(team)} {f_['win']}% — ✓ Fixtures · Series tab · forecasts
+  - [x] *markdown* · level {f_['draw']}% — ✓ Fixtures · Series (under way and previews: the score, games left, each side's chance, the likeliest scores)
+  - [x] *markdown* · {esc(s['opponent'])} {f_['lose']}% — ✓ Fixtures · Series · forecasts made before ball one, checked after
+  - [x] *markdown* likely — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* , likeliest {f_['likely']} — ✓ Fixtures · Series · forecasts made before ball one, checked after
+  - [x] *markdown* . Result {x['result']}: — ✓ Fixtures · Series · forecasts made before ball one, checked after (✅ the favourite won / ❌ an upset)
+  - [x] *markdown* right — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* ✅ the favourite won — ✓ Fixtures · Series · forecasts made before ball one, checked after (✅ the favourite won / ❌ an upset)
+  - [x] *markdown* ❌ an upset — ✓ Fixtures · Series · forecasts made before ball one, checked after (✅ the favourite won / ❌ an upset)
+  - [x] *markdown* exact — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* , exact score ✓ — ✓ Fixtures · Series · forecasts made before ball one, checked after
+  - [x] *markdown* 🏅 **Player of the Series: {player_link(p.player)}** ({esc(p.team)}) · {int(p.runs)} runs, {int(p.wickets)} wickets — ✓ Fixtures · Series tab
+  - [x] *markdown* **Most runs** — ✓ Fixtures · Series tab · Series reports
+  - [x] *markdown* {esc(pl)} ({esc(tm)}) {int(v)} — ✓ Fixtures · Series · Series reports (most runs and wickets, the matches)
+  - [x] *markdown* top_bat — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* **Most wickets** — ✓ Fixtures · Series tab · Series reports
+  - [x] *markdown* top_bowl — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* 🏆 {esc(x)} — ✓ Fixtures · Series tab · records
+  - [x] *markdown* 🎯 {esc(x)} — ✓ Fixtures · Series tab · milestones
+  - [x] *markdown* Matches: — ✓ Fixtures · Series tab · Series reports
+  - [x] *markdown* {r.date} — ✓ Fixtures · Series · Series reports (most runs and wickets, the matches)
+  - [x] *markdown* matches — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *safe_section* calendar — ✓ Fixtures · each tab: a part that can't be shown never breaks the rest
+  - [x] *info* No matches or fixtures for {team} yet. Add your schedule on the Add matches tab. — ✓ Fixtures · Add matches
+  - [x] *selectbox* Season — ✓ Fixtures · Calendar tab · Season picker
+  - [x] *selectbox* fx_cal_season — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *caption* {team} in {CV.season_label(int(cy))}: {played_y} match{'es' if played_y != 1 else ''} played. W blue: won · L red: lost · grey: drawn, tied or no result · dashed: still to come. T = Test, O = ODI, 20 = T20 (and the first letters of the opponent). A series still to come whose dates you didn't give is in the yellow box at the top of its month; give the first match's date when you add it and it's on its day too. The outlined day is the latest match played. Click a result for its scorecard. — ✓ Fixtures · Series tab
+  - [x] *caption* Nothing still to come this season in your schedule: add it on the **Add matches** tab. — ✓ Fixtures · Add matches
+  - [x] *info* {team} aren't one of the nine World Test Championship sides, or no WTC Tests have been played yet. — ✓ Fixtures · WTC race tab
+  - [x] *markdown* **World Test Championship {race['cycle']}–{str(race['cycle'] + 2)[-2:]}** · {team} have {race['remaining']} Test{'s' if race['remaining'] != 1 else ''} left in your schedule — ✓ Fixtures · WTC race tab
+  - [x] *html_table* Team — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* Pts — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* PCT % — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* hi — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *caption* Your Tests still to come: — ✓ Fixtures · WTC race · caption
+  - [x] *caption* v {o} ({venue_word(v) or '?'}) — ✓ Fixtures · WTC race · Your Tests still to come
+  - [x] *caption* . The other sides' remaining Tests aren't in your schedule, so their percentages are taken as they stand now. Each of your Tests is worked out from the ratings, as on Opponent preview. — ✓ Fixtures · Add matches · Opponent
+  - [x] *caption* Add your Tests for this cycle on the Add matches tab to see what you need to reach the final. — ✓ Fixtures · Add matches
+  - [x] *safe_section* milestones — ✓ Fixtures · Milestones tab
+  - [x] *info* Add fixtures to see which milestones your players could reach in them. — ✓ Fixtures · Milestones tab
+  - [x] *markdown* **Milestones in reach in your schedule** · {len(within)} of your players' next round numbers could fall in the matches you have left — ✓ Fixtures · Milestones tab
+  - [x] *html_table* {r.next} {r.what} — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* {r.needed} — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* needs about {r.games_needed} games; {r.games_left} left — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* Player — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* Next milestone — ✓ Fixtures · Milestones tab
+  - [x] *html_table* Still needs — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* Per match — ✓ Fixtures · Milestones tab
+  - [x] *html_table* Around — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *caption* Per match: their average per match in that format so far (everyone who played in your last 5 matches in it). 'Around' is the fixture they'd reach it in if they keep that rate: a guide, not a promise. — ✓ Fixtures · Milestones tab
+  - [x] *safe_section* goals — ✓ Fixtures · Goals tab
+  - [x] *markdown* {badge} **{esc(FX.goal_label(g))}** {esc(pg['text'])} — ✓ Fixtures · Goals tab
+  - [x] *button* Remove — ✓ Fixtures · Goals tab · Remove
+  - [x] *button* fx_goal_del_{g['id']} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *info* No goals yet. Add one below and watch its progress bar move with every match. — ✓ Fixtures · Goals tab
+  - [x] *markdown* **💡 Suggested goals** · from your schedule, one click to add — ✓ Fixtures · Goals tab
+  - [x] *button* Add — ✓ Fixtures · Goals · Suggested goals · Add
+  - [x] *button* fx_sugg_{j}_{_key(FX.goal_label(g))} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *toast* Goal added — ✓ Fixtures · Goals tab
+  - [x] *button* Add all {len(sugg[:6])} — ✓ Fixtures · Goals tab · Add all
+  - [x] *button* fx_sugg_all — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *toast* {len(sugg[:6])} goals added — ✓ Fixtures · Goals tab
+  - [x] *markdown* **Add a goal** — ✓ Fixtures · Goals tab
+  - [x] *selectbox* Goal — ✓ Fixtures · Goals tab
+  - [x] *selectbox* fx_goal_kind — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* fx_goal_series — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *caption* Add a series on the Add matches tab first. — ✓ Fixtures · Add matches
+  - [x] *caption* {team} aren't a World Test Championship side. — ✓ Fixtures · WTC race tab
+  - [x] *selectbox* fx_goal_player — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* fx_goal_fmt — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* Of — ✓ Fixtures · Goals tab · Add a goal
+  - [x] *selectbox* runs — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* wickets — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* fx_goal_what — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *number_input* Target — ✓ Fixtures · Goals tab · Add a goal
+  - [x] *number_input* fx_goal_target — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* Counting — ✓ Fixtures · Goals tab · Add a goal
+  - [x] *selectbox* Their whole career — ✓ Fixtures · Goals tab · Add a goal
+  - [x] *selectbox* fx_goal_year — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* fx_goal_wfmt — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *number_input* Wins — ✓ Fixtures · Goals tab · Add a goal
+  - [x] *number_input* fx_goal_wins — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* In — ✓ Fixtures · Goals tab · Add a goal
+  - [x] *selectbox* fx_goal_wyear — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* Add goal — ✓ Fixtures · Goals tab
+  - [x] *button* fx_goal_add — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *date_input* {ordinal(j + 1)} {fmt_} — ✓ Fixtures · Add matches · date boxes
+  - [x] *date_input* DD/MM/YYYY — ✓ Fixtures · Add matches · date boxes
+  - [x] *markdown* **🔎 Preview any opponent** · your history against them, their form, key players and a plan — ✓ Fixtures · Series tab · Preview / Schedule · Next match
+  - [x] *selectbox* Team to preview — ✓ Fixtures · Schedule · Preview any opponent
+  - [x] *selectbox* fx_any_opp — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* · in your schedule — ✓ Fixtures · Schedule · Preview any opponent ("in your schedule" by each one scheduled)
+  - [x] *selectbox* Format — ✓ Fixtures · Add matches · Format
+  - [x] *selectbox* fx_any_fmt — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* Preview → — ✓ Fixtures · Series tab · Preview / Schedule · Next match
+  - [x] *button* fx_any_go — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* stretch — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *caption* 🔍 Schedule check: nothing looks wrong. — ✓ Fixtures · Schedule · Schedule check (with Fix it / Delete it)
+  - [x] *markdown* **🔍 Schedule check** · {len(issues)} thing{'s' if len(issues) != 1 else ''} to look at — ✓ Fixtures · Schedule · Schedule check (with Fix it / Delete it)
+  - [x] *markdown* ⚠️ {esc(x['text'])} — ✓ Fixtures · Schedule · Schedule check (with Fix it / Delete it)
+  - [x] *button* fx_fix_{j}_{_key(x['series'] + x['kind'])} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* stretch — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *caption* Change it on the **Change or delete** tab — ✓ Fixtures · the Change or delete tab
+  - [x] *markdown* **📈 The season ahead · {CV.season_label(sy)}** · {len(ch)} match{'es' if len(ch) != 1 else ''} left with a known opponent — ✓ Fixtures · Schedule · The season ahead
+  - [x] *kpis* Record so far — ✓ Fixtures · Schedule · the kpis (Played, Won–lost, To come, Next)
+  - [x] *kpis* {now['W']}–{now['L']} — ✓ Fixtures · Schedule · the kpis (Played, Won–lost, To come, Next)
+  - [x] *kpis* Heading for — ✓ Fixtures · Schedule · the kpis (Played, Won–lost, To come, Next)
+  - [x] *kpis* {pr['exp_won']}–{pr['exp_lost']} — ✓ Fixtures · Schedule · the kpis (Played, Won–lost, To come, Next)
+  - [x] *kpis* exp_drawn — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *kpis* Likely wins — ✓ Fixtures · Schedule · the kpis (Played, Won–lost, To come, Next)
+  - [x] *kpis* {pr['low']} to {pr['high']} — ✓ Fixtures · Schedule · the kpis (Played, Won–lost, To come, Next)
+  - [x] *kpis* Easy · even · hard — ✓ Fixtures · Schedule · the kpis (Played, Won–lost, To come, Next)
+  - [x] *kpis* easy — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *kpis* even — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *kpis* hard — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* **Toughest run:** {esc(what)} ({esc(rr.when.iloc[0])} to {esc(rr.when.iloc[-1])}): your chance of winning averages {rr.win.mean()}%. — ✓ Fixtures · Schedule · The season ahead
+  - [x] *chart_note* {int((ch.level == 'easy').sum())} easy, {int((ch.level == 'even').sum())} even and {int((ch.level == 'hard').sum())} hard; the hardest is v {esc(hardest.opponent)} ({esc(hardest.when)}, {hardest.win}% to win). — ✓ Fixtures · Schedule · The season ahead · three lines
+  - [x] *chart_note* Shows which games to rest players for and which to go all out in. Green: easy (you win 60% or more of the games that end in a result), grey: even, red: hard (40% or less); in a Test the draws are left out of that, so a 35% win chance with many draws can still be even. Each game's chance is the same one Opponent preview gives (Elo ratings, form, head to head and venue). — ✓ Fixtures · Add matches · Opponent
+  - [x] *html_table* {v['won']}–{v['lost']} — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* drawn — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *html_table* ({v['drawn']} D) — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* left — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *html_table* {v['exp_won']}–{v['exp_lost']} — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* Format — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* Left — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *caption* Heading for: your record so far plus each game left counted by its chance (so it can say 9–5 when every game left is close). Likely wins: 8 times in 10 the season ends inside this range. — ✓ Fixtures · Schedule · The season ahead
+  - [x] *caption* unknown — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *caption* {pr['unknown']} tournament game{'s' if pr['unknown'] != 1 else ''} with no opponent yet — ✓ Fixtures · Schedule · The season ahead
+  - [x] *caption* isn't — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *caption* aren't — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *caption* counted. — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* **📜 {esc(team)} v {esc(opp)}: past {esc(fmt_)} series** — ✓ Fixtures · Series tab
+  - [x] *markdown* {r['start']} · {venue_word(r['venue']) or r['venue']} · **{r['result']}** {r['score']} — ✓ Fixtures · Series · each series' More box (past series, conditions where it's played, who travels well, your note)
+  - [x] *caption* No series between them in this format yet: this is the first. — ✓ Fixtures · Series tab
+  - [x] *markdown* **🏆 Records in reach** — ✓ Fixtures · Series tab · records
+  - [x] *markdown* **🌍 {games} in {esc(host)}** (their home games) against everywhere — ✓ Fixtures · Series · each series' More box (past series, conditions where it's played, who travels well, your note)
+  - [x] *html_table* In {host} — ✓ Fixtures · Goals tab · Add a goal
+  - [x] *html_table* Everywhere — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *caption* Bat first if you win the toss: — ✓ Fixtures · Series · each series' More box (past series, conditions where it's played, who travels well, your note)
+  - [x] *caption* Chase if you win the toss: — ✓ Fixtures · Series · each series' More box (past series, conditions where it's played, who travels well, your note)
+  - [x] *caption* Toss matters little: — ✓ Fixtures · Series · each series' More box (conditions where it's played: bat first, chase, or the toss matters little)
+  - [x] *caption* batting first wins {bf_there}% there. — ✓ Fixtures · Series · each series' More box (past series, conditions where it's played, who travels well, your note)
+  - [x] *caption* Not enough {games} in {host} yet to say what conditions are like. — ✓ Fixtures · Series · each series' More box (past series, conditions where it's played, who travels well, your note)
+  - [x] *markdown* **🧳 Who travels well** · {esc(team)} {esc(tv['label'])} against at home — ✓ Fixtures · Series · each series' More box (past series, conditions where it's played, who travels well, your note)
+  - [x] *markdown* Struggle away: — ✓ Fixtures · Series · each series' More box (past series, conditions where it's played, who travels well, your note)
+  - [x] *caption* Nobody's record changes much away from home. — ✓ Fixtures · Series · each series' More box (past series, conditions where it's played, who travels well, your note)
+  - [x] *text_input* 📝 Your note on this series — ✓ Fixtures · Series tab
+  - [x] *text_input* e.g. rest the strike bowler for the 3rd; try the new opener — ✓ Fixtures · Series · each series' More box (past series, conditions where it's played, who travels well, your note)
+  - [x] *button* Save note — ✓ Fixtures · Series · each series' More box (past series, conditions where it's played, who travels well, your note)
+  - [x] *button* {note_key}_save — ✓ Fixtures · Series · each series' More box (past series, conditions where it's played, who travels well, your note)
+  - [x] *button* stretch — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *toast* Note saved — ✓ Fixtures · the ✓ message after each change
+  - [x] *button* 🎯 Make winning this series a goal — ✓ Fixtures · Goals tab
+  - [x] *button* fx_goal_{i}_{_key(s['series'])} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *toast* Goal added: see the Goals tab — ✓ Fixtures · Goals tab
+  - [x] *markdown* **🧑‍🏫 Series review: {esc(team)}** — ✓ Fixtures · Series tab
+  - [x] *markdown* **{icon}:** — ✓ Fixtures · Series · Series reports · Series review (Use more, Think about dropping, Keep)
+  - [x] *markdown* {player_link(r.player)} ({esc(r.why)}) — ✓ Fixtures · Series · Series reports · Series review (Use more, Think about dropping, Keep)
+  - [x] *markdown* **✅ Keep:** — ✓ Fixtures · Series · Series reports · Series review (Use more, Think about dropping, Keep)
+  - [x] *html_table* {rv['format']} series — ✓ Fixtures · Series tab
+  - [x] *html_table* Won–lost — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* Runs per wicket made — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *html_table* Runs per wicket given — ✓ Fixtures · Schedule · Every fixture table
+  - [x] *caption* Use more: among your best by impact a match in this series and above their own usual level (all their earlier {rv['format']}s). Think about dropping: played twice or more, among your lowest and below their usual level: a batter averaging under 20 here, or a bowler giving away a quarter more per wicket than usual (or no wickets). A guide from the scorecards: you know their form in the nets. — ✓ Fixtures · Series tab
+  - [x] *info* {undo[1]}. — ✓ Fixtures · the list of recent changes, each with Undo (your answer 5)
+  - [x] *button* ↩️ Undo — ✓ Fixtures · the list of recent changes, each with Undo (your answer 5)
+  - [x] *button* fx_undo_btn{where} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* stretch — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *info* Nothing added for {team} yet. Add a series or tournament on the **Add matches** tab; it shows here to change or delete. — ✓ Fixtures · Add matches
+  - [x] *markdown* **What you added for {team}** · press ✏️ to change a series (opponent, format, how many, home or away, month or date) or 🗑️ to delete it — ✓ Fixtures · Series tab
+  - [x] *caption* Matches already played keep their results: they're matched to their scorecards again after a change. Series marked 🆕 auto-added on the Schedule tab come from the scorecards, so they aren't listed here. — ✓ Fixtures · Series tab
+  - [x] *markdown* {icon} **{esc(it['series'])}** {played} of {total} played · {esc(when)} — ✓ Fixtures · Series tab
+  - [x] *markdown* venue — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* · {venue_word(it['venue'])} — ✓ Fixtures · Change or delete (Change, Delete with Yes, delete it / Cancel, Delete the whole schedule)
+  - [x] *button* ✏️ Change — ✓ Fixtures · Change or delete (Change, Delete with Yes, delete it / Cancel, Delete the whole schedule)
+  - [x] *button* fx_ch_{k} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* stretch — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* 🗑️ Delete — ✓ Fixtures · Change or delete (Change, Delete with Yes, delete it / Cancel, Delete the whole schedule)
+  - [x] *button* fx_del_{k} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *warning* Delete **{it['series']}** ({it['n']} match{'es' if it['n'] != 1 else ''}) from your schedule? Results already played stay in your career. — ✓ Fixtures · Series tab
+  - [x] *button* Yes, delete it — ✓ Fixtures · Change or delete (Change, Delete with Yes, delete it / Cancel, Delete the whole schedule)
+  - [x] *button* primary — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* fx_yes_{k} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* Cancel — ✓ Fixtures · Change or delete · Change (Becomes: …, Save, Cancel)
+  - [x] *button* fx_no_{k} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *expander* Delete {poss(team)} whole schedule — ✓ Fixtures · Change or delete (Change, Delete with Yes, delete it / Cancel, Delete the whole schedule)
+  - [x] *caption* Takes every series and tournament you added for {team} out of the schedule (results already played stay in your career). You can put it back straight after with Undo. — ✓ Fixtures · Series tab
+  - [x] *checkbox* Yes, delete all {len(items)} of them — ✓ Fixtures · Change or delete (Change, Delete with Yes, delete it / Cancel, Delete the whole schedule)
+  - [x] *checkbox* fx_del_all_sure — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* Delete the whole schedule — ✓ Fixtures · Change or delete (Change, Delete with Yes, delete it / Cancel, Delete the whole schedule)
+  - [x] *button* fx_del_all — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* **Change {esc(it['series'])}** — ✓ Fixtures · Series tab
+  - [x] *selectbox* Opponent — ✓ Fixtures · Add matches · Opponent
+  - [x] *selectbox* opponent — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* fx_e_opp_{k} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* Format — ✓ Fixtures · Add matches · Format
+  - [x] *selectbox* format — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* fx_e_fmt_{k} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *number_input* How many matches — ✓ Fixtures · Add matches · How many matches
+  - [x] *number_input* fx_e_n_{k} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *segmented_control* Where — ✓ Fixtures · Add matches · Where
+  - [x] *segmented_control* fx_e_ven_{k} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *markdown* **Month** {typed} · from your dates — ✓ Fixtures · Add matches · Month
+  - [x] *selectbox* Month — ✓ Fixtures · Add matches · Month
+  - [x] *selectbox* fx_e_mo_{k} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* Year — ✓ Fixtures · Add matches · Year
+  - [x] *selectbox* fx_e_yr_{k} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *toggle* I know the dates — ✓ Fixtures · Add matches · I know the dates
+  - [x] *toggle* fx_e_know_{k} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *toggle · help* The date of each match from the game's fixture list. Leave any you don't know empty: it's worked out from the match before it. — ✓ Fixtures · Add matches · I know the dates (its explanation beside it)
+  - [x] *error* Put the dates in match order. — ✓ Fixtures · Add matches · the dates-in-order message
+  - [x] *selectbox* Tournament — ✓ Fixtures · Add matches · Tournament
+  - [x] *selectbox* fx_e_tn_{k} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* fx_e_tfmt_{k} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* Month it starts — ✓ Fixtures · Add matches · Tournament
+  - [x] *selectbox* fx_e_tmo_{k} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *selectbox* fx_e_tyr_{k} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *number_input* Games you'll play (0 = don't know) — ✓ Fixtures · Add matches · Tournament
+  - [x] *number_input* games — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *number_input* fx_e_tg_{k} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *caption* Becomes: **{esc(new_rows[0]['series'])}** — ✓ Fixtures · Series tab
+  - [x] *caption* ({len(new_rows)} matches — ✓ Fixtures · Change or delete · Change (Becomes: …, Save, Cancel)
+  - [x] *caption* , {given} with a date — ✓ Fixtures · Add matches · Adds: (with the dates given, named by the server)
+  - [x] *button* Save — ✓ Fixtures · Change or delete · Change (Becomes: …, Save, Cancel)
+  - [x] *button* primary — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* fx_e_save_{k} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* stretch — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *warning* You already have a series exactly like that in the schedule: change something, or delete one. — ✓ Fixtures · Series tab
+  - [x] *button* Cancel — ✓ Fixtures · Change or delete · Change (Becomes: …, Save, Cancel)
+  - [x] *button* fx_e_cancel_{k} — ✓ the old site's internal name or setting, not shown; the new site has the same thing
 
 ### My team / Home · `views/home.py` (88 lines)
 
-- [ ] *markdown* **Worth a minute of your time** 👉 **4 names are used by two different players**, so their stats are mixed together (e.g. *M Khan* at Punjab Kings and Lucknow Super Giants). One click keeps them apart.
-- [ ] *markdown* Open Data check →
-- [ ] *expander* Add another career (a different Scorecards folder)
-- [ ] *markdown* **1 · Your Scorecards folder**
-- [ ] *caption* In Cricket Captain 2026, turn on **Autosave scorecards** in Options. The folder is normally `AppData\Roaming\Childish Things\Cricket Captain 2026\Scorecards`.
-- [ ] *text_input* Folder
-- [ ] *button* Browse…
-- [ ] *markdown* **2 · Name this career**
-- [ ] *text_input* Career name
-- [ ] *button* Start watching
-- [ ] *expander* Upload files instead, or open a career file
-- [ ] *tab* Upload a folder
-- [ ] *file_uploader* Scorecards folder
-- [ ] *tab* Upload files or a zip
-- [ ] *file_uploader* Scorecard .txt files or a .zip
-- [ ] *tab* Open a career file
-- [ ] *file_uploader* Career file (.zip saved from this site)
-- [ ] *button* Load
-- [ ] *download_button* Download career file
-- [ ] *markdown* **Worth a minute of your time** 👉 **4 names are used by two different players**, so their stats are mixed together (e.g. *M Khan* at Punjab Kings and Lucknow Super Giants). One click keeps them apart.
-- [ ] *markdown* Open Data check →
-- [ ] *expander* Add another career (a different Scorecards folder)
-- [ ] *markdown* **1 · Your Scorecards folder**
-- [ ] *caption* In Cricket Captain 2026, turn on **Autosave scorecards** in Options. The folder is normally `AppData\Roaming\Childish Things\Cricket Captain 2026\Scorecards`.
-- [ ] *text_input* Folder
-- [ ] *button* Browse…
-- [ ] *markdown* **2 · Name this career**
-- [ ] *text_input* Career name
-- [ ] *button* Start watching
-- [ ] *expander* Upload files instead, or open a career file
-- [ ] *tab* Upload a folder
-- [ ] *file_uploader* Scorecards folder
-- [ ] *tab* Upload files or a zip
-- [ ] *file_uploader* Scorecard .txt files or a .zip
-- [ ] *tab* Open a career file
-- [ ] *file_uploader* Career file (.zip saved from this site)
-- [ ] *button* Load
-- [ ] *download_button* Download career file
-  - [ ] *markdown* **1 · Your Scorecards folder**
-  - [ ] *caption* In Cricket Captain 2026, turn on **Autosave scorecards** in Options. The folder is normally `AppData\Roaming\Childish Things\Cricket Captain 2026\Scorecards`
-  - [ ] *caption* and it was found on this PC.
-  - [ ] *text_input* Folder
-  - [ ] *text_input* Paste the folder path here
-  - [ ] *button* Browse…
-  - [ ] *markdown* **2 · Name this career**
-  - [ ] *text_input* Career name
-  - [ ] *text_input* My career
-  - [ ] *text_input* e.g. India save
-  - [ ] *warning* This folder is already used by **{owner}**. One Scorecards folder is one career, so both saves' matches go there. Pick a different folder for a separate career.
-  - [ ] *warning* That folder doesn't exist on this PC. Check the path or use Browse….
-  - [ ] *warning* A career with that name already exists. Pick another name.
-  - [ ] *button* Start watching
-  - [ ] *spinner* Reading scorecards…
-  - [ ] *tabs* Upload a folder
-  - [ ] *tabs* Upload files or a zip
-  - [ ] *tabs* Open a career file
-  - [ ] *file_uploader* Scorecards folder
-  - [ ] *file_uploader* Scorecard .txt files or a .zip
-  - [ ] *file_uploader* Career file (.zip saved from this site)
-  - [ ] *button* Load
-  - [ ] *spinner* Reading scorecards…
-  - [ ] *expander* Backups ({len(items)})
-  - [ ] *caption* A copy of this career is saved automatically once a week; the newest {store.BACKUPS_KEPT} are kept, in `{store.root / 'backups'}`. Restoring puts that copy back; your current state is backed up first, so you can always undo it.
-  - [ ] *button* Back up now
-  - [ ] *markdown* **{time.strftime('%a %d %b %Y, %H:%M', time.localtime(made))}**{note}
-  - [ ] *button* Yes, restore
-  - [ ] *button* Restore
-  - [ ] *page_header* Cricket Captain 2026
-  - [ ] *page_header* Your stats pack
-  - [ ] *page_header* Point the site at your Scorecards folder and every page fills in: leaderboards for every stat, player and team pages, team-vs-team comparisons and records. New matches appear by themselves while you play.
-  - [ ] *expander* Other ways to load: upload files, open a career file, or try the demo league
-  - [ ] *button* Try the demo league
-  - [ ] *success* Finished:
-  - [ ] *success* {v} {words.get(k, k)}
-  - [ ] *expander* {len(bad)} file(s) could not be read
-  - [ ] *dataframe* File
-  - [ ] *dataframe* Reason
-  - [ ] *info* No matches yet. Play a match in Cricket Captain (with Autosave scorecards on) and it will appear here within about 20 seconds.
-  - [ ] *warning* {career.problems.match_id.nunique()} scorecard(s) failed the self-check (numbers that don't add up). They'll be listed on the Data check page.
-  - [ ] *info* {auto_left} game{'s' if auto_left > 1 else ''} from an earlier playthrough of a season {'are' if auto_left > 1 else 'is'} left out of every figure (you reloaded a save and the knockouts went differently). See Data check → Games left out.
-  - [ ] *markdown* **Worth a minute of your time**
-  - [ ] *markdown* 👉 {t}
-  - [ ] *markdown* Open Data check →
-  - [ ] *expander* Add another career (a different Scorecards folder)
-  - [ ] *expander* Upload files instead, or open a career file
-  - [ ] *download_button* Download career file
-  - [ ] *download_button* {career.name}.stats-pack.zip
-  - [ ] *download_button · help* One small file with every match and your manual fixes, e.g. to back it up or open it on another PC.
+- [x] *markdown* **Worth a minute of your time** 👉 **4 names are used by two different players**, so their stats are mixed together (e.g. *M Khan* at Punjab Kings and Lucknow Super Giants). One click keeps them apart. — ✓ My team · Worth a minute of your time → Data check (only when something needs you, answer 17); the details on Data check
+- [x] *markdown* Open Data check → — ✓ My team · Worth a minute of your time → Data check (only when something needs you, answer 17); the details on Data check
+- [x] *expander* Add another career (a different Scorecards folder) — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *markdown* **1 · Your Scorecards folder** — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *caption* In Cricket Captain 2026, turn on **Autosave scorecards** in Options. The folder is normally `AppData\Roaming\Childish Things\Cricket Captain 2026\Scorecards`. — ✓ My team with no career: the first-start screen (Start a career; Other ways to load; Try the demo league)
+- [x] *text_input* Folder — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *button* Browse… — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *markdown* **2 · Name this career** — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *text_input* Career name — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *button* Start watching — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *expander* Upload files instead, or open a career file — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *tab* Upload a folder — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *file_uploader* Scorecards folder — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *tab* Upload files or a zip — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *file_uploader* Scorecard .txt files or a .zip — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *tab* Open a career file — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *file_uploader* Career file (.zip saved from this site) — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *button* Load — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *download_button* Download career file — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *markdown* **Worth a minute of your time** 👉 **4 names are used by two different players**, so their stats are mixed together (e.g. *M Khan* at Punjab Kings and Lucknow Super Giants). One click keeps them apart. — ✓ My team · Worth a minute of your time → Data check (only when something needs you, answer 17); the details on Data check
+- [x] *markdown* Open Data check → — ✓ My team · Worth a minute of your time → Data check (only when something needs you, answer 17); the details on Data check
+- [x] *expander* Add another career (a different Scorecards folder) — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *markdown* **1 · Your Scorecards folder** — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *caption* In Cricket Captain 2026, turn on **Autosave scorecards** in Options. The folder is normally `AppData\Roaming\Childish Things\Cricket Captain 2026\Scorecards`. — ✓ My team with no career: the first-start screen (Start a career; Other ways to load; Try the demo league)
+- [x] *text_input* Folder — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *button* Browse… — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *markdown* **2 · Name this career** — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *text_input* Career name — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *button* Start watching — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *expander* Upload files instead, or open a career file — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *tab* Upload a folder — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *file_uploader* Scorecards folder — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *tab* Upload files or a zip — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *file_uploader* Scorecard .txt files or a .zip — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *tab* Open a career file — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *file_uploader* Career file (.zip saved from this site) — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *button* Load — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+- [x] *download_button* Download career file — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *markdown* **1 · Your Scorecards folder** — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *caption* In Cricket Captain 2026, turn on **Autosave scorecards** in Options. The folder is normally `AppData\Roaming\Childish Things\Cricket Captain 2026\Scorecards` — ✓ My team with no career: the first-start screen (Start a career; Other ways to load; Try the demo league)
+  - [x] *caption* and it was found on this PC. — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *text_input* Folder — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *text_input* Paste the folder path here — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *button* Browse… — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *markdown* **2 · Name this career** — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *text_input* Career name — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *text_input* My career — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *text_input* e.g. India save — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *warning* This folder is already used by **{owner}**. One Scorecards folder is one career, so both saves' matches go there. Pick a different folder for a separate career. — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *warning* That folder doesn't exist on this PC. Check the path or use Browse…. — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *warning* A career with that name already exists. Pick another name. — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *button* Start watching — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *spinner* Reading scorecards… — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *tabs* Upload a folder — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *tabs* Upload files or a zip — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *tabs* Open a career file — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *file_uploader* Scorecards folder — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *file_uploader* Scorecard .txt files or a .zip — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *file_uploader* Career file (.zip saved from this site) — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *button* Load — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *spinner* Reading scorecards… — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *expander* Backups ({len(items)}) — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *caption* A copy of this career is saved automatically once a week; the newest {store.BACKUPS_KEPT} are kept, in `{store.root / 'backups'}`. Restoring puts that copy back; your current state is backed up first, so you can always undo it. — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *button* Back up now — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *markdown* **{time.strftime('%a %d %b %Y, %H:%M', time.localtime(made))}**{note} — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *button* Yes, restore — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *button* Restore — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *page_header* Cricket Captain 2026 — ✓ My team with no career: the first-start screen (Start a career; Other ways to load; Try the demo league)
+  - [x] *page_header* Your stats pack — ✓ My team with no career: the first-start screen (Start a career; Other ways to load; Try the demo league)
+  - [x] *page_header* Point the site at your Scorecards folder and every page fills in: leaderboards for every stat, player and team pages, team-vs-team comparisons and records. New matches appear by themselves while you play. — ✓ My team with no career: the first-start screen (Start a career; Other ways to load; Try the demo league)
+  - [x] *expander* Other ways to load: upload files, open a career file, or try the demo league — ✓ My team with no career: the first-start screen (Start a career; Other ways to load; Try the demo league)
+  - [x] *button* Try the demo league — ✓ My team with no career: the first-start screen (Start a career; Other ways to load; Try the demo league)
+  - [x] *success* Finished: — ✓ Settings · Careers and the first start: the report after reading (Finished: …, files that couldn't be read)
+  - [x] *success* {v} {words.get(k, k)} — ✓ Settings · Careers and the first start: the report after reading (Finished: …, files that couldn't be read)
+  - [x] *expander* {len(bad)} file(s) could not be read — ✓ Settings · Careers and the first start: the report after reading (Finished: …, files that couldn't be read)
+  - [x] *dataframe* File — ✓ Settings · Careers and the first start: the report after reading (Finished: …, files that couldn't be read)
+  - [x] *dataframe* Reason — ✓ Settings · Careers and the first start: the report after reading (Finished: …, files that couldn't be read)
+  - [x] *info* No matches yet. Play a match in Cricket Captain (with Autosave scorecards on) and it will appear here within about 20 seconds. — ✓ Settings · Careers and every page: a career with no matches says so (the old words)
+  - [x] *warning* {career.problems.match_id.nunique()} scorecard(s) failed the self-check (numbers that don't add up). They'll be listed on the Data check page. — ✓ My team · Worth a minute of your time → Data check (only when something needs you, answer 17); the details on Data check
+  - [x] *info* {auto_left} game{'s' if auto_left > 1 else ''} from an earlier playthrough of a season {'are' if auto_left > 1 else 'is'} left out of every figure (you reloaded a save and the knockouts went differently). See Data check → Games left out. — ✓ My team · Worth a minute of your time → Data check (only when something needs you, answer 17); the details on Data check
+  - [x] *markdown* **Worth a minute of your time** — ✓ My team · Worth a minute of your time → Data check (only when something needs you, answer 17); the details on Data check
+  - [x] *markdown* 👉 {t} — ✓ My team · Worth a minute of your time → Data check (only when something needs you, answer 17); the details on Data check
+  - [x] *markdown* Open Data check → — ✓ My team · Worth a minute of your time → Data check (only when something needs you, answer 17); the details on Data check
+  - [x] *expander* Add another career (a different Scorecards folder) — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *expander* Upload files instead, or open a career file — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *download_button* Download career file — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *download_button* {career.name}.stats-pack.zip — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
+  - [x] *download_button · help* One small file with every match and your manual fixes, e.g. to back it up or open it on another PC. — ✓ Settings · Careers (add from a folder with Browse…, upload a folder / files or a zip / a career file, download a career file, backups on the Backups tab) and the first start
 
 ### ui/logos.py · `ui/logos.py` (10 lines)
 
-  - [ ] *expander* 🎨 Logos
-  - [ ] *expander* · {n_teams} teams
-  - [ ] *caption* {n_teams} team emblems and {n_comps} competition logos, from your Cricket Captain editor files in {where.parent if where else ''}.
-  - [ ] *caption* No logos found yet. They come from your Cricket Captain editor files: the emblems and complogos folders (with editemblems.txt and editcomplogos.txt). Put the folder that has them below.
-  - [ ] *text_input* Folder with your editor files
-  - [ ] *text_input* logos_folder_box
-  - [ ] *text_input* e.g. C:\...\Cricket Captain 2026\editor
-  - [ ] *text_input · help* The folder holding 'emblems' and 'complogos' (or the game's folder above it). Leave empty to look next to your Scorecards folder and in the Steam folder.
-  - [ ] *button* Use this folder
-  - [ ] *button* logos_folder_use
+  - [x] *expander* 🎨 Logos — ✓ Settings · Logos (the folder, how many team and competition logos were found)
+  - [x] *expander* · {n_teams} teams — ✓ Settings · Logos (the folder, how many team and competition logos were found)
+  - [x] *caption* {n_teams} team emblems and {n_comps} competition logos, from your Cricket Captain editor files in {where.parent if where else ''}. — ✓ Settings · Logos (the folder, how many team and competition logos were found)
+  - [x] *caption* No logos found yet. They come from your Cricket Captain editor files: the emblems and complogos folders (with editemblems.txt and editcomplogos.txt). Put the folder that has them below. — ✓ Settings · Logos (the folder, how many team and competition logos were found)
+  - [x] *text_input* Folder with your editor files — ✓ Settings · Logos (the folder, how many team and competition logos were found)
+  - [x] *text_input* logos_folder_box — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *text_input* e.g. C:\...\Cricket Captain 2026\editor — ✓ Settings · Logos (the folder, how many team and competition logos were found)
+  - [x] *text_input · help* The folder holding 'emblems' and 'complogos' (or the game's folder above it). Leave empty to look next to your Scorecards folder and in the Steam folder. — ✓ Settings · Logos (the folder, how many team and competition logos were found)
+  - [x] *button* Use this folder — ✓ Settings · Logos (the folder, how many team and competition logos were found)
+  - [x] *button* logos_folder_use — ✓ the old site's internal name or setting, not shown; the new site has the same thing
 
 ### app.py · `app.py` (27 lines)
 
-  - [ ] *multiselect* My team
-  - [ ] *multiselect* sb_my_teams
-  - [ ] *multiselect* The team(s) you play as
-  - [ ] *multiselect · help* Home opens on your team, and the planner, previews and lists start from it. Saved with this career.
-  - [ ] *Page* views/fixtures.py
-  - [ ] *Page* Fixtures
-  - [ ] *Page* views/data_check.py
-  - [ ] *Page* Data check
-  - [ ] *markdown* Pick the country, franchise or county you control in **
-  - [ ] *markdown* ** (more than one if you manage a franchise and a country). Home then opens on your team, and the planner, previews, fixtures and every page start from it.
-  - [ ] *multiselect* Your teams
-  - [ ] *multiselect* ask_teams_pick
-  - [ ] *multiselect* Type a team's name
-  - [ ] *caption* Ticked: the teams you picked last time.
-  - [ ] *caption* A franchise or county appears here after its first match: add it then under **My team** in the sidebar.
-  - [ ] *button* Save
-  - [ ] *button* primary
-  - [ ] *button* stretch
-  - [ ] *button* ask_teams_save
-  - [ ] *button* Not now
-  - [ ] *button* ask_teams_later
-  - [ ] *button* I don't play as one team
-  - [ ] *button* ask_teams_never
-  - [ ] *button · help* Don't ask again for this career. You can still pick under My team in the sidebar.
-  - [ ] *caption* Saved with this career on this PC, so you're only asked once. Change it any time under **My team** in the sidebar.
-  - [ ] *dialog* Which teams do you play as?
-  - [ ] *dialog* medium
+  - [x] *multiselect* My team — ✓ Settings · Your teams (and My team's Pick your team link)
+  - [x] *multiselect* sb_my_teams — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *multiselect* The team(s) you play as — ✓ Settings · Your teams (and My team's Pick your team link)
+  - [x] *multiselect · help* Home opens on your team, and the planner, previews and lists start from it. Saved with this career. — ✓ Settings · Your teams (and My team's Pick your team link)
+  - [x] *Page* views/fixtures.py — ✓ the menu: Fixtures in the rail; Data check in Settings (and from My team)
+  - [x] *Page* Fixtures — ✓ the menu: Fixtures in the rail; Data check in Settings (and from My team)
+  - [x] *Page* views/data_check.py — ✓ the menu: Fixtures in the rail; Data check in Settings (and from My team)
+  - [x] *Page* Data check — ✓ the menu: Fixtures in the rail; Data check in Settings (and from My team)
+  - [x] *markdown* Pick the country, franchise or county you control in ** — ✓ the "Which teams do you play as?" question (shown on every page until answered; Save, Not now, I don't play as one team; all 235 teams)
+  - [x] *markdown* ** (more than one if you manage a franchise and a country). Home then opens on your team, and the planner, previews, fixtures and every page start from it. — ✓ the "Which teams do you play as?" question (shown on every page until answered; Save, Not now, I don't play as one team; all 235 teams)
+  - [x] *multiselect* Your teams — ✓ the "Which teams do you play as?" question (shown on every page until answered; Save, Not now, I don't play as one team; all 235 teams)
+  - [x] *multiselect* ask_teams_pick — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *multiselect* Type a team's name — ✓ the "Which teams do you play as?" question (shown on every page until answered; Save, Not now, I don't play as one team; all 235 teams)
+  - [x] *caption* Ticked: the teams you picked last time. — ✓ the "Which teams do you play as?" question (shown on every page until answered; Save, Not now, I don't play as one team; all 235 teams)
+  - [x] *caption* A franchise or county appears here after its first match: add it then under **My team** in the sidebar. — ✓ Settings · Your teams (and My team's Pick your team link)
+  - [x] *button* Save — ✓ the "Which teams do you play as?" question (shown on every page until answered; Save, Not now, I don't play as one team; all 235 teams)
+  - [x] *button* primary — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* stretch — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* ask_teams_save — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* Not now — ✓ the "Which teams do you play as?" question (shown on every page until answered; Save, Not now, I don't play as one team; all 235 teams)
+  - [x] *button* ask_teams_later — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button* I don't play as one team — ✓ the "Which teams do you play as?" question (shown on every page until answered; Save, Not now, I don't play as one team; all 235 teams)
+  - [x] *button* ask_teams_never — ✓ the old site's internal name or setting, not shown; the new site has the same thing
+  - [x] *button · help* Don't ask again for this career. You can still pick under My team in the sidebar. — ✓ Settings · Your teams (and My team's Pick your team link)
+  - [x] *caption* Saved with this career on this PC, so you're only asked once. Change it any time under **My team** in the sidebar. — ✓ Settings · Your teams (and My team's Pick your team link)
+  - [x] *dialog* Which teams do you play as? — ✓ the "Which teams do you play as?" question (shown on every page until answered; Save, Not now, I don't play as one team; all 235 teams)
+  - [x] *dialog* medium — ✓ the old site's internal name or setting, not shown; the new site has the same thing

@@ -147,3 +147,39 @@ def test_odd_input_refused(pc):
               dict(action="split", player="Nobody", team="X", new_name="Y"), dict(action="what")):
         status, _, _ = s.post("/api/datacheck", b)
         assert status == 400
+
+
+def test_parity_with_the_current_sites_data_check(career):
+    """The lists are the current site's (views/data_check.py uses the same engine checks)."""
+    from ccstats import checks
+    b = DP._body(career, "Player with two names")
+    mg = checks.merge_suggestions(career)
+    assert [(p["keep"], p["other"]) for p in b["pairs"]] == list(zip(mg.keep, mg.other))
+    b = DP._body(career, "Games left out")
+    assert [x["match_id"] for x in b["left"]] == list(career.leftovers.match_id)
+    b = DP._body(career, "Scorecards")
+    assert len(b["problems"]) == len(career.problems)
+    assert DC.summary(career)["counts"]["Scorecards"] >= career.problems.match_id.nunique()
+
+
+def test_career_changes_wait_while_a_data_check_change_is_made(tmp_path, monkeypatch):
+    store, _, _ = make_pc(tmp_path, n=8)
+    real = Career.with_fixes
+
+    def slow(self, fixes):
+        time.sleep(2)
+        return real(self, fixes)
+    monkeypatch.setattr(Career, "with_fixes", slow)
+    s = Live(create_app(store, web=tmp_path / "nothing", watch_every=0))
+    try:
+        c, _ = store.load("My career")
+        s.post("/api/datacheck", dict(action="leave_out", match_id=c.matches.match_id.iloc[0]))
+        st, _, body = s.post("/api/settings", dict(action="rename", name="My career", new="Other"))
+        assert st == 400 and "Data check" in json.loads(body)["error"]
+        st, _, body = s.post("/api/datacheck", dict(action="count_it", match_id=c.matches.match_id.iloc[0]))
+        assert st == 400 and "still being made" in json.loads(body)["error"]
+        assert s.json("/api/fixtures")["teams"] == ["England"]     # pages keep answering meanwhile
+        wait_done(s)
+        assert store.names() == ["My career"]
+    finally:
+        s.stop()

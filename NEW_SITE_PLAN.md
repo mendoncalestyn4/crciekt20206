@@ -1367,6 +1367,42 @@ Asked before building, as questions with the answers written out (your choice); 
     disk warning before a backup. Not picked: the folder-missing warning, renamed teams spotted, undo a restore for a
     day, the changes log.
 
+## 19. Stage 4: what was built
+
+Built 26–27 November to your answers (section 18) and checked against `design/STAGE4_CHECKLIST.md`, every line ticked
+there with where it is. Built by me one piece at a time, as in stage 3 (your choice, 26 November: no helper copies).
+
+- **Fixtures** (`/fixtures`; engine `ccstats/fixtures.py`, `planning.py`, `goals.py`, `winprob.py`; server
+  `server/fixturespage.py`): all 8 tabs with the old names (answer 1); schedules only for your teams, everyone else's
+  matches from the scorecards (answer 2); a franchise or county picks its competition, with that league's opponents
+  (answer 3); all four ways of adding (answer 4); a list of recent changes, each with its own undo, an older undo
+  keeping the later changes (answer 5); the old four goals and ten new kinds, and goals suggested each season (answers
+  6 and 20); both calendars (answer 7); how good the predictions are (each match's chance worked out from only the
+  matches before it, so the record is full from day one), the last time against each upcoming opponent, the tournament
+  path (answer 21). Checked: 19 tests (each new goal counted again by hand; the chance before a match equal to the
+  site's own chance on a career cut just before it; parity with the current site's page).
+- **Settings** (`/settings`; `server/settingspage.py`, `ccstats/local.py`): the tabs Careers, Your teams, Backups, Logos,
+  Colours, Problems (answer 8); careers added four ways with the old warnings word for word, downloaded, renamed and
+  removed with a backup first (answers 9, 10), the full reset asked twice that never touches the game's folders (answer
+  13); the first start with the demo league (answer 11); "Which teams do you play as?" with all 235 teams (answer 12);
+  every career backed up weekly, before every Data check change and every update, each backup read back to check it,
+  a warning instead on a nearly full disk (answers 13, 14, 21). Found and fixed: two backups made in the same second
+  shared one file, so a failed check could delete the good one. Checked: 14 tests.
+- **Data check** (`/settings/data-check`; `ccstats/datacheck.py`, `server/datacheckpage.py`): six tabs (answer 15);
+  pairs shown, never pre-ticked, joined only by your click and never in the same match (answer 16); the line on My
+  team only when something needs you (answer 17); every change made in the background after a backup, the site usable
+  and other career changes waiting meanwhile (answer 18); the fix preview (answer 20). Checked: 10 tests, including
+  that nothing is ever joined without your saved choice and parity with the current site.
+- **Alerts, the daily summary, the weekly recheck** (`ccstats/alerts.py`, `server/site.py`, `server/app.py`): Goal
+  reached!, Series won (and titles), Milestone reached, Career best, Streaks, Ranking moves, for your teams only, each
+  said once and nothing old on the first run (answers 19, 21); what happened since you last looked, once a day; once a
+  week while idle every number read afresh and compared, anything different put right and listed on Problems (answer
+  20). Checked: 6 tests.
+- **Checks at the end:** the browser checks on every new page and tab at every width, dark and light (254 passed); your
+  career and the 8 odd saves through every new page and form (0 problems, 0 server errors); the stress test (20 adds
+  and 24 reads at once with none lost, 25 undos at once, a Data check change while browsing, a restore while reading,
+  a folder that vanishes and comes back, the full reset on a copy: 0 problems); the full test suite and the Windows run.
+
 ## Appendix: technical outline
 
 **Kept**

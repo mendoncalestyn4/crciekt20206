@@ -49,12 +49,12 @@ HOW_TO = (
     "3. Press **Add series**. Do the same for each series in your year (a World Cup goes under **Tournament**).\n"
     "4. Dates are up to you. Know them from the game's fixture list? Switch on **I know the dates** and type each "
     "match's date: your next match and the calendar are then exact. Leave any out and it's worked out from the "
-    "match before it (shown as *about 12 Jun*). Either way, a match takes its real date from its scorecard once "
+    "match before it (shown as 'about 12 Jun'). Either way, a match takes its real date from its scorecard once "
     "it's played.\n\n"
     "Made a mistake, or the game moved a series? Open the **Change or delete** tab: every series and tournament you "
     "added has ✏️ Change and 🗑️ Delete (and every change can be undone from the list of recent changes).\n\n"
     "**Forgot something?** No problem: any match your team plays that isn't in your schedule is added by itself "
-    "(marked *auto-added*), with the rest of its series. In a tournament, the semi-final and final are added once "
+    "(marked 'auto-added'), with the rest of its series. In a tournament, the semi-final and final are added once "
     "you're through to them.")
 SCHEDULE_CAPTION = (
     "A match is ticked off when the game saves its scorecard: it's matched by the two teams, the format and its place "
@@ -649,7 +649,7 @@ def _predictions(career, team) -> dict | None:
     rows = [[r["format"], r["games"], r["right"], f"{r['pct']:.0f}%", r["upsets"],
              (f"{r['sure']:.0f}% of {r['sure_n']}" if r["sure_n"] else "–")] for r in pr["rows"]]
     best = max(pr["rows"], key=lambda r: (r["pct"], r["games"]))
-    return dict(table=table(["Format", "Games", "Favourite won", "Right", "Upsets", "When 65%+ sure"], rows, num=[1, 2, 3, 4]),
+    return dict(table=table(["Format", "Mat", "Favourite won", "Right", "Upsets", "When 65%+ sure"], rows, num=[1, 2, 3, 4]),
                 summary=f"Over {t['games']} {team} games with a winner, the side the chance favoured won {t['right']} "
                         f"({t['pct']:.0f}%).",
                 bars=[dict(label=r["format"], value=round(r["pct"], 1), n=r["games"]) for r in pr["rows"]],
