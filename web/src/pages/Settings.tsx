@@ -323,6 +323,26 @@ function LogosTab({ d }: { d: SettingsPage }) {
   );
 }
 
+/** The daily summary (your pick, 26 November): the first time you open the site each day, what happened since. */
+export function Daily() {
+  const { career } = useShell();
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: ["daily", career?.name], enabled: Boolean(career), retry: false, staleTime: Infinity,
+    queryFn: () => get<{ show: boolean; since?: string; matches?: number; groups?: { title: string; items: string[]; more: number }[] }>("/api/daily") });
+  const seen = useMutation({ mutationFn: () => post("/api/daily", {}), onSuccess: () => qc.setQueryData(["daily", career?.name], { show: false }) });
+  const d = q.data;
+  if (!d?.show) return null;
+  return (
+    <div className="modal" role="dialog" aria-label="Since you last looked"><div className="modalbox">
+      <div className="tt">Since you last looked</div>
+      <div className="plain">Since {d.since}: {d.matches ? <b>{d.matches} new match{d.matches !== 1 ? "es" : ""}</b> : "no new matches"}.</div>
+      {(d.groups ?? []).map((g) => <div key={g.title} style={{ marginTop: 10 }}><div className="plain"><b>{g.title}</b></div>
+        <ul className="dots">{g.items.map((x, i) => <li key={i}>{x}</li>)}{g.more > 0 && <li>and {g.more} more</li>}</ul></div>)}
+      <div className="field"><button className="btn" onClick={() => seen.mutate()}>Got it</button></div>
+    </div></div>
+  );
+}
+
 /** My team with no career yet: the first-start screen. */
 export function FirstStartPage() {
   const q = useSettings();

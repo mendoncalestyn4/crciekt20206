@@ -88,6 +88,9 @@ class CareerSettings:
     forecasts: dict = field(default_factory=dict)  # each series' chances before ball one (Fixtures), kept to check
     inbox: dict = field(default_factory=dict)  # the Inbox: {"read": [message ids], "removed": [message ids]}
     fixture_changes: list = field(default_factory=list)  # Fixtures: the recent changes to the schedule, each undoable
+    alerts_seen: dict = field(default_factory=dict)  # the alerts already said (each is said once), and where things stood
+    alert_log: list = field(default_factory=list)  # what happened, newest last: for the daily summary
+    daily: dict = field(default_factory=dict)  # the daily summary: the day it was last shown
 
 
 def write_atomic(path: Path, data: str | bytes) -> None:
@@ -602,3 +605,36 @@ class Watcher:
         entry["snapshot"], entry["times"] = snap, True
         self._write(data)
         return _result(career, settings)
+
+
+# --------------------------------------------------------------------------- stage 4: the weekly full recheck
+RECHECK_EVERY = 7 * 24 * 3600
+
+
+def recheck(store: CareerStore, name: str) -> list[str]:
+    """Every number worked out again from scratch and compared with what's kept (your pick, 26 November): the career
+    read afresh from its own scorecards (no ready-to-read copy, nothing kept) against the career as the site has it.
+    Returns what differs, in plain words; empty when everything agrees. Anything that differs is put right by
+    removing the kept copies, so the next read is the fresh one."""
+    d = store._dir(name)
+    raw = (d / "career.stats-pack.zip").read_bytes()
+    kept_copy = _ready_copy(d, raw)
+    fresh = Career.from_pack(raw)
+    out = []
+    for t in ("matches", "innings", "batting", "bowling", "fow"):
+        a, b = getattr(kept_copy, t), getattr(fresh, t)
+        if a.shape != b.shape or list(a.columns) != list(b.columns):
+            out.append(f"{name}: the {t} table differs ({a.shape[0]} rows kept, {b.shape[0]} read afresh)")
+            continue
+        try:
+            same = a.reset_index(drop=True).astype(str).equals(b.reset_index(drop=True).astype(str))
+        except Exception:  # noqa: BLE001
+            same = False
+        if not same:
+            out.append(f"{name}: some figures in the {t} table differ from a fresh read")
+    if out:
+        (d / "career.ready.pickle").unlink(missing_ok=True)
+        kept_dir = store.root / "kept"
+        if kept_dir.is_dir():
+            shutil.rmtree(kept_dir, ignore_errors=True)
+    return out

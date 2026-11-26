@@ -844,3 +844,4 @@ a.btn { display: inline-block; text-decoration: none; }
 .modalbox .tt { font: 400 34px 'Bebas Neue'; letter-spacing: .06em; color: var(--ink); margin-bottom: 8px; }
 .field label.filebtn { font: 600 16px Inter; letter-spacing: 0; color: var(--ink); cursor: pointer; }
 table.dct td { font: 400 15px/1.4 Inter; color: var(--soft); vertical-align: top; } table.dct small { color: var(--dim); }
+.toast.good { border-left-color: var(--win); }

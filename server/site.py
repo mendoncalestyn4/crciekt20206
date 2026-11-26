@@ -160,6 +160,34 @@ class Site:
             self.store.save_settings(s)
         return r
 
+    def update_named(self, name: str, change):
+        """`update_settings` for a career by name (the folder watcher's career may not be the one on screen)."""
+        with self._lock:
+            _, s = self.store.load_settings(name, fresh=True)
+            out = change(s)
+            self.store.save_settings(s)
+        return out
+
+    def alerts(self, career: Career, added: list[str]) -> list[dict]:
+        """The new alerts for these new matches (ccstats/alerts.py), each said once, and kept in the log the daily
+        summary reads."""
+        from ccstats import alerts as AL
+        s = self.settings(career.name)
+        if s is None:
+            return []
+        teams = [t for t in s.my_teams]
+        found, seen = AL.check(career, added, teams, list(s.goals), dict(s.alerts_seen))
+        now = time.time()
+        log = [dict(at=now, kind="matches", title="New matches", text=f"{len(added)} new match{'es' if len(added) != 1 else ''}")] \
+            if added else []
+        log += [dict(at=now, **a) for a in found]
+
+        def put(x):
+            x.alerts_seen = seen
+            x.alert_log = (list(x.alert_log) + log)[-400:]
+        self.update_named(career.name, put)
+        return found
+
     def update_settings(self, change):
         """Change the career's saved settings in one step (read fresh, `change(settings)`, saved), so two changes at
         once never lose one another. Returns what `change` returns. The current site reads the same file."""
@@ -242,7 +270,18 @@ class Site:
                     records = new_records(res.career, res.added)[:5]
                 except Exception:  # noqa: BLE001 - the records must never stop the news of new matches
                     records = []
-                events.append(dict(type="matches", career=res.career.name, added=len(res.added), records=records))
+                try:   # goals reached, series won, milestones, career bests, streaks, ranking moves (stage 4)
+                    alerts = self.alerts(res.career, res.added)[:8]
+                except Exception:  # noqa: BLE001 - an alert must never stop the news of new matches
+                    alerts = []
+                if records:
+                    try:
+                        self.update_named(res.career.name, lambda x: setattr(x, "alert_log", (list(x.alert_log) + [
+                            dict(at=time.time(), kind="record", title="New record!", text=r) for r in records])[-400:]))
+                    except Exception:  # noqa: BLE001
+                        pass
+                events.append(dict(type="matches", career=res.career.name, added=len(res.added), records=records,
+                                   alerts=alerts))
             if res.failed:
                 events.append(dict(type="failed", career=res.career.name,
                                    files=[dict(file=f, reason=why) for f, why in res.failed]))

@@ -27,6 +27,7 @@ from starlette.staticfiles import StaticFiles
 
 from ccstats import depth as DP
 from ccstats import datacheck
+from ccstats.local import RECHECK_EVERY, recheck
 from ccstats import keep as KEEP
 from ccstats import logos as LG
 from ccstats import search as SR
@@ -541,6 +542,63 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         p = request.query_params.get("player", "")
         data = await _with_career(lambda c: {"teams": datacheck.teams_of(c, p)})()
         return _json(data) if data is not None else _error("No career is open yet.", 404)
+
+    # ------------------------------------------------------------------ the daily summary (stage 4)
+    async def daily_(request: Request):
+        """The first time you open the site each day: what happened since you last looked (matches, records,
+        milestones, goals). POST marks it seen for today."""
+        def go():
+            c = site.career()
+            if c is None:
+                return None
+            s = site.settings(c.name)
+            if s is None:
+                return {"show": False}
+            today = time.strftime("%Y-%m-%d")
+            dy = dict(s.daily or {})
+            if request.method == "POST":
+                site.update_settings(lambda x: setattr(x, "daily", {"day": today, "at": time.time()}))
+                return {"show": False}
+            if dy.get("day") == today:
+                return {"show": False}
+            since = float(dy.get("at") or 0)
+            if not since:   # the very first day: nothing to sum up yet, start counting from now
+                site.update_settings(lambda x: setattr(x, "daily", {"day": today, "at": time.time()}))
+                return {"show": False}
+            log = [x for x in (s.alert_log or []) if float(x.get("at", 0)) > since]
+            if not log:
+                site.update_settings(lambda x: setattr(x, "daily", {"day": today, "at": time.time()}))
+                return {"show": False}
+            matches = sum(int(str(x["text"]).split(" ")[0]) for x in log if x["kind"] == "matches" and str(x["text"]).split(" ")[0].isdigit())
+            groups: dict = {}
+            for x in log:
+                if x["kind"] != "matches":
+                    groups.setdefault(x["title"], []).append(x["text"])
+            return {"show": True, "since": time.strftime("%a %d %b, %H:%M", time.localtime(since)), "matches": matches,
+                    "groups": [{"title": k, "items": v[-8:], "more": max(0, len(v) - 8)} for k, v in groups.items()]}
+        data = await anyio.to_thread.run_sync(go)
+        return _json(data or {"show": False})
+
+    RECHECK = {"busy": False}
+
+    def _weekly_recheck() -> None:
+        """Once a week, while the site is idle: every number worked out again from scratch and compared (your pick)."""
+        st = site.store
+        last = float(st.preferences().get("last_recheck") or 0)
+        if time.time() - last < RECHECK_EVERY or RECHECK["busy"]:
+            return
+        RECHECK["busy"] = True
+        try:
+            for name in site.names():
+                try:
+                    for what in recheck(st, name):
+                        problems.add("server", "weekly recheck", what + ": put right (worked out afresh)", career=name)
+                        site.forget(name)
+                except Exception as e:  # noqa: BLE001 - a career that can't be rechecked is noted, never stops the site
+                    problems.add("server", "weekly recheck", f"Couldn't recheck: {type(e).__name__}: {e}", career=name)
+            st.save_preference("last_recheck", time.time())
+        finally:
+            RECHECK["busy"] = False
 
     # ------------------------------------------------------------------ Fixtures (stage 4)
     def _fixtures(c, q):
@@ -1165,6 +1223,16 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                                 problems.add("scorecard", f["file"], f["reason"], career=e["career"])
                 # a new start, new matches, or another career opened: get every page ready (again)
                 if first or any(e.get("type") == "matches" for e in found) or (site.current() or "") != WARM["career"]:
+                    if first:   # the alerts start from where things stand now (nothing old pops up)
+                        def prime():
+                            c0 = site.career()
+                            s0 = site.settings(c0.name) if c0 is not None else None
+                            if s0 is not None and not (s0.alerts_seen or {}).get("started"):
+                                site.alerts(c0, [])
+                        try:
+                            await anyio.to_thread.run_sync(prime)
+                        except Exception:  # noqa: BLE001
+                            pass
                     first = False
                     WARM["career"] = site.current() or ""
                     asyncio.get_running_loop().run_in_executor(None, warm)
@@ -1173,6 +1241,8 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                     c = site.career()
                     if c is not None:
                         await anyio.to_thread.run_sync(lambda: save_kept(c, every=60))
+                    if ASKING[0] == 0 and not DCSTATE["busy"]:   # the weekly full recheck, only while idle
+                        asyncio.get_running_loop().run_in_executor(None, _weekly_recheck)
                 hub.publish({"type": "checked", "at": time.time(), "folders": len(site.folders())})
             except Exception:  # noqa: BLE001 - a check that fails is tried again next time
                 pass
@@ -1242,6 +1312,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/fixtures", fixtures_, methods=["GET", "POST"]),
         Route("/api/settings", settings_, methods=["GET", "POST"]),
         Route("/api/datacheck", datacheck_, methods=["GET", "POST"]),
+        Route("/api/daily", daily_, methods=["GET", "POST"]),
         Route("/api/datacheck/teams", datacheck_teams),
         Route("/api/upload", upload_, methods=["POST"]),
         Route("/api/careers/{name}/file", career_file),

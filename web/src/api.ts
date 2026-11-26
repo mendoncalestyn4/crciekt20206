@@ -133,7 +133,8 @@ export type StyleGuide = {
   squad?: SquadRow[] | null;
 };
 
-export type Live = { type: "matches"; career: string; added: number; records: string[] }
+export type Live = { type: "matches"; career: string; added: number; records: string[]; alerts?: { kind: string; title: string; text: string }[] }
+  | { type: "datacheck"; career: string; message: string } | { type: "problem"; what: string }
   | { type: "failed"; career: string; files: { file: string; reason: string }[] }
   | { type: "checked"; at: number; folders: number };
 

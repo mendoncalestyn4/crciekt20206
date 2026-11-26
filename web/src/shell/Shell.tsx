@@ -1,6 +1,6 @@
 // The frame of every page: the rail with the nine sections, the live news of new matches, the search box (Ctrl K),
 // and your team's colours.
-import { TeamsAsk } from "../pages/Settings";
+import { Daily, TeamsAsk } from "../pages/Settings";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useSearchParams } from "react-router";
@@ -34,7 +34,7 @@ const ShellContext = createContext<Shared>({ career: null, noCareer: false, open
   logos: { teams: new Set(), comps: new Set() } });
 export const useShell = () => useContext(ShellContext);
 
-type Toast = { id: number; kind: "new" | "rec" | "bad"; title: string; text: string };
+type Toast = { id: number; kind: "new" | "rec" | "bad" | "good"; title: string; text: string };
 
 /** The top of a page: title and where you are, choices, the date in your career, the search box. */
 export function Head({ title, crumb, chips, on = 0, onChip }: {
@@ -117,6 +117,7 @@ export function Shell({ children }: { children: ReactNode }) {
       else if (e.type === "matches") {
         toast("new", "New matches", `${e.added} new match${e.added > 1 ? "es" : ""} added to ${e.career}`);
         e.records.forEach((r) => toast("rec", "New record!", r));
+        (e.alerts ?? []).forEach((a) => toast(a.kind === "streak" && a.title.startsWith("A losing") ? "bad" : "good", a.title, a.text));
         void qc.invalidateQueries();
       } else if (e.type === "failed") {
         toast("bad", "Couldn't read", `${e.files.length} file${e.files.length > 1 ? "s" : ""} couldn't be read: ${e.files.map((f) => f.file).join(", ")}`);
@@ -157,6 +158,7 @@ export function Shell({ children }: { children: ReactNode }) {
         {finder && <Finder close={() => setFinder(false)} keep={keep} />}
         <PlayerMenu keep={keep} />
         <TeamsAsk />
+        <Daily />
         {toasts.length > 0 && <div className="toasts">{toasts.map((x) => (
           <div key={x.id} className={`toast ${x.kind}`}><div><b>{x.title}</b>{x.text}</div>
             <button onClick={() => setToasts((ts) => ts.filter((y) => y.id !== x.id))} aria-label="Close">✕</button></div>))}</div>}
