@@ -197,3 +197,68 @@ def test_whos_fading_picks_only_clear_drops_of_your_players(c):
     assert out["rows"][0]["team"] == "England" and out["rows"][1]["drop"] == f"{-(cut + 2):+.1f}"
     none = IP._fading(c, sec, "2027", bat, pd.DataFrame(), ["Nobody FC"], 5)
     assert "none" in none and "rows" not in none
+
+
+# --------------------------------------------------------------------------- selection review
+@pytest.fixture(scope="module")
+def demo():
+    """The made-up IPL (two full seasons): enough matches per team for runs of five."""
+    from ccstats.demo_league import generate
+    c = Career.build("demo", [(n, t.encode()) for n, t in generate((2026, 2027))])
+    c.count_fielding = False
+    return c
+
+
+def _sel_case(c):
+    """A team and competition with 7+ matches, and its XIs in order."""
+    from ccstats import selection as SEL
+    m = c.matches
+    for sec in m.section.unique():
+        here = m[m.section == sec]
+        for team in sorted(set(here.home) | set(here.away)):
+            xis = SEL._xis(c, here.match_id, team)
+            if len(xis) >= 7:
+                return sec, team, xis
+    raise AssertionError("no team with 7 matches in a competition")
+
+
+def test_selection_review_dropped_and_kept_on_made_cases(demo):
+    c = demo
+    import copy
+    from ccstats import selection as SEL
+    from ccstats.stats import KIND
+    sec, team, xis = _sel_case(c)
+    kind = KIND.get(c.matches[c.matches.section == sec].format.iloc[0], "one")
+    cc = copy.copy(c)
+    cc.batting = c.batting.copy()
+    # dropped: a player given a good score in one match and left out of the next (the made-up league keeps one XI,
+    # so his line in the next match is taken off the card here)
+    i, gone = 2, sorted(xis[2][2] & xis[3][2])[0]
+    cc.batting = cc.batting.drop(cc.batting.index[(cc.batting.match_id == xis[3][0]) & (cc.batting.player == gone)])
+    rows = cc.batting.index[(cc.batting.match_id == xis[i][0]) & (cc.batting.player == gone) & (cc.batting.team == team)]
+    cc.batting.loc[rows[0], ["runs", "did_bat"]] = [SEL.GOOD_RUNS[kind] + 1, True]
+    r = SEL.review(cc, team, sec)
+    hit = [x for x in r["dropped"] if x["player"] == gone and x["match_id"] == xis[i][0]]
+    assert hit and hit[0]["next_id"] == xis[i + 1][0] and f"{SEL.GOOD_RUNS[kind] + 1} runs" in hit[0]["did"]
+    cc.batting = c.batting.copy()                                            # back to the real cards for the next case
+    # kept: someone in 6 XIs in a row, given 5 low scores, still in the 6th
+    for j in range(len(xis) - 5):
+        common = set.intersection(*[x[2] for x in xis[j:j + 6]])
+        if common:
+            p = sorted(common)[0]
+            break
+    for k in range(j, j + 5):
+        idx = cc.batting.index[(cc.batting.match_id == xis[k][0]) & (cc.batting.player == p) & (cc.batting.team == team)]
+        cc.batting.loc[idx, ["runs", "did_bat"]] = [1, True]
+    r = SEL.review(cc, team, sec)
+    kept = [x for x in r["kept"] if x["player"] == p and "innings" in x["did"]]
+    assert any("(1, 1, 1, 1, 1)" in x["did"] and x["next_id"] == xis[j + 5][0] for x in kept)
+
+
+def test_selection_changes_counted_by_hand(demo):
+    c = demo
+    from ccstats import selection as SEL
+    sec, team, xis = _sel_case(c)
+    ids = c.matches[c.matches.section == sec].match_id
+    by_hand = sum(len(b[2] - a[2]) for a, b in zip(xis, xis[1:])) / (len(xis) - 1)
+    assert abs(SEL.changes(c, ids, team) - by_hand) < 1e-9

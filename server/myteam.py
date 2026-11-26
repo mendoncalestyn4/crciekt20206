@@ -435,3 +435,34 @@ def whole_career(career) -> dict:
     return dict(matches=len(m), sections=int(m.section.nunique()), seasons=int(m.season.nunique()),
                 players=int(career.batting.player.nunique()), runs=int(career.innings.runs.sum()),
                 wickets=int(career.innings.wickets.sum()), headlines=E.headlines(career))
+
+
+def selection(career, team: str) -> dict:
+    """The Selection tab on My team (stage 5): in every competition the team plays, who was dropped straight after a
+    good score, who was kept through a poor run, and how often the side changes against the other teams."""
+    from ccstats import selection as SEL
+    out = []
+    for sec in in_order(career.matches, MT.sections_of(career, team)):   # the agreed order
+        r = SEL.review(career, team, sec)
+        row = dict(section=sec, matches=r["matches"], none="",
+                   dropped=[dict(player=x["player"], did=x["did"], date=x["date"], id=x["match_id"], left_out=x["left_out"],
+                                 next_id=x["next_id"]) for x in r["dropped"][:12]],
+                   kept=[dict(player=x["player"], did=x["did"], date=x["date"], id=x["match_id"], kept_for=x["kept_for"],
+                              next_id=x["next_id"]) for x in r["kept"][:12]],
+                   more_dropped=max(0, len(r["dropped"]) - 12), more_kept=max(0, len(r["kept"]) - 12))
+        if r["matches"] < 2:
+            row["none"] = "Fewer than two matches here yet: nothing to compare."
+        elif r["changes"] is not None:
+            row["changes"] = (f"{team} bring in {r['changes']:.1f} new player{'s' if round(r['changes'], 1) != 1 else ''} a match "
+                              f"on average here" + (f"; the other teams {r['others']:.1f}" if r["others"] is not None else "")
+                              + (": a settled side." if r["others"] is not None and r["changes"] < r["others"] - 0.3 else
+                                 ": more changes than most." if r["others"] is not None and r["changes"] > r["others"] + 0.3
+                                 else "."))
+        out.append(row)
+    from ccstats import selection as SEL2
+    rules = (f"A good score: {SEL2.GOOD_RUNS['multi']}+ runs in Tests and one-day games, {SEL2.GOOD_RUNS['t20']}+ in T20s, or "
+             f"{SEL2.GOOD_WKTS['one']}+ wickets in a match ({SEL2.GOOD_WKTS['multi']}+ in multi-day games), then left out of "
+             f"the next match. A poor run: {SEL2.RUN} innings in a row under {SEL2.POOR_RUNS['one']} (under "
+             f"{SEL2.POOR_RUNS['t20']} in T20s), or {SEL2.RUN} bowling matches in a row without a wicket, and still picked. "
+             "The scorecards don't say why (an injury, a rest, a new series): this is what happened, for you to judge.")
+    return SG.clean(dict(team=team, sections=out, rules=rules))

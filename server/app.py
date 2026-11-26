@@ -694,6 +694,22 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
             return _error("That team hasn't played in this career.", 404)
         return _json(data) if data is not None else _error("No career is open yet.", 404)
 
+    async def selection_(request: Request):
+        """My team's Selection tab (stage 5): dropped after a good score, kept through a poor run, how often it changes."""
+        q = request.query_params
+
+        def make(c):
+            order = myteam.teams_by_latest(c, site.my_teams(c))
+            team = q.get("team", "") or (order[0] if order else styleguide.pick_team(c, []) or "")
+            if team not in set(c.matches.home) | set(c.matches.away):
+                raise KeyError(team)
+            return kept(c, ("selection", team), lambda: myteam.selection(c, team))
+        try:
+            data = await _with_career(make)()
+        except KeyError:
+            return _error("That team hasn't played in this career.", 404)
+        return _json(data) if data is not None else _error("No career is open yet.", 404)
+
     # ------------------------------------------------------------------ remembered picks
     def _with_memory(c, q, kinds) -> dict:
         """The page's own choices, with the section, season, team or competition you last picked on any page as the
@@ -1402,6 +1418,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         Route("/api/problems", problems_, methods=["GET", "POST"]),
         Route("/api/remember", remember_, methods=["POST"]),
         Route("/api/program", program_, methods=["GET", "POST"]),
+        Route("/api/selection", selection_),
         Route("/api/warmup", warmup_),
     ]
     if (web / "assets").is_dir():   # the website's files, named after their contents: kept by the browser for good

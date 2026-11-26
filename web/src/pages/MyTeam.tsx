@@ -4,7 +4,7 @@
 // national side and a franchise, the chips at the top switch between them; it opens on whichever played last.
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { get, type MyTeam as Data, type Result, type ScoutingPage } from "../api";
+import { get, type MyTeam as Data, type Result, type ScoutingPage, type SelectionPage } from "../api";
 import { Explain, Lamps, Logo, Missing, Name, Num, Pick, PName, Tile } from "../kit/base";
 import { SquadTable, Story, Ticker, TopList } from "../kit/blocks";
 import { RankTrack, Ring , TugOfWar } from "../kit/charts";
@@ -26,7 +26,8 @@ export function MyTeam() {
   const [params, setParams] = useSearchParams();
   const go = useNavigate();
   const keep = nation ? `?nation=${encodeURIComponent(nation)}` : "";
-  const team = params.get("team") ?? "", section = params.get("section") ?? "", scouting = params.get("view") === "scouting";
+  const team = params.get("team") ?? "", section = params.get("section") ?? "", view = params.get("view") ?? "";
+  const scouting = view === "scouting", selecting = view === "selection";
   const q = useQuery({ queryKey: ["myteam", team, section, career?.name], enabled: Boolean(career),
     queryFn: () => get<Data>(`/api/myteam?team=${encodeURIComponent(team)}&section=${encodeURIComponent(section)}`), retry: false });
   const box = useInbox();
@@ -35,7 +36,10 @@ export function MyTeam() {
   const scTeam = q.data?.missing.everything ? "" : q.data?.team ?? "";
   const sc = useQuery({ queryKey: ["scouting", scTeam, career?.name], enabled: Boolean(career) && scouting && Boolean(scTeam), retry: false,
     queryFn: () => get<ScoutingPage>(`/api/scouting?team=${encodeURIComponent(scTeam)}`) });
-  useReady(Boolean(q.data || q.error || noCareer) && (!scouting || !scTeam || Boolean(sc.data || sc.error)), `${team}|${section}|${scouting}`);
+  const sel = useQuery({ queryKey: ["selection", scTeam, career?.name], enabled: Boolean(career) && selecting && Boolean(scTeam), retry: false,
+    queryFn: () => get<SelectionPage>(`/api/selection?team=${encodeURIComponent(scTeam)}`) });
+  useReady(Boolean(q.data || q.error || noCareer) && (!scouting || !scTeam || Boolean(sc.data || sc.error))
+    && (!selecting || !scTeam || Boolean(sel.data || sel.error)), `${team}|${section}|${view}`);
   const set = (k: string, v: string) => { const p = new URLSearchParams(params); if (v) p.set(k, v); else p.delete(k); if (k === "team") p.delete("section"); setParams(p); };
   if (noCareer) return <><Head title={greeting()} crumb="No career open yet" /><FirstStartPage /></>;
   if (q.error) return <><Head title={greeting()} crumb="My team" /><div className="grid"><Tile span={12}><Missing why={String(q.error)} /></Tile></div></>;
@@ -57,10 +61,10 @@ export function MyTeam() {
       <Head title={greeting()} crumb={`${d.team} · ${d.mine ? "your team" : team && !d.asked ? "not one of your teams" : "the team with the most matches"}${label ? ` · ${label}` : ""}`}
         chips={chips} on={chips ? chips.indexOf(d.team) : 0} onChip={chips ? (i) => set("team", chips[i]!) : undefined} />
       <div className="grid">
-        <div className="itabs">{["Season", "Scouting"].map((x) => (
-          <button key={x} className={(x === "Scouting") === scouting ? "on" : ""} onClick={() => set("view", x === "Scouting" ? "scouting" : "")}>{x}</button>))}</div>
+        <div className="itabs">{[["Season", ""], ["Scouting", "scouting"], ["Selection", "selection"]].map(([x, v]) => (
+          <button key={x} className={view === v || (!["scouting", "selection"].includes(view) && v === "") ? "on" : ""} onClick={() => set("view", v!)}>{x}</button>))}</div>
         {asked}
-        {scouting ? <Scouting sc={sc.data} error={sc.error} team={d.team} keep={keep} /> : <>
+        {selecting ? <Selection s={sel.data} error={sel.error} team={d.team} keep={keep} /> : scouting ? <Scouting sc={sc.data} error={sc.error} team={d.team} keep={keep} /> : <>
         {!d.mine && <Tile span={12} title="Pick your team"><div className="plain">You haven't said which teams you play as, so this shows the team
           with the most matches. Pick yours in <Link to={`/settings?tab=Your%20teams${nation ? `&nation=${encodeURIComponent(nation)}` : ""}`}>Settings → Your teams</Link>.</div></Tile>}
         {(d.datacheck ?? []).length > 0 && <Tile span={12} title="Worth a minute of your time"
@@ -276,6 +280,35 @@ function Scouting({ sc, error, team, keep }: { sc?: ScoutingPage; error: unknown
       <Tile key={s.section} span={s.advice.length ? 12 : 6} title={`${fmtOf(s.section)}${s.series ? ` · after ${s.series}` : ""}`}
         right={s.advice.length ? `${s.advice.length} struggling` : undefined}>
         {s.advice.length ? <AdviceList items={s.advice} keep={keep} /> : <div className="plain">{s.none}</div>}
+      </Tile>))}
+  </>;
+}
+
+
+/** The Selection tab (stage 5): every competition the team plays, who was dropped straight after a good score, who was
+ * kept through a poor run, and how often the side changes against the other teams. */
+function Selection({ s, error, team, keep }: { s?: SelectionPage; error: unknown; team: string; keep: string }) {
+  if (error) return <Tile span={12}><Missing why={String(error)} /></Tile>;
+  if (!s) return <div className="empty" style={{ gridColumn: "span 12" }}>Going through {team}'s team sheets…</div>;
+  return <>
+    <Tile span={12} title={`Selection review · ${s.team}`}><div className="plain">Every XI {s.team} picked, straight from the scorecards.</div>
+      <div className="note">{s.rules}</div></Tile>
+    {s.sections.map((x) => (
+      <Tile key={x.section} span={12} title={fmtOf(x.section)} right={`${x.matches} match${x.matches === 1 ? "" : "es"}`}>
+        {x.none ? <div className="plain">{x.none}</div> : <>
+          {x.changes && <div className="plain" style={{ marginBottom: 8 }}>{x.changes}</div>}
+          <div className="two">
+            <div><div className="glabel">Dropped after a good score{x.more_dropped ? ` · newest ${x.dropped.length} of ${x.dropped.length + x.more_dropped}` : ""}</div>
+              {x.dropped.length ? <table className="c"><tbody>{x.dropped.map((r) => (
+                <tr key={r.player + r.id}><td><PName p={r.player} px={20} /></td><td><Link className="why lk" to={`/matches/${r.id}${keep}`}>{r.did} · {dayY(r.date)}</Link>
+                  <div className="how">left out <Link className="lk" to={`/matches/${r.next_id}${keep}`}>{dayY(r.left_out)}</Link></div></td></tr>))}</tbody></table>
+                : <div className="note">Nobody dropped straight after a good score.</div>}</div>
+            <div><div className="glabel">Kept through a poor run{x.more_kept ? ` · newest ${x.kept.length} of ${x.kept.length + x.more_kept}` : ""}</div>
+              {x.kept.length ? <table className="c"><tbody>{x.kept.map((r) => (
+                <tr key={r.player + r.id + r.did}><td><PName p={r.player} px={20} /></td><td><span className="why">{r.did}</span>
+                  <div className="how">still picked <Link className="lk" to={`/matches/${r.next_id}${keep}`}>{dayY(r.kept_for)}</Link></div></td></tr>))}</tbody></table>
+                : <div className="note">Nobody kept through a poor run.</div>}</div>
+          </div></>}
       </Tile>))}
   </>;
 }
