@@ -1494,6 +1494,12 @@ stage 4 is with you. About 6–7 days.
     add up. A quiet note stays on that match's scorecard page ("figures put right by the site") so any number can be
     traced. Only a file that isn't a scorecard at all (empty or broken) is still named, since there's nothing in it to
     count.
+15. **A stop for your new scorecards, then a full deep test on them (your plan, 26 November):** when stage 5's
+    building is finished, work stops and you're told. You send your newest scorecards (a fresh save), and everything
+    is tested on those alone, the saves used until now left aside: every page, tab, choice and chart for every team
+    and competition in it, every new piece, Data check, Fixtures, the program itself (opening, updates, the tour), the
+    numbers counted again by hand and against the current site, with every problem found fixed at the root and
+    tested again until none is left. Only then stage 5's final checks, screenshots and your sign-off.
 Not picked: compare two careers, the colour-blind check. Stage 5's list is locked here (your choice, 26 November); more
 ideas wait for your review after stage 6.
 
