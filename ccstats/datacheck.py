@@ -175,8 +175,17 @@ def change(career, action: str, b: dict) -> tuple[Fixes, str]:
 def your_changes(career) -> list[dict]:
     fx, m = career.fixes, career.matches.set_index("match_id")
 
+    left = career.leftovers.set_index("match_id") if len(career.leftovers) else None
+
     def game(mid: str) -> str:
-        return f"{m.date[mid]:%d %b %Y} {m.home[mid]} v {m.away[mid]}" if mid in m.index else "a match"
+        """A match by its date and teams, whether it counts or is left out (a left-out one is no longer among the
+        matches, so it's found among the games left out)."""
+        if mid in m.index:
+            return f"{m.date[mid]:%d %b %Y} {m.home[mid]} v {m.away[mid]}"
+        if left is not None and mid in left.index:
+            r = left.loc[mid]
+            return f"{pd.Timestamp(r.date):%d %b %Y} {r.home} v {r.away}"
+        return "a match no longer in your scorecards"
     out = [dict(kind="split", key=s, text=f"**{s['player']}** at {s['team']} is a separate player: **{s['new_name']}**")
            for s in fx.splits]
     out += [dict(kind="merge", key=a, text=f"**{a}** counts as **{b}**") for a, b in fx.merges.items()]

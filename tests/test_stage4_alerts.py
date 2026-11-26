@@ -89,13 +89,17 @@ def test_alerts_arrive_with_new_matches_and_are_logged(tmp_path):
         assert store.load_settings("My career")[1].alerts_seen.get("started")
         for f in files[-6:]:
             shutil.copy(f, folder / f.name)
+        # the site reads scorecards as they appear, so the six can come in more than one batch (as from the game)
+        def counted(log):
+            return sum(int(x["text"].split(" ")[0]) for x in log if x["kind"] == "matches")
         for _ in range(300):
             log = store.load_settings("My career")[1].alert_log
-            if any(x["kind"] == "matches" for x in log):
+            if counted(log) >= 6:
                 break
             time.sleep(0.1)
         log = store.load_settings("My career")[1].alert_log
-        assert any(x["kind"] == "matches" and x["text"].startswith("6 new match") for x in log)
+        assert counted(log) == 6, log
+        assert all(x["text"].endswith(("new match", "new matches")) for x in log if x["kind"] == "matches")
     finally:
         s.stop()
 
@@ -131,3 +135,19 @@ def test_weekly_recheck_finds_and_puts_right(tmp_path):
     diff = recheck(store, "My career")
     assert diff and "batting" in diff[0] and not f.exists()
     assert recheck(store, "My career") == []
+
+
+def test_a_series_whose_length_isnt_printed_never_stops_the_alerts():
+    """Found by the deep check on your career: a series with no length printed stopped every alert for that batch."""
+    import numpy as np
+    c = build(FIXTURES)
+    team = "England"
+    m = c.matches
+    sid = m[((m.home == team) | (m.away == team)) & (m.series_id.fillna("") != "")].series_id.iloc[0]
+    _, seen = AL.check(c, [], [team], [], {})
+    full, _ = AL.check(c, list(m.source), [team], [], dict(seen, said=[]))
+    c.matches = m.assign(series_length=np.where(m.series_id == sid, np.nan, m.series_length))
+    out, _ = AL.check(c, list(c.matches.source), [team], [], dict(seen, said=[]))
+    # every other alert still arrives; only that series' "won" can't be judged without its length
+    assert [a for a in full if a["kind"] != "series"] == [a for a in out if a["kind"] != "series"]
+    assert len([a for a in full if a["kind"] != "series"]) > 0

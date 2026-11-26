@@ -43,7 +43,7 @@ export function DataCheck() {
   const [wasBusy, setWasBusy] = useState(false);
   useEffect(() => { if (wasBusy && !busy) void qc.invalidateQueries(); setWasBusy(busy); }, [busy]);   // eslint-disable-line react-hooks/exhaustive-deps
   const act = useMutation({ mutationFn: (b: Record<string, unknown>) => post<{ message: string }>("/api/datacheck", b),
-    onSuccess: (r) => { setSaid(r.message); void qc.invalidateQueries({ queryKey: ["datacheck"] }); },
+    onSuccess: (r) => { setSaid(r.message); return qc.invalidateQueries({ queryKey: ["datacheck"] }); },
     onError: (e) => setSaid(`⚠️ ${e instanceof Error ? e.message : String(e)}`) });
   useReady(Boolean(q.data || q.error || noCareer), tab);
   const head = <Head title="Data check" crumb="Check and fix" />;

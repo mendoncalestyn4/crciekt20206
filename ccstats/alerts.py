@@ -58,11 +58,12 @@ def check(career, added: list[str], my_teams: list[str], goals: list[dict], seen
         here = new[(new.home == team) | (new.away == team)]
         # ------------------------------------------------------------ series won (and titles)
         for r in here.itertuples():
-            if r.series_id and r.series_length and int(r.series_length) >= 2:
+            n_games = int(r.series_length) if pd.notna(r.series_length) and r.series_length else 0   # not always printed
+            if r.series_id and n_games >= 2:
                 s = tm[tm.series_id == r.series_id]
                 won = sum(_outcome(x, team) == "W" for x in s.itertuples())
                 lost = sum(_outcome(x, team) == "L" for x in s.itertuples())
-                n = int(r.series_length)
+                n = n_games
                 if won > n // 2 or (len(s) >= n and won > lost):
                     opp = r.away if r.home == team else r.home
                     say(f"series|{team}|{r.series_id}", "series", "Series won",

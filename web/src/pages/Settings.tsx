@@ -28,7 +28,7 @@ function useAct(onDone?: (r: Report) => void) {
   const [said, setSaid] = useState<{ ok: boolean; text: string } | null>(null);
   const m = useMutation({
     mutationFn: (b: Record<string, unknown>) => post<Report>("/api/settings", b),
-    onSuccess: (r) => { setSaid(r.message ? { ok: true, text: r.message } : null); onDone?.(r); void qc.invalidateQueries(); },
+    onSuccess: (r) => { setSaid(r.message ? { ok: true, text: r.message } : null); onDone?.(r); return qc.invalidateQueries(); },
     onError: (e) => setSaid({ ok: false, text: e instanceof Error ? e.message : String(e) }),
   });
   return { run: (b: Record<string, unknown>) => m.mutateAsync(b).catch(() => undefined), busy: m.isPending, said, setSaid };

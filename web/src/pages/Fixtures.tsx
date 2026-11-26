@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { get, type GridT, type CalMonth, type Outcome, post } from "../api";
-import { Explain, Lamps, Logo, MatchLink, Missing, PName, Pick, three, Tile } from "../kit/base";
+import { Explain, Lamps, Logo, MatchLink, Missing, Pick, three, Tile } from "../kit/base";
 import { MonthGrid } from "../kit/calendar";
 import { EChart } from "../kit/EChart";
 import { look, ts } from "../kit/look";
@@ -90,7 +90,7 @@ export function Fixtures() {
   };
   const act = useMutation({
     mutationFn: (b: Record<string, unknown>) => post<{ message: string } & Record<string, unknown>>("/api/fixtures", { team: d?.team, ...b }),
-    onSuccess: (r) => { if (r.message) setSaid({ ok: true, text: r.message }); void qc.invalidateQueries(); },
+    onSuccess: (r) => { if (r.message) setSaid({ ok: true, text: r.message }); return qc.invalidateQueries(); },   // the buttons wait for the page as it now stands
     onError: (e) => setSaid({ ok: false, text: e instanceof Error ? e.message : String(e) }),
   });
   const run = (b: Record<string, unknown>) => act.mutateAsync(b).catch(() => undefined);
@@ -479,8 +479,8 @@ function ExtrasBox({ d, s, x, run, busy }: { d: Page; s: { series: string }; x: 
           {x.conditions && <><div className="plain"><b>{x.conditions_title}</b></div><Grid t={x.conditions} />{x.toss && <div className="note">{x.toss}</div>}</>}
           {x.conditions_none && <div className="note">{x.conditions_none}</div>}
           {x.travel_title && <><div className="plain" style={{ marginTop: 10 }}><b><T>{x.travel_title}</T></b></div>
-            {(x.travel_good ?? []).map((g) => <div key={g.player + g.text} className="plain"><PName p={g.player} px={19} /> {g.text}</div>)}
-            {(x.travel_worse ?? []).length > 0 && <div className="plain">Struggle away: {(x.travel_worse ?? []).map((g, i) => <span key={g.player}>{i ? ", " : ""}<PName p={g.player} px={19} /> {g.text}</span>)}</div>}
+            {(x.travel_good ?? []).map((g) => <div key={g.player + g.text} className="plain"><T>{`${g.player} ${g.text}`}</T></div>)}
+            {(x.travel_worse ?? []).length > 0 && <div className="plain">Struggle away: <T>{(x.travel_worse ?? []).map((g) => `${g.player} ${g.text}`).join(", ")}</T></div>}
             {x.travel_none && <div className="note">{x.travel_none}</div>}</>}
         </div>
       </div>
@@ -530,8 +530,8 @@ function SeriesTab({ d, b, keep, run, busy }: { d: Page; b: SeriesBody; keep: st
           <div className="note">Likeliest scores: {s.scorelines}</div>
           <div className="plain">Form in {s.format}s · {team} <Lamps seq={s.form[team] ?? []} /> · {s.opponent} <Lamps seq={s.form[s.opponent] ?? []} /> · {s.h2h}</div>
           <div className="two">{s.watch.map((w) => (
-            <div key={w.team} className="plain"><b>{w.team} to watch</b> (last {w.matches} {s.format}s): {[...w.bat.map(([p, v]) => <span key={"b" + p}><PName p={p} px={19} /> {v} runs, </span>),
-              ...w.bowl.map(([p, v]) => <span key={"w" + p}><PName p={p} px={19} /> {v} wkts, </span>)]}{!w.bat.length && !w.bowl.length ? "–" : ""}</div>))}</div>
+            <div key={w.team} className="plain"><b>{w.team} to watch</b> (last {w.matches} {s.format}s): <T>{[...w.bat.map(([p, v]) => `${p} ${v} runs`),
+              ...w.bowl.map(([p, v]) => `${p} ${v} wkts`)].join(", ") || "–"}</T></div>))}</div>
           {s.battles.length > 0 && <div className="plain">⚔️ <T>{s.battles.join("; ") + "."}</T></div>}
           {(s.pick.length > 0 || s.think.length > 0) && <div className="plain">{s.pick.length > 0 && <><b>Pick:</b> <T>{s.pick.join(", ") + "."}</T> </>}
             {s.think.length > 0 && <><b>Think again:</b> <T>{s.think.join(", ") + "."}</T></>}</div>}
@@ -546,19 +546,19 @@ function SeriesTab({ d, b, keep, run, busy }: { d: Page; b: SeriesBody; keep: st
         <Open key={s.series} title={`📋 ${s.title}`}>
           <div className="plain"><b>{s.result}</b> · {s.span}</div>
           {s.forecast && <div className="plain">{s.forecast}</div>}
-          {s.pos && <div className="plain">🏅 <b>Player of the Series: <PName p={s.pos.player} px={19} /></b> ({s.pos.team}) · {s.pos.text}</div>}
+          {s.pos && <div className="plain">🏅 <b>Player of the Series: <T>{s.pos.player}</T></b> ({s.pos.team}) · {s.pos.text}</div>}
           <div className="two">
-            <div className="plain"><b>Most runs</b>{s.top_bat.map(([p, t, v]) => <div key={p}><PName p={p} px={18} /> ({t}) {v}</div>)}</div>
-            <div className="plain"><b>Most wickets</b>{s.top_bowl.map(([p, t, v]) => <div key={p}><PName p={p} px={18} /> ({t}) {v}</div>)}</div>
+            <div className="plain"><b>Most runs</b>{s.top_bat.map(([p, t, v]) => <div key={p}><T>{`${p} (${t}) ${v}`}</T></div>)}</div>
+            <div className="plain"><b>Most wickets</b>{s.top_bowl.map(([p, t, v]) => <div key={p}><T>{`${p} (${t}) ${v}`}</T></div>)}</div>
           </div>
           {s.bits && <div className="plain"><T>{s.bits}</T></div>}
           {s.records.map((r) => <div key={r} className="plain">🏆 <T>{r}</T></div>)}
           {s.milestones.map((r) => <div key={r} className="plain">🎯 <T>{r}</T></div>)}
           <div className="plain">Matches: {s.matches.map((m, i) => <span key={m.id}>{i ? " · " : ""}<MatchLink id={m.id}>{m.date}</MatchLink></span>)}</div>
           {s.review && <div className="review"><div className="plain"><b>🧑‍🏫 Series review: {team}</b></div>
-            {s.review.use_more.length > 0 && <div className="plain"><b>📈 Use more:</b> {s.review.use_more.map((r, i) => <span key={r.player}>{i ? "; " : ""}<PName p={r.player} px={18} /> ({r.why})</span>)}</div>}
-            {s.review.drop.length > 0 && <div className="plain"><b>📉 Think about dropping:</b> {s.review.drop.map((r, i) => <span key={r.player}>{i ? "; " : ""}<PName p={r.player} px={18} /> ({r.why})</span>)}</div>}
-            {s.review.keep.length > 0 && <div className="plain"><b>✅ Keep:</b> {s.review.keep.map((p, i) => <span key={p}>{i ? ", " : ""}<PName p={p} px={18} /></span>)}</div>}
+            {s.review.use_more.length > 0 && <div className="plain"><b>📈 Use more:</b> <T>{s.review.use_more.map((r) => `${r.player} (${r.why})`).join("; ")}</T></div>}
+            {s.review.drop.length > 0 && <div className="plain"><b>📉 Think about dropping:</b> <T>{s.review.drop.map((r) => `${r.player} (${r.why})`).join("; ")}</T></div>}
+            {s.review.keep.length > 0 && <div className="plain"><b>✅ Keep:</b> <T>{s.review.keep.join(", ")}</T></div>}
             {s.review.table && <Grid t={s.review.table} />}
             <div className="note">{s.review.caption}</div></div>}
         </Open>))}
