@@ -80,6 +80,14 @@ how it was checked; a page isn't finished while any of its lines is open (your s
 - [ ] Goals suggested each season, across every goal kind, one click to add
 - [ ] Daily summary: the first open each day, what happened since last time (matches, records, milestones, goals)
 
+**Second batch picked (answer 21)**
+- [ ] Alerts: career best, streaks (wins 3, 5, 10; losses 3), ranking moves (team No. 1, player into the top 10)
+- [ ] Fixtures: how good the predictions are (chances recorded before each match, the favourite's record by format)
+- [ ] Fixtures: the last time v each upcoming opponent (result, top scorer, best bowler)
+- [ ] Fixtures: the tournament path (games left, what you need for the knockouts, likely opponents)
+- [ ] Backups test themselves (opened in the background; a broken one made again, noted on Problems)
+- [ ] Low disk warning before a backup
+
 ## Stage end
 - [ ] The full sweep on your 2,720 cards (every page, tab and form), junk and load, every server's error log
 - [ ] The stress test: adding, changing and deleting under load, two pages at once, a folder vanishing, a restore

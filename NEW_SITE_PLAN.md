@@ -1357,6 +1357,15 @@ Asked before building, as questions with the answers written out (your choice); 
     time, matches, records, milestones, goals). Not picked: the rest and rotation planner, the clash warning, next
     season's schedule suggested, the season-over alert, looking inside a backup, comparing two careers, career at a
     glance, new since your last visit.
+21. A second batch picked (new, your yes, 26 November): **alerts** for a career best (a player beats his own best
+    score or best bowling), streaks (your winning run reaching 3, 5 or 10, a losing run reaching 3) and ranking moves
+    (your team to No. 1 in a format, one of your players into the top 10 of the ratings); on **Fixtures**, how good
+    the predictions are (every match's chance recorded before it's played, then how often the favourite won, by
+    format), the last time v each upcoming opponent (result, top scorer, best bowler) and the tournament path (games
+    left, what you need to reach the knockouts, who you'd likely meet); for **safety**, backups that test themselves
+    (each opened in the background to check it restores; a broken one made again and noted on Problems) and a low
+    disk warning before a backup. Not picked: the folder-missing warning, renamed teams spotted, undo a restore for a
+    day, the changes log.
 
 ## Appendix: technical outline
 
