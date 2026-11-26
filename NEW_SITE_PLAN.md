@@ -1479,7 +1479,10 @@ full before it's built, with its checklist lines, tests and screenshots (stage 5
 11. **Your eras:** the stretches when your team was strongest by its ratings, named ("the 2029–31 era"), with that
     era's key players and results.
 12. **On this day** (My team): what happened on this date, by the game's calendar, in earlier seasons of your career.
-Not picked: compare two careers.
+13. **A short guided tour on first start:** the first time the program opens, about five pop-up tips point out the main
+    sections (My team, Players, Fixtures, Data check, the search bar); "Show me around again" in Settings.
+Not picked: compare two careers, the colour-blind check. Stage 5's list is locked here (your choice, 26 November); more
+ideas wait for your review after stage 6.
 
 Not wanted (26 November): finding next year's game by itself, keyboard shortcuts, table downloads, Windows
 notifications, a second safety copy, self-repair, the window remembered; nor bowler workload watch, record book
