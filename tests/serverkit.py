@@ -39,7 +39,9 @@ def png(path, colour):
 def played_in_order(folder):
     """File times in the order the matches were played (the game saves each scorecard as the match ends; the engine
     tells which match came last from them)."""
-    for i, p in enumerate(sorted(folder.glob("*.txt"), key=by_date)):
+    # (two matches on the same day: by name, so the order is the same on every machine; the folder's own listing
+    # order differs between Windows and Linux, found by the frozen copy on Windows)
+    for i, p in enumerate(sorted(folder.glob("*.txt"), key=lambda f: (by_date(f), f.name))):
         os.utime(p, (1_790_000_000 + i * 60, 1_790_000_000 + i * 60))
 
 
