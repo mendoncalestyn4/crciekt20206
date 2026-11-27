@@ -4,8 +4,10 @@ fails, unless the change is meant: then this is run again and the reason written
 
     python tools/freeze.py urls      # (rarely) open every page of the browser tests and note which answers they ask for
     python tools/freeze.py save "why the numbers changed"    # keep a new frozen copy, with the reason
+    python tools/freeze.py save-long "why"                   # the same for the 20-season career (the weekly check)
 
-The careers: "fixtures" (the test scorecards, played as India, as the browser tests have it)."""
+The careers: "fixtures" (the test scorecards, played as India, as the browser tests have it; every test run) and
+"long" (the 20-season made-up career, tests/longcareer.py; the weekly run)."""
 
 from __future__ import annotations
 
@@ -36,6 +38,31 @@ def site():
     store, _, _ = make_pc(tmp, team="India", files=[f for f in FIXTURES if f not in LATEST])
     store.save_preference("tour_done", True)
     return Live(create_app(store, web=ROOT / "web" / "dist", watch_every=0))
+
+
+def long_site(folder_files: list[Path]):
+    """The 20-season made-up career (tests/longcareer.py) served the same way."""
+    from server.app import create_app
+    from serverkit import Live, make_pc
+    tmp = Path(tempfile.mkdtemp(prefix="freeze-long-"))
+    store, _, _ = make_pc(tmp, team="India", files=folder_files)
+    store.save_preference("tour_done", True)
+    return Live(create_app(store, web=ROOT / "web" / "dist", watch_every=0))
+
+
+def long_urls() -> list[str]:
+    """The answers that mean something on the made-up career (no test-career player, team or match named)."""
+    return [u for u in json.loads(URLS.read_text()) if "name=" not in u and "team=" not in u and "/api/match/" not in u]
+
+
+def long_files() -> list[Path]:
+    import longcareer as LC
+    d = Path(tempfile.mkdtemp(prefix="long-files-"))
+    out = []
+    for name, text in LC.generate(seasons=20):
+        (d / name).write_text(text, encoding="utf-8")
+        out.append(d / name)
+    return out
 
 
 def clean(x):
@@ -118,6 +145,23 @@ def main() -> None:
         with (FROZEN / "CHANGES.md").open("a", encoding="utf-8") as f:
             f.write(f"- {date.today():%d %B %Y}: {why}\n")
         print(f"{len(got)} answers frozen")
+    elif what == "save-long":
+        why = " ".join(sys.argv[2:]).strip()
+        if not why:
+            sys.exit("say why the numbers changed: python tools/freeze.py save-long \"...\"")
+        live = long_site(long_files())
+        try:
+            got = ask(live, long_urls())
+        finally:
+            live.stop()
+        bad = [u for u, v in got.items() if isinstance(v, dict) and "error" in v]
+        if bad:
+            sys.exit(f"{len(bad)} answers failed, nothing frozen: {bad[:5]}")
+        with gzip.open(FROZEN / "long.json.gz", "wt", encoding="utf-8") as f:
+            json.dump(got, f, sort_keys=True, separators=(",", ":"))
+        with (FROZEN / "CHANGES.md").open("a", encoding="utf-8") as f:
+            f.write(f"- {date.today():%d %B %Y} (the 20-season career): {why}\n")
+        print(f"{len(got)} answers frozen for the 20-season career")
     else:
         sys.exit(__doc__)
 

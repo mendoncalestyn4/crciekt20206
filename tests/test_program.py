@@ -187,3 +187,16 @@ def test_the_program_reopens_where_you_left_off(live):
     for bad in ("/api/career", "http://elsewhere", "/" + "x" * 500):
         assert post(s, action="page", page=bad)[0] == 400
     assert PG.last_page(store.root) == "/teams/England?tab=Eras"
+
+
+def test_a_clear_message_when_it_cant_start(tmp_path, monkeypatch):
+    """The folder for your careers can't be made (a file is in its way): the program stops and says what happened and
+    what to do, never silently."""
+    bad = tmp_path / "not-a-folder"
+    bad.write_text("x")
+    said = tmp_path / "message.txt"
+    monkeypatch.setenv("STATS_PACK_HOME", str(bad))
+    monkeypatch.setenv("STATS_PACK_MESSAGE_TO", str(said))
+    assert PG.main(["--no-window"]) == 1
+    text = said.read_text(encoding="utf-8")
+    assert "couldn't start" in text and "What happened" in text and "What to do" in text

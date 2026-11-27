@@ -4,6 +4,7 @@
    window's page connects.
 2. Only one copy runs: starting it again doesn't start a second one; it hands over to the one running and stops.
 3. Closing the window closes the program: a minute after the last window goes, the program stops by itself.
+4. When it can't start, a message says what happened and what to do.
 
     python tools/program_check.py "dist/Cricket Captain Stats Pack/Cricket Captain Stats Pack.exe"
 
@@ -84,6 +85,16 @@ def main() -> int:
     t = time.time()
     wait("the program stopped after its window closed", lambda: first.poll() is not None or not alive(pid), 240)
     print(f"3. the window closed: the program stopped by itself {time.time() - t:.0f}s later")
+    # 4. a clear message when it can't start (its folder for your careers is a file, so nothing can be kept there)
+    bad = Path(tempfile.mkdtemp(prefix="program-check-bad-")) / "not-a-folder"
+    bad.write_text("x")
+    said = bad.parent / "message.txt"
+    r = subprocess.run([str(exe), "--no-window"], env=dict(os.environ, STATS_PACK_HOME=str(bad), STATS_PACK_MESSAGE_TO=str(said)),
+                       cwd=exe.parent, timeout=120)
+    text = said.read_text(encoding="utf-8") if said.is_file() else ""
+    if r.returncode != 1 or "couldn't start" not in text or "What to do" not in text:
+        raise SystemExit(f"FAILED: no clear message when it can't start (code {r.returncode}, said {text!r})")
+    print(f"4. can't start: the message says what happened and what to do ({text.strip()[:120]}…)")
     print("OK")
     return 0
 

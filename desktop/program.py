@@ -45,7 +45,13 @@ def build_info() -> dict:
 
 # --------------------------------------------------------------------------- messages and the window
 def message(title: str, text: str) -> None:
-    """A Windows message box (or the console elsewhere)."""
+    """A Windows message box (or the console elsewhere). For the checks only, STATS_PACK_MESSAGE_TO names a file the
+    message is written to instead (a box would wait for a click no one makes)."""
+    to = os.environ.get("STATS_PACK_MESSAGE_TO")
+    if to:
+        with open(to, "a", encoding="utf-8") as f:
+            f.write(f"{title}: {text}\n")
+        return
     if sys.platform == "win32":
         try:
             import ctypes
