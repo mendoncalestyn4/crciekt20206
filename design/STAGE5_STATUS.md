@@ -24,3 +24,14 @@ The owner paused for their usage limit and sends the new scorecards (the save pl
    NEW_SITE_PLAN.md item 15 and its additions (a) to (y), except (p), here and on Windows, with problems fixed as soon
    as found and everything run again at the end. The save goes to Windows through the project (the owner's yes).
 5. Then the switch-over, the final checks and screenshots, the plan's "Stage 5: what was built", and stage 6.
+
+## Deep test on the owner's save (5,796 scorecards, 2026-2040), from 27 November evening
+- Step 1 done: crash doubles (two crashes in Aug-Oct 2035). Fault fixed: a Test begun before a reload moved the
+  reload point back and set aside 2 genuine games (the LPL 2035 Qualifier 1); 26 crashed-try cards set aside, none
+  counted twice; permanent test.
+- Step 2 done: 57 problems -> 0 (50 false alarms: long team names, "1st InningsR"; 6 guessed figures reported twice;
+  1 card the game printed impossibly, now left out by itself, the owner's choice). 3 guesses checked by hand; 307
+  automatic splits right.
+- For step 6 (the owner's yes, 27 November): names that may be two players in different competitions (about 90, e.g.
+  M Khan for Pakistan and a Bangladeshi domestic side) listed on Data check with the reason, for the owner's click;
+  nothing changed by itself.
