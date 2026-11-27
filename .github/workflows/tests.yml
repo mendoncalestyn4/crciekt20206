@@ -20,12 +20,13 @@ concurrency:
 
 jobs:
   windows:
-    # every test, split over three Windows machines at once (each runs every third test), so a run takes about a
-    # third of the time; together they are exactly every test, each once
+    # every test, split over six Windows machines at once (each runs every sixth test; your idea of 27 November: more
+    # machines, each with less to do), so a run takes about a sixth of the time; together they are exactly every
+    # test, each once
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4, 5, 6]
     runs-on: windows-latest
     timeout-minutes: 120
     steps:
@@ -43,6 +44,6 @@ jobs:
         run: python -c "import sys, pandas; print(sys.version); print('pandas', pandas.__version__)"
       - name: Every test (this machine's third)
         env:
-          TEST_SHARD: ${{ matrix.shard }}/3
+          TEST_SHARD: ${{ matrix.shard }}/6
           WEEKLY: ${{ github.event_name != 'push' && '1' || '0' }}       # the weekly run, and a run started by hand
         run: python -m pytest -q -p no:cacheprovider
