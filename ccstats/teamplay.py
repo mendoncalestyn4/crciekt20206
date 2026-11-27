@@ -232,7 +232,7 @@ def position_race(career, ids) -> pd.DataFrame:
     league competition and season (`ids` should be one competition and season).
     The groups are the season's final ones; the order is the league table's:
     points (or wins), then net run rate where there is one, then fewest defeats."""
-    from .tables import BILATERAL, LIMITED, _groups, points_rule
+    from .tables import BILATERAL, LIMITED, _groups, draw_leads, points_rule, side_points
     from .analysis import nrr_innings
     cols = ["date", "round", "group", "team", "position", "points", "played"]
     m = career.matches[career.matches.match_id.isin(ids) & ~career.matches.knockout].sort_values(["date", "match_id"])
@@ -241,8 +241,7 @@ def position_race(career, ids) -> pd.DataFrame:
     comp, fmt = m.competition.iloc[0], m.format.iloc[0]
     _, pts = points_rule(comp, fmt)
     limited = fmt in LIMITED
-    inn = career.innings[career.innings.match_id.isin(m.match_id)]
-    first = inn[inn.team_innings == 1].groupby(["match_id", "team"]).runs.sum()
+    leads = draw_leads(career, m.match_id)
     by_match = {k: x for k, x in nrr_innings(career, m.match_id).groupby("match_id")}  # as net run rate counts them
     rows = []
     for label, gm, members in _groups(m):
@@ -261,19 +260,7 @@ def position_race(career, ids) -> pd.DataFrame:
                     loss = r.winner == opp or (so and r.tiebreak_winner == opp)
                     t["won"] += win
                     t["lost"] += loss
-                    if pts:
-                        if win and "bonus_win" in pts:
-                            big = bool(r.innings_win) or r.margin_wickets == 10
-                            t["points"] += pts["bonus_win"] if big else pts["win"]
-                        elif win:
-                            t["points"] += pts["win"]
-                        elif r.result_type == "tie" and not so:
-                            t["points"] += pts["tie"]
-                        elif r.result_type == "no result":
-                            t["points"] += pts["nr"]
-                        elif r.result_type == "draw":
-                            lead = first.get((r.match_id, team), np.nan) > first.get((r.match_id, opp), np.nan)
-                            t["points"] += pts.get("draw_lead", pts["draw"]) if lead else pts["draw"]
+                    t["points"] += side_points(r, team, pts, limited, leads)
                     if x is not None and limited:
                         for inn_r in x.itertuples():
                             balls = inn_r.balls

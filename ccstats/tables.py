@@ -32,7 +32,7 @@ def points_rule(competition: str, fmt: str) -> tuple[str, dict]:
     all use 2 for a win and 1 for a tie or no result.  First-class leagues only
     get points where the rules can be worked out from the scorecards."""
     if fmt in LIMITED:
-        return "2 points for a win, 1 for a tie or no result. Ties on points are split by net run rate.", \
+        return "2 points for a win, 1 for a tie or no result. Teams level on points are split by more wins, then net run rate.", \
             dict(win=2, tie=1, nr=1, draw=0)
     if competition == "County Championship":
         return ("16 points for a win, 8 for a draw or a tie. The real table also has batting and bowling bonus points; "
@@ -40,9 +40,52 @@ def points_rule(competition: str, fmt: str) -> tuple[str, dict]:
             dict(win=16, tie=8, draw=8, nr=8)
     if competition == "Ranji Trophy":
         return ("6 points for a win (7 for a win by an innings or 10 wickets), 3 for a draw with the first-innings lead, "
-                "1 for a draw without it, 3 for a tie, 1 for no result."), \
+                "1 for a draw without it (or when the lead wasn't decided: the side batting second neither passed the "
+                "total nor finished its innings), 3 for a tie, 1 for no result."), \
             dict(win=6, bonus_win=7, tie=3, draw_lead=3, draw=1, nr=1)
     return "The scorecards don't tell us this competition's points system, so teams are ordered by wins, then fewest defeats.", {}
+
+
+def first_innings_lead(innings: pd.DataFrame) -> str:
+    """The side ahead on first innings in a drawn first-class match (one match's innings), by the rule: settled once
+    the side batting second passes the first side's total, or once both first innings are complete (all out or
+    declared) with one side ahead. Otherwise (the second side's innings unfinished and behind, only one side batted,
+    or level scores) no one has it, and both sides get the points for a draw without the lead."""
+    first = innings[innings.team_innings == 1].sort_values("innings_no")
+    if len(first) < 2:
+        return ""
+    a, b = first.iloc[0], first.iloc[1]
+    if b.runs > a.runs:
+        return str(b.team)
+    if a.runs > b.runs and (bool(b.all_out) or bool(b.declared)):
+        return str(a.team)
+    return ""
+
+
+def draw_leads(career, ids) -> dict:
+    """{match id: the side with the first-innings lead} for these drawn matches (first_innings_lead)."""
+    m = career.matches
+    drawn = m.match_id[m.match_id.isin(ids) & (m.result_type == "draw")]
+    inn = career.innings[career.innings.match_id.isin(drawn)]
+    return {mid: first_innings_lead(g) for mid, g in inn.groupby("match_id")}
+
+
+def side_points(r, team: str, pts: dict, limited: bool, leads: dict) -> float:
+    """The points one side gets from one league match (a row of career.matches), by the competition's rule: the one
+    place this is worked out, for the table, the title race and the points through the season."""
+    if not pts:
+        return 0.0
+    so = limited and r.result_type == "tie" and r.tiebreak_winner != ""    # a tie settled by a super over
+    if r.winner == team or (so and r.tiebreak_winner == team):
+        big = "bonus_win" in pts and (bool(r.innings_win) or r.margin_wickets == 10)
+        return float(pts["bonus_win"] if big else pts["win"])
+    if r.result_type == "tie" and not so:
+        return float(pts["tie"])
+    if r.result_type == "no result":
+        return float(pts["nr"])
+    if r.result_type == "draw":
+        return float(pts.get("draw_lead", pts["draw"]) if leads.get(r.match_id, "") == team else pts["draw"])
+    return 0.0
 
 
 def _groups(matches: pd.DataFrame) -> list[tuple[str, pd.DataFrame, set]]:
@@ -131,7 +174,7 @@ def league_tables(career, ids) -> list[tuple[str, pd.DataFrame, str]]:
         rule_text, pts = (f"{kind} have no league table, so this is each team's record in them, ordered by "
                           "wins, then fewest defeats."), {}
     inn = career.innings[career.innings.match_id.isin(m.match_id)]
-    first = inn[inn.team_innings == 1].groupby(["match_id", "team"]).runs.sum()
+    leads = draw_leads(career, m.match_id) if "draw_lead" in pts else {}
     out = []
     groups = [("Every team", m, set(m.home) | set(m.away))] if bilateral else _groups(m)
     for label, gm, members in groups:
@@ -142,27 +185,14 @@ def league_tables(career, ids) -> list[tuple[str, pd.DataFrame, str]]:
                 continue  # a cross-group opponent: it has its own group's table
             mine = gm[(gm.home == team) | (gm.away == team)]
             # a tie settled by a super over counts as a win for the side that won it
-            so = (mine.result_type == "tie") & (mine.tiebreak_winner != "") if fmt in LIMITED else mine.result_type == "none"
+            # (no super overs in first-class cricket)
+            so = (mine.result_type == "tie") & (mine.tiebreak_winner != "") if fmt in LIMITED else pd.Series(False, index=mine.index)
             won = int((mine.winner == team).sum() + (so & (mine.tiebreak_winner == team)).sum())
             lost = int(((mine.winner != team) & (mine.winner != "")).sum() + (so & (mine.tiebreak_winner != team)).sum())
             tied = int(((mine.result_type == "tie") & ~so).sum())
             nr = int((mine.result_type == "no result").sum())
             drawn = int((mine.result_type == "draw").sum())
-            points = np.nan
-            if pts:
-                if "bonus_win" in pts:  # Ranji
-                    wins = mine[mine.winner == team]
-                    big = int((wins.innings_win.fillna(False).astype(bool) | (wins.margin_wickets == 10)).sum())
-                    draws = mine[mine.result_type == "draw"]
-                    lead = 0
-                    for mid, h, a in zip(draws.match_id, draws.home, draws.away):
-                        opp = a if h == team else h
-                        mine_r, opp_r = first.get((mid, team), np.nan), first.get((mid, opp), np.nan)
-                        lead += int(mine_r > opp_r)
-                    points = ((won - big) * pts["win"] + big * pts["bonus_win"] + lead * pts["draw_lead"]
-                              + (drawn - lead) * pts["draw"] + tied * pts["tie"] + nr * pts["nr"])
-                else:
-                    points = won * pts["win"] + tied * pts["tie"] + nr * pts["nr"] + drawn * pts["draw"]
+            points = sum(side_points(r, team, pts, fmt in LIMITED, leads) for r in mine.itertuples()) if pts else np.nan
             rows.append(dict(team=team, played=len(mine), won=won, lost=lost, drawn=drawn, tied=tied, no_result=nr,
                              points=points, nrr=tt.nrr[team], rpw_for=tt.rpw_for[team], rpw_against=tt.rpw_against[team]))
         t = pd.DataFrame(rows)

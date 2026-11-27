@@ -120,7 +120,7 @@ class _Season:
                  extra: int | None = None):
         from .analysis import nrr_innings
         from .rankings import team_elo
-        from .tables import LIMITED, _groups, points_rule
+        from .tables import LIMITED, _groups, draw_leads, points_rule, side_points
         from .teamplay import has_knockouts, qualification_defaults
         self.m = career.matches[(career.matches.event == event) & (career.matches.season == season)]
         self.league = self.m[~self.m.knockout].sort_values(["date", "match_id"])
@@ -145,8 +145,7 @@ class _Season:
         self.other = float((sec.result_type == ("no result" if self.limited else "draw")).mean()) if len(sec) else 0.0
         self.elo = team_elo(career, self.section)
         # each side's share of each league match, as the league table counts it (tables.league_tables)
-        inn = career.innings[career.innings.match_id.isin(self.league.match_id)]
-        first = inn[inn.team_innings == 1].groupby(["match_id", "team"]).runs.sum()
+        leads = draw_leads(career, self.league.match_id)
         nrr = nrr_innings(career, self.league.match_id) if self.limited else pd.DataFrame(columns=["match_id", "team"])
         nf = nrr.groupby(["match_id", "team"])[["runs", "balls"]].sum() if len(nrr) else None
         rows = []
@@ -155,18 +154,7 @@ class _Season:
             for team, opp in ((r.home, r.away), (r.away, r.home)):
                 win = r.winner == team or (so and r.tiebreak_winner == team)
                 loss = r.winner == opp or (so and r.tiebreak_winner == opp)
-                p = 0.0
-                if pts:
-                    if win:
-                        big = "bonus_win" in pts and (bool(r.innings_win) or r.margin_wickets == 10)
-                        p = pts["bonus_win"] if big else pts["win"]
-                    elif r.result_type == "tie" and not so:
-                        p = pts["tie"]
-                    elif r.result_type == "no result":
-                        p = pts["nr"]
-                    elif r.result_type == "draw":
-                        lead = first.get((r.match_id, team), np.nan) > first.get((r.match_id, opp), np.nan)
-                        p = pts.get("draw_lead", pts["draw"]) if lead else pts["draw"]
+                p = side_points(r, team, pts, self.limited, leads)
                 f = nf.loc[(r.match_id, team)] if nf is not None and (r.match_id, team) in nf.index else None
                 a = nf.loc[(r.match_id, opp)] if nf is not None and (r.match_id, opp) in nf.index else None
                 rows.append((r.match_id, r.date, team, opp, 1, int(win), int(loss), p,
