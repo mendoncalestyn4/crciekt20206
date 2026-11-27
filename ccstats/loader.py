@@ -231,7 +231,10 @@ class Career:
                     m = pickle.loads(read[key])
                 else:
                     m = parse_scorecard(text, source)
-                    m.read_back = read_back(text, m)   # every card written out again and compared with the printed one
+                    # every card written out again and compared with the printed one, as it was read (before any fair
+                    # guess: that's listed on its own, not again as a misreading)
+                    m.read_back = read_back(text, m.before_guess or m)
+                    m.before_guess = None
                     read[key] = pickle.dumps(m, protocol=pickle.HIGHEST_PROTOCOL)
             except ScorecardError as e:
                 report.append(FileReport(source, "failed", str(e)))

@@ -132,6 +132,9 @@ class Match:
     # what was put right in a scorecard that didn't add up, each proven by the card itself (see _correct)
     corrections: list[str] = field(default_factory=list)
     guesses: list[str] = field(default_factory=list)      # put right by the fair guess (fair_fix)
+    # the card as read, before the fair guess put it right: what the read-back compares with the printed card (the
+    # guess itself is listed on its own; dropped once read back)
+    before_guess: "Match | None" = field(default=None, repr=False, compare=False)
 
 
 class ScorecardError(ValueError):
@@ -749,6 +752,8 @@ def parse_scorecard(text: str, source: str = "") -> Match:
     _check_margin(match)
     _correct(match)
     if validate_match(match):   # still doesn't add up: the site's best fair guess, noted (your answers, 26 November)
+        import copy
+        match.before_guess = copy.deepcopy(match)
         match.guesses = fair_fix(match)
     return match
 

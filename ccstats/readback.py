@@ -27,11 +27,12 @@ def _innings_lines(text: str) -> list[list[str]]:
     cur: list[str] | None = None
     for raw in text.splitlines():
         line = raw.strip()
-        if re.search(r" - \d\w\w Innings\b", line):
+        # (a long team name leaves no gap before the first column: "… - 1st InningsR    B    4s  6s", as the reader knows)
+        if re.search(r" - \d\w\w Innings(?:R)?\b", line):
             cur = [line]
             out.append(cur)
             continue
-        if re.search(r" - Super over\b", line):
+        if re.search(r" - Super over(?:R)?\b", line):
             cur = None
             continue
         if cur is not None and line and not set(line) <= set("-*"):

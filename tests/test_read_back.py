@@ -77,3 +77,31 @@ def test_a_read_back_difference_is_a_problem_on_the_match():
     t, m = _card(TEST)
     m.read_back = ['England innings 1: "B Duckett lbw b Khan 85 161 8 -" read back as "B Duckett lbw b Khan 85 161 9 0"']
     assert any(p.startswith("read back: England innings 1") for p in validate_match(m))
+
+
+ODI = HERE / "fixtures" / "16_jul_2026-eng_v_ind_2nd_odi.txt"
+
+
+def test_a_long_team_name_with_no_gap_before_the_columns_reads_back_the_same():
+    """A team name long enough leaves no gap: "Nugegoda Sports Welfare Club - 1st InningsR    B    4s  6s" (your
+    save's Sri Lankan, Trinidad and Major League sides, 50 cards wrongly flagged on 27 November). The reader always
+    read it; the read-back now finds the innings too."""
+    t = ODI.read_text().replace("India", "Nugegoda Sports Welfare Club")
+    t = "\n".join("Nugegoda Sports Welfare Club - 1st InningsR    B    4s  6s" if l.startswith("Nugegoda Sports Welfare Club - 1st")
+                  else l for l in t.split("\n"))
+    assert "1st InningsR" in t
+    m = parse_scorecard(t, ODI.name)
+    assert len(m.innings) == 2
+    assert read_back(t, m) == []
+
+
+def test_figures_put_right_by_the_fair_guess_are_not_reported_again_as_a_misreading():
+    """A card whose bowlers were charged a run fewer than the innings conceded: the fair guess shares it out and is
+    listed on its own; the read-back compares the card with what was read before the guess, so it isn't reported a
+    second time as a misreading (two of your save's cards, 27 November)."""
+    from ccstats.loader import Career
+    t = ODI.read_text().replace("J Archer        10     0     44     1     4.40",
+                                "J Archer        10     0     43     1     4.30")
+    c = Career.build("guessed", [(ODI.name, t.encode())])
+    assert len(c.guesses) == 1 and "1 run no bowler was charged with" in c.guesses.guess.iloc[0]
+    assert c.problems.empty, c.problems.problem.tolist()
