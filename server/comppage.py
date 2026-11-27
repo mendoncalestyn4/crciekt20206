@@ -249,7 +249,8 @@ def _body(career, event, season, ids) -> dict:
         return dict(cycles=[dict(key=str(c), label=f"{c}–{str(c + 2)[-2:]}") for c in cycles],
                     cycle=str(here_cycle if here_cycle in cycles else cycles[0]), tables=tables,
                     note="The real system: 12 points for a win, 6 for a tie, 4 for a draw, ranked by the percentage of the "
-                         "points played for that were won (PCT). Only Tests between the nine WTC sides count (Australia, "
+                         "points played for that were won (PCT); teams level on PCT are split by more finished series won, then "
+                         "runs per wicket (runs scored per wicket lost, over runs given away per wicket taken). Only Tests between the nine WTC sides count (Australia, "
                          "Bangladesh, England, India, New Zealand, Pakistan, South Africa, Sri Lanka, West Indies), in "
                          "two-year cycles from June of an odd year; the top two meet in the final. Over-rate penalties "
                          "aren't on the scorecards, so they aren't taken off.")

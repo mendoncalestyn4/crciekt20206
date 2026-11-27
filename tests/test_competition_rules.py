@@ -75,3 +75,33 @@ def test_county_championship_points():
 def test_what_the_page_says_is_how_level_teams_are_split():
     text, _ = T.points_rule("Indian Premier League", "T20")
     assert "more wins, then net run rate" in text
+
+
+def test_world_test_championship_level_teams_split_by_series_won_then_runs_per_wicket():
+    from ccstats import seasonal as SN
+    games = pd.DataFrame([
+        # a finished two-Test series won by A; a three-Test series still being played (B lead 1-0: not won yet)
+        dict(match_id="1", series_id="s1", series_length=2, home="A", away="C", winner="A"),
+        dict(match_id="2", series_id="s1", series_length=2, home="A", away="C", winner=""),
+        dict(match_id="3", series_id="s2", series_length=3, home="B", away="D", winner="B"),
+        # a drawn finished series: no one won it
+        dict(match_id="4", series_id="s3", series_length=1, home="C", away="D", winner=""),
+    ])
+    assert SN._series_won(games) == {"A": 1}
+    innings = pd.DataFrame([dict(match_id="1", team="A", opposition="C", runs=400, wickets=10),
+                            dict(match_id="1", team="C", opposition="A", runs=200, wickets=10)])
+    ratio = SN._runs_per_wicket_ratio(Row(innings=innings), games[games.match_id == "1"])
+    assert ratio == {"A": 2.0, "C": 0.5}
+
+
+def test_world_test_championship_table_order(tmp_path):
+    from ccstats import seasonal as SN
+    from ccstats.loader import Career
+    from serverkit import FIXTURES
+    c = Career.build("t", [(f.name, f.read_bytes()) for f in FIXTURES])
+    for cyc in SN.wtc_matches(c).cycle.unique():
+        t = SN.wtc_table(c, cyc)
+        keys = list(zip(-t.pct.fillna(-1), -t.series_won, -t.rpw_ratio.fillna(-1e9)))
+        assert keys == sorted(keys)
+        assert (t.points == t.won * 12 + t.tied * 6 + t.drawn * 4).all()
+        assert (t.available == t.played * 12).all()

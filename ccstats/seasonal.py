@@ -636,9 +636,37 @@ def wtc_matches(career) -> pd.DataFrame:
     return t.assign(cycle=t.date.map(wtc_cycle))
 
 
+def _series_won(t: pd.DataFrame) -> dict:
+    """{team: finished series won} in these WTC matches (a series counts once all its matches are played)."""
+    won: dict = {}
+    for sid, g in t[t.series_id != ""].groupby("series_id"):
+        length = g.series_length.max()
+        if pd.notna(length) and len(g) < int(length):
+            continue                     # still being played
+        a, b = g.home.iloc[0], g.away.iloc[0]
+        wa, wb = int((g.winner == a).sum()), int((g.winner == b).sum())
+        if wa != wb:
+            w = a if wa > wb else b
+            won[w] = won.get(w, 0) + 1
+    return won
+
+
+def _runs_per_wicket_ratio(career, t: pd.DataFrame) -> dict:
+    """{team: runs scored per wicket lost, divided by runs given away per wicket taken} in these matches."""
+    inn = career.innings[career.innings.match_id.isin(t.match_id)]
+    out = {}
+    for team in set(t.home) | set(t.away):
+        mine, theirs = inn[inn.team == team], inn[(inn.opposition == team)]
+        f = mine.runs.sum() / mine.wickets.sum() if mine.wickets.sum() else np.nan
+        a = theirs.runs.sum() / theirs.wickets.sum() if theirs.wickets.sum() else np.nan
+        out[team] = f / a if a and not np.isnan(a) and not np.isnan(f) else np.nan
+    return out
+
+
 def wtc_table(career, cycle: int) -> pd.DataFrame:
     """12 points for a win, 6 for a tie, 4 for a draw; ranked by the percentage of
-    the points played for that were won (as the real table is)."""
+    the points played for that were won (as the real table is), and teams level on that by more finished series
+    won, then the runs-per-wicket ratio (the real tie-breakers)."""
     t = wtc_matches(career)
     t = t[t.cycle == cycle]
     rows = {}
@@ -665,7 +693,11 @@ def wtc_table(career, cycle: int) -> pd.DataFrame:
     d["series"] = d.series.map(len)
     d["available"] = d.played * WTC_POINTS["win"]
     d["pct"] = d.points / d.available.replace(0, np.nan) * 100
-    d = d.sort_values(["pct", "points", "won", "team"], ascending=[False, False, False, True]).reset_index(drop=True)
+    sw, rpw = _series_won(t), _runs_per_wicket_ratio(career, t)
+    d["series_won"] = d.team.map(lambda x: sw.get(x, 0))
+    d["rpw_ratio"] = d.team.map(rpw)
+    d = d.sort_values(["pct", "series_won", "rpw_ratio", "team"], ascending=[False, False, False, True],
+                      na_position="last").reset_index(drop=True)
     d.index = d.index + 1
     return d
 

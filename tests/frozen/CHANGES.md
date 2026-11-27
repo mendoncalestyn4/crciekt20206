@@ -11,3 +11,5 @@ Each time the frozen copy (tests/frozen/fixtures.json.gz) is saved again, the re
 - 27 November 2026 (the 20-season career): Every sort now keeps level rows in the order they came in (the same on every computer); checked: only level rows changed places, no number changed
 - 27 November 2026: Points table note: teams level on points are split by more wins, then net run rate (as the table always did; the note said net run rate only)
 - 27 November 2026 (the 20-season career): Points table note: teams level on points split by more wins, then net run rate (the note now says what the table does)
+- 27 November 2026: World Test Championship: teams level on PCT split by more finished series won, then runs per wicket (the real tie-breakers); its note says so
+- 27 November 2026 (the 20-season career): World Test Championship: real tie-breakers for teams level on PCT (series won, then runs per wicket)
