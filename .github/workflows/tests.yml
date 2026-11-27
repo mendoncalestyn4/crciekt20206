@@ -34,6 +34,12 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.14.7"
+          cache: pip                  # the packages kept between runs (about a minute less on every machine)
+          cache-dependency-path: requirements.txt
+      - uses: actions/cache@v4        # the test browser kept between runs too
+        with:
+          path: ~\AppData\Local\ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
       - name: Install what the site needs
         run: |
           python -m pip install --upgrade pip
