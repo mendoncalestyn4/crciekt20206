@@ -151,18 +151,24 @@ from server import teampage as TPG           # noqa: E402
 from server import tvtpage as TV             # noqa: E402
 
 
-def _team_two(career):
-    """A team with games in two or more competitions, and its two most played."""
+def _teams_two(career):
+    """Every team with games in two or more competitions, with its two most played (in a fixed order: one team picked
+    at random made each run check a different team)."""
     m = career.matches
-    for t in (set(m.home) | set(m.away)):
+    out = []
+    for t in sorted(set(m.home) | set(m.away)):
         secs = m[(m.home == t) | (m.away == t)].section.value_counts()
         if len(secs) >= 2:
-            return t, list(secs.index[:2])
-    pytest.skip("no team in two competitions")
+            out.append((t, list(secs.index[:2])))
+    assert out, "no team in two competitions"
+    return out
 
 
-def test_team_record_counted_together(career):
-    team, two = _team_two(career)
+@pytest.mark.parametrize("i", range(16))
+def test_team_record_counted_together(career, i):
+    teams = _teams_two(career)
+    assert len(teams) == 16           # (every team in two competitions, one test each)
+    team, two = teams[i]
     both = TPG.page(career, "|".join(two), "", team, "all", "Overview")
     one = [TPG.page(career, s, "", team, "all", "Overview") for s in two]
     kp = lambda p, k: next(x["v"] for x in p["head"]["kpis"] if x["k"] == k)  # noqa: E731
@@ -182,21 +188,37 @@ def test_team_record_counted_together(career):
 
 
 def test_team_v_team_runs_above_average_each_formats_own(career):
-    team, two = _team_two(career)
-    both = TV.page(career, "|".join(two), "", team, "", "any", "", [team])
-    if both["none"]:
-        pytest.skip(both["none"])
-    one = {s: TV.page(career, s, "", team, both["b"], "any", "", [team]) for s in two}
-    got = {r["player"]: r["value"] for r in both["body"]["above"]["rows"]}
-    each: dict = {}
-    for s, p in one.items():
-        if p.get("body") and p["body"].get("above"):
-            for r in p["body"]["above"]["rows"]:
-                each[r["player"]] = each.get(r["player"], 0) + r["value"]
-    shared = [k for k in got if k in each]
-    assert shared
-    for k in shared:
-        assert got[k] == pytest.approx(each[k], abs=0.05), k
+    """Formats ticked together: each batter's runs above average is the sum of each format's own, for every team in two
+    competitions (in a fixed order: it used to be one team picked at random). Against anyone, a side's numbers don't
+    depend on the other side, so each format's part is read from that format's page against an opponent who played
+    in it (the side picked may not have)."""
+    m = career.matches
+    checked = 0
+    for team in sorted(set(m.home) | set(m.away)):
+        secs = m[(m.home == team) | (m.away == team)].section.value_counts()
+        if len(secs) < 2:
+            continue
+        two = list(secs.index[:2])
+        both = TV.page(career, "|".join(two), "", team, "", "any", "", [team])
+        if both["none"]:
+            continue
+        got = {(r["team"], r["player"]): r["value"] for r in both["body"]["above"]["rows"]}
+        each: dict = {}
+        for side, other in ((team, both["b"]), (both["b"], team)):
+            for s in two:
+                here = m[m.section == s]
+                for opp in [other] + sorted((set(here.home) | set(here.away)) - {side, other}):
+                    p = TV.page(career, s, "", side, opp, "any", "", [side])
+                    if not p["none"]:
+                        break
+                for r in ((p.get("body") or {}).get("above") or {}).get("rows", []) if not p["none"] else []:
+                    if r["team"] == side:
+                        each[(side, r["player"])] = each.get((side, r["player"]), 0) + r["value"]
+        assert set(got) == set(each), (team, set(got) ^ set(each))
+        for k in got:
+            assert got[k] == pytest.approx(each[k], abs=0.05), (team, k)
+        checked += 1
+    assert checked >= 10
 
 
 def test_rivalries_and_the_match_finder_counted_together(career):
