@@ -1560,7 +1560,8 @@ site's code from start to end looking for logic mistakes. **Everything on Window
 should be tried on windows too ... I want it perfect", time no object):** every one of these checks that can run on a
 machine runs both here and on GitHub's Windows machines, and both must agree: on the made-up careers (the test
 scorecards and the 20-season career, built to cover every kind of match and competition) and the program itself.
-Your own save goes there only if you say so (the repository is public, so anything sent there can be seen). Every problem fixed at the root and tested again
+Your own save goes there too (your answer, 27 November: "Upload it, I don't mind", knowing the repository is
+public): uploaded only for the test run, never into the repository's files, and deleted when the test is done. Every problem fixed at the root and tested again
 until none is left; then the screenshots and your sign-off. However long it takes.
 
 Not picked: compare two careers, the colour-blind check. Stage 5's list is locked here (your choice, 26 November); more
