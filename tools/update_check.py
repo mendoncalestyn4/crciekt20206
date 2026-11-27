@@ -86,7 +86,14 @@ def main() -> int:
         if int(d["pid"]) == int(first["pid"]):
             return None
         return get(int(d["port"]), "/api/program")
-    now = wait("the new version opened again", reopened, 300)
+    try:
+        now = wait("the new version opened again", reopened, 300)
+    except SystemExit:
+        from desktop import updates as UP
+        print("the swap's own log:\n" + (UP.LOG.read_text(errors="replace") if UP.LOG.is_file() else "(none)"))
+        plog = home / "program.log"
+        print("program.log:\n" + (plog.read_text(errors="replace")[-3000:] if plog.is_file() else "(none)"))
+        raise
     if now["version"] != expect:
         raise SystemExit(f"FAILED: reopened as {now['version']}, expected {expect}")
     print(f"reopened as {now['version']}")

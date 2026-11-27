@@ -124,21 +124,33 @@ def swap_script(install: Path, new: Path, pid: int, reopen: str) -> str:
     the program started again on the same page, the old folder removed. If the swap fails, the old folder goes back."""
     old = install.with_name(install.name + ".old")
     q = lambda p: f'"{p}"'   # noqa: E731
+    log = q(LOG)
     return "\r\n".join([
         "@echo off",
+        f"cd /d {q(install.parent)}",            # never inside the folder being moved (Windows won't move it then)
+        f"echo %date% %time% waiting for the program to close >> {log}",
         ":wait",
         f'tasklist /FI "PID eq {pid}" | find "{pid}" >nul && (timeout /t 1 /nobreak >nul & goto wait)',
+        "timeout /t 1 /nobreak >nul",            # (a moment for Windows to let go of its files)
         f"if exist {q(old)} rmdir /s /q {q(old)}",
-        f"move {q(install)} {q(old)} >nul || goto failed",
-        f"move {q(new)} {q(install)} >nul || (move {q(old)} {q(install)} >nul & goto failed)",
-        f'start "" {q(install / EXE)} --open "{reopen}"',
+        f"echo %date% %time% setting the old version aside >> {log}",
+        f"move {q(install)} {q(old)} >> {log} 2>&1 || goto failed",
+        f"echo %date% %time% putting the new version in place >> {log}",
+        f"move {q(new)} {q(install)} >> {log} 2>&1 || (move {q(old)} {q(install)} >> {log} 2>&1 & goto failed)",
+        f"echo %date% %time% starting the new version >> {log}",
+        f'start "" /d {q(install)} {q(install / EXE)} --open "{reopen}"',
         f"rmdir /s /q {q(old)}",
         f"if exist {q(install.with_name(install.name + '.new'))} rmdir /s /q {q(install.with_name(install.name + '.new'))}",
+        f"echo %date% %time% done >> {log}",
         'del "%~f0" & exit',
         ":failed",
-        f'start "" {q(install / EXE)} --open "{reopen}" --update-failed',
+        f"echo %date% %time% FAILED: the version you had is back >> {log}",
+        f'start "" /d {q(install)} {q(install / EXE)} --open "{reopen}" --update-failed',
         'del "%~f0" & exit',
     ])
+
+
+LOG = Path(tempfile.gettempdir()) / "stats-pack-update.log"     # what the swap did, step by step
 
 
 def run_swap(install: Path, new: Path, reopen: str) -> None:
@@ -146,7 +158,7 @@ def run_swap(install: Path, new: Path, reopen: str) -> None:
     script = Path(tempfile.gettempdir()) / f"stats-pack-update-{os.getpid()}.cmd"
     script.write_text(swap_script(install, new, os.getpid(), reopen), encoding="utf-8")
     flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) | getattr(subprocess, "DETACHED_PROCESS", 0)
-    subprocess.Popen(["cmd", "/c", str(script)], creationflags=flags, close_fds=True)
+    subprocess.Popen(["cmd", "/c", str(script)], creationflags=flags, close_fds=True, cwd=str(install.parent))
 
 
 def install_folder() -> Path | None:

@@ -84,6 +84,8 @@ def test_unpacked_beside_the_one_running_and_the_swap_script(tmp_path):
     assert 'PID eq 1234' in script                                  # waits for this program to close
     assert script.index(f'move "{install}" "{install}.old"') < script.index(f'move "{new}" "{install}"')
     assert '--open "/players/J Root"' in script and "--update-failed" in script   # reopens; says so if it failed
+    # never run from inside the folder it moves (Windows won't move a folder a process is in), and every step logged
+    assert f'cd /d "{install.parent}"' in script and str(UP.LOG) in script and f'/d "{install}"' in script
 
 
 def test_the_update_backs_up_every_career_first_and_never_half_installs(tmp_path, monkeypatch):
