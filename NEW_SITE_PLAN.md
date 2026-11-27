@@ -1556,8 +1556,12 @@ by match, and after each match every page compared with before it: only what tha
 competition rules checked by hand (points, bonus points, net run rate, tie-breakers, who goes through); (u) every page
 opened in the browser with its error console watched, and the server's error log, both must stay empty; (v) a
 screenshot of every page checked by itself for overlaps, cut-off text and empty charts; (w) a careful read of all the
-site's code from start to end looking for logic mistakes. Every problem fixed at the root and tested again until none
-is left; then the screenshots and your sign-off. About 4 to 5 days.
+site's code from start to end looking for logic mistakes. **Everything on Windows too (27 November: "the checks
+should be tried on windows too ... I want it perfect", time no object):** every one of these checks that can run on a
+machine runs both here and on GitHub's Windows machines, and both must agree: on the made-up careers (the test
+scorecards and the 20-season career, built to cover every kind of match and competition) and the program itself.
+Your own save goes there only if you say so (the repository is public, so anything sent there can be seen). Every problem fixed at the root and tested again
+until none is left; then the screenshots and your sign-off. However long it takes.
 
 Not picked: compare two careers, the colour-blind check. Stage 5's list is locked here (your choice, 26 November); more
 ideas wait for your review after stage 6.
