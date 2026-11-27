@@ -35,17 +35,33 @@ def test_versions_sort_by_date_and_a_hand_built_copy_is_never_newer():
 
 
 def test_looking_for_an_update():
+    """The newest release is asked of GitHub's list (always current), then its own latest.json; the zip is that
+    release's own file. Nothing newer, no internet, a broken or half file: no update, and the reason is kept."""
     latest = dict(version="2026.12.01.1", file="x.zip", size=10, sha256="ab", notes=["Faster"])
-    assert UP.look("2026.11.27.1", fetch=lambda url, t: json.dumps(latest).encode())["version"] == "2026.12.01.1"
-    assert UP.look("2026.12.01.1", fetch=lambda url, t: json.dumps(latest).encode()) is None   # nothing newer
-    assert UP.look("2026.11.27.1", fetch=lambda url, t: b"not json") is None
-    assert UP.look("2026.11.27.1", fetch=lambda url, t: (_ for _ in ()).throw(OSError("no internet"))) is None
-    assert UP.look("2026.11.27.1", fetch=lambda url, t: json.dumps({"version": "2027.1.1.1"}).encode()) is None  # half a file
+    rel = {"tag_name": "v2026.12.01.1", "assets": [{"name": "latest.json", "browser_download_url": "https://dl/latest.json"},
+                                                   {"name": "x.zip", "browser_download_url": "https://dl/x.zip"}]}
+
+    def gh(latest_json, release=rel):
+        return lambda url, t: json.dumps(release).encode() if url == UP.API else latest_json
+    got = UP.look("2026.11.27.1", fetch=gh(json.dumps(latest).encode()))
+    assert got["version"] == "2026.12.01.1" and got["url"] == "https://dl/x.zip"
+    why: list = []
+    assert UP.look("2026.12.01.1", fetch=gh(json.dumps(latest).encode()), why=why) is None and "nothing newer" in why[0]
+    why = []
+    assert UP.look("2026.11.27.1", fetch=gh(b"not json"), why=why) is None and why[0].startswith("couldn't look")
+    why = []
+    assert UP.look("2026.11.27.1", fetch=lambda url, t: (_ for _ in ()).throw(OSError("no internet")), why=why) is None
+    assert "no internet" in why[0]
+    assert UP.look("2026.11.27.1", fetch=gh(json.dumps({"version": "2027.1.1.1"}).encode())) is None   # half a file
+    no_zip = dict(rel, assets=rel["assets"][:1])
+    why = []
+    assert UP.look("2026.11.27.1", fetch=gh(json.dumps(latest).encode(), no_zip), why=why) is None and "no x.zip" in why[0]
 
 
 def test_a_download_is_checked_before_anything_is_replaced(tmp_path):
     good = zip_of({"Cricket Captain Stats Pack/Cricket Captain Stats Pack.exe": b"MZ program", "x/data.txt": b"1"})
-    info = dict(version="2026.12.01.1", file="new.zip", size=len(good), sha256=hashlib.sha256(good).hexdigest())
+    info = dict(version="2026.12.01.1", file="new.zip", size=len(good), sha256=hashlib.sha256(good).hexdigest(),
+                url="https://dl/new.zip")
     got = UP.download(info, tmp_path, fetch=lambda url, t: good)
     assert got.read_bytes() == good
     with pytest.raises(UP.NotSafe, match="whole"):
@@ -78,7 +94,8 @@ def test_the_update_backs_up_every_career_first_and_never_half_installs(tmp_path
     install.mkdir(parents=True)
     monkeypatch.setattr(UP, "install_folder", lambda: install)
     good = zip_of({"Cricket Captain Stats Pack/Cricket Captain Stats Pack.exe": b"MZ"})
-    prog.offer = dict(version="2026.12.01.1", file="new.zip", size=len(good), sha256=hashlib.sha256(good).hexdigest())
+    prog.offer = dict(version="2026.12.01.1", file="new.zip", size=len(good), sha256=hashlib.sha256(good).hexdigest(),
+                      url="https://dl/new.zip")
     swapped = []
     monkeypatch.setattr(UP, "_fetch", lambda url, t: good)
     monkeypatch.setattr(UP, "run_swap", lambda inst, new, page: swapped.append((inst, new, page)))

@@ -4,7 +4,8 @@ complete and unchanged (its size and fingerprint) before anything is replaced; i
 and it tries again next time. "What's new" lives in Settings.
 
 The updates come from the project's own releases on GitHub (public since 26 November, so nothing else is needed: the
-newest release holds the finished program; the build on GitHub's Windows machine publishes it when asked):
+newest release holds the finished program; the build on GitHub's Windows machine publishes it when asked). Each
+release holds:
     latest.json   {"version": "2026.11.27.1", "date": "27 Nov 2026", "file": "<zip name>", "size": <bytes>,
                    "sha256": "<hex>", "notes": ["plain words", ...]}
     <zip name>    the program's folder, zipped
@@ -23,7 +24,9 @@ import zipfile
 from pathlib import Path
 
 REPO = "mendoncalestyn4/crciekt20206"
-BASE = f"https://github.com/{REPO}/releases/latest/download"     # the newest release's files
+# the newest release, asked of GitHub's own list (always current: the "latest" download shortcut can point at the
+# release before for a few minutes after a new one goes out, found by the real update test of 27 November)
+API = f"https://api.github.com/repos/{REPO}/releases/latest"
 TIMEOUT = 8          # seconds for the quick look when the program opens
 
 
@@ -39,15 +42,32 @@ def newer(available: str, current: str) -> bool:
     return bool(parse(available)) and parse(available) > parse(current)
 
 
-def look(current: str, fetch=None) -> dict | None:
-    """The update on offer, or None (nothing newer, no internet, or a file that doesn't make sense)."""
+def look(current: str, fetch=None, why: list | None = None) -> dict | None:
+    """The update on offer, or None (nothing newer, no internet, or a file that doesn't make sense; the reason is added
+    to `why` when given, so a look that fails is never silent). The newest release is asked of GitHub's list, then its
+    own latest.json read: the version, the zip's name, size and fingerprint, and the notes."""
     fetch = fetch or _fetch
+    why = why if why is not None else []
     try:
-        info = json.loads(fetch(f"{BASE}/latest.json", TIMEOUT))
-        if not isinstance(info, dict) or not all(k in info for k in ("version", "file", "size", "sha256")):
+        rel = json.loads(fetch(API, TIMEOUT))
+        files = {a["name"]: a["browser_download_url"] for a in rel.get("assets", []) if "name" in a}
+        if "latest.json" not in files:
+            why.append(f"the newest release ({rel.get('tag_name', '?')}) has no latest.json")
             return None
-        return info if newer(str(info["version"]), current) else None
-    except Exception:  # noqa: BLE001 - no internet or GitHub unreachable: simply no update this time
+        info = json.loads(fetch(files["latest.json"], TIMEOUT))
+        if not isinstance(info, dict) or not all(k in info for k in ("version", "file", "size", "sha256")):
+            why.append("latest.json is incomplete")
+            return None
+        if str(info["file"]) not in files:
+            why.append(f"the release has no {info['file']}")
+            return None
+        info["url"] = files[str(info["file"])]
+        if not newer(str(info["version"]), current):
+            why.append(f"nothing newer than {current} (the newest is {info['version']})")
+            return None
+        return info
+    except Exception as e:  # noqa: BLE001 - no internet or GitHub unreachable: simply no update this time
+        why.append(f"couldn't look: {type(e).__name__}: {e}")
         return None
 
 
@@ -64,7 +84,7 @@ class NotSafe(Exception):
 def download(info: dict, folder: Path, fetch=None) -> Path:
     """The new version's zip, checked: the right size and the right fingerprint, and a zip that opens."""
     fetch = fetch or _fetch
-    data = fetch(f"{BASE}/{info['file']}", 600)
+    data = fetch(str(info["url"]), 600)
     if len(data) != int(info["size"]):
         raise NotSafe(f"The download was {len(data):,} bytes, not {int(info['size']):,}: it didn't arrive whole.")
     if hashlib.sha256(data).hexdigest() != str(info["sha256"]).lower():

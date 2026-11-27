@@ -42,7 +42,7 @@ jobs:
           python -m playwright install chromium
       - name: Show the versions
         run: python -c "import sys, pandas; print(sys.version); print('pandas', pandas.__version__)"
-      - name: Every test (this machine's third)
+      - name: Every test (this machine's share)
         env:
           TEST_SHARD: ${{ matrix.shard }}/6
           WEEKLY: ${{ github.event_name != 'push' && '1' || '0' }}       # the weekly run, and a run started by hand

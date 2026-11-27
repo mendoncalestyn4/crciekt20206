@@ -131,10 +131,20 @@ class Program:
         self.started = time.time()
         self.ever_connected = False
 
-    def look_for_update(self) -> None:
+    def look_for_update(self, tries: int = 3, wait: float = 20.0) -> None:
+        """Looked for each time the program opens (your answer of 26 November); a look that couldn't reach GitHub
+        is tried again twice, and why there's no update is kept (in program.log and the program's state)."""
         if UP.install_folder() is None:       # running from the code: nothing to update
             return
-        self.offer = UP.look(self.version)
+        for k in range(tries):
+            why: list[str] = []
+            self.offer = UP.look(self.version, why=why)
+            self.state["looked"] = "; ".join(why) or "an update is ready"
+            print(f"update look: {self.state['looked']}", file=sys.stderr)
+            if self.offer or not any(w.startswith("couldn't look") for w in why):
+                return
+            if k + 1 < tries:
+                time.sleep(wait)
 
     def apply_update(self, store, reopen: str) -> None:
         """The update, safely: downloaded and checked first; every career backed up; the new version unpacked beside

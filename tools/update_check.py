@@ -69,7 +69,11 @@ def main() -> int:
     info = wait("the old version answered", lambda: get(port, "/api/program"), 120)
     old = info["version"]
     print(f"old version {old} running on port {port}")
-    offer = wait("the update was offered", lambda: get(port, "/api/program").get("update"), 120)
+    try:
+        offer = wait("the update was offered", lambda: get(port, "/api/program").get("update"), 180)
+    except SystemExit:
+        print("why not:", (get(port, "/api/program").get("state") or {}).get("looked", "(not said)"))
+        raise
     if offer["version"] != expect:
         raise SystemExit(f"FAILED: offered {offer['version']}, expected {expect}")
     print(f"offered {offer['version']}: installing")
