@@ -1547,8 +1547,8 @@ real size (first opening, then every page under a second); (m) the nothing-lost 
 frozen copy of every number of your save, kept for good. **And ways to find what no one thought to check (27 November,
 "to ensure all errors can be found"):** (o) the checks tested themselves: small mistakes put into the site's own
 working-out on purpose, one at a time, and every one must make a check fail (any that doesn't shows a blind spot,
-and a check is added for it); (p) thousands of made-up scorecards of every odd shape (all out for few, ten-wicket wins,
-ties, rain, super overs, retired hurt, extras-heavy), each must read cleanly and add up; (q) a third, separately
+and a check is added for it); (p) dropped (your choice, 27 November: no made-up
+scorecards needed, your save played on to about 2038 covers it); (q) a third, separately
 written working-out of the key numbers (averages, strike rates, economy, points tables, net run rate, ratings),
 compared on every player and team; (r) every answer scanned for the impossible (blank, "NaN", negative counts, more
 than 100%, more wickets than balls, an average that can't come from its runs and outs); (s) the save replayed match
