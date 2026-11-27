@@ -1556,7 +1556,10 @@ by match, and after each match every page compared with before it: only what tha
 competition rules checked by hand (points, bonus points, net run rate, tie-breakers, who goes through); (u) every page
 opened in the browser with its error console watched, and the server's error log, both must stay empty; (v) a
 screenshot of every page checked by itself for overlaps, cut-off text and empty charts; (w) a careful read of all the
-site's code from start to end looking for logic mistakes. **Everything on Windows too (27 November: "the checks
+site's code from start to end looking for logic mistakes; (x) different Windows setups, as a real PC may have
+them (27 November, my suggestion, your yes): Documents inside OneDrive, a Windows name with spaces or accents, very
+little disk space, a slow two-core PC, a non-English date setting; (y) careers made by today's version open with
+every number identical after all the fixes, with nothing rebuilt. **Everything on Windows too (27 November: "the checks
 should be tried on windows too ... I want it perfect", time no object):** every one of these checks that can run on a
 machine runs both here and on GitHub's Windows machines, and both must agree: on the made-up careers (the test
 scorecards and the 20-season career, built to cover every kind of match and competition) and the program itself.

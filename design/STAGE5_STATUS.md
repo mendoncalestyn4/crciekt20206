@@ -21,6 +21,6 @@ The owner paused for their usage limit and sends the new scorecards (the save pl
 2. **Windows runs green on the newest commit:** the push run, and a heavy run (dispatch Tests on Windows).
 3. **Competition rules (deep check item t):** knockouts and who goes through still to read by hand.
 4. **On the owner's new save only (the owner, 27 November: no checks on the old career):** the whole deep test in
-   NEW_SITE_PLAN.md item 15 and its additions (a) to (w), except (p), here and on Windows, with problems fixed as soon
+   NEW_SITE_PLAN.md item 15 and its additions (a) to (y), except (p), here and on Windows, with problems fixed as soon
    as found and everything run again at the end. The save goes to Windows through the project (the owner's yes).
 5. Then the switch-over, the final checks and screenshots, the plan's "Stage 5: what was built", and stage 6.
