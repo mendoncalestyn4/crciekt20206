@@ -150,13 +150,28 @@ def test_once_asked_to_close_it_always_closes_and_says_why_if_slow(capsys):
     import threading
     import time
     ended = threading.Event()
-    PG.make_sure_it_closes(say_after=0.2, close_after=0.4, end=lambda code: ended.set())
+    PG.make_sure_it_closes(say_after=0.2, close_after=0.4, end=lambda code: ended.set(), low_level=False)
     assert ended.wait(5)
     time.sleep(0.05)
     said = capsys.readouterr().err
     assert "still closing after" in said and "what each part is doing" in said
     assert "make_sure_it_closes" in said or "watch" in said       # (each part's place in the code, the main one too)
     assert "closed regardless" in said
+
+
+def test_the_packaged_program_ends_itself_once_everything_is_kept(capsys, monkeypatch):
+    """As the packaged program, it ends itself once the site has stopped (Python's own tidying-up could hang for good
+    on Windows), saying first what, if anything, was still running; from the code it just returns."""
+    ended = []
+    PG.end_now(0, end=ended.append)
+    assert ended == [0]
+    assert "ending (code 0); still running: threads" in capsys.readouterr().err
+    monkeypatch.setattr(PG, "run", lambda argv=None: 3)
+    monkeypatch.setattr(PG, "end_now", lambda code, end=None: ended.append(("ended", code)))
+    assert PG.main([]) == 3 and ended == [0]                       # from the code: no ending by itself
+    monkeypatch.setattr(PG.sys, "frozen", True, raising=False)
+    PG.main([])
+    assert ended[-1] == ("ended", 3)                               # packaged: ends itself, with the code
 
 
 def test_closing_never_waits_for_the_helpers(tmp_path, monkeypatch):

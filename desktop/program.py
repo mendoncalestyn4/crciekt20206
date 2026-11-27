@@ -188,7 +188,8 @@ class Program:
                 return
 
 
-def make_sure_it_closes(say_after: float = SAY_WHY_AFTER, close_after: float = CLOSE_ANYWAY_AFTER, end=os._exit) -> None:
+def make_sure_it_closes(say_after: float = SAY_WHY_AFTER, close_after: float = CLOSE_ANYWAY_AFTER, end=os._exit,
+                        low_level: bool = True) -> None:
     """Once asked to close: if it still hasn't a little later, what each part of it is doing is written to program.log
     (so the cause can be found and put right), and a little after that it closes regardless. By then it has stopped
     answering and kept everything it worked out, so nothing is lost, and an update can never be left waiting (found
@@ -213,6 +214,13 @@ def make_sure_it_closes(say_after: float = SAY_WHY_AFTER, close_after: float = C
             pass
         end(0)
     threading.Thread(target=watch, name="make sure it closes", daemon=True).start()
+    if not low_level:
+        return
+    try:   # and the same again at the lowest level, which works even when Python itself is stuck
+        import faulthandler
+        faulthandler.dump_traceback_later(close_after + 5, exit=True, file=sys.stderr)
+    except Exception:  # noqa: BLE001 - (a log with no file behind it: the first watch still closes it)
+        pass
 
 
 def last_page(home: Path) -> str:
@@ -227,6 +235,31 @@ def last_page(home: Path) -> str:
 
 
 def main(argv=None) -> int:
+    """The program: runs, then (as the packaged program) ends itself once everything is kept."""
+    code = run(argv)
+    if getattr(sys, "frozen", False):
+        end_now(code)
+    return code
+
+
+def end_now(code: int, end=os._exit) -> None:
+    """The packaged program ends itself here, once the site has stopped and everything is kept, instead of waiting for
+    Python's own tidying-up: on Windows that could hang for good after the program had finished (the site stopped in
+    0.3 seconds, then the program never ended, and an update waited for it; found by the real update test, 27
+    November). Anything still running at this point is written to program.log first, as a clue."""
+    try:
+        import multiprocessing
+        left = [t.name for t in threading.enumerate() if t is not threading.main_thread() and not t.daemon]
+        kids = [k.pid for k in multiprocessing.active_children()]
+        print(f"ending (code {code}); still running: threads {left or 'none'}, helpers {kids or 'none'}", file=sys.stderr)
+        sys.stdout.flush()
+        sys.stderr.flush()
+    except Exception:  # noqa: BLE001 - the clue is a help, never a reason not to end
+        pass
+    end(code)
+
+
+def run(argv=None) -> int:
     ap = argparse.ArgumentParser(prog=NAME)
     ap.add_argument("--open", default="", help="the page to open (else the one you were on last time)")
     ap.add_argument("--no-window", action="store_true")
