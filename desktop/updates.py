@@ -3,7 +3,8 @@ backs up every career, puts the new version in place and reopens on the same pag
 complete and unchanged (its size and fingerprint) before anything is replaced; if it isn't, the version you have stays
 and it tries again next time. "What's new" lives in Settings.
 
-The updates come from the public repository holding only the finished program:
+The updates come from the project's own releases on GitHub (public since 26 November, so nothing else is needed: the
+newest release holds the finished program; the build on GitHub's Windows machine publishes it when asked):
     latest.json   {"version": "2026.11.27.1", "date": "27 Nov 2026", "file": "<zip name>", "size": <bytes>,
                    "sha256": "<hex>", "notes": ["plain words", ...]}
     <zip name>    the program's folder, zipped
@@ -21,8 +22,8 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-REPO = "mendoncalestyn4/cricket-captain-stats-pack"
-BASE = f"https://raw.githubusercontent.com/{REPO}/main"
+REPO = "mendoncalestyn4/crciekt20206"
+BASE = f"https://github.com/{REPO}/releases/latest/download"     # the newest release's files
 TIMEOUT = 8          # seconds for the quick look when the program opens
 
 

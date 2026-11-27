@@ -8,10 +8,22 @@ on:
     paths: ["desktop/**", "server/**", "ccstats/**", "web/dist/**", "tools/build_program.py", "tools/program_entry.py",
             "design/WHATS_NEW.json", "requirements.txt", ".github/workflows/program.yml"]
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish this build as the new version (offered to the program as an update)"
+        type: boolean
+        default: false
+      update_test:
+        description: "After publishing: install the version before it, and update it to this one for real"
+        type: boolean
+        default: false
 
 concurrency:
   group: program-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: write          # (only to publish a release, when asked)
 
 jobs:
   build:
@@ -42,3 +54,27 @@ jobs:
             dist/*.zip
             dist/latest.json
           retention-days: 30
+      - name: Publish it as the new version (only when asked)
+        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $info = Get-Content dist\latest.json | ConvertFrom-Json
+          $notes = ($info.notes | ForEach-Object { "- $_" }) -join "`n"
+          gh release create "v$($info.version)" (Get-ChildItem dist\*.zip).FullName dist\latest.json --target $env:GITHUB_SHA --title "Cricket Captain Stats Pack $($info.version)" --notes "$notes"
+          Write-Host "Published version $($info.version)."
+      - name: Update the version before to this one, for real (only when asked)
+        if: github.event_name == 'workflow_dispatch' && inputs.publish && inputs.update_test
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python -m pip install -r requirements.txt
+          $info = Get-Content dist\latest.json | ConvertFrom-Json
+          $tags = gh release list --limit 10 --json tagName,createdAt | ConvertFrom-Json | Sort-Object createdAt -Descending
+          $before = ($tags | Where-Object { $_.tagName -ne "v$($info.version)" } | Select-Object -First 1).tagName
+          if (-not $before) { throw "No earlier published version to update from" }
+          New-Item -ItemType Directory -Force old | Out-Null
+          gh release download $before --pattern "*.zip" --dir old
+          python tools/update_check.py (Get-ChildItem old\*.zip).FullName $info.version
