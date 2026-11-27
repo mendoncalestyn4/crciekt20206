@@ -144,6 +144,21 @@ def post(s, **b):
     return status, json.loads(body)
 
 
+def test_once_asked_to_close_it_always_closes_and_says_why_if_slow(capsys):
+    """If something keeps it from closing, what each part is doing goes into program.log, then it closes regardless
+    (an update can never be left waiting: found by the real update test on Windows, 27 November)."""
+    import threading
+    import time
+    ended = threading.Event()
+    PG.make_sure_it_closes(say_after=0.2, close_after=0.4, end=lambda code: ended.set())
+    assert ended.wait(5)
+    time.sleep(0.05)
+    said = capsys.readouterr().err
+    assert "still closing after" in said and "what each part is doing" in said
+    assert "make_sure_it_closes" in said or "watch" in said       # (each part's place in the code, the main one too)
+    assert "closed regardless" in said
+
+
 def test_closing_never_waits_for_the_helpers(tmp_path, monkeypatch):
     """Closing stops the helpers on the other cores at once, even mid-way through their work: waiting for them made
     the program take three minutes to close on a slow PC (found by the window check on Windows, 27 November). Here

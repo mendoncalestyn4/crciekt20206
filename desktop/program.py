@@ -30,6 +30,8 @@ from . import updates as UP
 NAME = "Cricket Captain Stats Pack"
 IDLE_STOP = 60        # seconds after the last window closes
 FIRST_WAIT = 180      # seconds to wait for the first window before giving up on it
+SAY_WHY_AFTER = 20    # seconds: still not closed, so what each part is doing goes into program.log
+CLOSE_ANYWAY_AFTER = 40   # seconds: by then it has stopped answering and kept its work, so it closes regardless
 
 
 def build_info() -> dict:
@@ -186,6 +188,33 @@ class Program:
                 return
 
 
+def make_sure_it_closes(say_after: float = SAY_WHY_AFTER, close_after: float = CLOSE_ANYWAY_AFTER, end=os._exit) -> None:
+    """Once asked to close: if it still hasn't a little later, what each part of it is doing is written to program.log
+    (so the cause can be found and put right), and a little after that it closes regardless. By then it has stopped
+    answering and kept everything it worked out, so nothing is lost, and an update can never be left waiting (found
+    by the real update test on Windows, 27 November)."""
+    def watch():
+        time.sleep(say_after)
+        try:
+            import multiprocessing
+            import traceback
+            print(f"still closing after {say_after:.0f}s; what each part is doing:", file=sys.stderr)
+            names = {t.ident: f"{t.name}{' (daemon)' if t.daemon else ''}" for t in threading.enumerate()}
+            for ident, frame in sys._current_frames().items():
+                print(f"--- {names.get(ident, ident)}\n" + "".join(traceback.format_stack(frame)), file=sys.stderr)
+            print(f"helpers still running: {[k.pid for k in multiprocessing.active_children()]}", file=sys.stderr)
+        except Exception as e:  # noqa: BLE001 - saying why is a help, never a reason not to close
+            print(f"(couldn't say what each part is doing: {e})", file=sys.stderr)
+        time.sleep(max(0.0, close_after - say_after))
+        print(f"closed regardless after {close_after:.0f}s", file=sys.stderr)
+        try:
+            sys.stderr.flush()
+        except Exception:  # noqa: BLE001
+            pass
+        end(0)
+    threading.Thread(target=watch, name="make sure it closes", daemon=True).start()
+
+
 def last_page(home: Path) -> str:
     """The page you were on when the program last closed (your choice of 14 November: it reopens where you left off);
     My team when there's none."""
@@ -231,7 +260,16 @@ def main(argv=None) -> int:
 
         port = free_port(8601)
         server: list = []
-        prog = Program(build_info(), home, stop=lambda: setattr(server[0], "should_exit", True) if server else None)
+        closing: list = []
+
+        def stop() -> None:
+            if closing or not server:
+                return
+            closing.append(time.time())
+            print("closing", file=sys.stderr)
+            server[0].should_exit = True
+            make_sure_it_closes()
+        prog = Program(build_info(), home, stop=stop)
         app = create_app(program=prog)
         config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning", timeout_graceful_shutdown=2)
         srv = uvicorn.Server(config)
@@ -265,6 +303,8 @@ def main(argv=None) -> int:
         checked = {"ok": False}
         threading.Thread(target=when_ready, daemon=True).start()
         srv.run()
+        if closing:
+            print(f"the site stopped {time.time() - closing[0]:.1f}s after closing began", file=sys.stderr)
         return (0 if checked["ok"] else 2) if args.check else 0
     except SystemExit as e:   # e.g. no free port: said in plain words
         message(NAME, f"The Stats Pack couldn't start: {e}")

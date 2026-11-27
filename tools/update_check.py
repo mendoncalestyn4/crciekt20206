@@ -97,6 +97,8 @@ def main() -> int:
     if now["version"] != expect:
         raise SystemExit(f"FAILED: reopened as {now['version']}, expected {expect}")
     print(f"reopened as {now['version']}")
+    plog = home / "program.log"      # (how the old version closed: how long it took, and anything it said)
+    print("program.log:\n" + (plog.read_text(errors="replace")[-4000:] if plog.is_file() else "(none)"))
     after = sorted(CareerStore(home).names())
     if after != before:
         raise SystemExit(f"FAILED: careers before {before}, after {after}")
