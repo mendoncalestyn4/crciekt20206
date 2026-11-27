@@ -44,5 +44,5 @@ jobs:
       - name: Every test (this machine's third)
         env:
           TEST_SHARD: ${{ matrix.shard }}/3
-          WEEKLY: ${{ github.event_name == 'schedule' && '1' || '0' }}
+          WEEKLY: ${{ github.event_name != 'push' && '1' || '0' }}       # the weekly run, and a run started by hand
         run: python -m pytest -q -p no:cacheprovider
