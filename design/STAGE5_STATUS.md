@@ -14,24 +14,25 @@ The owner paused for their usage limit and sends the new scorecards (the save pl
   on Windows after an update), with two safety nets and a note in program.log if anything was still running.
 - Full test run here: 1,597 passed. Windows: the normal runs green; the heavy run 5 of 6 green at the stop.
 
-## Left, in order (updated 27 November, 9:50 pm IST; the owner said: finish what's running, then stop)
-1. **Finish the checks that were running at the stop** and read their results (below, "Running at the stop").
-   Fix every real finding at the root with a test; update this note.
-2. **Deep test step 5 must end clean**, then stop and report to the owner (the owner: "stop after 5th").
-3. Then, only when the owner says go: steps 6 to 12 of the deep test (NEW_SITE_PLAN.md item 15 and (a) to (y), except
+## Left, in order (updated 27 November, 9:55 pm IST: the owner said "stop right now"; everything was stopped)
+1. **Look into the one real finding so far** (step 5, `deep5a.py`): on the ODI World Cup 2035 points table,
+   Australia's W column doesn't equal the wins in Australia's own record (tests/test_same_number.py,
+   test_the_points_table_is_the_teams_own_record). Find the cause (a tie won in a super over counted as a win, a
+   game set aside, or a real fault), fix it at the root with a test.
+2. **Run again what was stopped part-way**, from an empty folder (`python3 -I tools/deeptest/<script>.py …`):
+   - `deep4.py`: step 4's crawl had reached 9,200 answers (pages with every choice, two levels deep, done; every team
+     under way), 0 real findings (its 174 flags were all sentences starting "None of your players", a false alarm of
+     the checker: filter those out, or teach the checker to skip `.none` messages).
+   - `deep4b.py`: the "your team" crawl (England, Gujarat Titans, Titans set as the owner's teams), barely begun.
+   - `deep5b.py`: every check in the test suite that takes a whole career, on the save: 8 passed when stopped.
+   - `pressure.py`: never started (it runs after both crawls).
+   - `deep5a.py` finished: 8 same-number checks, 7 passed, 1 failed (item 1).
+3. **The last update test** (Build the program run started after commit faeed07, publish + update test): read its end;
+   it must say "OK: … intact". The update itself already passed on Windows (the old version installed the new one
+   and reopened as it, careers intact, backed up first); only the report's arrow failed to print before that fix.
+4. **Deep test step 5 must end clean**, then stop and report to the owner (the owner: "stop after 5th").
+5. Then, only when the owner says go: steps 6 to 12 of the deep test (NEW_SITE_PLAN.md item 15 and (a) to (y), except
    (p)), the switch-over, the final checks and screenshots, and stage 6.
-
-## Running at the stop (scripts kept in tools/deeptest/, logs in the session's scratchpad)
-- Step 4: `deep4.py` (every page with every choice it offers, two levels deep; every team; every competition and season;
-  every match; every player; the server's error log) and `deep4b.py` (the "your team" pages, with England, Gujarat
-  Titans and Titans set as the owner's teams). At 8,400 answers: 0 real findings (the only flags were sentences
-  starting "None of your players", a false alarm of the checker).
-- Step 5: `deep5a.py` (every same-number check on the save; the first passed) and `deep5b.py` (every check in the test
-  suite that takes a whole career, run on the save).
-- Pressure: `pressure.py` (about 2,000 questions answered calmly, then by 16 visitors at once, three rounds, all must
-  be identical; a new match arriving while 16 visitors ask; the slowest answer). It starts by itself after the crawls.
-- The update test with UTF-8 reports (program build run after commit faeed07). The update itself already passed on
-  Windows (old version installed the new one and reopened as it, careers intact, backed up first).
 
 ## How to resume
 1. Read this note and the plan (NEW_SITE_PLAN.md item 15) first.
