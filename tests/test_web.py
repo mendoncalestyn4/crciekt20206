@@ -474,6 +474,9 @@ def test_the_player_page_tabs_each_show_their_own_kind(browser, site):
         titles = pg.evaluate("[...document.querySelectorAll('.t .tl')].map(e => e.textContent)")
         assert any(t.startswith("Bowling · every competition") for t in titles) and not any(t.startswith("Batting ·") for t in titles)
         pg.locator(".itabs button", has_text="Batting").first.click()
+        # (the page is already "ready" from before the click: wait for the Batting tab itself, as a slow machine needs)
+        pg.wait_for_function("[...document.querySelectorAll('.t .tl')].some(e => e.textContent.startsWith('Batting · every competition'))",
+                             timeout=30000)
         pg.wait_for_selector("body[data-ready='1']")
         titles = pg.evaluate("[...document.querySelectorAll('.t .tl')].map(e => e.textContent)")
         assert any(t.startswith("Batting · every competition") for t in titles)

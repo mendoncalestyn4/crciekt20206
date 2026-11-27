@@ -70,7 +70,7 @@ def everyone(career) -> list[dict]:
         rows = pd.concat([career.batting[["match_id", "team", "player"]], career.bowling[["match_id", "team", "player"]]]).drop_duplicates()
         m = career.matches.set_index("match_id")
         pos = {mid: i for i, mid in enumerate(by_played(career, career.matches).match_id)}
-        rows = rows.assign(at=rows.match_id.map(pos), section=rows.match_id.map(m.section)).sort_values("at")
+        rows = rows.assign(at=rows.match_id.map(pos), section=rows.match_id.map(m.section)).sort_values(["at", "player"], kind="stable")
         out = []
         for p, g in rows.groupby("player", sort=False):
             teams = list(dict.fromkeys(g.team[::-1]))[::-1]

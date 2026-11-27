@@ -157,9 +157,9 @@ def test_parity_with_the_current_sites_data_check(career):
     assert [(p["keep"], p["other"]) for p in b["pairs"]] == list(zip(mg.keep, mg.other))
     b = DP._body(career, "Games left out")
     assert [x["match_id"] for x in b["left"]] == list(career.leftovers.match_id)
-    b = DP._body(career, "Scorecards")
-    assert len(b["problems"]) == len(career.problems)
-    assert DC.summary(career)["counts"]["Scorecards"] >= career.problems.match_id.nunique()
+    b = DP._body(career, "Scorecards")      # (your answers of 26 November: only files that aren't scorecards are named)
+    failed = [r for r in career.report if r.status == "failed"]
+    assert len(b["failed"]) == len(failed) == DC.summary(career)["counts"]["Scorecards"]
 
 
 def test_career_changes_wait_while_a_data_check_change_is_made(tmp_path, monkeypatch):

@@ -530,9 +530,10 @@ def _how_they_play(career, ids, opp, where_note, last: bool) -> dict:
 def _current(career, ids, team: str, last: int = 10) -> list[str]:
     """The team's players in its last `last` matches here, most matches first: the side as it is now."""
     m = career.matches[career.matches.match_id.isin(ids) & ((career.matches.home == team) | (career.matches.away == team))]
-    recent = set(m.sort_values("date").match_id.tail(last))
+    recent = set(m.sort_values(["date", "match_id"]).match_id.tail(last))
     xi = career.batting[career.batting.match_id.isin(recent) & (career.batting.team == team)]
-    return list(xi.player.value_counts().index)
+    n = xi.player.value_counts()
+    return sorted(n.index, key=lambda p: (-n[p], p))       # (equal matches: by name, the same on every machine)
 
 
 def _one_section(career, ids) -> bool:

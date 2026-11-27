@@ -128,7 +128,9 @@ def test_a_name_on_two_bowling_lines_is_two_bowlers():
                                         "J Duffy         1      0     10     1     10.00", 1)
     c = Career.build("d", [("twice.txt", text.encode())])
     w = c.bowling[c.bowling.player.str.startswith("J Duffy")].set_index("player")
-    assert w.runs["J Duffy"] == 10 and w.runs["J Duffy (2)"] == 47  # the one who bowled more is "(2)"
+    assert w.balls["J Duffy (2)"] > w.balls["J Duffy"]                # the one who bowled more is "(2)"
+    # (the extra line makes the card's bowling add up to more than the innings: put right by the fair guess, noted)
+    assert len(c.guesses) and not c.problems.problem.str.contains("bowling runs|overs do not").any()
     assert not c.problems.problem.str.contains("appears twice").any()
     at = AppTest.from_file(str(ROOT / "views" / "player.py"), default_timeout=120)
     at.session_state["career_obj"] = c

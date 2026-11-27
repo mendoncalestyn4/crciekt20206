@@ -280,6 +280,8 @@ def test_no_balls_left_off_every_bowler_are_recorded_as_not_charged():
     c = Career.build("c", [("x.txt", text.encode())])
     assert c.innings.set_index("innings_no").uncharged.tolist() == [0, 2] and c.problems.empty
     assert c.bowling.set_index("player").runs["K Rabada"] == 15
-    # short by an amount that is neither the no-balls nor the wides: not put right, still a problem
+    # short by an amount that is neither the no-balls nor the wides: the card can't settle it, so (your answer of 26
+    # November) the 3 runs are shared between the innings' bowlers by balls bowled, noted, and the card adds up
     off = parse_scorecard(_card(("K Rabada        4      14    16", "K Rabada        4      14    13")), "x.txt")
-    assert off.innings[1].uncharged == 0 and any("bowling runs" in p for p in validate_match(off))
+    assert off.innings[1].uncharged == 0 and validate_match(off) == []
+    assert len(off.guesses) == 1 and "3 runs no bowler was charged with" in off.guesses[0]
