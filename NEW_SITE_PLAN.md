@@ -1561,8 +1561,11 @@ should be tried on windows too ... I want it perfect", time no object):** every 
 machine runs both here and on GitHub's Windows machines, and both must agree: on the made-up careers (the test
 scorecards and the 20-season career, built to cover every kind of match and competition) and the program itself.
 Your own save goes there too (your answer, 27 November: "Upload it, I don't mind", knowing the repository is
-public): uploaded only for the test run, never into the repository's files, and deleted when the test is done. Every problem fixed at the root and tested again
-until none is left; then the screenshots and your sign-off. However long it takes.
+public): uploaded only for the test run, never into the repository's files, and deleted when the test is done. **When problems are fixed (27 November, your question; my
+recommendation):** each one as soon as it's found, at the root, with its own test added at once so it can't come back;
+anything that would change how something looks or works by choice (not a wrong number) is asked about first. Then,
+at the end, every check run again from the start, here and on Windows, on the final version, so nothing is signed
+off on a version that wasn't fully checked. Then the screenshots and your sign-off. However long it takes.
 
 Not picked: compare two careers, the colour-blind check. Stage 5's list is locked here (your choice, 26 November); more
 ideas wait for your review after stage 6.
