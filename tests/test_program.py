@@ -82,6 +82,8 @@ def test_unpacked_beside_the_one_running_and_the_swap_script(tmp_path):
     assert (new / UP.EXE).exists() and new.parent.name.endswith(".new")
     script = UP.swap_script(install, new, 1234, "/players/J Root")
     assert 'PID eq 1234' in script                                  # waits for this program to close
+    # with no pipe and no "timeout" (hidden, a piped search waited for ever; "timeout" needs a keyboard), and not for ever
+    assert "| find" not in script and "timeout" not in script and f"GEQ {UP.SWAP_WAIT}" in script and "goto closed" in script
     assert script.index(f'move "{install}" "{install}.old"') < script.index(f'move "{new}" "{install}"')
     assert '--open "/players/J Root"' in script and "--update-failed" in script   # reopens; says so if it failed
     # never run from inside the folder it moves (Windows won't move a folder a process is in), and every step logged

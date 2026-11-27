@@ -129,9 +129,22 @@ def swap_script(install: Path, new: Path, pid: int, reopen: str) -> str:
         "@echo off",
         f"cd /d {q(install.parent)}",            # never inside the folder being moved (Windows won't move it then)
         f"echo %date% %time% waiting for the program to close >> {log}",
+        # (no pipes and no "timeout": hidden, with no window, a piped search could wait for ever after the program had
+        # gone, and "timeout" needs a keyboard; found by the real update test, 27 November. The task list goes to a
+        # file that's searched, a second's pause is two pings, and after two minutes it goes on regardless: if the
+        # program were somehow still there, the move below fails safely and the version you had opens again.)
+        "set /a waited=0",
         ":wait",
-        f'tasklist /FI "PID eq {pid}" | find "{pid}" >nul && (timeout /t 1 /nobreak >nul & goto wait)',
-        "timeout /t 1 /nobreak >nul",            # (a moment for Windows to let go of its files)
+        f'tasklist /FI "PID eq {pid}" /NH > {q(WAIT)} 2>nul',
+        f'findstr /C:" {pid} " {q(WAIT)} >nul || goto closed',     # (the number with a space each side: its column)
+        "set /a waited+=1",
+        f"if %waited% GEQ {SWAP_WAIT} (echo %date% %time% still running after {SWAP_WAIT} seconds: going on >> {log} & goto closed)",
+        "ping -n 2 127.0.0.1 >nul",
+        "goto wait",
+        ":closed",
+        f"del {q(WAIT)} 2>nul",
+        f"echo %date% %time% the program has closed >> {log}",
+        "ping -n 2 127.0.0.1 >nul",              # (a moment for Windows to let go of its files)
         f"if exist {q(old)} rmdir /s /q {q(old)}",
         f"echo %date% %time% setting the old version aside >> {log}",
         f"move {q(install)} {q(old)} >> {log} 2>&1 || goto failed",
@@ -151,13 +164,16 @@ def swap_script(install: Path, new: Path, pid: int, reopen: str) -> str:
 
 
 LOG = Path(tempfile.gettempdir()) / "stats-pack-update.log"     # what the swap did, step by step
+WAIT = Path(tempfile.gettempdir()) / "stats-pack-update-wait.txt"   # the task list the swap searches
+SWAP_WAIT = 120     # seconds the swap waits for the program to close before going on regardless
 
 
 def run_swap(install: Path, new: Path, reopen: str) -> None:
     """Start the swap script, hidden, to run as soon as this program has closed."""
     script = Path(tempfile.gettempdir()) / f"stats-pack-update-{os.getpid()}.cmd"
     script.write_text(swap_script(install, new, os.getpid(), reopen), encoding="utf-8")
-    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) | getattr(subprocess, "DETACHED_PROCESS", 0)
+    # hidden, with a console of its own that has no window (so the commands it runs never open one), in its own group
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
     subprocess.Popen(["cmd", "/c", str(script)], creationflags=flags, close_fds=True, cwd=str(install.parent))
 
 
