@@ -451,6 +451,8 @@ def _impossible(inn: "Innings", where: str, quota: int | None) -> list[str]:
     for b in inn.batting:
         if b.did_bat and b.runs > 6 * b.balls:
             out.append(f"{where}: {b.player} made {b.runs} off {b.balls} balls (more than 6 a ball)")
+    if quota and inn.balls > quota:
+        out.append(f"{where}: {inn.balls} balls bowled, more than the {quota} an innings has")
     limit = quota // 5 if quota else None
     for w in inn.bowling:
         if w.wickets > 10:

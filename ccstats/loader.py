@@ -463,6 +463,15 @@ def find_leftovers(parsed: dict[str, Match], saved: dict[str, float], fixes: Fix
                     out[src] = (f"From an earlier playthrough: saved {when(saved[src])}, before this season was "
                                 f"{later} on {when(saved[other])}.", True)
                     break
+    # a card the game itself printed impossibly (a bowler past his overs, or more overs than the format has: your T20I
+    # of 9 September 2032 with a bowler's 14 overs in a 21-over innings) is left out of every figure by itself, listed
+    # with the reason and counted again with a click (your choice, 27 November: "14 overs, that's impossible, leave it out")
+    for (src, m), c in zip(items, cls):
+        if src in out or c.format not in QUOTA:
+            continue
+        bad = [x for x in validate_match(m, QUOTA[c.format]) if "past the limit" in x or "an innings has" in x]
+        if bad:
+            out[src] = ("Left out by itself: the game printed this scorecard impossibly (" + "; ".join(bad) + ").", True)
     for src, m in parsed.items():
         if m.match_id in fixes.include:
             out.pop(src, None)

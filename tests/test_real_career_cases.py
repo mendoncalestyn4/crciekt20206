@@ -392,3 +392,18 @@ def test_a_test_saved_after_a_reload_does_not_move_the_reload_back():
     assert set(c.leftovers.source) == {n for n, _ in gone}
     assert {n for n, _ in kept} <= set(c.matches.source)
     assert len(c.matches) == len(files) - len(gone)
+
+
+def test_a_card_the_game_printed_impossibly_is_left_out_by_itself():
+    """Your T20I of 9 September 2032: a bowler with 14 overs in a 21-over innings. A card with a bowler past his
+    overs, or more overs than the format has, is left out of every figure by itself (your choice, 27 November),
+    listed with the reason, and counted again with a click."""
+    t = FINAL.read_text().replace("K Rabada        4      10    30     3     7.50",
+                                  "K Rabada        14     10    30     3     2.14")
+    c = Career.build("impossible", [(FINAL.name, t.encode())] + [(p.name, p.read_bytes()) for p in IPL if p != FINAL])
+    left = c.leftovers[c.leftovers.source == FINAL.name]
+    assert len(left) == 1 and left.auto.iloc[0] and "printed this scorecard impossibly" in left.reason.iloc[0]
+    assert "K Rabada bowled" in left.reason.iloc[0] and "past the limit of 24" in left.reason.iloc[0]
+    assert not c.bowling.match_id.isin(left.match_id).any()                 # in no figure
+    back = c.with_fixes(Fixes(include=list(left.match_id)))
+    assert back.leftovers[back.leftovers.source == FINAL.name].empty       # counted again by your click

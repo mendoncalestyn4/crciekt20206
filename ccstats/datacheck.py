@@ -75,8 +75,11 @@ def summary(career) -> dict:
     if not len(merges) and (joined is None or not len(joined)):   # (a joined pair has its own line above)
         fine.append("✅ No player appears under two names")
     if len(left):
-        fine.append(f"ℹ️ {len(left)} game{'s' if len(left) > 1 else ''} left out on purpose (from an earlier playthrough"
-                    f"{' or by you' if (~left.auto.astype(bool)).any() else ''}) → the Games left out tab")
+        why = [w for w, k in (("from an earlier playthrough", left.reason.str.startswith("From an earlier").any()),
+                              ("printed impossibly by the game", left.reason.str.startswith("Left out by itself").any()),
+                              ("by you", (~left.auto.astype(bool)).any())) if k]
+        fine.append(f"ℹ️ {len(left)} game{'s' if len(left) > 1 else ''} left out on purpose ({', '.join(why[:-1])}"
+                    f"{' or ' if len(why) > 1 else ''}{why[-1]}) → the Games left out tab")
     if dups:
         fine.append(f"ℹ️ {len(dups)} scorecard{'s' if len(dups) > 1 else ''} saved twice, counted once → the Copies tab")
     unknown = career.matches[~career.matches.recognised.astype(bool)] if "recognised" in career.matches else career.matches[:0]
@@ -219,7 +222,7 @@ def your_changes(career) -> list[dict]:
     out += [dict(kind="keep_apart", key=list(x), text=f"You kept **{x[0]}** and **{x[1]}** apart (they had been joined by "
                  "themselves)") for x in fx.keep_apart]
     out += [dict(kind="exclude", key=mid, text=f"You left out **{game(mid)}**") for mid in fx.exclude]
-    out += [dict(kind="include", key=mid, text=f"You count **{game(mid)}** again (it looked like it was from an earlier playthrough)")
+    out += [dict(kind="include", key=mid, text=f"You count **{game(mid)}** again (it had been left out by itself)")
             for mid in fx.include]
     return out
 
