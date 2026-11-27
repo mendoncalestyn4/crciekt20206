@@ -47,16 +47,21 @@ def broken(career, ids, min_stand: int = MIN_STAND) -> pd.DataFrame:
 
 
 def table(career, ids, team: str = "", min_stand: int = MIN_STAND) -> pd.DataFrame:
-    """Bowlers ranked by the big stands they broke: how many, the biggest, the average size, and the batters they got."""
+    """Bowlers ranked by the big stands they broke: how many, the biggest, the average size, and the matches. One row
+    per bowler with every team he did it for ("A / B", in the order he played for them), so a bowler who changed
+    teams has his whole total in one place, as on Stat by stat and his Player page (found by the 20-season test
+    career, 27 November); with `team`, only what he did for that team."""
     b = broken(career, ids, min_stand)
     if team:
         b = b[b.team == team]
     cols = ["bowler", "team", "broken", "biggest", "average", "matches"]
     if b.empty:
         return pd.DataFrame(columns=cols)
-    g = b.groupby(["bowler", "team"])
-    t = pd.DataFrame({"broken": g.size(), "biggest": g.runs.max(), "average": g.runs.mean(),
-                      "matches": g.match_id.nunique()}).reset_index()
+    when = career.matches.set_index("match_id").date
+    b = b.assign(_when=b.match_id.map(when)).sort_values(["_when", "match_id"])
+    g = b.groupby("bowler")
+    t = pd.DataFrame({"team": g.team.agg(lambda x: " / ".join(dict.fromkeys(x))), "broken": g.size(),
+                      "biggest": g.runs.max(), "average": g.runs.mean(), "matches": g.match_id.nunique()}).reset_index()
     return t.sort_values(["broken", "biggest", "bowler"], ascending=[False, False, True]).reset_index(drop=True)[cols]
 
 
