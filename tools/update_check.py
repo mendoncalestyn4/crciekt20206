@@ -44,6 +44,12 @@ def wait(what: str, check, seconds: float):
 
 
 def main() -> int:
+    # (the Windows machine's console can't show every character, e.g. an arrow: never a reason for the check to fail)
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:  # noqa: BLE001
+            pass
     old_zip, expect = Path(sys.argv[1]), sys.argv[2]
     tmp = Path(tempfile.mkdtemp(prefix="update-check-"))
     install = tmp / "program"
@@ -109,7 +115,7 @@ def main() -> int:
     backups = list((home).rglob("*before-update*"))
     if not backups:
         raise SystemExit("FAILED: no backup was made before the update")
-    print(f"OK: {old} → {now['version']}, careers {after} intact, {len(backups)} backup(s) made first")
+    print(f"OK: {old} to {now['version']}, careers {after} intact, {len(backups)} backup(s) made first")
     return 0          # (with no window open, the program closes by itself a few minutes later)
 
 

@@ -51,6 +51,12 @@ def alive(pid: int) -> bool:
 
 
 def main() -> int:
+    # (the Windows machine's console can't show every character, e.g. an arrow: never a reason for the check to fail)
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:  # noqa: BLE001
+            pass
     exe = Path(sys.argv[1]).resolve()
     home = Path(tempfile.mkdtemp(prefix="program-check-"))
     env = dict(os.environ, STATS_PACK_HOME=str(home))
