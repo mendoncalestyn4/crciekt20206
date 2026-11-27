@@ -67,7 +67,7 @@ def _seeded(order: list[tuple[np.ndarray, np.ndarray]], places: int, extra: int)
         if not cols:
             break
         sides, keys = np.stack([c[0] for c in cols], axis=1), np.stack([c[1] for c in cols], axis=1)
-        by = np.argsort(-keys, axis=1)
+        by = np.argsort(-keys, axis=1, kind="stable")
         sides = np.take_along_axis(sides, by, axis=1)
         take = sides.shape[1] if pos < places else min(extra, sides.shape[1])
         field += [sides[:, j] for j in range(take)]
@@ -253,7 +253,7 @@ def season_odds(career, event: str, season: str, games: int | None = None, place
         # the table's order: points (or wins), then wins, then net run rate (limited overs), then fewest defeats
         key = pnt * 1e9 + wins * 1e6 + (np.clip(nrr, -400, 400) * 1e3 if S.limited else 0) - lost \
             + rng.random((sims, n)) * 1e-3
-        order_local = np.argsort(-key, axis=1)
+        order_local = np.argsort(-key, axis=1, kind="stable")
         orders.append((np.array([idx[t] for t in teams])[order_local] if n else order_local,
                        np.take_along_axis(key, order_local, axis=1)))
         rank = np.empty_like(order_local)

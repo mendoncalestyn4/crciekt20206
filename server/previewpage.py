@@ -48,7 +48,8 @@ def page(career, q: dict, mine_all: list[str], mine_order: list[str], sched: lis
                              none=SG.NO_MATCHES, elsewhere=[], tabs=TABS, tab=TABS[0]))
     intl = [s for s in ("Tests", "ODIs", "T20Is") if s in set(m.section)]
     counts = m.section.value_counts()
-    choices = ([INTL] if intl else []) + [s for s in counts.index if s not in intl]
+    # (in the agreed order: internationals, then franchise leagues, then domestic, most matches first in each)
+    choices = ([INTL] if intl else []) + [s for s in in_order(m, counts.index) if s not in intl]
     up = kept(career, ("upcoming", repr(sched), tuple(mine_order)), lambda: FX.upcoming(career, sched, tuple(mine_order))) \
         if mine_order else None
     nxt = up.iloc[0] if up is not None and len(up) else None
