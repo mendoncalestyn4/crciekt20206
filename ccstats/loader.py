@@ -380,11 +380,12 @@ def play_runs(items: list[tuple], cls: list, saved: dict[str, float]) -> list[di
     top = None
     for t, start, end in rows:
         if top is None or end + REWIND < top:
-            runs.append(dict(t=t, dates=[start]))
+            runs.append(dict(t=t, dates=[start], ends=[end]))
             top = start
         else:
             top = max(top, start)
             runs[-1]["dates"].append(start)
+            runs[-1]["ends"].append(end)
     return runs
 
 
@@ -424,7 +425,12 @@ def find_leftovers(parsed: dict[str, Match], saved: dict[str, float], fixes: Fix
         # (at least MIN_REPLAY files), most of them the same games, so its own games outnumber those left over; a few
         # older scorecards copied into the folder later don't, and set nothing aside.
         for run in runs[1:]:
-            t_back, d0, d1 = run["t"], min(run["dates"]), max(run["dates"])
+            # (the date it went back to: no later than the first game the new playthrough could have finished. A Test
+            # it saved may have started days before the reload: a Test is saved when it ends, so its start date says
+            # nothing about where play went back to. Your crashes of 27 November: two Tests that began on 1 August
+            # ended after a reload from 5 August, and the league games of 2 and 4 August, never played again, were
+            # wrongly set aside.)
+            t_back, d0, d1 = run["t"], min(run["ends"]), max(run["dates"])
             old = [src for (src, m) in items if src not in out and src in saved
                    and saved[src] < t_back - SAVE_SLACK and d0 < m.date <= d1]
             if old and len(run["dates"]) >= MIN_REPLAY and len(run["dates"]) > len(old):
