@@ -351,3 +351,44 @@ def test_a_double_booked_team_and_a_multi_day_game_saved_late_count():
     ahead = Career.build("ahead", [(*_dated(odi, o_days + 12)[:2], 1_790_000_000), (t_name, t_bytes, 1_790_000_100)])
     assert ahead.leftovers.empty
 
+
+
+def _on(p: Path, day: pd.Timestamp, name: str) -> tuple[str, bytes]:
+    """A fixture played on another day, under another file name."""
+    lines = p.read_text().split("\n")
+    head, _, _ = lines[2].rpartition(" - ")
+    lines[2] = f"{head} - {day.day} {day:%b %Y}"
+    return name, "\n".join(lines).encode()
+
+
+ONE_DAY = [FIX / n for n in ("16_jul_2026-eng_v_ind_2nd_odi.txt", "17_apr_2026-ban_v_nz_1st_odi.txt",
+                             "1_oct_2026-ind_v_wi_1st_odi.txt", "1_oct_2026-rsa_v_aus_1st_odi.txt",
+                             "3_oct_2026-ind_v_wi_2nd_odi.txt", "8_jun_2026-wi_v_sl_3rd_odi.txt",
+                             "7_aug_2026-ire_v_afg_2nd_odi.txt")]
+
+
+def test_a_test_saved_after_a_reload_does_not_move_the_reload_back():
+    """Your crashes of 27 November: the game reloaded from a save made on 5 August, after a Test that began on
+    1 August had started; that Test ended after the reload, so the new playthrough saved it, dated 1 August. The
+    league games of 2 and 4 August were never played again (their files kept their old times) and count; the first
+    playthrough's games after the reload, never played again in the same way, are set aside."""
+    base = pd.Timestamp("2030-08-01")
+    day = lambda n: base + pd.Timedelta(days=n)            # noqa: E731
+    test = FIX / "19_aug_2026-eng_v_pak_1st_tst.txt"
+    first, second = [], []
+    for i in range(20):                                     # the first playthrough, in order
+        first.append(_on(ONE_DAY[i % 7], day(i - 20), f"early_{i}.txt"))
+    kept = [_on(ONE_DAY[0], day(1), "league_2_aug.txt"), _on(ONE_DAY[1], day(3), "league_4_aug.txt"),
+            _on(test, day(0), "test_a_1_aug.txt")]          # (the first playthrough's Test, ended before the reload)
+    first += kept
+    gone = [_on(ONE_DAY[i % 7], day(8 + 4 * i), f"crashed_{i}.txt") for i in range(6)]   # 8 to 28 August
+    first += gone
+    second.append(_on(FIX / "22_aug_2026-aus_v_ban_2nd_tst.txt", day(0), "test_b_1_aug.txt"))   # began before the reload
+    for i in range(25):                                     # the playthrough kept: from 5 August on
+        second.append(_on(ONE_DAY[i % 7], day(5 + i * 1.4), f"replay_{i}.txt"))
+    files = [(n, b, 1_790_000_000 + 60 * i) for i, (n, b) in enumerate(first)]
+    files += [(n, b, 1_790_100_000 + 60 * i) for i, (n, b) in enumerate(second)]
+    c = Career.build("two crashes", files)
+    assert set(c.leftovers.source) == {n for n, _ in gone}
+    assert {n for n, _ in kept} <= set(c.matches.source)
+    assert len(c.matches) == len(files) - len(gone)
