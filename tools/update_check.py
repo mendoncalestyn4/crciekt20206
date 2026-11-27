@@ -93,6 +93,10 @@ def main() -> int:
         print("the swap's own log:\n" + (UP.LOG.read_text(errors="replace") if UP.LOG.is_file() else "(none)"))
         plog = home / "program.log"
         print("program.log:\n" + (plog.read_text(errors="replace")[-3000:] if plog.is_file() else "(none)"))
+        print("the old version's process:", subprocess.run(["tasklist", "/V", "/FI", f"PID eq {first['pid']}"],
+                                                           capture_output=True, text=True).stdout)
+        print("every copy of the program still running:", subprocess.run(
+            ["tasklist", "/V", "/FI", "IMAGENAME eq Cricket Captain Stats Pack.exe"], capture_output=True, text=True).stdout)
         raise
     if now["version"] != expect:
         raise SystemExit(f"FAILED: reopened as {now['version']}, expected {expect}")

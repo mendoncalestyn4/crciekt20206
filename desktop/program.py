@@ -188,7 +188,7 @@ class Program:
                 return
 
 
-def make_sure_it_closes(say_after: float = SAY_WHY_AFTER, close_after: float = CLOSE_ANYWAY_AFTER, end=os._exit,
+def make_sure_it_closes(say_after: float = SAY_WHY_AFTER, close_after: float = CLOSE_ANYWAY_AFTER, end=None,
                         low_level: bool = True) -> None:
     """Once asked to close: if it still hasn't a little later, what each part of it is doing is written to program.log
     (so the cause can be found and put right), and a little after that it closes regardless. By then it has stopped
@@ -212,7 +212,7 @@ def make_sure_it_closes(say_after: float = SAY_WHY_AFTER, close_after: float = C
             sys.stderr.flush()
         except Exception:  # noqa: BLE001
             pass
-        end(0)
+        (end or _end_process)(0)
     threading.Thread(target=watch, name="make sure it closes", daemon=True).start()
     if not low_level:
         return
@@ -242,7 +242,22 @@ def main(argv=None) -> int:
     return code
 
 
-def end_now(code: int, end=os._exit) -> None:
+def _end_process(code: int) -> None:
+    """Ends this program at once. On Windows the way Task Manager's "End task" does (TerminateProcess): ending it the
+    usual way still lets each loaded library tidy up, and one of them could hang there for good after an update (the
+    program had stopped and said nothing was left running, yet Windows kept it, and the update waited: the real update
+    test, 27 November). Everything is kept on disk before this is called."""
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            k = ctypes.windll.kernel32
+            k.TerminateProcess(k.GetCurrentProcess(), int(code))
+        except Exception:  # noqa: BLE001 - if that can't be done, the usual way
+            pass
+    os._exit(code)
+
+
+def end_now(code: int, end=_end_process) -> None:
     """The packaged program ends itself here, once the site has stopped and everything is kept, instead of waiting for
     Python's own tidying-up: on Windows that could hang for good after the program had finished (the site stopped in
     0.3 seconds, then the program never ended, and an update waited for it; found by the real update test, 27
