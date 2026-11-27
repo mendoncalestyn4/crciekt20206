@@ -1529,6 +1529,24 @@ stage 4 is with you. About 6–7 days.
     none of it runs inside the program, so the site is no slower; the quick checks join the usual run on small test
     careers, and the heavy ones (the nothing-lost crawl, the frozen copy on the big careers) go in the weekly run, so a
     normal test run takes no longer than now (timed before and after, and said).
+**The deep test made deeper (your "super duper deep check, very deep, to cover it all", 27 November):** on top of
+the 13 checks above, all on your new scorecards and nothing needed from you but the save:
+(a) the second reader on **every** match of the save, not 30; (b) every page, tab and choice for **every** team and
+competition and every season up to the one in progress (no samples), with every link and player name followed to
+where it leads; (c) the same answers on every computer: every page worked out here and on GitHub's Windows machine,
+identical; (d) the sums agree up and down: players add up to their team, matches to their season, seasons to the
+career, and formats ticked together equal each format added; (e) what a chart draws equals the table beside it, and
+every sentence ("who's best", "what it shows") says what the numbers say; (f) every unusual match found in the save
+(ties, super overs, rain, no results, follow-ons, declarations, retired hurt, playoffs and finals) checked by hand on
+every page that shows it; (g) every record, milestone, alert and inbox message checked against a fresh count; (h)
+every pair of names that may be one player checked against the cards; (i) deliberate mistakes put into copies of real
+cards, every one caught; (j) odd careers: empty, one match, the first match of a new season, a career switched or
+restored mid-season, several careers at once; (k) the program on Windows from scratch: install, first start, the tour,
+What's new, one copy, closing, backups and restore, and an update, with every page opened there; (l) speed at your
+real size (first opening, then every page under a second); (m) the nothing-lost crawl on your save; (n) at the end, a
+frozen copy of every number of your save, kept for good. Every problem fixed at the root and tested again until none
+is left; then the screenshots and your sign-off. About 3 to 4 days.
+
 Not picked: compare two careers, the colour-blind check. Stage 5's list is locked here (your choice, 26 November); more
 ideas wait for your review after stage 6.
 
