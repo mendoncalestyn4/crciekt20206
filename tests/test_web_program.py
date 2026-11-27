@@ -68,6 +68,13 @@ def test_the_tour_then_whats_new(browser, pc):
         pg.wait_for_selector(".tourtip", timeout=30000)
         pg.click(".tourtip button:has-text('Skip the tour')")
         pg.wait_for_selector(".tour", state="detached")
+        # the page you're on is noted, so the program opens on it next time
+        pg.wait_for_function("true", timeout=100)
+        for _ in range(40):
+            if str(store.preferences().get("last_page", "")).startswith("/settings"):
+                break
+            pg.wait_for_timeout(100)
+        assert PG.last_page(store.root).startswith("/settings")
         assert said == [], said
     finally:
         pg.close()

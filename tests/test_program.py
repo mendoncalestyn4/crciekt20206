@@ -175,3 +175,15 @@ def test_the_fingerprint_when_the_code_is_packed_away(tmp_path, monkeypatch):
     monkeypatch.setattr(keep, "code_fingerprint", lambda r: "")
     monkeypatch.setattr(keep, "_built_fingerprint", lambda: "abc123def456")
     assert keep.version() == "abc123def456"
+
+
+def test_the_program_reopens_where_you_left_off(live):
+    """Your choice of 14 November: the page you were on is noted (a second after you arrive) and the program opens on
+    it next time; never an API address or something that isn't a page; My team when there's none."""
+    s, store, _ = live
+    assert PG.last_page(store.root) == "/"
+    assert post(s, action="page", page="/teams/England?tab=Eras")[0] == 200
+    assert PG.last_page(store.root) == "/teams/England?tab=Eras"
+    for bad in ("/api/career", "http://elsewhere", "/" + "x" * 500):
+        assert post(s, action="page", page=bad)[0] == 400
+    assert PG.last_page(store.root) == "/teams/England?tab=Eras"

@@ -1,0 +1,92 @@
+"""The program itself, tried for real on GitHub's Windows machine after every build (stage 5):
+
+1. It opens in its own app window (Edge or Chrome started with --app, a window with no address bar or tabs) and the
+   window's page connects.
+2. Only one copy runs: starting it again doesn't start a second one; it hands over to the one running and stops.
+3. Closing the window closes the program: a minute after the last window goes, the program stops by itself.
+
+    python tools/program_check.py "dist/Cricket Captain Stats Pack/Cricket Captain Stats Pack.exe"
+
+Exits 0 when all of that happened, 1 (saying what didn't) otherwise."""
+
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import time
+import urllib.request
+from pathlib import Path
+
+
+def wait(what: str, check, seconds: float):
+    end, last = time.time() + seconds, None
+    while time.time() < end:
+        try:
+            got = check()
+            if got:
+                return got
+        except Exception as e:  # noqa: BLE001
+            last = e
+        time.sleep(1)
+    raise SystemExit(f"FAILED: {what} (waited {seconds:.0f}s{'; last: ' + str(last) if last else ''})")
+
+
+def windows_of(pid_marker: str) -> list[dict]:
+    """The browser processes started as the program's app window (their command line has --app= and our folder)."""
+    out = subprocess.run(["powershell", "-NoProfile", "-Command",
+                          "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*--app=*' } | "
+                          "Select-Object ProcessId,CommandLine | ConvertTo-Json"], capture_output=True, text=True).stdout
+    rows = json.loads(out) if out.strip() else []
+    rows = rows if isinstance(rows, list) else [rows]
+    return [r for r in rows if pid_marker in (r.get("CommandLine") or "")]
+
+
+def alive(pid: int) -> bool:
+    out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/NH"], capture_output=True, text=True).stdout
+    return str(pid) in out
+
+
+def main() -> int:
+    exe = Path(sys.argv[1]).resolve()
+    home = Path(tempfile.mkdtemp(prefix="program-check-"))
+    env = dict(os.environ, STATS_PACK_HOME=str(home))
+    lock = home / "running.json"
+    first = subprocess.Popen([str(exe)], env=env, cwd=exe.parent)
+    info = wait("the program started", lambda: json.loads(lock.read_text()) if lock.is_file() else None, 120)
+    port, pid = int(info["port"]), int(info["pid"])
+    print(f"1. started (pid {pid}, port {port})")
+    # 1. its own app window, whose page connects
+    wins = wait("its own app window opened", lambda: windows_of(str(home)), 60)
+    print(f"   app window: {wins[0]['CommandLine'][:160]}")
+
+    def connected():          # (asking the window to come forward answers how many windows are connected)
+        req = urllib.request.Request(f"http://127.0.0.1:{port}/api/program", data=json.dumps({"action": "focus"}).encode(),
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return json.loads(r.read()).get("windows", 0) >= 1
+    wait("the window's page connected", connected, 90)
+    print("   its page is connected")
+    # 2. only one copy: a second start hands over and stops
+    t = time.time()
+    second = subprocess.run([str(exe), "--no-window"], env=env, cwd=exe.parent, timeout=120)
+    if second.returncode != 0:
+        raise SystemExit(f"FAILED: the second start ended with code {second.returncode}")
+    now = json.loads(lock.read_text())
+    if int(now["pid"]) != pid or not alive(pid):
+        raise SystemExit("FAILED: a second copy took over (or the first one stopped)")
+    print(f"2. only one copy: the second start handed over and stopped in {time.time() - t:.1f}s")
+    # 3. closing the window closes the program (a minute later)
+    for w in windows_of(str(home)):
+        subprocess.run(["taskkill", "/PID", str(w["ProcessId"]), "/T", "/F"], capture_output=True)
+    t = time.time()
+    wait("the program stopped after its window closed", lambda: first.poll() is not None or not alive(pid), 240)
+    print(f"3. the window closed: the program stopped by itself {time.time() - t:.0f}s later")
+    print("OK")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -18,8 +18,8 @@ on:
         type: boolean
         default: false
 
-concurrency:
-  group: program-${{ github.ref }}
+concurrency:            # (a push never cancels a build started by hand to publish a version)
+  group: program-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 permissions:
@@ -47,6 +47,8 @@ jobs:
           $p = Start-Process -FilePath "dist\Cricket Captain Stats Pack\Cricket Captain Stats Pack.exe" -ArgumentList "--check" -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "The program didn't start properly (exit code $($p.ExitCode))" }
           Write-Host "The program started and answered."
+      - name: Its own window, only one copy, and it closes with its window (for real)
+        run: python tools/program_check.py "dist\Cricket Captain Stats Pack\Cricket Captain Stats Pack.exe"
       - uses: actions/upload-artifact@v4
         with:
           name: program

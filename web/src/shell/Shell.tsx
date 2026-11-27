@@ -4,7 +4,7 @@ import { Daily, TeamsAsk } from "../pages/Settings";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useSearchParams } from "react-router";
-import { ApiError, get, type CareerInfo, type InboxPage, type Live, type ProblemsPage, type Theme } from "../api";
+import { ApiError, get, post, type CareerInfo, type InboxPage, type Live, type ProblemsPage, type Theme } from "../api";
 import { ab, dayY, STAT_WORDS } from "../format";
 import { refit } from "../fit";
 import { explainTables } from "../howto";
@@ -74,6 +74,14 @@ export function Shell({ children }: { children: ReactNode }) {
   const [finder, setFinder] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [watch, setWatch] = useState<{ at: number; folders: number } | null>(null);
+
+  // the page you're on, noted (your choice of 14 November: the program reopens where you left off), a second after
+  // you arrive so passing pages aren't noted
+  useEffect(() => {
+    const page = loc.pathname + loc.search;
+    const wait = window.setTimeout(() => { void post("/api/program", { action: "page", page }).catch(() => undefined); }, 1000);
+    return () => window.clearTimeout(wait);
+  }, [loc.pathname, loc.search]);
 
   // on every page: every table heading that's a short stat name shows its meaning on hover (one list: STAT_WORDS),
   // and every average, strike rate and economy in a table the sum behind it (howto.ts); done again after each change

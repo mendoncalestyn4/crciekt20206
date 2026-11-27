@@ -170,14 +170,25 @@ class Program:
                 return
 
 
+def last_page(home: Path) -> str:
+    """The page you were on when the program last closed (your choice of 14 November: it reopens where you left off);
+    My team when there's none."""
+    try:
+        from ccstats.local import CareerStore
+        p = str(CareerStore(home).preferences().get("last_page", "") or "")
+        return p if p.startswith("/") and not p.startswith("/api") else "/"
+    except Exception:  # noqa: BLE001 - a preferences file that can't be read: start on My team
+        return "/"
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog=NAME)
-    ap.add_argument("--open", default="/", help="the page to open")
+    ap.add_argument("--open", default="", help="the page to open (else the one you were on last time)")
     ap.add_argument("--no-window", action="store_true")
     ap.add_argument("--check", action="store_true", help="start, answer one question, stop (for the build's test)")
     ap.add_argument("--update-failed", action="store_true")
     args = ap.parse_args(argv)
-    page = args.open if args.open.startswith("/") else "/"
+    page = args.open if args.open.startswith("/") else ""
     if sys.stderr is None or sys.stdout is None:   # the program has no black window: what it would print goes to a file
         try:
             from ccstats.local import home_dir
@@ -193,6 +204,7 @@ def main(argv=None) -> int:
         from ccstats.local import home_dir as default_root
         home = default_root()
         home.mkdir(parents=True, exist_ok=True)
+        page = page or last_page(home)
         other = None if args.check else running(home)
         if other:
             bring_back(other, home, page)

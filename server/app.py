@@ -1099,6 +1099,12 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         if action == "focus":      # the program opened again while it runs: the open window comes forward
             hub.publish({"type": "focus"})
             return _json({"windows": len(hub._queues)})
+        if action == "page":       # the page you're on: the program opens on it next time
+            page = str(b.get("page", ""))
+            if not page.startswith("/") or page.startswith("/api") or len(page) > 400:
+                return _error("Send a page of the site.", 400)
+            site.store.save_preference("last_page", page)
+            return _json({"ok": True})
         if action == "seen":
             site.store.save_preference("whats_new_seen", program.version if program else "")
         elif action == "tour_done":
