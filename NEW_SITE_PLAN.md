@@ -1544,8 +1544,20 @@ cards, every one caught; (j) odd careers: empty, one match, the first match of a
 restored mid-season, several careers at once; (k) the program on Windows from scratch: install, first start, the tour,
 What's new, one copy, closing, backups and restore, and an update, with every page opened there; (l) speed at your
 real size (first opening, then every page under a second); (m) the nothing-lost crawl on your save; (n) at the end, a
-frozen copy of every number of your save, kept for good. Every problem fixed at the root and tested again until none
-is left; then the screenshots and your sign-off. About 3 to 4 days.
+frozen copy of every number of your save, kept for good. **And ways to find what no one thought to check (27 November,
+"to ensure all errors can be found"):** (o) the checks tested themselves: small mistakes put into the site's own
+working-out on purpose, one at a time, and every one must make a check fail (any that doesn't shows a blind spot,
+and a check is added for it); (p) thousands of made-up scorecards of every odd shape (all out for few, ten-wicket wins,
+ties, rain, super overs, retired hurt, extras-heavy), each must read cleanly and add up; (q) a third, separately
+written working-out of the key numbers (averages, strike rates, economy, points tables, net run rate, ratings),
+compared on every player and team; (r) every answer scanned for the impossible (blank, "NaN", negative counts, more
+than 100%, more wickets than balls, an average that can't come from its runs and outs); (s) the save replayed match
+by match, and after each match every page compared with before it: only what that match touched may change; (t) the
+competition rules checked by hand (points, bonus points, net run rate, tie-breakers, who goes through); (u) every page
+opened in the browser with its error console watched, and the server's error log, both must stay empty; (v) a
+screenshot of every page checked by itself for overlaps, cut-off text and empty charts; (w) a careful read of all the
+site's code from start to end looking for logic mistakes. Every problem fixed at the root and tested again until none
+is left; then the screenshots and your sign-off. About 4 to 5 days.
 
 Not picked: compare two careers, the colour-blind check. Stage 5's list is locked here (your choice, 26 November); more
 ideas wait for your review after stage 6.
