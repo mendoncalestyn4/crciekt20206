@@ -1258,8 +1258,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                 got = 0
                 for fu in as_completed(futs):
                     if WARM["gen"] != gen or site.career() is not c:
-                        for x in futs:
-                            x.cancel()
+                        pool.shutdown(wait=False, cancel_futures=True)   # (closing: never wait for the rest)
                         return
                     for key, value in fu.result():
                         cache_put(c, key, value)

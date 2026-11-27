@@ -54,6 +54,16 @@ def main() -> int:
     exe = Path(sys.argv[1]).resolve()
     home = Path(tempfile.mkdtemp(prefix="program-check-"))
     env = dict(os.environ, STATS_PACK_HOME=str(home))
+    # with a real career in it, so it's also preparing pages in the background (with its helper processes) while
+    # the checks run: closing must still be quick then (found by the update test, 27 November)
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    os.environ["STATS_PACK_HOME"] = str(home)
+    from ccstats.local import CareerStore, Watcher
+    folder = home.parent / f"{home.name}-Scorecards"
+    folder.mkdir()
+    for f in sorted((Path(__file__).resolve().parent.parent / "tests" / "fixtures").glob("*.txt")):
+        (folder / f.name).write_bytes(f.read_bytes())
+    Watcher(CareerStore(home)).create("Program check", folder)
     lock = home / "running.json"
     first = subprocess.Popen([str(exe)], env=env, cwd=exe.parent)
     info = wait("the program started", lambda: json.loads(lock.read_text()) if lock.is_file() else None, 120)
