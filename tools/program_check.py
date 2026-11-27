@@ -93,7 +93,9 @@ def main() -> int:
     for w in windows_of(str(home)):
         subprocess.run(["taskkill", "/PID", str(w["ProcessId"]), "/T", "/F"], capture_output=True)
     t = time.time()
-    wait("the program stopped after its window closed", lambda: first.poll() is not None or not alive(pid), 240)
+    # (a minute after the window goes, and quickly after that: closing never waits for the helpers' work; it took
+    # three minutes on this machine before that was put right, 27 November)
+    wait("the program stopped within two minutes of its window closing", lambda: first.poll() is not None or not alive(pid), 120)
     print(f"3. the window closed: the program stopped by itself {time.time() - t:.0f}s later")
     # 4. a clear message when it can't start (its folder for your careers is a file, so nothing can be kept there)
     bad = Path(tempfile.mkdtemp(prefix="program-check-bad-")) / "not-a-folder"

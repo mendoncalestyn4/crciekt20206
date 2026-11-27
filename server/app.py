@@ -1124,6 +1124,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
 
     # ------------------------------------------------------------------ getting every page ready (the speed work)
     WARM = {"done": 0, "total": 0, "busy": False, "gen": 0, "career": ""}
+    HELPERS: list = [None]   # the helper processes at work right now, if any (stopped at once when the site closes)
 
     def _ask(path: str) -> None:
         """A page answered here in the server, exactly as the browser asks for it (its answer is then kept)."""
@@ -1254,11 +1255,15 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
         try:
             with ProcessPoolExecutor(n_help, mp_context=mp.get_context("spawn"), initializer=warmers.start,
                                      initargs=(str(site.store.root), c.name)) as pool:
+                HELPERS[0] = pool
+                if WARM["gen"] != gen:                  # (the site closed while they were being started)
+                    stop_helpers()
+                    return
                 futs = [pool.submit(warmers.players, b, stamp) for b in batches]
                 got = 0
                 for fu in as_completed(futs):
                     if WARM["gen"] != gen or site.career() is not c:
-                        pool.shutdown(wait=False, cancel_futures=True)   # (closing: never wait for the rest)
+                        stop_helpers()           # (new matches, or closing: never wait for the rest)
                         return
                     for key, value in fu.result():
                         cache_put(c, key, value)
@@ -1267,6 +1272,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                     if got % 10 == 0:
                         save_kept(c, every=60)
         except Exception:  # noqa: BLE001 - no helpers (a locked-down PC): the rest is done here, one at a time
+            HELPERS[0] = None
             for p in names:
                 if WARM["gen"] != gen or site.career() is not c:
                     return
@@ -1277,6 +1283,22 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                 except Exception:  # noqa: BLE001
                     pass
                 WARM["done"] += 1
+        finally:
+            HELPERS[0] = None
+
+    def stop_helpers() -> None:
+        """Closing (or new matches): the helpers stop now, mid-batch if need be. Their work is only a head start, and
+        what they already handed back is kept; waiting for the batch they're on made the program take minutes to close
+        on a slow PC (found by the window check on Windows, 27 November)."""
+        pool = HELPERS[0]
+        if pool is None:
+            return
+        procs = list((getattr(pool, "_processes", None) or {}).values())   # (taken first: shutting down forgets them)
+        with contextlib.suppress(Exception):
+            pool.shutdown(wait=False, cancel_futures=True)
+        for proc in procs:
+            with contextlib.suppress(Exception):
+                proc.terminate()
 
     async def warmup_(request: Request):
         """How far getting every page ready has got (the progress bar)."""
@@ -1346,6 +1368,7 @@ def create_app(store: CareerStore | None = None, web: Path | None = None, watch_
                 with contextlib.suppress(asyncio.CancelledError):
                     await task
             WARM["gen"] += 1   # the warm-up stops
+            stop_helpers()     # (and its helpers, at once)
             with contextlib.suppress(Exception):   # what's been worked out is kept for the next start
                 c = site.career()
                 if c is not None:

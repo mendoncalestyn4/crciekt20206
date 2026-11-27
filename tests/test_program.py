@@ -144,6 +144,35 @@ def post(s, **b):
     return status, json.loads(body)
 
 
+def test_closing_never_waits_for_the_helpers(tmp_path, monkeypatch):
+    """Closing stops the helpers on the other cores at once, even mid-way through their work: waiting for them made
+    the program take three minutes to close on a slow PC (found by the window check on Windows, 27 November). Here
+    they're slow on purpose, and the site is closed while they're at work."""
+    import multiprocessing as mp
+    import time
+
+    import slowhelper
+    from server import warmers
+    from serverkit import FIXTURES
+    monkeypatch.setenv("STATS_PACK_HELPERS", "2")
+    monkeypatch.setattr(warmers, "start", slowhelper.start)
+    store, _, _ = make_pc(tmp_path, n=len(FIXTURES), team="India")
+    srv = Live(create_app(store, watch_every=0.5))
+    try:
+        end = time.time() + 300
+        while not mp.active_children() and time.time() < end:
+            time.sleep(0.2)
+        assert mp.active_children(), "the helpers never started"
+    finally:
+        t = time.time()
+        srv.stop()
+    end = time.time() + 15
+    while mp.active_children() and time.time() < end:
+        time.sleep(0.2)
+    assert not mp.active_children(), "helpers still at work after the site closed"
+    assert time.time() - t < 15
+
+
 def test_whats_new_and_the_mark_in_the_menu(live):
     s, store, prog = live
     d = s.json("/api/program")
